@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn condition_effects(mut checks: usize) -> usize {
-    #[cycle("Repeat the check until it fails.")]
+    #[kaa::cycle("Repeat the check until it fails.")]
     let leave_1 = loop {
-        #[question("Check once more?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Check once more?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (iterate_1, leave_1) = |&mut checks| {
             *checks += 1;
             *checks < 4

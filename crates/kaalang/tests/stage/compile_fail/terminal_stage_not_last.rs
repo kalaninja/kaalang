@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn terminal_stage_not_last(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |finish| {
         return;
     };
 
-    #[stage("Begin.")]
+    #[kaa::stage("Begin.")]
     let finish = |go| {
-        #[action("Select the terminal stage.")]
+        #[kaa::action("Select the terminal stage.")]
         let finish = || ();
     };
 }

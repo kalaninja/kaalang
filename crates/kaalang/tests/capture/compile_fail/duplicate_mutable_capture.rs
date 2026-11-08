@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn duplicate_mutable_capture(value: u8) -> u8 {
-    #[action("Capture the same logical wire twice.")]
+    #[kaa::action("Capture the same logical wire twice.")]
     let end = |mut value, &mut r#value| { *value };
 
     |end| return end;

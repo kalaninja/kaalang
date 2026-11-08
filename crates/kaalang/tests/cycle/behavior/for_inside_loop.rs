@@ -1,24 +1,24 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_inside_loop(mut rounds: u32, values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Repeat the rounds.")]
+    #[kaa::cycle("Repeat the rounds.")]
     let finished = loop {
-        #[question("Is another round left?")]
+        #[kaa::question("Is another round left?")]
         let (round, finished) = |&rounds| *rounds > 0;
 
-        #[cycle("Add every value.")]
+        #[kaa::cycle("Add every value.")]
         let added = |round, values| {
             for value in values {
-                #[action("Add the value.")]
+                #[kaa::action("Add the value.")]
                 |value, &mut total| *total += *value;
             }
         };
 
-        #[action("Count the round.")]
+        #[kaa::action("Count the round.")]
         let counted = |added, &mut rounds| *rounds -= 1;
 
         |counted| continue;

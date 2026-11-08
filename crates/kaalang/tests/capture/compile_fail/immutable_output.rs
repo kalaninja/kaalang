@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn immutable_output(input: String) -> String {
-    #[action("Produce immutable text.")]
+    #[kaa::action("Produce immutable text.")]
     let text = |input| { input };
 
-    #[action("Try to borrow the output mutably.")]
+    #[kaa::action("Try to borrow the output mutably.")]
     |&mut text| { text.clear() };
 
     |text| return text;

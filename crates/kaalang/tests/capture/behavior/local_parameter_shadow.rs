@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn local_parameter_shadow(value: u32) -> (u32, u32) {
-    #[action("Use an explicit local binding.")]
+    #[kaa::action("Use an explicit local binding.")]
     let result = || {
         let value = 9;
         value + 1

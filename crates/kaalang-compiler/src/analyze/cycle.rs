@@ -136,22 +136,22 @@ mod tests {
     #[test]
     fn nested_questions_keep_their_exits_adjacent() {
         let source = r#"
-            #[kaalang]
+            #[kaa]
             fn invalid(mut mode: u8) -> u8 {
-                #[cycle("Select an exit from a nested cycle.")]
+                #[kaa::cycle("Select an exit from a nested cycle.")]
                 let selected = loop {
-                    #[cycle("Advance at most once.")]
+                    #[kaa::cycle("Advance at most once.")]
                     let selected = loop {
-                        #[question("Exit immediately?")]
+                        #[kaa::question("Exit immediately?")]
                         let (done, check) = |mode| mode == 0;
 
-                        #[question("Advance once?")]
+                        #[kaa::question("Advance once?")]
                         let (done, advance) = |check, mode| mode == 1;
 
-                        #[action("Advance to the final case.")]
+                        #[kaa::action("Advance to the final case.")]
                         |advance, &mut mode| *mode = 2;
 
-                        #[action("Keep the mode.")]
+                        #[kaa::action("Keep the mode.")]
                         let selected = |done, mode| mode;
                         |advance| continue;
                     };
@@ -170,16 +170,16 @@ mod tests {
         let source = fixture.replace(
             "    let result = loop {",
             r#"    let result = loop {
-        #[question("Prepare this iteration?")]
+        #[kaa::question("Prepare this iteration?")]
         let (left, right) = |mode| mode == 0;
 
-        #[action("Prepare the left branch.")]
+        #[kaa::action("Prepare the left branch.")]
         let ready = |left| ();
 
-        #[action("Prepare the right branch.")]
+        #[kaa::action("Prepare the right branch.")]
         let ready = |right| ();
 
-        #[action("Finish the shared preparation.")]
+        #[kaa::action("Finish the shared preparation.")]
         |ready| {};
 "#,
         );
@@ -195,21 +195,21 @@ mod tests {
     fn a_partial_merge_before_cycle_entry_does_not_split_its_exit_routes() {
         let source = include_str!("../../../kaalang/tests/cycle/behavior/conditional_entry.rs")
             .replace(
-                "#[question(\"Run the counter?\")]\n    let (run, skip) = |enabled| enabled;",
-                r#"#[choice("Run the counter?")]
-    #[case("Run when enabled.")]
-    #[case("Run for a zero limit.")]
-    #[case("Skip the counter.")]
+                "#[kaa::question(\"Run the counter?\")]\n    let (run, skip) = |enabled| enabled;",
+                r#"#[kaa::choice("Run the counter?")]
+    #[kaa::case("Run when enabled.")]
+    #[kaa::case("Run for a zero limit.")]
+    #[kaa::case("Skip the counter.")]
     let (first, second, skip) = |enabled, limit| match (enabled, limit) {
         (true, _) => (),
         (false, 0) => (),
         _ => (),
     };
 
-    #[action("Run when enabled.")]
+    #[kaa::action("Run when enabled.")]
     let run = |first| ();
 
-    #[action("Run for a zero limit.")]
+    #[kaa::action("Run for a zero limit.")]
     let run = |second| ();"#,
             );
         crate::build(&crate::tests::fixture(&source, "conditional_entry"))

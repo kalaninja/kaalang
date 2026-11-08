@@ -1,18 +1,18 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn interior_mutability_in_stage(go: Cell<u8>) -> u8 {
-    #[stage("Update the cell.")]
+    #[kaa::stage("Update the cell.")]
     let finish = |go| {
-        #[action("Change the inner value.")]
+        #[kaa::action("Change the inner value.")]
         let finish = |go| {
             go.set(go.get() + 1);
             go.get()
         };
     };
 
-    #[stage("Return the new value.")]
+    #[kaa::stage("Return the new value.")]
     |finish| {
         |finish| return finish;
     };

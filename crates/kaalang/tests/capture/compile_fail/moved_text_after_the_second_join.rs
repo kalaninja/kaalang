@@ -1,31 +1,31 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The merged text moves into its length, then a common action after the
 // second join takes it again. Rust reports the use after the move.
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool, long: bool) -> usize {
-    #[question("Which text?")]
+    #[kaa::question("Which text?")]
     let (first, second) = |condition| { condition };
 
-    #[action("Build the first text.")]
+    #[kaa::action("Build the first text.")]
     let text = |first| { String::from("abc") };
 
-    #[action("Build the second text.")]
+    #[kaa::action("Build the second text.")]
     let text = |second| { String::from("de") };
 
-    #[action("Measure the merged text.")]
+    #[kaa::action("Measure the merged text.")]
     let length = |text| { text.len() };
 
-    #[question("Is it long enough?")]
+    #[kaa::question("Is it long enough?")]
     let (yes, no) = |&length, long| { long && *length > 2 };
 
-    #[action("Keep the length.")]
+    #[kaa::action("Keep the length.")]
     let selected = |yes, length| { length };
 
-    #[action("Report nothing.")]
+    #[kaa::action("Report nothing.")]
     let selected = |no, length| { length };
 
-    #[action("Use the moved text after the join.")]
+    #[kaa::action("Use the moved text after the join.")]
     let end = |selected, text| { selected + text.len() };
 
     |end| return end;

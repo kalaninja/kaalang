@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn swap<T>(a: T, b: T) -> (T, T) {
     |a, b| return (b, a);
 }

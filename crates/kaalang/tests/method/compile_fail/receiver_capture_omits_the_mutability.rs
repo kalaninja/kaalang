@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter {
     value: u32,
 }
 
 impl Counter {
-    #[kaalang]
+    #[kaa]
     fn invalid(&mut self) -> u32 {
-        #[action("Read the counter through a shared capture.")]
+        #[kaa::action("Read the counter through a shared capture.")]
         let end = |&self| self.value;
 
         |end| return end;

@@ -1,27 +1,27 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn convergence_after_a_terminal_case(value: i8) -> &'static str {
-    #[choice("Choose a branch.")]
-    #[case("Finish without a shared step.")]
-    #[case("Build the left value.")]
-    #[case("Build the right value.")]
+    #[kaa::choice("Choose a branch.")]
+    #[kaa::case("Finish without a shared step.")]
+    #[kaa::case("Build the left value.")]
+    #[kaa::case("Build the right value.")]
     let (done, left, right) = |value| match value {
         ..0 => (),
         0 => (),
         _ => (),
     };
 
-    #[action("Produce the direct result.")]
+    #[kaa::action("Produce the direct result.")]
     let end = |done| "done";
 
-    #[action("Build the left value.")]
+    #[kaa::action("Build the left value.")]
     let selected = |left| "left";
 
-    #[action("Build the right value.")]
+    #[kaa::action("Build the right value.")]
     let selected = |right| "right";
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let end = |selected| selected;
 
     |end| return end;

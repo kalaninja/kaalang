@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn identity<T>(end: T) -> T {
     |end| return end;
 }

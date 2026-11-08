@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_with_an_endless_body(values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Spin on the first value, if there is one.")]
+    #[kaa::cycle("Spin on the first value, if there is one.")]
     |values| {
         for value in values {
-            #[action("Take the value.")]
+            #[kaa::action("Take the value.")]
             |value, &mut total| *total = *value;
 
-            #[cycle("Spin forever.")]
+            #[kaa::cycle("Spin forever.")]
             loop {
-                #[action("Wait.")]
+                #[kaa::action("Wait.")]
                 let waited = || std::hint::spin_loop();
 
                 |waited| continue;

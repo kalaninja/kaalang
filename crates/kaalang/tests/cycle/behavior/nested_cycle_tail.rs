@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_cycle_tail(mut count: usize, limit: usize) -> usize {
-    #[cycle("Count to the limit through an inner cycle.")]
+    #[kaa::cycle("Count to the limit through an inner cycle.")]
     let leave_1 = loop {
-        #[question("Is another counting pass needed?")]
-        #[no("NO")]
-        #[yes("YES")]
+        #[kaa::question("Is another counting pass needed?")]
+        #[kaa::no("NO")]
+        #[kaa::yes("YES")]
         let (leave_1, iterate_1) = |&count, &limit| *count < *limit;
 
-        #[cycle("Increment until the current pass is complete.")]
+        #[kaa::cycle("Increment until the current pass is complete.")]
         let leave_2 = |iterate_1| loop {
-            #[question("Is the count below the limit?")]
-            #[yes("YES")]
-            #[no("NO")]
+            #[kaa::question("Is the count below the limit?")]
+            #[kaa::yes("YES")]
+            #[kaa::no("NO")]
             let (iterate_2, leave_2) = |&count, &limit| *count < *limit;
 
-            #[action("Increment the count.")]
+            #[kaa::action("Increment the count.")]
             |iterate_2, &mut count| *count += 1;
 
             |iterate_2| continue;

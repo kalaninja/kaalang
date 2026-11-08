@@ -1,32 +1,32 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The first selection merges two `String` producers into `text`, a common
 /// action moves it into a length, and a second selection follows. Nothing
 /// needs to transfer `text` again: its binding is outside the second selection.
-#[kaalang]
+#[kaa]
 fn successive_selections_move_a_string(condition: bool, long: bool) -> usize {
-    #[question("Which text?")]
+    #[kaa::question("Which text?")]
     let (first, second) = |condition| condition;
 
-    #[action("Build the first text.")]
+    #[kaa::action("Build the first text.")]
     let text = |first| String::from("abc");
 
-    #[action("Build the second text.")]
+    #[kaa::action("Build the second text.")]
     let text = |second| String::from("de");
 
-    #[action("Measure the merged text.")]
+    #[kaa::action("Measure the merged text.")]
     let length = |text| text.len();
 
-    #[question("Is it long enough?")]
+    #[kaa::question("Is it long enough?")]
     let (yes, no) = |&length, long| long && *length > 2;
 
-    #[action("Keep the length.")]
+    #[kaa::action("Keep the length.")]
     let selected = |yes, length| length;
 
-    #[action("Scale the short length.")]
+    #[kaa::action("Scale the short length.")]
     let selected = |no, length| length * 100;
 
-    #[action("Finish with the selected length.")]
+    #[kaa::action("Finish with the selected length.")]
     let end = |selected| selected;
 
     |end| return end;

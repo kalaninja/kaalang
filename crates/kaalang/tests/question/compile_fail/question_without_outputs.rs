@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // `let ()` declares no wires, and a question needs two.
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[question("Ask without outputs.")]
+    #[kaa::question("Ask without outputs.")]
     let () = |&input| { *input > 0 };
 
     |input| return input;

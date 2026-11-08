@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Try a labeled body.")]
+    #[kaa::cycle("Try a labeled body.")]
     || 'body: loop {};
 }
 

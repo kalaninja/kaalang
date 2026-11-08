@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn increment(value: u32) -> u32 {
     value + 1
 }
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u32, increment: fn(u32) -> u32) -> u32 {
-    #[call("Run the captured function.")]
+    #[kaa::call("Run the captured function.")]
     let end = |increment, value| increment(value);
 
     |end| return end;

@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn render_large_formulas(value: u32) -> u32 {
-    #[action(
+    #[kaa::action(
         r"$\begin{matrix}1 & 2 \\ 2 & 4 \\ 3 & 6 \\ 4 & 8 \\ 5 & 10 \\ 6 & 12 \\ 7 & 14 \\ 8 & 16 \\ 9 & 18 \\ 10 & 20\end{matrix}$"
     )]
     let rendered = |value| value;
 
-    #[action(
+    #[kaa::action(
         r"$\begin{matrix}1 & 2 \\ 2 & 4 \\ 3 & 6 \\ 4 & 8 \\ 5 & 10 \\ 6 & 12 \\ 7 & 14 \\ 8 & 16 \\ 9 & 18 \\ 10 & 20 \\ 11 & 22\end{matrix}$"
     )]
     let literal = |rendered| rendered;

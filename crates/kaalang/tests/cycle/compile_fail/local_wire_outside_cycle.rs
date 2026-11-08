@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) {
-    #[cycle("Create a local wire.")]
+    #[kaa::cycle("Create a local wire.")]
     let done = |flag| loop {
-        #[question("Repeat?")]
+        #[kaa::question("Repeat?")]
         let (again, done) = |flag| flag;
 
-        #[action("Create the local wire.")]
+        #[kaa::action("Create the local wire.")]
         let _local = |again| 1;
     };
 
-    #[action("Read the local wire.")]
+    #[kaa::action("Read the local wire.")]
     |_local| {};
 
     |done| return;

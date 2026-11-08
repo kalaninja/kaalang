@@ -4,7 +4,7 @@ use kaalang_render::ArrangementVerifier;
 /// One action between the flow's start and end: the smallest arrangement a
 /// reference can be removed from.
 const SERIAL_PROBE: &str = "fn probe(value: u8) -> u8 {
-    #[action(\"Keep the value.\")]
+    #[kaa::action(\"Keep the value.\")]
     let kept = |value| value;
     |kept| return kept;
 }";

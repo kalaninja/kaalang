@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_stage_declaration(go: ()) {
-    #[stage("Outer.")]
+    #[kaa::stage("Outer.")]
     |go| {
-        #[stage("Inner.")]
+        #[kaa::stage("Inner.")]
         |go| {
             return;
         };

@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Macro token streams are opaque to the control-transfer check,
 /// so a macro may mention `return` without transferring control.
-#[kaalang]
+#[kaa]
 fn keep_macro_tokens_opaque() -> &'static str {
-    #[action("Spell the keyword instead of using it.")]
+    #[kaa::action("Spell the keyword instead of using it.")]
     let end = || stringify!(return);
 
     |end| return end;

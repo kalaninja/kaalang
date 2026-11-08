@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The block declares no outputs, so Rust checks its body against `()`.
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) {
-    #[action("Declare no outputs.")]
+    #[kaa::action("Declare no outputs.")]
     let () = |input| { input + 1 };
 
-    #[action("Finish.")]
+    #[kaa::action("Finish.")]
     let end = || {};
 
     |end| return end;

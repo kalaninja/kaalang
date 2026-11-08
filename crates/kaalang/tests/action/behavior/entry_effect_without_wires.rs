@@ -1,18 +1,18 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 static VISITS: AtomicUsize = AtomicUsize::new(0);
 
 /// The shortest spelling of an effect: no inputs, no outputs, at flow entry.
-#[kaalang]
+#[kaa]
 fn entry_effect_without_wires() -> usize {
-    #[action("Count the flow entry.")]
+    #[kaa::action("Count the flow entry.")]
     {
         VISITS.fetch_add(1, Ordering::Relaxed);
     };
 
-    #[action("Report the count.")]
+    #[kaa::action("Report the count.")]
     let end = || VISITS.load(Ordering::Relaxed);
 
     |end| return end;

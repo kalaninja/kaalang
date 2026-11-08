@@ -1,30 +1,30 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn run_choice(value: i32, branch_action_count: &mut usize) -> &'static str {
-    #[choice("What is the sign of the value?")]
-    #[case("The value is negative.")]
-    #[case("The value is zero.")]
-    #[case("The value is positive.")]
+    #[kaa::choice("What is the sign of the value?")]
+    #[kaa::case("The value is negative.")]
+    #[kaa::case("The value is zero.")]
+    #[kaa::case("The value is positive.")]
     let (negative, zero, positive) = |value| match value {
         ..0 => (),
         0 => (),
         _ => (),
     };
 
-    #[action("Produce the negative result.")]
+    #[kaa::action("Produce the negative result.")]
     let end = |negative, branch_action_count| {
         *branch_action_count += 1;
         "negative"
     };
 
-    #[action("Produce the zero result.")]
+    #[kaa::action("Produce the zero result.")]
     let end = |zero, branch_action_count| {
         *branch_action_count += 1;
         "zero"
     };
 
-    #[action("Produce the positive result.")]
+    #[kaa::action("Produce the positive result.")]
     let end = |positive, branch_action_count| {
         *branch_action_count += 1;
         "positive"

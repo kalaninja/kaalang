@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Owned;
 
 impl Owned {
-    #[kaalang]
+    #[kaa]
     fn receiver_entry(self) -> Self {
-        #[stage("Return the receiver.")]
+        #[kaa::stage("Return the receiver.")]
         |self| {
             |self| return self;
         };

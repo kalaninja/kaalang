@@ -1,22 +1,22 @@
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn owned_entry_self_transition(go: String) -> String {
-    #[stage("Grow the string.")]
+    #[kaa::stage("Grow the string.")]
     let (go, finish) = |go| {
-        #[action("Read the current string.")]
+        #[kaa::action("Read the current string.")]
         let current = |go| go;
 
-        #[question("Grow again?")]
+        #[kaa::question("Grow again?")]
         let (again, done) = |&current| current.len() < 3;
-        #[action("Append a letter.")]
+        #[kaa::action("Append a letter.")]
         let go = |again, mut current| {
             current.push('x');
             current
         };
-        #[action("Keep the completed string.")]
+        #[kaa::action("Keep the completed string.")]
         let finish = |done, current| current;
     };
-    #[stage("Return the string.")]
+    #[kaa::stage("Return the string.")]
     |finish| {
         |finish| return finish;
     };

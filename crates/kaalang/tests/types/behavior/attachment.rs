@@ -1,47 +1,47 @@
 #![allow(dead_code)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("Overlapping word and byte views of shared storage.")]
+#[kaa("Overlapping word and byte views of shared storage.")]
 #[repr(C, align(8))]
 #[derive(Clone, Copy)]
 union Payload {
-    #[value("The payload as a word.")]
+    #[kaa::value("The payload as a word.")]
     word: u64,
-    #[value("The payload as bytes.")]
+    #[kaa::value("The payload as bytes.")]
     bytes: [u8; 8],
 }
 
-#[kaalang("An attachment with a configurable payload.")]
+#[kaa("An attachment with a configurable payload.")]
 #[repr(C)]
 struct Attachment<T> {
-    #[value("The boxed attachment payload.")]
+    #[kaa::value("The boxed attachment payload.")]
     payload: Box<T>,
-    #[value("A digest of the payload.")]
+    #[kaa::value("A digest of the payload.")]
     digest: [u8; 4096],
 }
 
-#[kaalang("An upload waiting for review.")]
+#[kaa("An upload waiting for review.")]
 struct Upload {
-    #[refer(Attachment, "The uploaded content.")]
+    #[kaa::refer(Attachment, "The uploaded content.")]
     content: Attachment<Payload>,
-    #[refer(crate::behavior::attachment::Payload, "The checksum of the content.")]
+    #[kaa::refer(crate::behavior::attachment::Payload, "The checksum of the content.")]
     checksum: Payload,
 }
 
-#[kaalang("A selected attachment, by its index.")]
+#[kaa("A selected attachment, by its index.")]
 #[repr(transparent)]
 struct Selection {
-    #[refer(Attachment, "The selected attachment, resolved by index.")]
+    #[kaa::refer(Attachment, "The selected attachment, resolved by index.")]
     index: usize,
 }
 
-#[kaalang("A compact handle to an attachment.")]
+#[kaa("A compact handle to an attachment.")]
 #[repr(C, packed)]
 struct Handle {
-    #[refer(Attachment, "The attachment in this slot.")]
+    #[kaa::refer(Attachment, "The attachment in this slot.")]
     slot: u16,
-    #[value("The generation of the slot.")]
+    #[kaa::value("The generation of the slot.")]
     generation: u8,
 }
 

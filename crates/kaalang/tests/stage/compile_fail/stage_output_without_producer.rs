@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_output_without_producer() {
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     let go = |go| {};
 }
 

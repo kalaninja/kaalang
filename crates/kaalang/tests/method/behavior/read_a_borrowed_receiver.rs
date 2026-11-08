@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
@@ -6,12 +6,12 @@ struct Rectangle {
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn read_a_borrowed_receiver(&self, scale: u32) -> u32 {
-        #[action("Scale the width.")]
+        #[kaa::action("Scale the width.")]
         let scaled = |&self, scale| self.width * scale;
 
-        #[action("Add the height.")]
+        #[kaa::action("Add the height.")]
         let end = |&self, scaled| scaled + self.height;
 
         |end| return end;

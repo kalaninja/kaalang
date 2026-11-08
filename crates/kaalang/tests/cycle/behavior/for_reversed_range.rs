@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_reversed_range(from: u32) -> Vec<u32> {
-    #[action("Start with an empty countdown.")]
+    #[kaa::action("Start with an empty countdown.")]
     let mut countdown = || Vec::new();
 
-    #[cycle("Count down to one.")]
+    #[kaa::cycle("Count down to one.")]
     |from| {
         for step in (1..=from).rev() {
-            #[action("Record the step.")]
+            #[kaa::action("Record the step.")]
             |step, &mut countdown| countdown.push(step);
         }
     };

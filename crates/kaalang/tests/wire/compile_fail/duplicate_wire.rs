@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[action("Produce a wire.")]
+    #[kaa::action("Produce a wire.")]
     let shared = |&input| { *input };
 
-    #[action("Produce the same wire name again.")]
+    #[kaa::action("Produce the same wire name again.")]
     let shared = |shared| { shared };
 
     |shared| return shared;

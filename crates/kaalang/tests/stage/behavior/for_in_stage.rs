@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_in_stage(values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = || {};
 
-    #[stage("Add every value, then return the total.")]
+    #[kaa::stage("Add every value, then return the total.")]
     |go| {
-        #[cycle("Add every value.")]
+        #[kaa::cycle("Add every value.")]
         let added = |values| {
             for value in values {
-                #[action("Add the value.")]
+                #[kaa::action("Add the value.")]
                 |value, &mut total| *total += *value;
             }
         };

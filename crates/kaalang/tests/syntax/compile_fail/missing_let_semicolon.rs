@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn missing_let_semicolon(input: u32) -> u32 {
-    #[action("Return the input.")]
+    #[kaa::action("Return the input.")]
     let end = |input| { input }
 }
 

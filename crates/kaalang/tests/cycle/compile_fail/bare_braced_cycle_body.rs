@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Repeat forever.")]
+    #[kaa::cycle("Repeat forever.")]
     {
         continue;
     };

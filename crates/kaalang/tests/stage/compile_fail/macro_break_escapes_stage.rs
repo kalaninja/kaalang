@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 macro_rules! escape {
     () => {
@@ -6,18 +6,18 @@ macro_rules! escape {
     };
 }
 
-#[kaalang]
+#[kaa]
 fn macro_break_escapes_stage(go: ()) {
-    #[stage("Try to escape.")]
+    #[kaa::stage("Try to escape.")]
     let finish = |go| {
-        #[action("Try to escape.")]
+        #[kaa::action("Try to escape.")]
         let finish = |go| {
             escape!();
             go
         };
     };
 
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |finish| {
         return;
     };

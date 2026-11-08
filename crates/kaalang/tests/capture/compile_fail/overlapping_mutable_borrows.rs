@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn overlapping_mutable_borrows(mut text: String) -> usize {
-    #[action("Keep a mutable reference.")]
+    #[kaa::action("Keep a mutable reference.")]
     let first = |&mut text| { text };
 
-    #[action("Borrow the wire again while its first reference is live.")]
+    #[kaa::action("Borrow the wire again while its first reference is live.")]
     let end = |&mut text, first| {
         text.push('!');
         first.len()

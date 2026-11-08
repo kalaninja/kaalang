@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Owner<'a>(&'a RefCell<Vec<&'static str>>);
 
@@ -18,20 +18,20 @@ impl Drop for Borrowed<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn prepared_drop_order(events: &RefCell<Vec<&'static str>>) -> bool {
-    #[action("Create the owner first.")]
+    #[kaa::action("Create the owner first.")]
     let z = |events| Owner(events);
 
-    #[action("Create a dependent owner second.")]
+    #[kaa::action("Create a dependent owner second.")]
     let a = |&z| Borrowed(z);
 
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = || {};
 
-    #[stage("Read both prepared values.")]
+    #[kaa::stage("Read both prepared values.")]
     |go| {
-        #[action("Check the retained reference.")]
+        #[kaa::action("Check the retained reference.")]
         let same = |&z, &a| core::ptr::eq(z, a.0);
 
         |same| return same;

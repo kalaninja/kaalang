@@ -3,7 +3,7 @@ error: a kaalang cycle body is a `loop { ... }` or `for ... in ... { ... }` bloc
    |
  9 |       let done = {
    |  ________________^
-10 | |         #[question("Has the limit been reached?")]
+10 | |         #[kaa::question("Has the limit been reached?")]
 11 | |         let (done, again) = |&count, &limit| *count >= *limit;
 ...  |
 16 | |         |again| continue;

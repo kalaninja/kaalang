@@ -140,7 +140,7 @@ mod tests {
             ..source.rfind('}').expect("the probe closes")]
             .replace("|seed| seed;", "|entry, seed| seed;");
         let staged = format!(
-            "#[kaalang] fn staged(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {{\n#[action(\"Start.\")] let entry = || ();\n#[stage(\"Work.\")] |entry| {{ {body} }};\n}}"
+            "#[kaa] fn staged(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {{\n#[kaa::action(\"Start.\")] let entry = || ();\n#[kaa::stage(\"Work.\")] |entry| {{ {body} }};\n}}"
         );
         let function = kaalang_testing::probes::flow(&staged);
         let analysis = crate::analyze(&function).expect("the staged flow analyzes");

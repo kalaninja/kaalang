@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_convergence(outer: bool, inner: bool) -> u32 {
-    #[question("Take the nested branch?")]
+    #[kaa::question("Take the nested branch?")]
     let (nested, direct) = |outer, &inner| outer;
 
-    #[question("Choose the nested value.")]
+    #[kaa::question("Choose the nested value.")]
     let (inner_yes, inner_no) = |nested, inner| inner;
 
-    #[action("Build the nested yes value.")]
+    #[kaa::action("Build the nested yes value.")]
     let selected = |inner_yes| 1;
 
-    #[action("Build the nested no value.")]
+    #[kaa::action("Build the nested no value.")]
     let selected = |inner_no| 2;
 
-    #[action("Build the direct value.")]
+    #[kaa::action("Build the direct value.")]
     let selected = |direct| 3;
 
-    #[action("Use the selected nested value.")]
+    #[kaa::action("Use the selected nested value.")]
     let end = |selected| selected * 10;
 
     |end| return end;

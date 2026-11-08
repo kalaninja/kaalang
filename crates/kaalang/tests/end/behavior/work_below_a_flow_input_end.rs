@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn work_below_a_flow_input_end(end: u32, other: u32) -> u32 {
-    #[action("Combine the ordinary `end` input with another value.")]
+    #[kaa::action("Combine the ordinary `end` input with another value.")]
     let result = |end, other| end + other;
 
     |result| return result;

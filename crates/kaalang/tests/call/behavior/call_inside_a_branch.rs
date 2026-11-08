@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn double(value: i32) -> i32 {
     value * 2
@@ -8,17 +8,17 @@ fn negate(value: i32) -> i32 {
     -value
 }
 
-#[kaalang]
+#[kaa]
 fn call_inside_a_branch(value: i32) -> i32 {
-    #[question("Is the value positive?")]
-    #[yes("YES")]
-    #[no("NO")]
+    #[kaa::question("Is the value positive?")]
+    #[kaa::yes("YES")]
+    #[kaa::no("NO")]
     let (positive, negative) = |&value| *value > 0;
 
-    #[call("Double a positive value so it stays on the same side of zero.")]
+    #[kaa::call("Double a positive value so it stays on the same side of zero.")]
     let scaled = |positive, value| double(value);
 
-    #[call]
+    #[kaa::call]
     let scaled = |negative, value| negate(value);
 
     |scaled| return scaled;

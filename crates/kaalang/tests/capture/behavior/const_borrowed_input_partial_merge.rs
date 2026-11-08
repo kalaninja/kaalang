@@ -1,32 +1,32 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Borrowed input data outlives both the partial and wider joins, including
 /// when the flow runs during constant evaluation.
-#[kaalang]
+#[kaa]
 const fn const_borrowed_input_partial_merge(source: u8, bytes: &[u8]) -> usize {
-    #[choice("Which source?")]
-    #[case("First source.")]
-    #[case("Second source.")]
-    #[case("Fallback.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Fallback.")]
     let (first, second, fallback) = |source| match source {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Use the input on the first branch.")]
+    #[kaa::action("Use the input on the first branch.")]
     let partial = |first, bytes| bytes;
 
-    #[action("Use the input on the second branch.")]
+    #[kaa::action("Use the input on the second branch.")]
     let partial = |second, bytes| bytes;
 
-    #[action("Carry the partially merged slice onward.")]
+    #[kaa::action("Carry the partially merged slice onward.")]
     let view = |partial| partial;
 
-    #[action("Use the fallback slice.")]
+    #[kaa::action("Use the fallback slice.")]
     let view = |fallback| &[7, 8];
 
-    #[action("Measure the merged slice.")]
+    #[kaa::action("Measure the merged slice.")]
     let end = |view| view.len() + view[0] as usize;
 
     |end| return end;

@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: i32) -> &'static str {
-    #[choice("What is the sign of the input?")]
-    #[case("The input is negative.")]
-    #[case("The input is zero or positive.")]
+    #[kaa::choice("What is the sign of the input?")]
+    #[kaa::case("The input is negative.")]
+    #[kaa::case("The input is zero or positive.")]
     let (negative, zero, positive) = |input| {
         match input {
             ..0 => (),
@@ -13,13 +13,13 @@ fn invalid(input: i32) -> &'static str {
         }
     };
 
-    #[action("Produce the negative result.")]
+    #[kaa::action("Produce the negative result.")]
     let negative_result = |negative| { "negative" };
 
-    #[action("Produce the zero result.")]
+    #[kaa::action("Produce the zero result.")]
     let zero_result = |zero| { "zero" };
 
-    #[action("Produce the positive result.")]
+    #[kaa::action("Produce the positive result.")]
     let positive_result = |positive| { "positive" };
 }
 

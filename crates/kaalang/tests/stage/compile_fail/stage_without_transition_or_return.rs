@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_without_transition_or_return() {
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     |go| {
-        #[action("Again.")]
+        #[kaa::action("Again.")]
         let local = || ();
     };
 }

@@ -1,25 +1,25 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 #[repr(u8)]
 #[derive(Debug, PartialEq)]
 enum State {
-    #[case("Not yet published.")]
+    #[kaa::case("Not yet published.")]
     Draft,
     Published {
-        #[value("The published revision.")]
+        #[kaa::value("The published revision.")]
         revision: u32,
-        #[value("The publication note.")]
+        #[kaa::value("The publication note.")]
         note: String,
     },
-    Archived(#[value("The archive reason.")] String),
+    Archived(#[kaa::value("The archive reason.")] String),
 }
 
-#[kaalang("A document with its publication state.")]
+#[kaa("A document with its publication state.")]
 struct Document {
-    #[value("The display title.")]
+    #[kaa::value("The display title.")]
     title: String,
-    #[refer(State, "The current publication state.")]
+    #[kaa::refer(State, "The current publication state.")]
     state: State,
 }
 

@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> (u32, u32) {
-    #[action("Produce two outputs with one name.")]
+    #[kaa::action("Produce two outputs with one name.")]
     let (end, end) = |input| { (input, input) };
 
     |end| return end;

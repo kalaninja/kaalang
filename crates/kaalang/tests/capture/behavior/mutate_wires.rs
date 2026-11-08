@@ -1,28 +1,28 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutate_wires(mut r#type: String, count: u32) -> (String, u32, usize) {
-    #[action("Increment a local copy.")]
+    #[kaa::action("Increment a local copy.")]
     let incremented = |mut count| {
         count += 1;
         count
     };
 
-    #[action("Append to the original text.")]
+    #[kaa::action("Append to the original text.")]
     |&mut r#type| {
         r#type.push('!');
     };
 
-    #[action("Measure the changed text.")]
+    #[kaa::action("Measure the changed text.")]
     let length = |&r#type| r#type.len();
 
-    #[action("Move the text and keep the original count.")]
+    #[kaa::action("Move the text and keep the original count.")]
     let (mut text, mut total) = |mut r#type, count, incremented| {
         r#type.push('?');
         (r#type, count + incremented)
     };
 
-    #[action("Change both action outputs.")]
+    #[kaa::action("Change both action outputs.")]
     |&mut text, &mut total| {
         text.push('.');
         *total += 10;

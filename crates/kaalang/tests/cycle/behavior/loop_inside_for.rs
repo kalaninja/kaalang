@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn loop_inside_for(values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Count down every value.")]
+    #[kaa::cycle("Count down every value.")]
     |values| {
         for value in values {
-            #[action("Start counting at the value.")]
+            #[kaa::action("Start counting at the value.")]
             let mut left = |value| *value;
 
-            #[cycle("Count the value down to zero.")]
+            #[kaa::cycle("Count the value down to zero.")]
             let _zero = loop {
-                #[question("Has the value been counted down?")]
+                #[kaa::question("Has the value been counted down?")]
                 let (_zero, more) = |&left| *left == 0;
 
-                #[action("Count one down.")]
+                #[kaa::action("Count one down.")]
                 let counted = |more, &mut left, &mut total| {
                     *left -= 1;
                     *total += 1;

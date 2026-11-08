@@ -20,7 +20,7 @@ ownership, borrowing, and type checking.
 
 ### 1.1 Terms
 
-- An **annotated type** is a Rust type declaration marked `#[kaalang]`.
+- An **annotated type** is a Rust type declaration marked `#[kaa]`.
 - A **relationship** is one explicit `refer` annotation on a field or alias. It
   has a source component, the annotated field or alias, a target, and a
   description.
@@ -38,18 +38,18 @@ control-flow connection.
 ### 2.1 Annotated types
 
 ```rust
-#[kaalang("A member that can appear in several roles.")]
+#[kaa("A member that can appear in several roles.")]
 struct Member {
-    #[value("The member's display name.")]
+    #[kaa::value("The member's display name.")]
     name: String,
 }
 ```
 
-`#[kaalang]` marks a type declaration as it marks a flow. On a type it may carry
-one description, a nonempty Rust string literal, as `#[kaalang("description")]`;
-a type without one is described by its name. The attribute applies to named,
-tuple, and unit structs, enums, unions, and type aliases. Generic parameters and
-lifetimes remain part of the Rust declaration.
+`#[kaa]` marks a type declaration as it marks a flow. On a type it may carry one
+description, a nonempty Rust string literal, as `#[kaa("description")]`; a type
+without one is described by its name. The attribute applies to named, tuple, and
+unit structs, enums, unions, and type aliases. Generic parameters and lifetimes
+remain part of the Rust declaration.
 
 The Rust identifier supplies the name; a card header qualifies it with its
 module path (§4.2). There is no separate display-name argument. Descriptions
@@ -69,13 +69,13 @@ declaration form supplies the structural distinction.
 A field may have one of two annotations:
 
 ```rust
-#[kaalang("An article in the catalog.")]
+#[kaa("An article in the catalog.")]
 struct Article<'a> {
-    #[value("The display title.")]
+    #[kaa::value("The display title.")]
     title: String,
-    #[refer(Member, "The member responsible for this article.")]
+    #[kaa::refer(Member, "The member responsible for this article.")]
     owner: &'a Member,
-    #[refer(Member, "Reviewers, resolved through the directory.")]
+    #[kaa::refer(Member, "Reviewers, resolved through the directory.")]
     reviewers: Vec<MemberId>,
 }
 ```
@@ -93,8 +93,8 @@ struct fields, enum-variant fields, and union fields. Tuple fields use their
 positions instead of invented names. An unannotated field retains its Rust name
 or position and type, but has no authored description or relationship.
 
-An enum variant may carry `#[case("description")]`, like a choice branch in a
-flow. It describes the variant as a whole; a unit variant has no field to
+An enum variant may carry `#[kaa::case("description")]`, like a choice branch in
+a flow. It describes the variant as a whole; a unit variant has no field to
 annotate, so `case` is its only description.
 
 A field cannot have both `value` and `refer`, or repeat either annotation. One
@@ -106,19 +106,19 @@ An alias can give an existing representation a domain-specific name and
 description:
 
 ```rust
-#[kaalang("The description for the current revision.")]
+#[kaa("The description for the current revision.")]
 type CurrentDetails = Details;
 
-#[kaalang("The description retained for an earlier revision.")]
+#[kaa("The description retained for an earlier revision.")]
 type RevisionDetails = Details;
 
-#[kaalang("An ordered sequence of earlier descriptions.")]
-#[refer(RevisionDetails, "Earlier descriptions in revision order.")]
+#[kaa("An ordered sequence of earlier descriptions.")]
+#[kaa::refer(RevisionDetails, "Earlier descriptions in revision order.")]
 type History = Vec<RevisionDetails>;
 ```
 
 An alias has no field on which to put its relationship. An optional `refer`
-therefore belongs directly to the alias, alongside `kaalang`. It describes the
+therefore belongs directly to the alias, alongside `#[kaa]`. It describes the
 aliased value as a whole. The alias's structure shows its right-hand-side Rust
 type and, when present, the relationship description and target.
 
@@ -135,9 +135,9 @@ aliases name an existing type rather than define a new one.
 ### 2.4 Generics
 
 ```rust
-#[kaalang("An attachment with a configurable payload.")]
+#[kaa("An attachment with a configurable payload.")]
 struct Attachment<T> {
-    #[value("The boxed attachment payload.")]
+    #[kaa::value("The boxed attachment payload.")]
     payload: Box<T>,
 }
 ```
@@ -149,7 +149,7 @@ its Rust type `Box<T>` and a `value` description.
 A field using this generic declaration writes:
 
 ```rust
-#[refer(Attachment, "The attached content.")]
+#[kaa::refer(Attachment, "The attached content.")]
 content: Attachment<Payload>,
 ```
 
@@ -157,6 +157,31 @@ This is one relationship to `Attachment`. The Rust type preserves `Payload`, but
 does not create a second relationship to it or specialize the relationship
 inside `Attachment`. `refer(Attachment<Payload>, ...)` is rejected. A
 relationship to `Payload` needs its own `refer(Payload, ...)` on another field.
+
+### 2.5 The `kaa` namespace
+
+The attribute is `#[kaa]`, or `#[kaalang::kaa]` through the crate path, and each
+annotation is written under its path: `#[kaa::value(...)]`,
+`#[kaa::refer(...)]`, `#[kaa::case(...)]`. This RFC names an annotation by its
+last segment, so `value` means `#[kaa::value(...)]`. The language keeps its
+name; the attribute is short because a flow repeats it on every block.
+
+A type's fields and variants also carry the helper attributes of every derive on
+that type, and those take short common names: `#[derive(clap::ValueEnum)]` reads
+`#[value(...)]` on an enum and its variants. A bare `value` could not tell the
+two apart. The path leaves bare names to other macros. It needs no import of its
+own: the attribute removes its annotations before Rust resolves them.
+
+A flow's body is less exposed. A derive cannot attach to a statement, and an
+attribute macro on a statement is unstable, so a collision would take another
+macro on the same function that interprets attributes in its body. Flows take
+the same namespace for consistency. This supersedes the attribute spelling of
+RFCs 0001 to 0008, wherever they write it: a flow is marked `#[kaa]` instead of
+`#[kaalang]`, and `#[kaalang::kaa]` replaces `#[kaalang::kaalang]`; the block
+attributes become `#[kaa::action]`, `#[kaa::call]`, `#[kaa::question]`,
+`#[kaa::yes]`, `#[kaa::no]`, `#[kaa::choice]`, `#[kaa::case]`, `#[kaa::cycle]`,
+and `#[kaa::stage]`. Their arguments, placement, and meaning do not change, and
+a bare block attribute is no longer kaalang's.
 
 ## 3. Relationship meaning
 
@@ -291,12 +316,12 @@ benches) is a separate crate; a path declared in more than one of them cannot be
 selected. Exactly one of `--flow` and `--type` is given. `--collapse-cycles`
 applies to flows and is rejected with `--type`. Without `-o`, the command writes
 `./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
-`--collapse-cycles`. A path that names no `#[kaalang]` declaration of the
-requested kind is a failure; one that matches several without `-p` is a failure
-that lists them with their packages. The command creates or replaces the output
-only after the selected declaration and, for a type, its incoming types are
-validated and the diagram rendered. On success it prints the output path; on
-failure it writes a diagnostic to stderr and exits with a nonzero status.
+`--collapse-cycles`. A path that names no `#[kaa]` declaration of the requested
+kind is a failure; one that matches several without `-p` is a failure that lists
+them with their packages. The command creates or replaces the output only after
+the selected declaration and, for a type, its incoming types are validated and
+the diagram rendered. On success it prints the output path; on failure it writes
+a diagnostic to stderr and exits with a nonzero status.
 
 This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
 of §4 under which the renderer selects one function by its unqualified name and
@@ -311,7 +336,7 @@ under `cfg` are read as written.
 
 ## 7. Validation and acceptance scenarios
 
-The annotation parser must diagnose duplicate or malformed `kaalang` attributes,
+The annotation parser must diagnose duplicate or malformed `kaa` attributes,
 unsupported declaration forms, empty descriptions, a `value`, `refer`, or `case`
 without its description, repeated or conflicting field, variant, and alias
 annotations, a `case` outside an enum variant, a declaration-level `value`, a
@@ -330,7 +355,7 @@ Acceptance scenarios:
 | Scenario                                               | Required result                                                    |
 | ------------------------------------------------------ | ------------------------------------------------------------------ |
 | Named, tuple, and unit structs; enums; unions; aliases | Preserve the Rust declaration form.                                |
-| Bare `#[kaalang]` on a type                            | Draw the card without a description line.                          |
+| Bare `#[kaa]` on a type                                | Draw the card without a description line.                          |
 | Unequal enum variant field counts                      | Draw each variant's own product.                                   |
 | `case` on a unit variant                               | Draw the description beside the variant's name.                    |
 | `value` and an unannotated field                       | Show values without inferring relationships.                       |
@@ -349,11 +374,11 @@ Acceptance scenarios:
 
 ## 8. Compatibility and exclusions
 
-This RFC adds a proposed type view alongside flows. Beyond the provisions §6
-names, it does not supersede the execution, lowering, or control-flow drawing
-rules in the accepted RFCs. Their flow terms retain their existing meanings. A
-type relationship is not evidence of execution order or of a value being moved
-or borrowed.
+This RFC adds a proposed type view alongside flows. Beyond the provisions §2.5
+and §6 name, it does not supersede the execution, lowering, or control-flow
+drawing rules in the accepted RFCs. Their flow terms retain their existing
+meanings. A type relationship is not evidence of execution order or of a value
+being moved or borrowed.
 
 The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The

@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter(u8);
 
 impl Counter {
-    #[kaalang]
+    #[kaa]
     fn stage_owned_receiver(self, go: ()) -> u8 {
-        #[stage("Read the owned receiver.")]
+        #[kaa::stage("Read the owned receiver.")]
         let finish = |go| {
-            #[action("Take the receiver's value.")]
+            #[kaa::action("Take the receiver's value.")]
             let finish = |self, go| self.0;
         };
 
-        #[stage("Return the receiver's value.")]
+        #[kaa::stage("Return the receiver's value.")]
         |finish| {
             |finish| return finish;
         };

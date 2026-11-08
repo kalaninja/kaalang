@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> &'static str {
-    #[cycle("Try to return a borrowed local.")]
+    #[kaa::cycle("Try to return a borrowed local.")]
     let borrowed = |flag| loop {
-        #[question("Transfer a local value?")]
+        #[kaa::question("Transfer a local value?")]
         let (done, again) = |flag| flag;
 
-        #[action("Create the local owner.")]
+        #[kaa::action("Create the local owner.")]
         let text = |done| String::from("local");
 
-        #[action("Borrow the local owner.")]
+        #[kaa::action("Borrow the local owner.")]
         let borrowed = |&text| text.as_str();
 
         |again| continue;

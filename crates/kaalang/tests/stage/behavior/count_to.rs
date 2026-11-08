@@ -1,25 +1,25 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn count_to(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut counter = || 0usize;
 
-    #[action("Begin counting.")]
+    #[kaa::action("Begin counting.")]
     let count = || {};
 
-    #[stage("Count to the limit.")]
+    #[kaa::stage("Count to the limit.")]
     let (count, finish) = |count| {
-        #[question("Done?")]
+        #[kaa::question("Done?")]
         let (finish, again) = |counter, limit| counter >= limit;
 
-        #[action("Increment and repeat.")]
+        #[kaa::action("Increment and repeat.")]
         let count = |again, &mut counter| {
             *counter += 1;
         };
     };
 
-    #[stage("Return the count.")]
+    #[kaa::stage("Return the count.")]
     |finish| {
         |counter| return counter;
     };

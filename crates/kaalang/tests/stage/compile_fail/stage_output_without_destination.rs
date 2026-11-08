@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_output_without_destination() {
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     let nowhere = |go| {
-        #[action("Nowhere.")]
+        #[kaa::action("Nowhere.")]
         let nowhere = || ();
     };
 }

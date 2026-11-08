@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The inner merge owns the text. The wider merge ends its scope, so Rust
 // rejects carrying a reference to that text into the shared continuation.
-#[kaalang]
+#[kaa]
 fn invalid(source: u8) -> usize {
-    #[choice("Which source?")]
-    #[case("First source.")]
-    #[case("Second source.")]
-    #[case("Fallback.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Fallback.")]
     let (first, second, fallback) = |source| {
         match source {
             0 => (),
@@ -16,19 +16,19 @@ fn invalid(source: u8) -> usize {
         }
     };
 
-    #[action("Build the first text.")]
+    #[kaa::action("Build the first text.")]
     let text = |first| { String::from("abc") };
 
-    #[action("Build the second text.")]
+    #[kaa::action("Build the second text.")]
     let text = |second| { String::from("defg") };
 
-    #[action("Borrow the partially merged text.")]
+    #[kaa::action("Borrow the partially merged text.")]
     let view = |&text| { text.as_str() };
 
-    #[action("Use the fallback text.")]
+    #[kaa::action("Use the fallback text.")]
     let view = |fallback| { "fallback" };
 
-    #[action("Measure the merged view.")]
+    #[kaa::action("Measure the merged view.")]
     let end = |view| { view.len() };
 
     |end| return end;

@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> ! {
-    #[question("Run?")]
+    #[kaa::question("Run?")]
     let (_run, _skip) = |flag| flag;
 
-    #[cycle("Enter without selecting a branch.")]
+    #[kaa::cycle("Enter without selecting a branch.")]
     loop {
         continue;
     };

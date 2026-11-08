@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("")]
+#[kaa("")]
 struct Member;
 
 fn main() {}

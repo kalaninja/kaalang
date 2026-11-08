@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> String {
     |input| return input;
 }

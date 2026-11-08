@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn outer_repeat_contour(mut mode: u8) -> u8 {
-    #[cycle("Advance until the left route leaves.")]
+    #[kaa::cycle("Advance until the left route leaves.")]
     let leave = loop {
-        #[choice("Which route?")]
-        #[case("Leave on the left.")]
-        #[case("Advance in the middle.")]
-        #[case("Advance on the right.")]
+        #[kaa::choice("Which route?")]
+        #[kaa::case("Leave on the left.")]
+        #[kaa::case("Advance in the middle.")]
+        #[kaa::case("Advance on the right.")]
         let (leave, middle, right) = |mode| match mode {
             0 => (),
             1 => (),
             _ => (),
         };
 
-        #[action("Advance through the middle case.")]
+        #[kaa::action("Advance through the middle case.")]
         let advanced = |middle, &mut mode| *mode = 0;
 
-        #[action("Advance through the right case.")]
+        #[kaa::action("Advance through the right case.")]
         let advanced = |right, &mut mode| *mode = 1;
 
         |advanced| continue;

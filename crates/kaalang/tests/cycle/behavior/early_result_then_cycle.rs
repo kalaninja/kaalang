@@ -1,38 +1,38 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn early_result_then_cycle(first: bool, mut count: usize) -> usize {
-    #[cycle("Select an early result or continue.")]
+    #[kaa::cycle("Select an early result or continue.")]
     let early_result = |first| loop {
-        #[question("Check for an early result?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Check for an early result?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (produce_early, continue_counting) = |first| first;
 
-        #[action("Continue to the counter.")]
+        #[kaa::action("Continue to the counter.")]
         let early_result = |continue_counting| None;
 
-        #[action("Produce the early result.")]
+        #[kaa::action("Produce the early result.")]
         let early_result = |produce_early| Some(99);
     };
 
-    #[question("Was an early result selected?")]
+    #[kaa::question("Was an early result selected?")]
     let (finish_early, count_more) = |&early_result| early_result.is_some();
 
-    #[action("Extract the early result.")]
+    #[kaa::action("Extract the early result.")]
     let end = |finish_early, early_result| early_result.expect("the early route has a result");
 
-    #[cycle("Count to three.")]
+    #[kaa::cycle("Count to three.")]
     let end = |count_more| loop {
-        #[question("Has the count reached three?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Has the count reached three?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (leave, iterate) = |&count| *count >= 3;
 
-        #[action("Hand over the count.")]
+        #[kaa::action("Hand over the count.")]
         let end = |leave, count| count;
 
-        #[action("Increment the count.")]
+        #[kaa::action("Increment the count.")]
         |iterate, &mut count| *count += 1;
 
         |iterate| continue;

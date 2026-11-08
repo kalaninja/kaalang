@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(number: usize, choose_number: bool) -> usize {
-    #[cycle("Provide incompatible result types.")]
+    #[kaa::cycle("Provide incompatible result types.")]
     let selected = loop {
-        #[question("Provide the number?")]
+        #[kaa::question("Provide the number?")]
         let (number_route, text_route) = |choose_number| choose_number;
 
-        #[action("Keep the number.")]
+        #[kaa::action("Keep the number.")]
         let selected = |number_route, number| number;
 
-        #[action("Build text.")]
+        #[kaa::action("Build text.")]
         let selected = |text_route| String::from("text");
     };
 

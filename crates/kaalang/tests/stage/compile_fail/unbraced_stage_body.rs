@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn unbraced_stage_body(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| return;
 }
 

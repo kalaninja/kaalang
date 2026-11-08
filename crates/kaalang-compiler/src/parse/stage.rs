@@ -27,7 +27,7 @@ pub(crate) struct ParsedStage {
 
 pub(super) fn is_stage(statement: &Stmt) -> bool {
     attributes(statement)
-        .is_some_and(|attrs| attrs.iter().any(|attr| attr.path().is_ident("stage")))
+        .is_some_and(|attrs| attrs.iter().any(|attr| super::is_annotation(attr, "stage")))
 }
 
 fn attributes(statement: &Stmt) -> Option<&[syn::Attribute]> {
@@ -264,7 +264,7 @@ struct Declaration {
 #[allow(clippy::too_many_lines)] // Keeps the header's syntax checks beside its parsed fields.
 fn declaration(statement: &Stmt) -> Result<Declaration> {
     let (attrs, pattern, closure) = block_statement(statement)?;
-    // `is_stage` found a `#[stage]` among these, so a sole kind is that one.
+    // `is_stage` found a `#[kaa::stage]` among these, so a sole kind is that one.
     let mut kinds = attrs.iter().filter(|attr| !attr.path().is_ident("doc"));
     let (Some(kind), None) = (kinds.next(), kinds.next()) else {
         return Err(Error::new_spanned(

@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u32) -> u32 {
-    #[action("Read a receiver this flow does not declare.")]
+    #[kaa::action("Read a receiver this flow does not declare.")]
     let end = |value| value + self.width;
 
     |end| return end;

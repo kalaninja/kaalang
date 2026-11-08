@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_ignored_item(times: usize) -> String {
-    #[action("Start with an empty text.")]
+    #[kaa::action("Start with an empty text.")]
     let mut text = || String::new();
 
-    #[cycle("Knock as many times as asked.")]
+    #[kaa::cycle("Knock as many times as asked.")]
     |times| {
         for _ in 0..times {
-            #[action("Knock once.")]
+            #[kaa::action("Knock once.")]
             |&mut text| text.push_str("knock ");
         }
     };

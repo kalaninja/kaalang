@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A `Copy` bound lets Rust accept repeated value captures of a generic wire.
-#[kaalang]
+#[kaa]
 fn generic_reuse_with_copy<T: Copy>(value: T) -> (T, T) {
-    #[action("Take the value.")]
+    #[kaa::action("Take the value.")]
     let first = |value| value;
 
-    #[action("Take the value again.")]
+    #[kaa::action("Take the value again.")]
     let second = |value| value;
 
     |first, second| return (first, second);

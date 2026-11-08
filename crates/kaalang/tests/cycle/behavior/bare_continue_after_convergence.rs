@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn bare_continue_after_convergence(flag: bool) -> ! {
-    #[cycle("Repeat after both branches converge.")]
+    #[kaa::cycle("Repeat after both branches converge.")]
     loop {
-        #[question("Take the first route?")]
+        #[kaa::question("Take the first route?")]
         let (first, second) = |flag| flag;
 
-        #[action("Finish the first route.")]
+        #[kaa::action("Finish the first route.")]
         let ready = |first| {};
 
-        #[action("Finish the second route.")]
+        #[kaa::action("Finish the second route.")]
         let ready = |second| {};
 
-        #[action("Use the merged wire.")]
+        #[kaa::action("Use the merged wire.")]
         |ready| {};
 
         continue;

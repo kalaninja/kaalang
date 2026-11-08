@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn forward<T>(go: T) -> T {
-    #[stage("Forward the incoming value.")]
+    #[kaa::stage("Forward the incoming value.")]
     let finish = |go| {
-        #[cycle("Complete on the first iteration.")]
+        #[kaa::cycle("Complete on the first iteration.")]
         let finish = |go| loop {
-            #[action("Provide the incoming value.")]
+            #[kaa::action("Provide the incoming value.")]
             let finish = |go| go;
         };
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

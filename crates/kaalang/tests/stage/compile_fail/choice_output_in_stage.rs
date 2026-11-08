@@ -1,24 +1,24 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(take: bool) -> String {
-    #[choice("Enter the stage?")]
-    #[case("Provide an owner.")]
-    #[case("Stay here.")]
+    #[kaa::choice("Enter the stage?")]
+    #[kaa::case("Provide an owner.")]
+    #[kaa::case("Stay here.")]
     let (owner, stay) = |take| match take {
         true => String::from("owned"),
         false => (),
     };
 
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = |&owner| ();
 
-    #[cycle("Stay on the other branch.")]
+    #[kaa::cycle("Stay on the other branch.")]
     |stay| loop {
         continue;
     };
 
-    #[stage("Use the unmerged choice output.")]
+    #[kaa::stage("Use the unmerged choice output.")]
     |go| {
         |owner| return owner;
     };

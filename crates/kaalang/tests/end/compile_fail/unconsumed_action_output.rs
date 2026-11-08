@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) {
-    #[action("Produce a used and an unused value.")]
+    #[kaa::action("Produce a used and an unused value.")]
     let (used, unused) = |input| (input, input);
 
     |used| return used;

@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_entry_through_cycle(go: u8) -> u8 {
-    #[stage("Use the entry.")]
+    #[kaa::stage("Use the entry.")]
     let finish = |go| {
-        #[cycle("Read the entry.")]
+        #[kaa::cycle("Read the entry.")]
         let finish = |go| loop {
-            #[action("Mutate the entry.")]
+            #[kaa::action("Mutate the entry.")]
             let finish = |&mut go| {
                 *go += 1;
                 *go
@@ -14,7 +14,7 @@ fn mutable_entry_through_cycle(go: u8) -> u8 {
         };
     };
 
-    #[stage("Return the result.")]
+    #[kaa::stage("Return the result.")]
     |finish| {
         |finish| return finish;
     };

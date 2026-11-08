@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 mod math {
     pub(super) fn difference(left: i32, right: i32) -> i32 {
@@ -6,9 +6,9 @@ mod math {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn call_reorders_its_arguments(left: i32, right: i32) -> i32 {
-    #[call("Subtract the left value from the right one.")]
+    #[kaa::call("Subtract the left value from the right one.")]
     let end = |left, right| math::difference(right, left);
 
     |end| return end;

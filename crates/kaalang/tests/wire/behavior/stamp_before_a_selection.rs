@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// An action with no inputs runs on the common path where it is written. Only
 /// one branch captures its output, which does not place the action in that
 /// branch.
-#[kaalang]
+#[kaa]
 fn stamp_before_a_selection(flag: bool) -> u64 {
-    #[action("Stamp.")]
+    #[kaa::action("Stamp.")]
     let stamp = || 7;
 
-    #[question("Which way?")]
+    #[kaa::question("Which way?")]
     let (yes, no) = |flag| flag;
 
-    #[action("Finish with the stamp.")]
+    #[kaa::action("Finish with the stamp.")]
     let end = |yes, stamp| stamp;
 
-    #[action("Finish without it.")]
+    #[kaa::action("Finish without it.")]
     let end = |no| 0;
 
     |end| return end;

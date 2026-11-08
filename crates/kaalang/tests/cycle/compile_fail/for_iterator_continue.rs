@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[cycle("Repeat forever.")]
+    #[kaa::cycle("Repeat forever.")]
     loop {
-        #[action("Visit a Rust iterator.")]
+        #[kaa::action("Visit a Rust iterator.")]
         {
             for _ in {
                 if std::hint::black_box(true) {

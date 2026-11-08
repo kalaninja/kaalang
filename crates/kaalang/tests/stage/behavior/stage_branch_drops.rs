@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Guard<'a>(&'a RefCell<Vec<&'static str>>, &'static str);
 
@@ -10,29 +10,29 @@ impl Drop for Guard<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn stage_branch_drops(choose: bool, events: &RefCell<Vec<&'static str>>) {
-    #[stage("Choose a branch.")]
+    #[kaa::stage("Choose a branch.")]
     let finish = |choose| {
-        #[question("Take the left branch?")]
+        #[kaa::question("Take the left branch?")]
         let (left, right) = |choose| choose;
 
-        #[action("Own the left branch guard.")]
+        #[kaa::action("Own the left branch guard.")]
         let left_guard = |left, events| Guard(events, "left");
 
-        #[action("Finish the left branch.")]
+        #[kaa::action("Finish the left branch.")]
         let finish = |&left_guard| {};
 
-        #[action("Own the right branch guard.")]
+        #[kaa::action("Own the right branch guard.")]
         let right_guard = |right, events| Guard(events, "right");
 
-        #[action("Finish the right branch.")]
+        #[kaa::action("Finish the right branch.")]
         let finish = |&right_guard| {};
     };
 
-    #[stage("Observe the next visit.")]
+    #[kaa::stage("Observe the next visit.")]
     |finish| {
-        #[action("Record the visit.")]
+        #[kaa::action("Record the visit.")]
         |events| events.borrow_mut().push("visit");
 
         return;

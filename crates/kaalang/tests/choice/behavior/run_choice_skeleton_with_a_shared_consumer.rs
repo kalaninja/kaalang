@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(unreachable_code)]
-#[kaalang]
+#[kaa]
 fn run_choice_skeleton_with_a_shared_consumer(value: i32) -> i32 {
-    #[choice("What is the sign of the value?")]
-    #[case("The value is negative.")]
-    #[case("The value is nonnegative.")]
+    #[kaa::choice("What is the sign of the value?")]
+    #[kaa::case("The value is negative.")]
+    #[kaa::case("The value is nonnegative.")]
     let (negative, nonnegative) = |value| todo!();
 
-    #[action("Build the negative magnitude.")]
+    #[kaa::action("Build the negative magnitude.")]
     let magnitude = |negative| todo!();
 
-    #[action("Build the nonnegative magnitude.")]
+    #[kaa::action("Build the nonnegative magnitude.")]
     let magnitude = |nonnegative| todo!();
 
     |magnitude| return magnitude;

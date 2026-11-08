@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn empty_capture_continue() -> ! {
-    #[cycle("Repeat without an output.")]
+    #[kaa::cycle("Repeat without an output.")]
     loop {
         || continue;
     }

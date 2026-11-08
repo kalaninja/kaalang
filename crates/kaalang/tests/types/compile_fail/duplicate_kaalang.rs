@@ -1,7 +1,7 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A member.")]
-#[kaalang("The same member again.")]
+#[kaa("A member.")]
+#[kaa("The same member again.")]
 struct Member;
 
 fn main() {}

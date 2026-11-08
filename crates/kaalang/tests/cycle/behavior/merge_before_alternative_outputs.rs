@@ -1,36 +1,36 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A merge completed before a cycle with several outputs stays merged: the
 /// body's routes, repeating or exporting, do not reopen the question above it.
-#[kaalang]
+#[kaa]
 fn merge_before_alternative_outputs(fast: bool, mut count: u32) -> u32 {
-    #[question("Count fast?")]
+    #[kaa::question("Count fast?")]
     let (quick, slow) = |fast| fast;
 
-    #[action("Step by two.")]
+    #[kaa::action("Step by two.")]
     let step = |quick| 2;
 
-    #[action("Step by one.")]
+    #[kaa::action("Step by one.")]
     let step = |slow| 1;
 
-    #[cycle("Count past five.")]
+    #[kaa::cycle("Count past five.")]
     let (even, odd) = loop {
-        #[question("Past five?")]
+        #[kaa::question("Past five?")]
         let (past, again) = |&count| *count > 5;
 
-        #[action("Take a step.")]
+        #[kaa::action("Take a step.")]
         let stepped = |again, step, &mut count| *count += step;
 
         |stepped| continue;
 
-        #[question("Is the count even?")]
+        #[kaa::question("Is the count even?")]
         let (even, odd) = |past, &count| *count % 2 == 0;
     };
 
-    #[action("Score the even count.")]
+    #[kaa::action("Score the even count.")]
     let score = |even, count| count * 10;
 
-    #[action("Score the odd count.")]
+    #[kaa::action("Score the odd count.")]
     let score = |odd, count| count;
 
     |score| return score;

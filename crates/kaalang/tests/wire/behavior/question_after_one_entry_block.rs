@@ -1,29 +1,29 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn question_after_one_entry_block(condition: bool) -> u32 {
-    #[question("Choose the pair.")]
+    #[kaa::question("Choose the pair.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes pair.")]
+    #[kaa::action("Build the yes pair.")]
     let (left, right) = |yes| (1, 2);
 
-    #[action("Build the no pair.")]
+    #[kaa::action("Build the no pair.")]
     let (left, right) = |no| (3, 4);
 
-    #[action("Use the left value.")]
+    #[kaa::action("Use the left value.")]
     let first = |left| left * 10;
 
-    #[action("Use the right value.")]
+    #[kaa::action("Use the right value.")]
     let second = |right| right * 10;
 
-    #[question("Is the first value large?")]
+    #[kaa::question("Is the first value large?")]
     let (large, small) = |first| first > 10;
 
-    #[action("Combine a large first value with the second.")]
+    #[kaa::action("Combine a large first value with the second.")]
     let end = |large, second| second + 100;
 
-    #[action("Combine a small first value with the second.")]
+    #[kaa::action("Combine a small first value with the second.")]
     let end = |small, second| second;
 
     |end| return end;

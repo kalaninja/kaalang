@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn braced_continue_with_semicolon(mut remaining: usize) -> usize {
-    #[cycle("Count down.")]
+    #[kaa::cycle("Count down.")]
     let done = loop {
-        #[question("Is there another step?")]
+        #[kaa::question("Is there another step?")]
         let (again, done) = |&remaining| *remaining > 0;
 
-        #[action("Count down one step.")]
+        #[kaa::action("Count down one step.")]
         |again, &mut remaining| *remaining -= 1;
 
         |again| {

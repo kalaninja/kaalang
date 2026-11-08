@@ -1,7 +1,7 @@
-#[kaalang::kaalang]
+#[kaalang::kaa]
 fn invalid(input: u32) -> u32 {
     // A comment is deliberately not the block description.
-    #[action]
+    #[kaa::action]
     let output = |input| { input };
 }
 

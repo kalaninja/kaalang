@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Three partial merges nested one inside the next: `ab` joins inside `abc`,
 /// which joins inside `abcd`. Each shared body is emitted once.
-#[kaalang]
+#[kaa]
 fn nested_partial_merges(source: u8) -> u8 {
-    #[choice("Which source?")]
-    #[case("First.")]
-    #[case("Second.")]
-    #[case("Third.")]
-    #[case("Fourth.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First.")]
+    #[kaa::case("Second.")]
+    #[kaa::case("Third.")]
+    #[kaa::case("Fourth.")]
     let (a, b, c, d) = |source| match source {
         0 => (),
         1 => (),
@@ -16,22 +16,22 @@ fn nested_partial_merges(source: u8) -> u8 {
         _ => (),
     };
 
-    #[action("First value.")]
+    #[kaa::action("First value.")]
     let ab = |a| 1;
 
-    #[action("Second value.")]
+    #[kaa::action("Second value.")]
     let ab = |b| 2;
 
-    #[action("Close the first pair.")]
+    #[kaa::action("Close the first pair.")]
     let abc = |ab| ab + 10;
 
-    #[action("Third value.")]
+    #[kaa::action("Third value.")]
     let abc = |c| 3;
 
-    #[action("Close the first three.")]
+    #[kaa::action("Close the first three.")]
     let abcd = |abc| abc + 100;
 
-    #[action("Fourth value.")]
+    #[kaa::action("Fourth value.")]
     let abcd = |d| 4;
 
     |abcd| return abcd;

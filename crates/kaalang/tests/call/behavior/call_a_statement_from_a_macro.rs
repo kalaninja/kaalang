@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 static NOTICES: AtomicUsize = AtomicUsize::new(0);
 
@@ -12,12 +12,12 @@ fn record() {
 /// in the invisible group a metavariable substitutes through.
 macro_rules! recording {
     ($name:ident, $application:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name() -> usize {
-            #[call]
+            #[kaa::call]
             $application;
 
-            #[action("Report the notices.")]
+            #[kaa::action("Report the notices.")]
             let end = || NOTICES.load(Ordering::Relaxed);
 
             |end| return end;

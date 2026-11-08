@@ -1,5 +1,5 @@
 error: a kaalang call requires a non-empty description
- --> tests/call/compile_fail/call_empty_description.rs:9:12
+ --> tests/call/compile_fail/call_empty_description.rs:9:17
   |
-9 |     #[call("")]
-  |            ^^
+9 |     #[kaa::call("")]
+  |                 ^^

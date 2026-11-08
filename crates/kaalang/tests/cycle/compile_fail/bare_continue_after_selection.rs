@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) {
-    #[cycle("Repeat without choosing the repeating branch.")]
+    #[kaa::cycle("Repeat without choosing the repeating branch.")]
     loop {
-        #[question("Leave now?")]
+        #[kaa::question("Leave now?")]
         let (_stay, _again) = |flag| flag;
 
         continue;

@@ -1,27 +1,27 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The setup belongs to no branch, so it is written above the question that
 /// selects its consumers. The recorded order is the source order.
-#[kaalang]
+#[kaa]
 fn setup_precedes_a_later_question(condition: bool, order: &Cell<u8>) -> u8 {
-    #[action("Prepare the shared setup.")]
+    #[kaa::action("Prepare the shared setup.")]
     let setup = |&order| {
         order.set(order.get() * 10 + 1);
         7
     };
 
-    #[question("Take the short branch?")]
+    #[kaa::question("Take the short branch?")]
     let (short, long) = |condition, &order| {
         order.set(order.get() * 10 + 2);
         condition
     };
 
-    #[action("Use the setup on the short branch.")]
+    #[kaa::action("Use the setup on the short branch.")]
     let end = |short, &setup| setup + 1;
 
-    #[action("Use the setup on the long branch.")]
+    #[kaa::action("Use the setup on the long branch.")]
     let end = |long, &setup| setup + 2;
 
     |end| return end;

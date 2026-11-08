@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A flow written by another macro, whose action initializer arrives wrapped in
 /// the invisible group a metavariable substitutes through.
 macro_rules! doubling {
     ($name:ident, $initializer:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name(value: u32) -> u32 {
-            #[action("Double the value.")]
+            #[kaa::action("Double the value.")]
             let doubled = $initializer;
 
             |doubled| return doubled;

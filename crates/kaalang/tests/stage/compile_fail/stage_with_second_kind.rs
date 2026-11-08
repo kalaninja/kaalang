@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_with_second_kind(go: ()) {
-    #[stage("Finish.")]
-    #[action("Other.")]
+    #[kaa::stage("Finish.")]
+    #[kaa::action("Other.")]
     |go| {
         return;
     };

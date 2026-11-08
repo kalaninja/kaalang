@@ -1,53 +1,53 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_search(rows: &[&[i32]], target: i32) -> Option<(usize, usize)> {
-    #[action("Start at the first row.")]
+    #[kaa::action("Start at the first row.")]
     let mut row = || 0;
 
-    #[cycle("Search each row.")]
+    #[kaa::cycle("Search each row.")]
     let outcome = loop {
-        #[question("Are there more rows?")]
-        #[no("All rows have been searched.")]
-        #[yes("Search this row.")]
+        #[kaa::question("Are there more rows?")]
+        #[kaa::no("All rows have been searched.")]
+        #[kaa::yes("Search this row.")]
         let (leave_1, iterate_1) = |&row, &rows| *row < rows.len();
 
-        #[action("The target is absent.")]
+        #[kaa::action("The target is absent.")]
         let outcome = |leave_1| None;
 
-        #[action("Start at the first column.")]
+        #[kaa::action("Start at the first column.")]
         let mut column = |iterate_1| 0;
 
-        #[cycle("Search the current row.")]
+        #[kaa::cycle("Search the current row.")]
         let found = |column| loop {
-            #[question("Are there more columns?")]
-            #[yes("YES")]
-            #[no("NO")]
+            #[kaa::question("Are there more columns?")]
+            #[kaa::yes("YES")]
+            #[kaa::no("NO")]
             let (iterate_2, leave_2) = |&column, &row, &rows| *column < (*rows)[*row].len();
 
-            #[action("No match exists in this row.")]
+            #[kaa::action("No match exists in this row.")]
             let found = |leave_2| None;
 
-            #[question("Does the value differ from the target?")]
+            #[kaa::question("Does the value differ from the target?")]
             let (different, equal) =
                 |iterate_2, &rows, &row, &column, &target| (*rows)[*row][*column] != *target;
 
-            #[action("Advance to the next column.")]
+            #[kaa::action("Advance to the next column.")]
             |different, &mut column| *column += 1;
 
-            #[action("Produce the matching position.")]
+            #[kaa::action("Produce the matching position.")]
             let found = |equal, &row, &column| Some((*row, *column));
 
             |different| continue;
         };
 
-        #[question("Was the target found in this row?")]
+        #[kaa::question("Was the target found in this row?")]
         let (done, again) = |&found| found.is_some();
 
-        #[action("Keep the matching position.")]
+        #[kaa::action("Keep the matching position.")]
         let outcome = |done, found| found;
 
-        #[action("Advance to the next row.")]
+        #[kaa::action("Advance to the next row.")]
         |again, &mut row| *row += 1;
 
         |again| continue;

@@ -4,14 +4,14 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 
 ## Language
 
-- **flow**: one function marked `#[kaalang]`; its **flow inputs** are its
-  parameters and its **flow output** is the structural `return` value.
+- **flow**: one function marked `#[kaa]`; its **flow inputs** are its parameters
+  and its **flow output** is the structural `return` value.
 - **block**: one authored statement of a flow; **computational block** when it
   has a Rust body (action, call, question, choice).
 - **block kinds**: action, call, question, choice, cycle, continue, return.
 - **description**: the string in a block's attribute, such as
-  `#[action("...")]`, and the text of a question branch, a case, or a stage. A
-  call without one is described by the function it names.
+  `#[kaa::action("...")]`, and the text of a question branch, a case, or a
+  stage. A call without one is described by the function it names.
 - **wire**: a named value a producer provides for capture.
 - **input**, **output**: a block's captured wires and the wires it produces.
 - **producer**: one occurrence of a named flow input or block output that

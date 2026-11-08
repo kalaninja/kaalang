@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Borrowing a temporary in an output initializer keeps it alive while the
 /// next branch-local action measures it.
-#[kaalang]
+#[kaa]
 fn temporary_borrow_within_branch(condition: bool) -> usize {
-    #[question("Build the temporary text?")]
+    #[kaa::question("Build the temporary text?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Borrow the temporary text.")]
+    #[kaa::action("Borrow the temporary text.")]
     let owner = |yes| &String::from("abc");
 
-    #[action("Measure the borrowed text.")]
+    #[kaa::action("Measure the borrowed text.")]
     let size = |&owner| owner.len();
 
-    #[action("Use an empty size.")]
+    #[kaa::action("Use an empty size.")]
     let size = |no| 0;
 
     |size| return size;

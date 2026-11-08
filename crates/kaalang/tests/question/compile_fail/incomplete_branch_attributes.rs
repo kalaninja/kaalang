@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) -> u8 {
-    #[question("Choose a branch.")]
-    #[yes]
+    #[kaa::question("Choose a branch.")]
+    #[kaa::yes]
     let (yes, no) = |condition| { condition };
 }
 

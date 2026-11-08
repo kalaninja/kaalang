@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn double(value: i32) -> i32 {
     value * 2
 }
 
-#[kaalang]
+#[kaa]
 fn call_without_a_description(value: i32) -> i32 {
-    #[call]
+    #[kaa::call]
     let end = |value| double(value);
 
     |end| return end;

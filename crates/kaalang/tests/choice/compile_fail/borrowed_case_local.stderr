@@ -1,8 +1,8 @@
 error[E0597]: `owned` does not live long enough
   --> tests/choice/compile_fail/borrowed_case_local.rs:12:43
    |
- 5 | #[kaalang]
-   |          - `owned` dropped here while still borrowed
+ 5 | #[kaa]
+   |      - `owned` dropped here while still borrowed
 ...
 10 |     let (nonempty, empty) = |value| {
    |          -------- borrow later stored here
@@ -15,8 +15,8 @@ error[E0597]: `owned` does not live long enough
 error[E0597]: `owned` does not live long enough
   --> tests/choice/compile_fail/borrowed_case_local.rs:13:22
    |
- 5 | #[kaalang]
-   |          - `owned` dropped here while still borrowed
+ 5 | #[kaa]
+   |      - `owned` dropped here while still borrowed
 ...
 10 |     let (nonempty, empty) = |value| {
    |                    ----- borrow later stored here

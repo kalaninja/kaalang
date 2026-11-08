@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutate_in_selections(mut text: String, count: u8, mode: u8) -> String {
-    #[question("Use the choice after changing the text?")]
+    #[kaa::question("Use the choice after changing the text?")]
     let (yes, no) = |&mut text, mut count| {
         text.push('q');
         count += 1;
         count == 1
     };
 
-    #[choice("Change the text and choose a suffix.")]
-    #[case("First suffix.")]
-    #[case("Second suffix.")]
+    #[kaa::choice("Change the text and choose a suffix.")]
+    #[kaa::case("First suffix.")]
+    #[kaa::case("Second suffix.")]
     let (first, second) = |yes, &mut text, mut mode| match {
         text.push('c');
         mode += 1;
@@ -21,24 +21,24 @@ fn mutate_in_selections(mut text: String, count: u8, mode: u8) -> String {
         _ => String::from("b"),
     };
 
-    #[action("Consume and extend the first case value.")]
+    #[kaa::action("Consume and extend the first case value.")]
     let selected = |mut first, &mut text| {
         first.push('1');
         text.push('x');
         first
     };
 
-    #[action("Consume and extend the second case value.")]
+    #[kaa::action("Consume and extend the second case value.")]
     let selected = |mut second, &mut text| {
         second.push('2');
         text.push('y');
         second
     };
 
-    #[action("Skip the choice.")]
+    #[kaa::action("Skip the choice.")]
     let selected = |no| String::from("skip");
 
-    #[action("Return the text and selected suffix.")]
+    #[kaa::action("Return the text and selected suffix.")]
     let end = |text, selected| text + &selected;
 
     |end| return end;

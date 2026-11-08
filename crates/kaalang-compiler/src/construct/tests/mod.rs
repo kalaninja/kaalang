@@ -471,19 +471,19 @@ fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
 #[test]
 fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
     let source = "fn probe(mode: u8) {
-    #[cycle(\"Repeat the outer cycle.\")]
+    #[kaa::cycle(\"Repeat the outer cycle.\")]
     |mode| loop {
-        #[question(\"Repeat?\")]
+        #[kaa::question(\"Repeat?\")]
         let (again, enter) = |mode| mode == 0;
-        #[action(\"Repeat.\")]
+        #[kaa::action(\"Repeat.\")]
         |again| ();
-        #[action(\"First.\")]
+        #[kaa::action(\"First.\")]
         let first = |enter| ();
-        #[action(\"Second.\")]
+        #[kaa::action(\"Second.\")]
         let second = |first| ();
-        #[action(\"Third.\")]
+        #[kaa::action(\"Third.\")]
         let third = |second| ();
-        #[cycle(\"Diverge in the inner cycle.\")]
+        #[kaa::cycle(\"Diverge in the inner cycle.\")]
         |third| loop {
             continue;
         };
@@ -740,14 +740,14 @@ fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
 fn diagnostics_name_a_stage_entry_and_transition() {
     let model = model(
         "fn probe(seed: u32) -> u32 {
-            #[action(\"Enter the stage.\")]
+            #[kaa::action(\"Enter the stage.\")]
             let go = || {};
-            #[stage(\"Forward the seed.\")]
+            #[kaa::stage(\"Forward the seed.\")]
             let finish = |go| {
-                #[action(\"Leave.\")]
+                #[kaa::action(\"Leave.\")]
                 let finish = || ();
             };
-            #[stage(\"Return the seed.\")]
+            #[kaa::stage(\"Return the seed.\")]
             |finish| {
                 |seed| return seed;
             };
@@ -799,13 +799,13 @@ fn body_columns_do_not_shrink_when_a_body_vertex_moves_below_the_tail() {
 fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
     let model = model(
         "fn probe(flag: bool) {
-            #[cycle(\"Repeat the outer cycle.\")]
+            #[kaa::cycle(\"Repeat the outer cycle.\")]
             |flag| loop {
-                #[cycle(\"Repeat or leave the inner cycle.\")]
+                #[kaa::cycle(\"Repeat or leave the inner cycle.\")]
                 let leave = |flag| loop {
-                    #[question(\"Repeat?\")]
+                    #[kaa::question(\"Repeat?\")]
                     let (again, leave) = |flag| flag;
-                    #[action(\"Repeat.\")]
+                    #[kaa::action(\"Repeat.\")]
                     |again| ();
                     |again| continue;
                 };
@@ -1054,7 +1054,7 @@ fn a_back_edge_can_bend_outside_its_body() {
 #[test]
 fn serial_nodes_do_not_need_artificial_side_steps() {
     let source = r#"fn straight(input: u8) -> u8 {
-        #[action("Read the value.")]
+        #[kaa::action("Read the value.")]
         let value = |input| input;
         |value| return value;
     }"#;

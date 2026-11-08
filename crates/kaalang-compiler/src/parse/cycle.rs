@@ -239,6 +239,8 @@ pub(super) fn structural_cycle(expression: &Expr) -> Error {
     };
     Error::new_spanned(
         expression,
-        format!("a `{keyword}` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`"),
+        format!(
+            "a `{keyword}` in a kaalang flow is a cycle and needs `#[kaa::cycle(\"description\")]`"
+        ),
     )
 }

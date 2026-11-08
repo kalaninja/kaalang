@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn const_mutable_captures(mut value: u32) -> u32 {
-    #[action("Increment a local copy.")]
+    #[kaa::action("Increment a local copy.")]
     let incremented = |mut value| {
         value += 1;
         value
     };
 
-    #[action("Add the copy to the original wire.")]
+    #[kaa::action("Add the copy to the original wire.")]
     |&mut value, incremented| {
         *value += incremented;
     };

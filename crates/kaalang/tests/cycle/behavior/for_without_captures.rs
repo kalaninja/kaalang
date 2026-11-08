@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_without_captures() -> String {
-    #[action("Start with an empty text.")]
+    #[kaa::action("Start with an empty text.")]
     let mut text = || String::new();
 
-    #[cycle("Knock three times.")]
+    #[kaa::cycle("Knock three times.")]
     for _ in 0..3 {
-        #[action("Knock once.")]
+        #[kaa::action("Knock once.")]
         |&mut text| text.push_str("knock ");
     }
 

@@ -1,30 +1,30 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mut items: Vec<String>) -> Option<String> {
-    #[cycle("Find a nonempty item.")]
+    #[kaa::cycle("Find a nonempty item.")]
     let (exhausted, found) = loop {
-        #[choice("Is another item available?")]
-        #[case("Inspect the item.")]
-        #[case("The collection is exhausted.")]
+        #[kaa::choice("Is another item available?")]
+        #[kaa::case("Inspect the item.")]
+        #[kaa::case("The collection is exhausted.")]
         let (item, exhausted) = |&mut items| match items.pop() {
             Some(item) => item,
             None => (),
         };
 
-        #[question("Is the item empty?")]
+        #[kaa::question("Is the item empty?")]
         let (skip, keep) = |&item| item.is_empty();
 
-        #[action("Provide the nonempty item.")]
+        #[kaa::action("Provide the nonempty item.")]
         let found = |keep, item| item;
 
         |skip| continue;
     };
 
-    #[action("Return the found item.")]
+    #[kaa::action("Return the found item.")]
     let result = |found| Some(found);
 
-    #[action("Report exhaustion.")]
+    #[kaa::action("Report exhaustion.")]
     let result = |exhausted| None;
 
     |result| return result;

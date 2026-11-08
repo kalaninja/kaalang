@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn repeated_move_of_outer_state(data: String, go: ()) -> ! {
-    #[stage("Consume and repeat.")]
+    #[kaa::stage("Consume and repeat.")]
     let go = |go| {
-        #[action("Consume the shared value.")]
+        #[kaa::action("Consume the shared value.")]
         |data| {
             drop(data);
         };
-        #[action("Repeat the stage.")]
+        #[kaa::action("Repeat the stage.")]
         let go = |go| ();
     };
 }

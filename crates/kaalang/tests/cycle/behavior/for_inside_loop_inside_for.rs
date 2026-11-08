@@ -1,24 +1,24 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_inside_loop_inside_for(rows: u32, columns: u32) -> u32 {
-    #[action("Start with no visited cells.")]
+    #[kaa::action("Start with no visited cells.")]
     let mut visited = || 0;
 
-    #[cycle("Visit every row.")]
+    #[kaa::cycle("Visit every row.")]
     |rows| {
         for _ in 0..rows {
-            #[cycle("Complete one row.")]
+            #[kaa::cycle("Complete one row.")]
             let _finished = loop {
-                #[cycle("Visit every column.")]
+                #[kaa::cycle("Visit every column.")]
                 |columns| {
                     for _ in 0..columns {
-                        #[action("Count one cell.")]
+                        #[kaa::action("Count one cell.")]
                         |&mut visited| *visited += 1;
                     }
                 };
 
-                #[action("Finish the row.")]
+                #[kaa::action("Finish the row.")]
                 let _finished = || {};
             };
         }

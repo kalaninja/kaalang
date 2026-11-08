@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn duplicate_stage_outputs(go: ()) {
-    #[stage("Repeat.")]
+    #[kaa::stage("Repeat.")]
     let (go, go) = |go| {
-        #[action("Repeat.")]
+        #[kaa::action("Repeat.")]
         let go = |go| ();
     };
 }

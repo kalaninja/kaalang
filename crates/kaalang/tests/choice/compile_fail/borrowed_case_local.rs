@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The selected case value leaves its arm before the branch continues, so it
 // cannot borrow a binding that the arm owns.
-#[kaalang]
+#[kaa]
 fn invalid(value: String) -> usize {
-    #[choice("Borrow the matched string.")]
-    #[case("Use a nonempty string.")]
-    #[case("Use an empty string.")]
+    #[kaa::choice("Borrow the matched string.")]
+    #[kaa::case("Use a nonempty string.")]
+    #[kaa::case("Use an empty string.")]
     let (nonempty, empty) = |value| {
         match value {
             owned if !owned.is_empty() => &owned,
@@ -14,10 +14,10 @@ fn invalid(value: String) -> usize {
         }
     };
 
-    #[action("Measure the nonempty string.")]
+    #[kaa::action("Measure the nonempty string.")]
     let end = |nonempty| { nonempty.len() };
 
-    #[action("Measure the empty string.")]
+    #[kaa::action("Measure the empty string.")]
     let end = |empty| { empty.len() };
 
     |end| return end;

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 thread_local! {
     static ORDER: RefCell<Vec<&'static str>> = const { RefCell::new(Vec::new()) };
@@ -25,21 +25,21 @@ fn record(event: &'static str) {
     ORDER.with_borrow_mut(|order| order.push(event));
 }
 
-#[kaalang]
+#[kaa]
 fn for_temporary_values() -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add values borrowed from a temporary owner.")]
+    #[kaa::cycle("Add values borrowed from a temporary owner.")]
     for value in Values::new().0.iter() {
-        #[action("Add the value.")]
+        #[kaa::action("Add the value.")]
         |value, &mut total| {
             record("visit");
             *total += *value;
         };
     }
 
-    #[action("Finish after releasing the temporary owner.")]
+    #[kaa::action("Finish after releasing the temporary owner.")]
     || record("finish");
 
     |total| return total;

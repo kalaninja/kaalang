@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[action("Produce one value.")]
+    #[kaa::action("Produce one value.")]
     let (left, right) = |&input| { *input };
 
-    #[action("Add both outputs.")]
+    #[kaa::action("Add both outputs.")]
     let end = |left, right| { left + right };
 
     |end| return end;

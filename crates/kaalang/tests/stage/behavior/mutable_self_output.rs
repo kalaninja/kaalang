@@ -1,26 +1,26 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_self_output(go: u8) -> u8 {
-    #[stage("Increment until two.")]
+    #[kaa::stage("Increment until two.")]
     let (finish, go) = |go| {
-        #[action("Read the entry.")]
+        #[kaa::action("Read the entry.")]
         let current = |go| go;
 
-        #[question("Reached two?")]
+        #[kaa::question("Reached two?")]
         let (done, again) = |current| current >= 2;
 
-        #[action("Keep the result.")]
+        #[kaa::action("Keep the result.")]
         let finish = |done, current| current;
 
-        #[action("Create a mutable self-transition value.")]
+        #[kaa::action("Create a mutable self-transition value.")]
         let mut go = |again, current| current;
 
-        #[action("Increment the outgoing value.")]
+        #[kaa::action("Increment the outgoing value.")]
         |&mut go| *go += 1;
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

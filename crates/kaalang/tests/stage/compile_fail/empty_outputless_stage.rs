@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn empty_outputless_stage(start: ()) {
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = |start| start;
 
-    #[stage("Empty.")]
+    #[kaa::stage("Empty.")]
     |go| {};
 }
 

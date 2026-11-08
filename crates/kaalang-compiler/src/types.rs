@@ -7,13 +7,16 @@ use syn::{
     parse::ParseStream, spanned::Spanned,
 };
 
-use crate::{is_kaalang_attribute, parse::description};
+use crate::{
+    is_kaalang_attribute,
+    parse::{description, is_annotation},
+};
 
-/// A struct, enum, union, or type alias marked `#[kaalang]`.
+/// A struct, enum, union, or type alias marked `#[kaa]`.
 pub struct TypeDeclaration {
     pub name: Ident,
     pub generics: Generics,
-    /// The description from `#[kaalang("description")]`, if any.
+    /// The description from `#[kaa("description")]`, if any.
     pub description: Option<String>,
     pub form: TypeForm,
 }
@@ -29,7 +32,7 @@ pub enum TypeForm {
 
 pub struct Variant {
     pub name: Ident,
-    /// The description from `#[case("description")]`, if any.
+    /// The description from `#[kaa::case("description")]`, if any.
     pub case: Option<String>,
     pub fields: Vec<Field>,
 }
@@ -74,10 +77,9 @@ impl TypeDeclaration {
     }
 }
 
-const UNSUPPORTED: &str =
-    "#[kaalang] applies to functions, structs, enums, unions, and type aliases";
+const UNSUPPORTED: &str = "#[kaa] applies to functions, structs, enums, unions, and type aliases";
 
-/// Parses an annotated type declaration. Its first `#[kaalang]` attribute
+/// Parses an annotated type declaration. Its first `#[kaa]` attribute
 /// supplies the optional description.
 ///
 /// # Errors
@@ -119,7 +121,7 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
     if let Some(duplicate) = kaalang.next() {
         return Err(Error::new_spanned(
             duplicate,
-            "a type takes one `#[kaalang]` attribute",
+            "a type takes one `#[kaa]` attribute",
         ));
     }
 
@@ -129,7 +131,7 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
             Some("value") => {
                 return Err(Error::new_spanned(
                     attribute,
-                    "`value` describes a field; a type takes its description from `#[kaalang(\"description\")]`",
+                    "`value` describes a field; a type takes its description from `#[kaa(\"description\")]`",
                 ));
             }
             Some("case") => return Err(misplaced_case(attribute)),
@@ -187,12 +189,12 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
 pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStream> {
     // Spanned at the arguments, so that a malformed description points at them.
     let attribute: Attribute = match arguments.clone().into_iter().next() {
-        None => syn::parse_quote!(#[kaalang]),
-        Some(first) => syn::parse_quote_spanned!(first.span()=> #[kaalang(#arguments)]),
+        None => syn::parse_quote!(#[kaa]),
+        Some(first) => syn::parse_quote_spanned!(first.span()=> #[kaa(#arguments)]),
     };
     let annotated: Item = syn::parse_quote!(#attribute #item);
 
-    // Only the annotations go: rustc rejects a `#[kaalang]` left on a field or variant.
+    // Only the annotations go: rustc rejects a `#[kaa]` left on a field or variant.
     let unannotated = |attribute: &Attribute| annotation(attribute).is_none();
     let mut fields: Vec<&mut syn::Field> = match &mut item {
         Item::Struct(declaration) => {
@@ -239,11 +241,12 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
     Ok(quote! { #item #imports })
 }
 
-/// The name of a type annotation kaalang consumes: `value`, `refer`, or `case`.
+/// The name of a type annotation kaalang consumes: `kaa::value`, `kaa::refer`,
+/// or `kaa::case`.
 fn annotation(attribute: &Attribute) -> Option<&'static str> {
     ["value", "refer", "case"]
         .into_iter()
-        .find(|name| attribute.path().is_ident(name))
+        .find(|name| is_annotation(attribute, name))
 }
 
 fn fields<'a>(
@@ -295,7 +298,7 @@ fn variant_case(attributes: &[Attribute]) -> Result<Option<String>> {
             Some(_) => {
                 return Err(Error::new_spanned(
                     attribute,
-                    "`value` and `refer` describe fields; an enum variant takes `#[case(\"description\")]`",
+                    "`value` and `refer` describe fields; an enum variant takes `#[kaa::case(\"description\")]`",
                 ));
             }
             None => {}
@@ -313,7 +316,7 @@ fn relationship(attribute: &Attribute, generics: &Generics) -> Result<Relationsh
     let malformed = || {
         Error::new_spanned(
             attribute,
-            "a relationship is written `#[refer(Target, \"description\")]`",
+            "a relationship is written `#[kaa::refer(Target, \"description\")]`",
         )
     };
     let Meta::List(list) = &attribute.meta else {
@@ -377,12 +380,12 @@ mod tests {
     #[test]
     fn relationships_follow_source_order_across_variants() {
         let item = parse_quote! {
-            #[kaalang]
+            #[kaa]
             enum Document {
-                Article(#[refer(Article, "The content.")] Body, #[value("A slug.")] String),
-                #[case("Nothing yet.")]
+                Article(#[kaa::refer(Article, "The content.")] Body, #[kaa::value("A slug.")] String),
+                #[kaa::case("Nothing yet.")]
                 Empty,
-                Report { #[refer(crate::Report, "The report.")] report: Body },
+                Report { #[kaa::refer(crate::Report, "The report.")] report: Body },
             }
         };
         assert_eq!(targets(&item), ["Article", "crate :: Report"]);
@@ -391,8 +394,8 @@ mod tests {
     #[test]
     fn an_alias_owns_its_declaration_level_relationship() {
         let item = parse_quote! {
-            #[kaalang("Earlier descriptions.")]
-            #[refer(RevisionDetails, "In revision order.")]
+            #[kaa("Earlier descriptions.")]
+            #[kaa::refer(RevisionDetails, "In revision order.")]
             type History = Vec<RevisionDetails>;
         };
         assert_eq!(targets(&item), ["RevisionDetails"]);
@@ -409,9 +412,9 @@ mod tests {
         let item = parse_quote! {
             #[derive(Debug)]
             struct Article<'a> {
-                #[value("The title.")]
+                #[kaa::value("The title.")]
                 title: String,
-                #[refer(super::Member, "The owner.")]
+                #[kaa::refer(super::Member, "The owner.")]
                 #[doc = "kept"]
                 owner: &'a Member,
             }
@@ -419,7 +422,7 @@ mod tests {
         let expanded = expand_type(&quote::quote!("An article."), item)
             .unwrap()
             .to_string();
-        for removed in ["kaalang", "value", "refer"] {
+        for removed in ["kaa", "value", "refer"] {
             assert!(!expanded.contains(removed), "{expanded}");
         }
         assert!(expanded.contains("derive (Debug)"), "{expanded}");

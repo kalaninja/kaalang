@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter {
     value: u32,
 }
 
 impl Counter {
-    #[kaalang]
+    #[kaa]
     fn mutate_a_receiver(&mut self, step: u32) -> u32 {
-        #[action("Advance the counter.")]
+        #[kaa::action("Advance the counter.")]
         let advanced = |&mut self, step| {
             self.value += step;
         };
 
-        #[action("Read the counter.")]
+        #[kaa::action("Read the counter.")]
         let end = |advanced, &mut self| self.value;
 
         |end| return end;

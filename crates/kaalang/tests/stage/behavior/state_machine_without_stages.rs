@@ -1,6 +1,6 @@
 //! The same transitions as `state_machine.rs`, with an explicit dispatcher.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 enum State {
     First,
@@ -8,24 +8,24 @@ enum State {
     Finish,
 }
 
-#[kaalang]
+#[kaa]
 fn state_machine_without_stages(mut state: State) {
-    #[cycle("Follow state transitions until `Finish`.")]
+    #[kaa::cycle("Follow state transitions until `Finish`.")]
     let done = loop {
-        #[choice("Which state is selected?")]
-        #[case("First")]
-        #[case("Second")]
-        #[case("Finish")]
+        #[kaa::choice("Which state is selected?")]
+        #[kaa::case("First")]
+        #[kaa::case("Second")]
+        #[kaa::case("Finish")]
         let (first, second, done) = |&state| match *state {
             State::First => (),
             State::Second => (),
             State::Finish => (),
         };
 
-        #[action("Continue to `Second`.")]
+        #[kaa::action("Continue to `Second`.")]
         let changed = |first, &mut state| *state = State::Second;
 
-        #[action("Continue to `Finish`.")]
+        #[kaa::action("Continue to `Finish`.")]
         let changed = |second, &mut state| *state = State::Finish;
 
         |changed| continue;

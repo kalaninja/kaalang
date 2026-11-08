@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mut items: Vec<String>) -> Option<String> {
-    #[cycle("Take the next item.")]
+    #[kaa::cycle("Take the next item.")]
     let taken = loop {
-        #[action("Take an item.")]
+        #[kaa::action("Take an item.")]
         let taken = |&mut items| items.pop();
 
-        #[question("Is it worth logging?")]
+        #[kaa::question("Is it worth logging?")]
         let (log, quiet) = |&taken| taken.is_some();
 
-        #[action("Log it.")]
+        #[kaa::action("Log it.")]
         |log, &taken| println!("{taken:?}");
 
-        #[action("Stay quiet.")]
+        #[kaa::action("Stay quiet.")]
         |quiet| {};
     };
 

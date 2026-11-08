@@ -1,5 +1,5 @@
-error: cannot find attribute `action` in this scope
+error[E0433]: cannot find module or crate `kaa` in this scope
  --> tests/syntax/compile_fail/block_outside_flow.rs:3:7
   |
-3 |     #[action("Copy the input.")]
-  |       ^^^^^^
+3 |     #[kaa::action("Copy the input.")]
+  |       ^^^ use of unresolved module or unlinked crate `kaa`

@@ -1,29 +1,29 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn prepared_partial_merge(mode: u8) -> String {
-    #[choice("Prepare an owner or stay here.")]
-    #[case("Prepare the first owner.")]
-    #[case("Prepare the second owner.")]
-    #[case("Stay here.")]
+    #[kaa::choice("Prepare an owner or stay here.")]
+    #[kaa::case("Prepare the first owner.")]
+    #[kaa::case("Prepare the second owner.")]
+    #[kaa::case("Stay here.")]
     let (first, second, stay) = |mode| match mode {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Prepare the first owner and entry.")]
+    #[kaa::action("Prepare the first owner and entry.")]
     let (shared, go) = |first| (String::from("first"), ());
 
-    #[action("Prepare the second owner and entry.")]
+    #[kaa::action("Prepare the second owner and entry.")]
     let (shared, go) = |second| (String::from("second"), ());
 
-    #[cycle("Stay on the remaining branch.")]
+    #[kaa::cycle("Stay on the remaining branch.")]
     |stay| loop {
         continue;
     };
 
-    #[stage("Return the merged owner.")]
+    #[kaa::stage("Return the merged owner.")]
     |go| {
         |shared| return shared;
     };

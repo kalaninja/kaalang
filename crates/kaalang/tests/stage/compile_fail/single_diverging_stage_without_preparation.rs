@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn single_diverging_stage_without_preparation(go: ()) -> ! {
-    #[stage("Repeat forever.")]
+    #[kaa::stage("Repeat forever.")]
     |go| {
-        #[cycle("Stay in this stage.")]
+        #[kaa::cycle("Stay in this stage.")]
         |go| loop {
             continue;
         };

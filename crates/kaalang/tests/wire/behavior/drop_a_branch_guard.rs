@@ -1,29 +1,29 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// An explicit value capture may release a branch-local guard before its scope
 /// ends. The other branch never creates or drops a guard.
-#[kaalang]
+#[kaa]
 fn drop_a_branch_guard(condition: bool, cell: &RefCell<usize>) -> usize {
-    #[question("Measure the cell?")]
+    #[kaa::question("Measure the cell?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Borrow the cell exclusively.")]
+    #[kaa::action("Borrow the cell exclusively.")]
     let guard = |yes, cell| cell.borrow_mut();
 
-    #[action("Read the guard.")]
+    #[kaa::action("Read the guard.")]
     let size = |&guard| **guard;
 
-    #[action("Release the guard before the merge.")]
+    #[kaa::action("Release the guard before the merge.")]
     |guard| {
         drop(guard);
     };
 
-    #[action("Use the fallback size.")]
+    #[kaa::action("Use the fallback size.")]
     let size = |no| 8;
 
-    #[action("Mutate the cell after the merge.")]
+    #[kaa::action("Mutate the cell after the merge.")]
     let end = |size, cell| {
         *cell.borrow_mut() += 1;
         size

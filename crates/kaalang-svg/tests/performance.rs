@@ -43,7 +43,7 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
             let names = kaalang_svg::flow_names(&source).expect("the fixture parses");
             // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
             let views = std::iter::once(false)
-                .chain(source.contains("#[cycle(").then_some(true))
+                .chain(source.contains("#[kaa::cycle(").then_some(true))
                 .collect::<Vec<_>>();
             names
                 .into_iter()

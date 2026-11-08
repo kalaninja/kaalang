@@ -1,25 +1,25 @@
 #![deny(unused_mut)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A case value declared `mut` may be mutated through a mutable borrow.
-#[kaalang]
+#[kaa]
 fn mutably_borrowed_choice_output(input: Option<String>) -> usize {
-    #[choice("Was text supplied?")]
-    #[case("Text supplied.")]
-    #[case("No text.")]
+    #[kaa::choice("Was text supplied?")]
+    #[kaa::case("Text supplied.")]
+    #[kaa::case("No text.")]
     let (mut text, absent) = |input| match input {
         Some(text) => text,
         None => (),
     };
 
-    #[action("Append to the case value.")]
+    #[kaa::action("Append to the case value.")]
     let end = |&mut text| {
         text.push('!');
         text.len()
     };
 
-    #[action("Use zero when absent.")]
+    #[kaa::action("Use zero when absent.")]
     let end = |absent| 0;
 
     |end| return end;

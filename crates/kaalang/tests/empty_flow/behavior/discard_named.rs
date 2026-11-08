@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn discard_named(_value: u8) {
     || return;
 }

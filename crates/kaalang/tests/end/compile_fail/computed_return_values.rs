@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn identity(value: u32) -> u32 {
     value
 }
 
-#[kaalang]
+#[kaa]
 fn computed(value: u32) -> u32 {
     |value| return value + 1;
 }
 
-#[kaalang]
+#[kaa]
 fn called(value: u32) -> u32 {
     |value| return identity(value);
 }

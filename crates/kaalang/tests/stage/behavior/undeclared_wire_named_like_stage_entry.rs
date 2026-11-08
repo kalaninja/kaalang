@@ -1,23 +1,23 @@
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn undeclared_wire_named_like_stage_entry(go: ()) -> u8 {
-    #[stage("Make a local wire.")]
+    #[kaa::stage("Make a local wire.")]
     let next = |go| {
-        #[action("Name a local wire after another entry.")]
+        #[kaa::action("Name a local wire after another entry.")]
         let finish = |go| 4u8;
-        #[action("Use the local wire.")]
+        #[kaa::action("Use the local wire.")]
         |finish| {
             let _ = finish;
         };
-        #[action("Select the next stage.")]
+        #[kaa::action("Select the next stage.")]
         let next = || {};
     };
-    #[stage("Select the final stage.")]
+    #[kaa::stage("Select the final stage.")]
     let finish = |next| {
-        #[action("Produce the declared signal.")]
+        #[kaa::action("Produce the declared signal.")]
         let finish = |next| 8u8;
     };
-    #[stage("Return.")]
+    #[kaa::stage("Return.")]
     |finish| {
         |finish| return finish;
     };

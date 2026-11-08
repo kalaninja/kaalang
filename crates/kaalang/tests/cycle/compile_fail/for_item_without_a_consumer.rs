@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Visit every value.")]
+    #[kaa::cycle("Visit every value.")]
     |values| for value in values {
-        #[action("Count the visit.")]
+        #[kaa::action("Count the visit.")]
         |&mut total| *total += 1;
     };
 

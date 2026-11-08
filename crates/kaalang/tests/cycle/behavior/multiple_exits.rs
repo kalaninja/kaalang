@@ -1,26 +1,26 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn multiple_exits(mut mode: u8) -> u8 {
-    #[cycle("Select an exit after zero or one advances.")]
+    #[kaa::cycle("Select an exit after zero or one advances.")]
     let result = loop {
-        #[choice("Exit or advance?")]
-        #[case("Exit immediately.")]
-        #[case("Exit after advancing.")]
-        #[case("Advance once.")]
+        #[kaa::choice("Exit or advance?")]
+        #[kaa::case("Exit immediately.")]
+        #[kaa::case("Exit after advancing.")]
+        #[kaa::case("Advance once.")]
         let (first, last, advance) = |mode| match mode {
             0 => (),
             2 => (),
             _ => (),
         };
 
-        #[action("Keep the immediate result.")]
+        #[kaa::action("Keep the immediate result.")]
         let result = |first, mode| mode;
 
-        #[action("Advance to the final case.")]
+        #[kaa::action("Advance to the final case.")]
         |advance, &mut mode| *mode = 2;
 
-        #[action("Keep the result after advancing.")]
+        #[kaa::action("Keep the result after advancing.")]
         let result = |last, mode| mode;
 
         |advance| continue;

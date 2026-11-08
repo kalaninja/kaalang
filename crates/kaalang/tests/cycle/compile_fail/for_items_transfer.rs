@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: Vec<Vec<u32>>) -> Option<u32> {
-    #[cycle("Visit the values of the first row.")]
+    #[kaa::cycle("Visit the values of the first row.")]
     |values| for value in values.first()? {
-        #[action("Use the value.")]
+        #[kaa::action("Use the value.")]
         |value| drop(value);
     };
 

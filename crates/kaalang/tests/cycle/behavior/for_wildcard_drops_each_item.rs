@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Counts its drops, so the flow can see when each item goes away.
 struct Item<'a>(&'a Cell<usize>);
@@ -11,15 +11,15 @@ impl Drop for Item<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn for_wildcard_drops_each_item(items: Vec<Item<'_>>, dropped: &Cell<usize>) -> Vec<usize> {
-    #[action("Start with no observations.")]
+    #[kaa::action("Start with no observations.")]
     let mut seen = || Vec::new();
 
-    #[cycle("Visit each item without binding it.")]
+    #[kaa::cycle("Visit each item without binding it.")]
     |items| {
         for _ in items {
-            #[action("Record how many items have been dropped so far.")]
+            #[kaa::action("Record how many items have been dropped so far.")]
             |dropped, &mut seen| {
                 seen.push(dropped.get());
             };

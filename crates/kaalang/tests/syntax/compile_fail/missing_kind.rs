@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn missing_kind(value: i32) -> i32 {
     let doubled = |value| { value * 2 };
 }

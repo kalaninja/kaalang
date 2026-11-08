@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn first_value(values: &[i32]) -> Option<i32> {
-    #[cycle("Find the first value.")]
+    #[kaa::cycle("Find the first value.")]
     let selected = |values| loop {
-        #[question("Is there a first value?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is there a first value?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (iterate_1, leave_1) = |values| !values.is_empty();
 
-        #[action("Report that no first value exists.")]
+        #[kaa::action("Report that no first value exists.")]
         let selected = |leave_1| None;
 
-        #[action("Produce the first value.")]
+        #[kaa::action("Produce the first value.")]
         let selected = |iterate_1, values| Some(values[0]);
     };
 

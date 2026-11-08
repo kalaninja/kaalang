@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_cycle_shadows_stage_entry(go: ()) {
-    #[stage("Prepare a local result.")]
+    #[kaa::stage("Prepare a local result.")]
     let other = |go| {
-        #[cycle("Prepare a local result.")]
+        #[kaa::cycle("Prepare a local result.")]
         let other = loop {
-            #[action("Shadow the entry.")]
+            #[kaa::action("Shadow the entry.")]
             let go = || ();
 
-            #[action("Finish locally.")]
+            #[kaa::action("Finish locally.")]
             let other = |go| ();
         };
     };
 
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |other| {
         |other| return;
     };

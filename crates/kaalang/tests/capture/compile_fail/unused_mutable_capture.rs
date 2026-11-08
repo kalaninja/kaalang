@@ -1,10 +1,10 @@
 #![deny(unused_mut)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn unused_mutable_capture(value: u8) -> u8 {
-    #[action("Leave the authored mutable binding unchanged.")]
+    #[kaa::action("Leave the authored mutable binding unchanged.")]
     let end = |mut value| { value };
 
     |end| return end;

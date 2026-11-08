@@ -1,31 +1,31 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A cycle cannot return from the flow. An `abort` output hands the decision
 /// to the containing sequence, which returns.
-#[kaalang]
+#[kaa]
 fn abort_output(mut count: u32, limit: u32) -> Result<u32, u32> {
-    #[cycle("Count until done or aborted.")]
+    #[kaa::cycle("Count until done or aborted.")]
     let (done, abort) = loop {
-        #[choice("Where is the count?")]
-        #[case("Below the limit.")]
-        #[case("At the limit.")]
-        #[case("Past the limit.")]
+        #[kaa::choice("Where is the count?")]
+        #[kaa::case("Below the limit.")]
+        #[kaa::case("At the limit.")]
+        #[kaa::case("Past the limit.")]
         let (below, done, abort) = |&count, &limit| match count.cmp(limit) {
             std::cmp::Ordering::Less => (),
             std::cmp::Ordering::Equal => (),
             std::cmp::Ordering::Greater => (),
         };
 
-        #[action("Count up.")]
+        #[kaa::action("Count up.")]
         let stepped = |below, &mut count| *count += 1;
 
         |stepped| continue;
     };
 
-    #[action("Report the count.")]
+    #[kaa::action("Report the count.")]
     let result = |done, count| Ok(count);
 
-    #[action("Report the abort.")]
+    #[kaa::action("Report the abort.")]
     let result = |abort, count| Err(count);
 
     |result| return result;

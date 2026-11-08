@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn capturing_closure_after_convergence(condition: bool) -> u32 {
-    #[question("Which base?")]
+    #[kaa::question("Which base?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes base.")]
+    #[kaa::action("Build the yes base.")]
     let base = |yes| 10;
 
-    #[action("Build the no base.")]
+    #[kaa::action("Build the no base.")]
     let base = |no| 20;
 
-    #[action("Capture the selected base in a closure.")]
+    #[kaa::action("Capture the selected base in a closure.")]
     let add = |base| move |delta: u32| base + delta;
 
-    #[action("Apply the closure.")]
+    #[kaa::action("Apply the closure.")]
     let end = |add| add(1);
 
     |end| return end;

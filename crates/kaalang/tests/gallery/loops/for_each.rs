@@ -2,17 +2,17 @@
 //! `iterator_loop` writes the same traversal out with a loop cycle.
 //! A wider accumulator keeps sums of large i32 values representable.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_each(values: &[i32]) -> i64 {
-    #[action("🧮 Start with a total of zero.")]
+    #[kaa::action("🧮 Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add the list's values to the total one by one.")]
+    #[kaa::cycle("Add the list's values to the total one by one.")]
     let done = |values| {
         for value in values {
-            #[action("➕ Add this value to the running total.")]
+            #[kaa::action("➕ Add this value to the running total.")]
             |value, &mut total| *total += i64::from(*value);
         }
     };

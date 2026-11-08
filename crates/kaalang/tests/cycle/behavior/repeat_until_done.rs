@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn repeat_until_done(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut count = || 0;
 
-    #[cycle("Count until the limit is reached.")]
+    #[kaa::cycle("Count until the limit is reached.")]
     let done = loop {
-        #[question("Has the counter reached the limit?")]
+        #[kaa::question("Has the counter reached the limit?")]
         let (done, again) = |&count, &limit| *count == *limit;
 
-        #[action("Increment the counter.")]
+        #[kaa::action("Increment the counter.")]
         |again, &mut count| *count += 1;
 
         |again| continue;

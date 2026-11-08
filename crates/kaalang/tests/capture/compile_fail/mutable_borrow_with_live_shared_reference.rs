@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_borrow_with_live_shared_reference(mut text: String) -> usize {
-    #[action("Keep a shared reference.")]
+    #[kaa::action("Keep a shared reference.")]
     let view = |&text| { text.as_str() };
 
-    #[action("Mutate while the shared reference remains live.")]
+    #[kaa::action("Mutate while the shared reference remains live.")]
     let end = |&mut text, view| {
         text.push('!');
         view.len()

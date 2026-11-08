@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mode: u8) -> u8 {
-    #[choice("Which source?")]
-    #[case("First.")]
-    #[case("Second.")]
-    #[case("Third.")]
-    #[case("Fourth.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First.")]
+    #[kaa::case("Second.")]
+    #[kaa::case("Third.")]
+    #[kaa::case("Fourth.")]
     let (a, b, c, d) = |mode| {
         match mode {
             0 => (),
@@ -16,25 +16,25 @@ fn invalid(mode: u8) -> u8 {
         }
     };
 
-    #[action("First value.")]
+    #[kaa::action("First value.")]
     let early = |a| { 1 };
 
-    #[action("Second value.")]
+    #[kaa::action("Second value.")]
     let early = |b| { 2 };
 
-    #[action("Third value.")]
+    #[kaa::action("Third value.")]
     let late = |c| { 3 };
 
-    #[action("Fourth value.")]
+    #[kaa::action("Fourth value.")]
     let late = |d| { 4 };
 
-    #[action("Common effect.")]
+    #[kaa::action("Common effect.")]
     || {};
 
-    #[action("Use the early value.")]
+    #[kaa::action("Use the early value.")]
     let result = |early| early;
 
-    #[action("Use the late value.")]
+    #[kaa::action("Use the late value.")]
     let result = |late| late;
 
     |result| return result;

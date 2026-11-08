@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn raw_duplicate_outputs() -> u8 {
-    #[cycle("Declare the same result twice.")]
+    #[kaa::cycle("Declare the same result twice.")]
     let (found, r#found) = loop {
-        #[action("Produce the result.")]
+        #[kaa::action("Produce the result.")]
         let found = || 7u8;
     };
 

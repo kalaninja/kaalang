@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> ! {
-    #[cycle("Repeat through two transfers.")]
+    #[kaa::cycle("Repeat through two transfers.")]
     loop {
-        #[question("Which route?")]
+        #[kaa::question("Which route?")]
         let (first, second) = |flag| flag;
 
         |first| continue;

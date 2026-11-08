@@ -68,9 +68,11 @@ fn draws_a_diagram_beside_every_executable_fixture() {
 
             for (flow, name) in flows.iter().zip(names) {
                 let mut expanded = None;
-                for (suffix, collapse_cycles) in std::iter::once(("", false))
-                    .chain(source.contains("#[cycle(").then_some(("_collapsed", true)))
-                {
+                for (suffix, collapse_cycles) in std::iter::once(("", false)).chain(
+                    source
+                        .contains("#[kaa::cycle(")
+                        .then_some(("_collapsed", true)),
+                ) {
                     let svg = kaalang_svg::render_source_with_options(
                         &source,
                         flow,

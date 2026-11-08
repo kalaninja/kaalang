@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn duplicate_kind(value: i32) -> i32 {
-    #[action("Double the value.")]
-    #[question("Is the value large?")]
+    #[kaa::action("Double the value.")]
+    #[kaa::question("Is the value large?")]
     let doubled = |value| { value * 2 };
 }
 

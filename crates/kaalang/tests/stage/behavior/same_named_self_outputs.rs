@@ -1,33 +1,33 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn same_named_self_outputs(go: u8) -> u8 {
-    #[stage("Choose how to repeat.")]
+    #[kaa::stage("Choose how to repeat.")]
     let (finish, go) = |go| {
-        #[action("Read the entry.")]
+        #[kaa::action("Read the entry.")]
         let current = |go| go;
 
-        #[choice("Choose a route.")]
-        #[case("Finish.")]
-        #[case("Repeat from the left.")]
-        #[case("Repeat from the right.")]
+        #[kaa::choice("Choose a route.")]
+        #[kaa::case("Finish.")]
+        #[kaa::case("Repeat from the left.")]
+        #[kaa::case("Repeat from the right.")]
         let (done, left, right) = |current| match current {
             0 => (),
             1 => (),
             _ => (),
         };
 
-        #[action("Keep the completed value.")]
+        #[kaa::action("Keep the completed value.")]
         let finish = |done, current| current;
 
-        #[action("Produce the left self-transition.")]
+        #[kaa::action("Produce the left self-transition.")]
         let go = |left| 0;
 
-        #[action("Produce the right self-transition.")]
+        #[kaa::action("Produce the right self-transition.")]
         let go = |right| 0;
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

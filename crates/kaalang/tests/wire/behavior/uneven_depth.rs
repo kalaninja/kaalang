@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn uneven_depth(condition: bool) -> u32 {
-    #[question("Choose a branch depth.")]
+    #[kaa::question("Choose a branch depth.")]
     let (short, long) = |condition| condition;
 
-    #[action("Build the short value.")]
+    #[kaa::action("Build the short value.")]
     let selected = |short| 5;
 
-    #[action("Prepare the long value.")]
+    #[kaa::action("Prepare the long value.")]
     let prepared = |long| 7;
 
-    #[action("Build the long value.")]
+    #[kaa::action("Build the long value.")]
     let selected = |prepared| prepared + 1;
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let end = |selected| selected * 2;
 
     |end| return end;

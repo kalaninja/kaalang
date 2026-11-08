@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn origin() -> (i32, i32) {
     (0, 0)
@@ -8,9 +8,9 @@ fn origin() -> (i32, i32) {
 /// the invisible group a metavariable substitutes through.
 macro_rules! starting_at {
     ($name:ident, $application:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name() -> (i32, i32) {
-            #[call("Start at the origin.")]
+            #[kaa::call("Start at the origin.")]
             let end = $application;
 
             |end| return end;

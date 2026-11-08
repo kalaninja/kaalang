@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn several_wires(condition: bool) -> (u32, &'static str) {
-    #[question("Choose a pair.")]
+    #[kaa::question("Choose a pair.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes pair.")]
+    #[kaa::action("Build the yes pair.")]
     let (number, label) = |yes| (1, "yes");
 
-    #[action("Build the no pair.")]
+    #[kaa::action("Build the no pair.")]
     let (number, label) = |no| (2, "no");
 
     |label, number| return (number, label);

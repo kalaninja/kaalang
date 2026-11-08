@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Square {
     side: u32,
@@ -6,12 +6,12 @@ struct Square {
 }
 
 impl Square {
-    #[kaalang]
+    #[kaa]
     fn build_a_self_value(side: u32) -> Self {
-        #[action("Square the side.")]
+        #[kaa::action("Square the side.")]
         let area = |&side| side * side;
 
-        #[action("Assemble the square.")]
+        #[kaa::action("Assemble the square.")]
         let end = |side, area| Self { side, area };
 
         |end| return end;

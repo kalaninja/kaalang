@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_reference_binding(value: u8) -> u8 {
-    #[action("Try to modify both the reference and its binding.")]
+    #[kaa::action("Try to modify both the reference and its binding.")]
     let end = |&mut mut value| { *value };
 
     |end| return end;

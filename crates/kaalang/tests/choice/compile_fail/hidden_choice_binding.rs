@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: Option<u32>) -> u32 {
-    #[choice("Is a value present?")]
-    #[case("A value is present.")]
-    #[case("No value is present.")]
+    #[kaa::choice("Is a value present?")]
+    #[kaa::case("A value is present.")]
+    #[kaa::case("No value is present.")]
     let (present, absent) = |input| {
         match input {
             Some(hidden) => (),
@@ -12,10 +12,10 @@ fn invalid(input: Option<u32>) -> u32 {
         }
     };
 
-    #[action("Produce the hidden match value.")]
+    #[kaa::action("Produce the hidden match value.")]
     let end = |present| { hidden };
 
-    #[action("Produce zero for no value.")]
+    #[kaa::action("Produce zero for no value.")]
     let end = |absent| { 0 };
 
     |end| return end;

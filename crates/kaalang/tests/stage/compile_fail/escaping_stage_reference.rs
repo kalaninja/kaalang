@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn escaping_stage_reference<'a>(mut slot: &'a mut Option<&'a u8>, go: ()) {
-    #[stage("Store a local reference.")]
+    #[kaa::stage("Store a local reference.")]
     let finish = |go| {
-        #[action("Create a local value.")]
+        #[kaa::action("Create a local value.")]
         let local = |go| 7u8;
 
-        #[action("Store its reference outside the visit.")]
+        #[kaa::action("Store its reference outside the visit.")]
         |&mut slot, &local| **slot = Some(local);
 
-        #[action("Finish the visit.")]
+        #[kaa::action("Finish the visit.")]
         let finish = || ();
     };
 
-    #[stage("Return.")]
+    #[kaa::stage("Return.")]
     |finish| {
         return;
     };

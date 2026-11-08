@@ -1,22 +1,22 @@
 //! A minimal state machine using stages; compare `state_machine_without_stages.rs`.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn state_machine(first: ()) {
-    #[stage("First")]
+    #[kaa::stage("First")]
     let second = |first| {
-        #[action("Continue to `Second`.")]
+        #[kaa::action("Continue to `Second`.")]
         let second = || {};
     };
 
-    #[stage("Second")]
+    #[kaa::stage("Second")]
     let finish = |second| {
-        #[action("Continue to `Finish`.")]
+        #[kaa::action("Continue to `Finish`.")]
         let finish = || {};
     };
 
-    #[stage("Finish")]
+    #[kaa::stage("Finish")]
     |finish| {
         return;
     };

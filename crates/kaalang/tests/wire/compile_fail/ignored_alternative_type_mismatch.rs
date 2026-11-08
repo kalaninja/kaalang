@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) -> u32 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| { condition };
 
-    #[action("Build the yes values.")]
+    #[kaa::action("Build the yes values.")]
     let (number, _log) = |yes| { (1, "yes") };
 
-    #[action("Build the no values.")]
+    #[kaa::action("Build the no values.")]
     let (number, _log) = |no| { (2, 3u8) };
 
     |number| return number;

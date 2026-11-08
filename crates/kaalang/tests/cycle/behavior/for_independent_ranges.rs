@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_independent_ranges(rows: u32, columns: u32) -> u32 {
-    #[action("Start with no visited cells.")]
+    #[kaa::action("Start with no visited cells.")]
     let mut visited = || 0;
 
-    #[cycle("Visit every row.")]
+    #[kaa::cycle("Visit every row.")]
     |rows| {
         for _ in 0..rows {
-            #[cycle("Visit every column.")]
+            #[kaa::cycle("Visit every column.")]
             |columns| {
                 for _ in 0..columns {
-                    #[action("Count one cell.")]
+                    #[kaa::action("Count one cell.")]
                     |&mut visited| *visited += 1;
                 }
             };

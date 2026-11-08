@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Source order places the borrow before the move. Swapping them makes Rust
 /// reject the borrow of the moved string.
-#[kaalang]
+#[kaa]
 fn log_then_transform(value: String) -> usize {
-    #[action("Log the value.")]
+    #[kaa::action("Log the value.")]
     |&value| {
         assert_eq!(value, "abc");
     };
 
-    #[action("Transform the value into its length.")]
+    #[kaa::action("Transform the value into its length.")]
     let length = |value| value.len();
 
     |length| return length;

@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(non_camel_case_types)]
 enum __kaalang_stage {
@@ -11,15 +11,15 @@ macro_rules! authored_variant {
     };
 }
 
-#[kaalang]
+#[kaa]
 fn preserve_type_names(go: ()) -> bool {
-    #[stage("Use the authored type.")]
+    #[kaa::stage("Use the authored type.")]
     let finish = |go| {
-        #[action("Resolve type names inside a macro.")]
+        #[kaa::action("Resolve type names inside a macro.")]
         let finish = |go| authored_variant!();
     };
 
-    #[stage("Return the result.")]
+    #[kaa::stage("Return the result.")]
     |finish| {
         |finish| return finish;
     };

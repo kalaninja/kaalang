@@ -1,21 +1,21 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn long_cycle_captions(flag: bool) {
-    #[question("Choose a cycle.")]
+    #[kaa::question("Choose a cycle.")]
     let (left, right) = |flag| flag;
 
-    #[cycle(
+    #[kaa::cycle(
         "Collect the available results from the source until there are enough items to complete the current request."
     )]
     let done = |left| loop {
-        #[action("Collect the results.")]
+        #[kaa::action("Collect the results.")]
         let done = |left| {};
     };
 
-    #[cycle("Read the next item and prepare it for processing.")]
+    #[kaa::cycle("Read the next item and prepare it for processing.")]
     let done = |right| loop {
-        #[action("Read the item.")]
+        #[kaa::action("Read the item.")]
         let done = |right| {};
     };
 

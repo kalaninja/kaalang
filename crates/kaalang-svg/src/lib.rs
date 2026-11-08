@@ -29,9 +29,9 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// No exact `#[kaalang]` function has the requested path.
+    /// No exact `#[kaa]` function has the requested path.
     FlowNotFound(String),
-    /// More than one exact `#[kaalang]` function has the requested path.
+    /// More than one exact `#[kaa]` function has the requested path.
     AmbiguousFlow(String),
     /// The selected function is not a valid kaalang flow.
     InvalidFlow {
@@ -71,11 +71,11 @@ impl fmt::Display for RenderError {
                 "could not parse Rust source at {line}:{column}: {message}"
             ),
             Self::FlowNotFound(name) => {
-                write!(formatter, "`#[kaalang]` function `{name}` was not found")
+                write!(formatter, "`#[kaa]` function `{name}` was not found")
             }
             Self::AmbiguousFlow(name) => write!(
                 formatter,
-                "multiple `#[kaalang]` functions have the path `{name}`"
+                "multiple `#[kaa]` functions have the path `{name}`"
             ),
             Self::InvalidFlow {
                 name,
@@ -105,14 +105,14 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders one exact `#[kaalang]` function from a UTF-8 Rust source file.
+/// Renders one exact `#[kaa]` function from a UTF-8 Rust source file.
 /// `flow_path` is its path within the file, as [`flow_names`] lists it.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust,
 /// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
-/// `flow_path` does not name exactly one `#[kaalang]` function,
+/// `flow_path` does not name exactly one `#[kaa]` function,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
 /// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
 /// character XML 1.0 cannot represent, and
@@ -172,7 +172,7 @@ pub fn render_source_with_options(
     ))
 }
 
-/// Lists the path within a UTF-8 Rust source file of every `#[kaalang]`
+/// Lists the path within a UTF-8 Rust source file of every `#[kaa]`
 /// function, free or associated, in source order and with duplicates: `route`,
 /// `review::route` inside an inline module, or `Report::approve`.
 ///
@@ -228,10 +228,7 @@ fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
     {
         return Err(invalid_flow(
             flow_path,
-            &syn::Error::new_spanned(
-                attribute,
-                "#[kaalang] on a function does not accept arguments",
-            ),
+            &syn::Error::new_spanned(attribute, "#[kaa] on a function does not accept arguments"),
         ));
     }
 
@@ -343,7 +340,7 @@ mod tests {
 
     #[test]
     fn requires_an_exact_kaalang_attribute() {
-        let source = "#[other::kaalang]\nfn nested_attribute(input: u8) -> u8 {}\n";
+        let source = "#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n";
 
         assert_eq!(
             render_source(source, "nested_attribute"),
@@ -362,12 +359,12 @@ mod tests {
             Err(RenderError::FlowNotFound("plain".into()))
         );
         assert!(matches!(
-            render_source("#[kaalang] fn empty() {}", "empty"),
+            render_source("#[kaa] fn empty() {}", "empty"),
             Err(RenderError::InvalidFlow { .. })
         ));
         assert_eq!(
             render_source(
-                "#[kaalang] fn duplicate() {} #[kaalang] fn duplicate() {}",
+                "#[kaa] fn duplicate() {} #[kaa] fn duplicate() {}",
                 "duplicate"
             ),
             Err(RenderError::AmbiguousFlow("duplicate".into()))
@@ -376,7 +373,7 @@ mod tests {
 
     #[test]
     fn finds_a_flow_marked_through_the_crate_path() {
-        let source = "#[kaalang::kaalang]\nfn qualified(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let source = "#[kaalang::kaa]\nfn qualified(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
         assert_eq!(flow_names(source), Ok(vec!["qualified".to_owned()]));
         assert!(render_source(source, "qualified").is_ok());
@@ -384,9 +381,9 @@ mod tests {
 
     #[test]
     fn flows_are_selected_by_their_path_within_the_file() {
-        let flow = "fn copy(input: u8) -> u8 {\n    #[action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let flow = "fn copy(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
         let source = format!(
-            "mod review {{ #[kaalang] {flow} }}\nstruct Report;\nimpl Report {{ #[kaalang] {flow} }}\ntrait Review {{ #[kaalang] {flow} }}\n"
+            "mod review {{ #[kaa] {flow} }}\nstruct Report;\nimpl Report {{ #[kaa] {flow} }}\ntrait Review {{ #[kaa] {flow} }}\n"
         );
 
         let paths = ["review::copy", "Report::copy", "Review::copy"];
@@ -402,9 +399,9 @@ mod tests {
 
     #[test]
     fn reports_kaalang_arguments_as_an_invalid_flow() {
-        for attribute in ["kaalang", "kaalang::kaalang"] {
+        for attribute in ["kaa", "kaalang::kaa"] {
             let source = format!(
-                "#[{attribute}(unexpected)]\nfn invalid(input: u8) -> u8 {{\n    #[action(\"Return the input\")]\n    let end = |input| {{ input }};\n    |end| return end;\n}}\n"
+                "#[{attribute}(unexpected)]\nfn invalid(input: u8) -> u8 {{\n    #[kaa::action(\"Return the input\")]\n    let end = |input| {{ input }};\n    |end| return end;\n}}\n"
             );
 
             assert_eq!(
@@ -413,7 +410,7 @@ mod tests {
                     name: "invalid".into(),
                     line: 1,
                     column: 1,
-                    message: "#[kaalang] on a function does not accept arguments".into(),
+                    message: "#[kaa] on a function does not accept arguments".into(),
                 })
             );
         }
@@ -421,7 +418,7 @@ mod tests {
 
     #[test]
     fn reports_model_errors_at_their_source_position() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy the input\")]\n    let input = |input| { input };\n    |input| return input;\n}\n";
+        let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"Copy the input\")]\n    let input = |input| { input };\n    |input| return input;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -438,18 +435,18 @@ mod tests {
     /// repeats the shared consumer.
     #[test]
     fn rejects_a_late_alternative_producer_before_layout() {
-        let source = r#"#[kaalang]
+        let source = r#"#[kaa]
 fn invalid(condition: bool) -> u32 {
-    #[question("Choose a value")]
+    #[kaa::question("Choose a value")]
     let (yes, no) = |condition| { condition };
 
-    #[action("Build the first value")]
+    #[kaa::action("Build the first value")]
     let selected = |yes| { 1 };
 
-    #[action("Use the selected value")]
+    #[kaa::action("Use the selected value")]
     let end = |selected| { selected };
 
-    #[action("Build the later alternative")]
+    #[kaa::action("Build the later alternative")]
     let selected = |no| { 2 };
 
     |end| return end;
@@ -470,7 +467,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn rejects_characters_that_xml_cannot_represent() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"bad\\0label\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -489,19 +486,19 @@ fn invalid(condition: bool) -> u32 {
 
         for (source, line, column, context) in [
             (
-                "#[kaalang]\nfn /*\0*/ invalid(input: u8) -> u8 {\n    |input| return input;\n}\n",
+                "#[kaa]\nfn /*\0*/ invalid(input: u8) -> u8 {\n    |input| return input;\n}\n",
                 2,
                 1,
                 "flow header",
             ),
             (
-                "\u{feff}#!/usr/bin/env rustx\r\n#[kaalang]\nfn invalid(input: /*\0*/ u8) -> u8 {\n    |input| return input;\n}\n",
+                "\u{feff}#!/usr/bin/env rustx\r\n#[kaa]\nfn invalid(input: /*\0*/ u8) -> u8 {\n    |input| return input;\n}\n",
                 3,
                 12,
                 "parameter 1",
             ),
             (
-                "#[kaalang]\nfn invalid(input: u8) -> (u8, /*\0*/ u8) {\n    |input| return input;\n}\n",
+                "#[kaa]\nfn invalid(input: u8) -> (u8, /*\0*/ u8) {\n    |input| return input;\n}\n",
                 2,
                 26,
                 "return type",
@@ -521,7 +518,7 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn validates_xml_characters_in_default_call_labels() {
-        let source = "#[kaalang]\nfn invalid() -> usize {\n    #[call]\n    let output = count::<{r\"a\0b\".len()}>();\n    |output| return output;\n}\nfn count<const N: usize>() -> usize { N }\n";
+        let source = "#[kaa]\nfn invalid() -> usize {\n    #[kaa::call]\n    let output = count::<{r\"a\0b\".len()}>();\n    |output| return output;\n}\nfn count<const N: usize>() -> usize { N }\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -532,13 +529,13 @@ fn invalid(condition: bool) -> u32 {
                 context: "call label".into(),
             })
         );
-        let described = source.replace("#[call]", "#[call(\"Count bytes.\")]");
+        let described = source.replace("#[kaa::call]", "#[kaa::call(\"Count bytes.\")]");
         assert!(render_source(&described, "invalid").is_ok());
     }
 
     #[test]
     fn reports_an_invalid_case_description_by_its_position() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[choice(\"Pick\")]\n    #[case(\"first\")]\n    #[case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[action(\"A\")]\n    let end = |a| { 1 };\n\n    #[action(\"B\")]\n    let end = |b| { 2 };\n\n    |end| return end;\n}\n";
+        let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::choice(\"Pick\")]\n    #[kaa::case(\"first\")]\n    #[kaa::case(\"bad\\0case\")]\n    let (a, b) = |input| {\n        match input { 0 => (), _ => () }\n    };\n\n    #[kaa::action(\"A\")]\n    let end = |a| { 1 };\n\n    #[kaa::action(\"B\")]\n    let end = |b| { 2 };\n\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -555,7 +552,7 @@ fn invalid(condition: bool) -> u32 {
     /// character it names is validated too.
     #[test]
     fn reports_an_invalid_character_a_reference_introduces() {
-        let source = "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";
+        let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -573,14 +570,14 @@ fn invalid(condition: bool) -> u32 {
 
     #[test]
     fn validates_raw_and_interpreted_stage_descriptions() {
-        let source = r#"#[kaalang]
+        let source = r#"#[kaa]
 fn invalid(go: u8) -> u8 {
-    #[stage("Record&#30;the run.")]
+    #[kaa::stage("Record&#30;the run.")]
     let finish = |go| {
-        #[action("Forward the value.")]
+        #[kaa::action("Forward the value.")]
         let finish = |go| go;
     };
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };
@@ -606,7 +603,7 @@ fn invalid(go: u8) -> u8 {
 
     #[test]
     fn reports_an_invalid_question_branch_description() {
-        let source = "#[kaalang]\nfn invalid(condition: bool) -> u8 {\n    #[question(\"Choose\")]\n    #[yes(\"bad\\0branch\")]\n    #[no]\n    let (yes, no) = |condition| { condition };\n    #[action(\"Yes\")]\n    let end = |yes| { 1 };\n    #[action(\"No\")]\n    let end = |no| { 0 };\n    |end| return end;\n}\n";
+        let source = "#[kaa]\nfn invalid(condition: bool) -> u8 {\n    #[kaa::question(\"Choose\")]\n    #[kaa::yes(\"bad\\0branch\")]\n    #[kaa::no]\n    let (yes, no) = |condition| { condition };\n    #[kaa::action(\"Yes\")]\n    let end = |yes| { 1 };\n    #[kaa::action(\"No\")]\n    let end = |no| { 0 };\n    |end| return end;\n}\n";
 
         assert_eq!(
             render_source(source, "invalid"),
@@ -622,7 +619,7 @@ fn invalid(go: u8) -> u8 {
     #[test]
     fn source_prefixes_preserve_labels_and_error_locations() {
         const SOURCE: &str =
-            "#[kaalang]\nfn idéntity(value: u32) -> u32 {\n    |value| return value;\n}\n";
+            "#[kaa]\nfn idéntity(value: u32) -> u32 {\n    |value| return value;\n}\n";
         const PREFIXES: [(&str, usize); 4] = [
             ("", 0),
             ("\u{feff}", 0),
@@ -648,11 +645,11 @@ fn invalid(go: u8) -> u8 {
         let invalid = [
             ("fn invalid(", "invalid"),
             (
-                "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"Copy\")]\n    let input = |input| input;\n    |input| return input;\n}\n",
+                "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"Copy\")]\n    let input = |input| input;\n    |input| return input;\n}\n",
                 "invalid",
             ),
             (
-                "#[kaalang]\nfn invalid(input: u8) -> u8 {\n    #[action(\"bad\\0label\")]\n    let output = |input| input;\n    |output| return output;\n}\n",
+                "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"bad\\0label\")]\n    let output = |input| input;\n    |output| return output;\n}\n",
                 "invalid",
             ),
         ];

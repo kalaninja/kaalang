@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) {
-    #[cycle("Forget to repeat.")]
+    #[kaa::cycle("Forget to repeat.")]
     let leave = loop {
-        #[question("Leave now?")]
+        #[kaa::question("Leave now?")]
         let (leave, again) = |flag| flag;
 
-        #[action("Do the repeating work.")]
+        #[kaa::action("Do the repeating work.")]
         |again| {};
     };
 

@@ -9,7 +9,7 @@ use crate::model::{Block, QuestionBranch};
 pub(super) fn answer_before_question(attribute: &Attribute) -> Error {
     Error::new_spanned(
         attribute,
-        "a `#[yes]` or `#[no]` attribute must follow `#[question(\"description\")]`",
+        "a `#[kaa::yes]` or `#[kaa::no]` attribute must follow `#[kaa::question(\"description\")]`",
     )
 }
 
@@ -42,7 +42,7 @@ pub(super) fn answers(syntax: &BlockSyntax<'_>) -> Result<Vec<QuestionBranch>> {
         if branches.len() != 2 || branches[0].is_yes == branches[1].is_yes {
             return Err(Error::new_spanned(
                 syntax.kind_attribute,
-                "a kaalang question must declare exactly one `#[yes]` and one `#[no]` attribute, or neither",
+                "a kaalang question must declare exactly one `#[kaa::yes]` and one `#[kaa::no]` attribute, or neither",
             ));
         }
         branches
@@ -61,7 +61,7 @@ fn parse_branch(attribute: &Attribute) -> Result<QuestionBranch> {
             ));
         }
     };
-    Ok(branch(attribute.path().is_ident("yes"), description))
+    Ok(branch(super::is_annotation(attribute, "yes"), description))
 }
 
 fn branch(is_yes: bool, description: Option<String>) -> QuestionBranch {

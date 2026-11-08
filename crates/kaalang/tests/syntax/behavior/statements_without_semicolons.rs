@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // Rust lets a block-like statement and the last statement of a block drop the
 // semicolon. kaalang gives the semicolon no meaning, so both spellings parse.
-#[kaalang]
+#[kaa]
 fn statements_without_semicolons() -> String {
-    #[action("Start with an empty text.")]
+    #[kaa::action("Start with an empty text.")]
     let mut text = || String::new();
 
-    #[cycle("Knock three times.")]
+    #[kaa::cycle("Knock three times.")]
     {
         for _ in 0..3 {
-            #[action("Knock once.")]
+            #[kaa::action("Knock once.")]
             |&mut text| text.push_str("knock ");
         }
     }

@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn sum_to_limit(limit: u8) -> u32 {
-    #[action("Start at zero.")]
+    #[kaa::action("Start at zero.")]
     let count = || (0u8, 0u32);
 
-    #[stage("Accumulate up to the limit.")]
+    #[kaa::stage("Accumulate up to the limit.")]
     let (count, finish) = |count| {
-        #[action("Advance the count and total.")]
+        #[kaa::action("Advance the count and total.")]
         let next = |mut count, limit| {
             if count.0 < limit {
                 count.0 += 1;
@@ -16,16 +16,16 @@ fn sum_to_limit(limit: u8) -> u32 {
             count
         };
 
-        #[choice("Are there more numbers?")]
-        #[case("Continue counting.")]
-        #[case("Stop counting.")]
+        #[kaa::choice("Are there more numbers?")]
+        #[kaa::case("Continue counting.")]
+        #[kaa::case("Stop counting.")]
         let (count, finish) = |next, limit| match next.0 < limit {
             true => next,
             false => next.1,
         };
     };
 
-    #[stage("Return the total.")]
+    #[kaa::stage("Return the total.")]
     |finish| {
         |finish| return finish;
     };

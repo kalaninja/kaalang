@@ -1,17 +1,17 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 static VISITS: AtomicUsize = AtomicUsize::new(0);
 
 macro_rules! counting {
     ($name:ident, $body:block) => {
-        #[kaalang]
+        #[kaa]
         fn $name() -> usize {
-            #[action("Count a visit.")]
+            #[kaa::action("Count a visit.")]
             $body;
 
-            #[action("Read the count.")]
+            #[kaa::action("Read the count.")]
             let count = || VISITS.load(Ordering::Relaxed);
 
             |count| return count;

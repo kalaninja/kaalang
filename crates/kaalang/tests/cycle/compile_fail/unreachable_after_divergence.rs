@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[cycle("Repeat the outer cycle.")]
+    #[kaa::cycle("Repeat the outer cycle.")]
     loop {
-        #[cycle("Spin forever.")]
+        #[kaa::cycle("Spin forever.")]
         loop {
             continue;
         };
 
-        #[action("Too late.")]
+        #[kaa::action("Too late.")]
         || {};
 
         continue;

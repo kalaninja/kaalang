@@ -18,9 +18,9 @@ fn internal_looking_names_keep_their_for_cycle_labels() {
     let (model, captions) = read(
         r#"
         fn example() {
-            #[cycle("Visit every item.")]
+            #[kaa::cycle("Visit every item.")]
             let __kaalang_unnamed_done = for __kaalang_unnamed_item in 0..3 {
-                #[action("Use the item.")]
+                #[kaa::action("Use the item.")]
                 |__kaalang_unnamed_item| drop(__kaalang_unnamed_item);
             };
             |__kaalang_unnamed_done| return;
@@ -53,13 +53,13 @@ fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
 fn stage_cycle_inputs_keep_outer_mutability_but_not_the_initial_entry_mutability() {
     let function = syn::parse_quote! {
         fn example(mut parameter: u8, mut entry: ()) -> (u8, u8) {
-            #[action("Prepare shared storage.")]
+            #[kaa::action("Prepare shared storage.")]
             let mut prepared = || 0;
-            #[stage("Finish.")]
+            #[kaa::stage("Finish.")]
             |entry| {
-                #[cycle("Adjust shared storage.")]
+                #[kaa::cycle("Adjust shared storage.")]
                 let done = |entry| loop {
-                    #[action("Increment both values.")]
+                    #[kaa::action("Increment both values.")]
                     let done = |&mut parameter, &mut prepared| {
                         *parameter += 1;
                         *prepared += 1;
@@ -97,15 +97,15 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
     let (model, captions) = read(
         r#"
         fn example(r#type: u8, _spare: u8, _: u8) -> u8 {
-            #[choice("Pick a case.")]
-            #[case("Near.")]
-            #[case("Far.")]
+            #[kaa::choice("Pick a case.")]
+            #[kaa::case("Near.")]
+            #[kaa::case("Far.")]
             let (near, far) = |r#type| { match r#type { 0 => 1, _ => 2 } };
-            #[action("Split the near value.")]
+            #[kaa::action("Split the near value.")]
             let (width, depth, _unused) = |near| { (near, near, ()) };
-            #[action("Use both dimensions.")]
+            #[kaa::action("Use both dimensions.")]
             let end = |&width, depth| { *width + depth };
-            #[action("Use the far value.")]
+            #[kaa::action("Use the far value.")]
             let end = |far| { far };
 
             |end| return end;
@@ -155,7 +155,7 @@ fn end_names_the_transferred_value_instead_of_all_return_captures() {
         (
             r#"
             fn example(value: u8) -> u8 {
-                #[action("Keep a guard alive through return.")]
+                #[kaa::action("Keep a guard alive through return.")]
                 let guard = || ();
                 |value, guard| return value;
             }
@@ -246,9 +246,9 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
         let (model, captions) = read(&format!(
             r#"
             fn example() -> u8 {{
-                #[action("Prepare two values.")]
+                #[kaa::action("Prepare two values.")]
                 let ({outputs}) = || {{ (1, 2) }};
-                #[action("Use both values.")]
+                #[kaa::action("Use both values.")]
                 let end = |{capture}| {{ 3 }};
 
                 |end| return end;
@@ -317,7 +317,7 @@ fn mutable_alternatives_keep_the_same_label_across_block_kinds_and_the_merge() {
 #[test]
 fn a_question_branch_description_replaces_its_output_label() {
     let source = include_str!("../../../kaalang/tests/question/behavior/run_question.rs")
-        .replace(r#"#[no("The condition is false.")]"#, "#[no]")
+        .replace(r#"#[kaa::no("The condition is false.")]"#, "#[kaa::no]")
         .replace("The condition is true.", "Go ahead.");
     let (_, captions) = fixture(&source, "run_question");
     let no = ExitId {
@@ -343,7 +343,7 @@ fn a_question_branch_description_replaces_its_output_label() {
 fn a_call_without_a_description_is_labeled_with_the_path_it_calls() {
     let (_, captions) = read(
         "fn example(value: u32) -> u32 {
-            #[call]
+            #[kaa::call]
             let end = |value| math::
                 // The author may break a path across lines.
                 twice(value);

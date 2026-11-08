@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn establish_order_with_a_unit_wire(value: u32) -> u32 {
-    #[action("Log flow entry.")]
+    #[kaa::action("Log flow entry.")]
     let entered = || println!("start");
 
-    #[action("Continue once the flow has been entered.")]
+    #[kaa::action("Continue once the flow has been entered.")]
     let end = |entered, value| value + 1;
 
     |end| return end;

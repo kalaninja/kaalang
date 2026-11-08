@@ -1,4 +1,4 @@
-//! Finds a `#[kaalang]` flow in the current cargo workspace by its Rust path.
+//! Finds a `#[kaa]` flow in the current cargo workspace by its Rust path.
 
 use std::{
     collections::BTreeSet,
@@ -141,9 +141,9 @@ fn walk_file(walk: &mut Walk, file: &Path, owns_directory: bool, module: &str) {
         Ok(parsed) => parsed,
         Err(error) => return skip(walk, &error),
     };
-    // Both `#[kaalang]` and `#[kaalang::kaalang]` contain the word, so most
+    // Both `#[kaa]` and `#[kaalang::kaa]` contain the word, so most
     // files skip the second parse.
-    if source.contains("kaalang") {
+    if source.contains("kaa") {
         for path_in_file in kaalang_svg::flow_names(&source).expect("the source parsed above") {
             if walk.wanted.strip_prefix(module) == Some(path_in_file.as_str()) {
                 walk.found.push(Found {

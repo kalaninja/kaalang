@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn blocked_terminal_crossing(request: u8) -> u8 {
-    #[choice("Choose an outer case.")]
-    #[case("Build the left shared value.")]
-    #[case("Build the right shared value.")]
-    #[case("Finish after one step.")]
-    #[case("Finish after two steps.")]
+    #[kaa::choice("Choose an outer case.")]
+    #[kaa::case("Build the left shared value.")]
+    #[kaa::case("Build the right shared value.")]
+    #[kaa::case("Finish after one step.")]
+    #[kaa::case("Finish after two steps.")]
     let (left, right, first, second) = |request| match request {
         0 => (),
         1 => (),
@@ -14,26 +14,26 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
         _ => (),
     };
 
-    #[action("Build the left shared value.")]
+    #[kaa::action("Build the left shared value.")]
     let shared = |left| 1u8;
 
-    #[action("Build the right shared value.")]
+    #[kaa::action("Build the right shared value.")]
     let shared = |right| 2;
 
-    #[action("Produce the first terminal result.")]
+    #[kaa::action("Produce the first terminal result.")]
     let end = |first| 3;
 
-    #[action("Take one more step toward the second terminal result.")]
+    #[kaa::action("Take one more step toward the second terminal result.")]
     let stepped = |second| 4;
 
-    #[action("Produce the second terminal result.")]
+    #[kaa::action("Produce the second terminal result.")]
     let end = |stepped| stepped;
 
-    #[choice("Choose an inner case wide enough to block both terminal columns.")]
-    #[case("Build A.")]
-    #[case("Build B.")]
-    #[case("Build C.")]
-    #[case("Build D.")]
+    #[kaa::choice("Choose an inner case wide enough to block both terminal columns.")]
+    #[kaa::case("Build A.")]
+    #[kaa::case("Build B.")]
+    #[kaa::case("Build C.")]
+    #[kaa::case("Build D.")]
     let (a, b, c, d) = |shared| match shared {
         0 => (),
         1 => (),
@@ -41,19 +41,19 @@ fn blocked_terminal_crossing(request: u8) -> u8 {
         _ => (),
     };
 
-    #[action("Build result A.")]
+    #[kaa::action("Build result A.")]
     let selected = |a| 6;
 
-    #[action("Build result B.")]
+    #[kaa::action("Build result B.")]
     let selected = |b| 7;
 
-    #[action("Build result C.")]
+    #[kaa::action("Build result C.")]
     let selected = |c| 8;
 
-    #[action("Build result D.")]
+    #[kaa::action("Build result D.")]
     let selected = |d| 9;
 
-    #[action("Use the result.")]
+    #[kaa::action("Use the result.")]
     let end = |selected| selected;
 
     |end| return end;

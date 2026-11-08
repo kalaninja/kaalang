@@ -1,35 +1,35 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn retry_or_give_up(mut attempts: u32, mut state: u8) -> Option<u8> {
-    #[cycle("Poll until a response arrives.")]
+    #[kaa::cycle("Poll until a response arrives.")]
     let result = loop {
-        #[choice("What did the poll return?")]
-        #[case("A response.")]
-        #[case("A timeout.")]
-        #[case("The server is busy.")]
+        #[kaa::choice("What did the poll return?")]
+        #[kaa::case("A response.")]
+        #[kaa::case("A timeout.")]
+        #[kaa::case("The server is busy.")]
         let (value, timeout, busy) = |&state| match *state {
             0 => 7,
             1 => (),
             _ => (),
         };
 
-        #[question("Are the attempts exhausted?")]
+        #[kaa::question("Are the attempts exhausted?")]
         let (exhausted, retry) = |timeout, &mut attempts| {
             *attempts -= 1;
             *attempts == 0
         };
 
-        #[action("Keep the response.")]
+        #[kaa::action("Keep the response.")]
         let result = |value| Some(value);
 
-        #[action("Give up.")]
+        #[kaa::action("Give up.")]
         let result = |exhausted| None;
 
-        #[action("Wait until the server is free.")]
+        #[kaa::action("Wait until the server is free.")]
         let again = |busy, &mut state| *state = 0;
 
-        #[action("Poll again after the timeout.")]
+        #[kaa::action("Poll again after the timeout.")]
         let again = |retry| {};
 
         |again| continue;

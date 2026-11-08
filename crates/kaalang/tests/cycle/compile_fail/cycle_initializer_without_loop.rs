@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> u32 {
-    #[cycle("Try a cycle body without a loop.")]
+    #[kaa::cycle("Try a cycle body without a loop.")]
     let result = 1;
 
     |result| return result;

@@ -1,29 +1,29 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn local_signal_in_stage_cycle(go: ()) -> u8 {
-    #[stage("Keep a local signal in a cycle.")]
+    #[kaa::stage("Keep a local signal in a cycle.")]
     let next = |go| {
-        #[cycle("Produce a local value.")]
+        #[kaa::cycle("Produce a local value.")]
         let local = |go| loop {
-            #[action("Use a name reserved for a later stage.")]
+            #[kaa::action("Use a name reserved for a later stage.")]
             let finish = |go| {};
 
-            #[action("Complete the cycle without exporting that name.")]
+            #[kaa::action("Complete the cycle without exporting that name.")]
             let local = |finish| {};
         };
 
-        #[action("Select the next stage.")]
+        #[kaa::action("Select the next stage.")]
         let next = |local| {};
     };
 
-    #[stage("Produce the final signal.")]
+    #[kaa::stage("Produce the final signal.")]
     let finish = |next| {
-        #[action("Produce the declared signal.")]
+        #[kaa::action("Produce the declared signal.")]
         let finish = |next| 9u8;
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("Something with a name.")]
+#[kaa("Something with a name.")]
 trait Named {}
 
 fn main() {}

@@ -1,35 +1,35 @@
 //! Bubble sort with nested cycles. Each pass ends the unsorted prefix at its
 //! last swap; a pass without swaps finishes the sort.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn bubble_sort(mut values: &mut [i32]) {
-    #[action("📏 Start with the whole list to sort.")]
+    #[kaa::action("📏 Start with the whole list to sort.")]
     let mut unsorted = |&values| values.len();
 
-    #[cycle("🫧 Move larger values to the right.")]
+    #[kaa::cycle("🫧 Move larger values to the right.")]
     let sorted = loop {
-        #[question("Are at least two values left to sort?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Are at least two values left to sort?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (pass, sorted) = |unsorted| unsorted > 1;
 
-        #[action("⏮️ Begin the pass with no swaps recorded.")]
+        #[kaa::action("⏮️ Begin the pass with no swaps recorded.")]
         let mut last_swap = |pass| 0;
 
-        #[cycle("Put each adjacent pair in order, from left to right.")]
+        #[kaa::cycle("Put each adjacent pair in order, from left to right.")]
         let compared = |pass, unsorted| {
             for index in 1..unsorted {
-                #[action("Select the two values in this adjacent pair.")]
+                #[kaa::action("Select the two values in this adjacent pair.")]
                 let (left, right) = |index, &values| (values[index - 1], values[index]);
 
-                #[question("Is the left value greater than the right?")]
-                #[yes("YES")]
-                #[no("NO")]
+                #[kaa::question("Is the left value greater than the right?")]
+                #[kaa::yes("YES")]
+                #[kaa::no("NO")]
                 let (greater, _ordered) = |left, right| left > right;
 
-                #[action("🔀 Swap the values; remember where this swap happened.")]
+                #[kaa::action("🔀 Swap the values; remember where this swap happened.")]
                 let _ordered = |greater, &mut values, index, &mut last_swap| {
                     values.swap(index - 1, index);
                     *last_swap = index;
@@ -37,12 +37,12 @@ fn bubble_sort(mut values: &mut [i32]) {
             }
         };
 
-        #[question("Did this pass swap any values?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Did this pass swap any values?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (shrink, sorted) = |compared, last_swap| last_swap > 0;
 
-        #[action("🔻 Leave the sorted tail after the last swap out of the next pass.")]
+        #[kaa::action("🔻 Leave the sorted tail after the last swap out of the next pass.")]
         |shrink, last_swap, &mut unsorted| *unsorted = last_swap;
 
         |shrink| continue;

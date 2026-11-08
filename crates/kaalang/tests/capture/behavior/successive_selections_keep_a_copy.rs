@@ -1,31 +1,31 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The `Copy` variant: the merged seed remains in scope and is captured again
 /// after the second selection's branches join.
-#[kaalang]
+#[kaa]
 fn successive_selections_keep_a_copy(condition: bool, long: bool) -> u32 {
-    #[question("Which seed?")]
+    #[kaa::question("Which seed?")]
     let (first, second) = |condition| condition;
 
-    #[action("Build the first seed.")]
+    #[kaa::action("Build the first seed.")]
     let seed = |first| 3;
 
-    #[action("Build the second seed.")]
+    #[kaa::action("Build the second seed.")]
     let seed = |second| 2;
 
-    #[action("Scale the merged seed.")]
+    #[kaa::action("Scale the merged seed.")]
     let scaled = |seed| seed * 10;
 
-    #[question("Is it large?")]
+    #[kaa::question("Is it large?")]
     let (yes, no) = |&scaled, long| long && *scaled > 20;
 
-    #[action("Include the original seed.")]
+    #[kaa::action("Include the original seed.")]
     let include_seed = |yes| true;
 
-    #[action("Use the scaled value alone.")]
+    #[kaa::action("Use the scaled value alone.")]
     let include_seed = |no| false;
 
-    #[action("Finish with the selected adjustment.")]
+    #[kaa::action("Finish with the selected adjustment.")]
     let end = |include_seed, scaled, seed| {
         if include_seed { scaled + seed } else { scaled }
     };

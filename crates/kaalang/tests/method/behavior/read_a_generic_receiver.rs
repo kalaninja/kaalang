@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Holder<T> {
     value: T,
 }
 
 impl<T: Clone> Holder<T> {
-    #[kaalang]
+    #[kaa]
     fn read_a_generic_receiver(&self) -> (T, T) {
-        #[action("Copy the held value.")]
+        #[kaa::action("Copy the held value.")]
         let copied = |&self| self.value.clone();
 
-        #[action("Pair it with another copy.")]
+        #[kaa::action("Pair it with another copy.")]
         let end = |&self, copied| (copied, self.value.clone());
 
         |end| return end;

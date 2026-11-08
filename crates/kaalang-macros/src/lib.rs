@@ -12,11 +12,11 @@ use syn::{Error, Item, parse_macro_input};
 /// its annotations. The [`kaalang`](https://docs.rs/kaalang) crate documentation
 /// describes the syntax.
 #[proc_macro_attribute]
-pub fn kaalang(attributes: TokenStream, item: TokenStream) -> TokenStream {
+pub fn kaa(attributes: TokenStream, item: TokenStream) -> TokenStream {
     let expanded = match parse_macro_input!(item as Item) {
         Item::Fn(_) if !attributes.is_empty() => Err(Error::new(
             Span::call_site().into(),
-            "#[kaalang] on a function does not accept arguments",
+            "#[kaa] on a function does not accept arguments",
         )),
         Item::Fn(function) => kaalang_compiler::expand(function).map(ToTokens::into_token_stream),
         item => kaalang_compiler::expand_type(&attributes.into(), item),

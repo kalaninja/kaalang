@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn select_value<T: Copy>(take_left: bool, left: T, right: T) -> T {
-    #[action("Begin selection.")]
+    #[kaa::action("Begin selection.")]
     let choose = || {};
 
-    #[stage("Select one value.")]
+    #[kaa::stage("Select one value.")]
     let finish = |choose| {
-        #[question("Take the left value?")]
+        #[kaa::question("Take the left value?")]
         let (yes, no) = |take_left| take_left;
 
-        #[action("Select left.")]
+        #[kaa::action("Select left.")]
         let finish = |yes, left| left;
 
-        #[action("Select right.")]
+        #[kaa::action("Select right.")]
         let finish = |no, right| right;
     };
 
-    #[stage("Return the selected value.")]
+    #[kaa::stage("Return the selected value.")]
     |finish| {
         |finish| return finish;
     };

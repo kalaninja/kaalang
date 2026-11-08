@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Values {
     values: Vec<u32>,
 }
 
 impl Values {
-    #[kaalang]
+    #[kaa]
     fn invalid(&self) {
-        #[cycle("Visit every value.")]
+        #[kaa::cycle("Visit every value.")]
         || for value in self.values.iter() {
-            #[action("Use the value.")]
+            #[kaa::action("Use the value.")]
             |value| drop(value);
         };
 

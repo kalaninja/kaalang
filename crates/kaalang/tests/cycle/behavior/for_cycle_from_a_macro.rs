@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 macro_rules! repeat {
     ($name:ident, $text:ident, $iteration:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name() -> String {
-            #[action("Start with an empty text.")]
+            #[kaa::action("Start with an empty text.")]
             let mut $text = || String::new();
 
-            #[cycle("Knock three times.")]
+            #[kaa::cycle("Knock three times.")]
             $iteration;
 
             |$text| return $text;
@@ -19,7 +19,7 @@ repeat!(
     for_cycle_from_a_macro,
     text,
     for _ in 0..3 {
-        #[action("Knock once.")]
+        #[kaa::action("Knock once.")]
         |&mut text| text.push_str("knock ");
     }
 );

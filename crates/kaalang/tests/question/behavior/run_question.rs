@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn run_question(condition: bool) -> &'static str {
-    #[question("Take the yes branch?")]
-    #[no("The condition is false.")]
-    #[yes("The condition is true.")]
+    #[kaa::question("Take the yes branch?")]
+    #[kaa::no("The condition is false.")]
+    #[kaa::yes("The condition is true.")]
     let (no, yes) = |condition| condition;
 
-    #[action("Produce the no result.")]
+    #[kaa::action("Produce the no result.")]
     let end = |no| "no";
 
-    #[action("Produce the yes result.")]
+    #[kaa::action("Produce the yes result.")]
     let end = |yes| "yes";
 
     |end| return end;

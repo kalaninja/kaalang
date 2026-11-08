@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> bool {
-    #[cycle("Try to leave through a break.")]
+    #[kaa::cycle("Try to leave through a break.")]
     let result = |flag| loop {
         |flag| break flag;
     };

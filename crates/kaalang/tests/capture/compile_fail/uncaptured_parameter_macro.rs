@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 macro_rules! assign {
     ($value:ident) => {
@@ -6,9 +6,9 @@ macro_rules! assign {
     };
 }
 
-#[kaalang]
+#[kaa]
 fn uncaptured_parameter_macro(value: u32) -> u32 {
-    #[action("Assign through an opaque macro without a capture.")]
+    #[kaa::action("Assign through an opaque macro without a capture.")]
     { assign!(value); };
 
     |value| return value;

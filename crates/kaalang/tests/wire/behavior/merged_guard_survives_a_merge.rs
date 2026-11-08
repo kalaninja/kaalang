@@ -1,21 +1,21 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Alternative guard producers transfer their value through the merge. The
 /// selected guard remains alive until the common action explicitly drops it.
-#[kaalang]
+#[kaa]
 fn merged_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> usize {
-    #[question("Which branch borrows the cell?")]
+    #[kaa::question("Which branch borrows the cell?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Borrow the cell on the yes branch.")]
+    #[kaa::action("Borrow the cell on the yes branch.")]
     let guard = |yes, cell| cell.borrow_mut();
 
-    #[action("Borrow the cell on the no branch.")]
+    #[kaa::action("Borrow the cell on the no branch.")]
     let guard = |no, cell| cell.borrow_mut();
 
-    #[action("Release the merged guard before borrowing again.")]
+    #[kaa::action("Release the merged guard before borrowing again.")]
     let end = |guard, cell| {
         assert!(cell.try_borrow_mut().is_err());
         let size = *guard;

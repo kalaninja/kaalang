@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: Vec<u32>, limit: usize) -> usize {
-    #[cycle("Visit the first values.")]
+    #[kaa::cycle("Visit the first values.")]
     |values| for value in values.into_iter().take(limit) {
-        #[action("Use the value.")]
+        #[kaa::action("Use the value.")]
         |value| drop(value);
     };
 

@@ -1,37 +1,37 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn sequential_exits(before_limit: usize, after_limit: usize) -> Vec<&'static str> {
-    #[action("Initialize the counter and log.")]
+    #[kaa::action("Initialize the counter and log.")]
     let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
-    #[cycle("Run work between two stopping checks.")]
+    #[kaa::cycle("Run work between two stopping checks.")]
     let done = loop {
-        #[question("Stop before the work?")]
+        #[kaa::question("Stop before the work?")]
         let (done, work) = |&initial_count, before_limit, &mut initial_log| {
             initial_log.push("check before");
             *initial_count >= before_limit
         };
 
-        #[action("Perform the work and advance the counter.")]
+        #[kaa::action("Perform the work and advance the counter.")]
         let worked = |work, &mut initial_count, &mut initial_log| {
             initial_log.push("work");
             *initial_count += 1;
         };
 
-        #[question("Stop after the work?")]
+        #[kaa::question("Stop after the work?")]
         let (done, again) = |worked, &initial_count, after_limit, &mut initial_log| {
             initial_log.push("check after");
             *initial_count >= after_limit
         };
 
-        #[action("Finish the iteration.")]
+        #[kaa::action("Finish the iteration.")]
         |again, &mut initial_log| initial_log.push("repeat");
 
         |again| continue;
     };
 
-    #[action("Continue after the cycle.")]
+    #[kaa::action("Continue after the cycle.")]
     let result = |done, mut initial_log| {
         initial_log.push("done");
         initial_log

@@ -1,8 +1,8 @@
 error[E0382]: use of moved value
   --> tests/capture/compile_fail/consumed_common_wire.rs:17:26
    |
- 5 | #[kaalang]
-   | ---------- in this attribute macro expansion
+ 5 | #[kaa]
+   | ------ in this attribute macro expansion
  6 | fn invalid(condition: bool, common: String) -> String {
    |                             ------ move occurs because value has type `String`, which does not implement the `Copy` trait
 ...
@@ -12,7 +12,7 @@ error[E0382]: use of moved value
 17 |     let end = |selected, common| { format!("{common}:{selected}") };
    |                          ^^^^^^ value used here after move
    |
-   = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the attribute macro `kaa` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider cloning the value if the performance cost is acceptable
    |
 11 |     let selected = |yes, common.clone()| { common };

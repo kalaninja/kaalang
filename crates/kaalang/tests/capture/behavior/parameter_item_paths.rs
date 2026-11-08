@@ -1,7 +1,7 @@
 // Hoisted items deliberately exercise Rust's block-local resolution.
 #![allow(clippy::items_after_statements)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn value() -> u32 {
     9
@@ -15,15 +15,15 @@ macro_rules! declare_value {
     };
 }
 
-#[kaalang]
+#[kaa]
 fn parameter_item_paths(value: fn() -> u32) -> (u32, u32, u32, u32) {
-    #[action("Call the captured input.")]
+    #[kaa::action("Call the captured input.")]
     let captured = |value| value();
 
-    #[action("Call a qualified module item.")]
+    #[kaa::action("Call a qualified module item.")]
     let qualified = || self::value();
 
-    #[action("Call a hoisted authored local item.")]
+    #[kaa::action("Call a hoisted authored local item.")]
     let local = || {
         let result = value();
         fn value() -> u32 {
@@ -32,7 +32,7 @@ fn parameter_item_paths(value: fn() -> u32) -> (u32, u32, u32, u32) {
         result
     };
 
-    #[action("Call a hoisted item introduced by a macro.")]
+    #[kaa::action("Call a hoisted item introduced by a macro.")]
     let generated = || {
         let result = value();
         declare_value!(value);

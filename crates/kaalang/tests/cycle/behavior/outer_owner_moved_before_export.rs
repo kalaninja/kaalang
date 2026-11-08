@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Entry(Rc<RefCell<Vec<usize>>>);
 impl Drop for Entry {
@@ -9,20 +9,20 @@ impl Drop for Entry {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn outer_owner_moved_before_export(entry: Entry, mut log: Rc<RefCell<Vec<usize>>>) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut count = || 0;
 
-    #[cycle("Count three entries.")]
+    #[kaa::cycle("Count three entries.")]
     let final_count = loop {
-        #[question("Has the counter reached three?")]
+        #[kaa::question("Has the counter reached three?")]
         let (done, again) = |&count| *count == 3;
 
-        #[action("Hand over the count and release the entry.")]
+        #[kaa::action("Hand over the count and release the entry.")]
         let final_count = |done, count, entry| count;
 
-        #[action("Record and advance the counter.")]
+        #[kaa::action("Record and advance the counter.")]
         |again, &mut count, &entry| {
             entry.0.borrow_mut().push(*count);
             *count += 1;
@@ -31,7 +31,7 @@ fn outer_owner_moved_before_export(entry: Entry, mut log: Rc<RefCell<Vec<usize>>
         |again| continue;
     };
 
-    #[action("Record work after the moved entry drops.")]
+    #[kaa::action("Record work after the moved entry drops.")]
     let result = |final_count, &mut log| {
         log.borrow_mut().push(100);
         final_count

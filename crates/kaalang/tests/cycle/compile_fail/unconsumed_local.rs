@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) {
-    #[cycle("Create an unused local wire.")]
+    #[kaa::cycle("Create an unused local wire.")]
     let done = |flag| loop {
-        #[question("Repeat?")]
+        #[kaa::question("Repeat?")]
         let (again, done) = |flag| flag;
 
-        #[action("Create the unused local wire.")]
+        #[kaa::action("Create the unused local wire.")]
         let local = |again| 1;
 
         |again| continue;

@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn prepared_internal_names() -> ((), u32) {
-    #[action("Prepare a value with an internal-looking name.")]
+    #[kaa::action("Prepare a value with an internal-looking name.")]
     let __kaalang_unnamed_value = || 42;
 
-    #[action("Enter the terminal stage.")]
+    #[kaa::action("Enter the terminal stage.")]
     let __kaalang_unnamed_entry = || {};
 
-    #[stage("Return the prepared value.")]
+    #[kaa::stage("Return the prepared value.")]
     |__kaalang_unnamed_entry| {
         |__kaalang_unnamed_entry, __kaalang_unnamed_value| {
             return (__kaalang_unnamed_entry, __kaalang_unnamed_value);

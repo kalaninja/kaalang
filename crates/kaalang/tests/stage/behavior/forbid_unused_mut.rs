@@ -2,31 +2,31 @@
 //! would reject.
 #![forbid(unused_mut)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn forbid_unused_mut(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut counter = || 0usize;
 
-    #[action("Begin counting.")]
+    #[kaa::action("Begin counting.")]
     let count = || {};
 
-    #[stage("Count to the limit.")]
+    #[kaa::stage("Count to the limit.")]
     let finish = |count| {
-        #[cycle("Increment until the limit.")]
+        #[kaa::cycle("Increment until the limit.")]
         let finish = loop {
-            #[question("Done?")]
+            #[kaa::question("Done?")]
             let (finish, again) = |&counter, limit| *counter >= limit;
 
-            #[action("Increment.")]
+            #[kaa::action("Increment.")]
             let stepped = |again, &mut counter| *counter += 1;
 
             |stepped| continue;
         };
     };
 
-    #[stage("Return the count.")]
+    #[kaa::stage("Return the count.")]
     |finish| {
         |counter| return counter;
     };

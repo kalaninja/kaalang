@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn raw_entry(r#go: u8) -> u8 {
-    #[stage("Forward the entry.")]
+    #[kaa::stage("Forward the entry.")]
     let finish = |go| {
-        #[action("Forward the value.")]
+        #[kaa::action("Forward the value.")]
         let finish = |go| go;
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

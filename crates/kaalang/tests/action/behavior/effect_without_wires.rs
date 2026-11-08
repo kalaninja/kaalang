@@ -1,12 +1,12 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 static ENTRIES: AtomicUsize = AtomicUsize::new(0);
 
-#[kaalang]
+#[kaa]
 fn effect_without_wires() {
-    #[action("Count the flow entry.")]
+    #[kaa::action("Count the flow entry.")]
     let end = || {
         ENTRIES.fetch_add(1, Ordering::Relaxed);
     };

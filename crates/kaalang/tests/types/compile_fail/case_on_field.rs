@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A member.")]
+#[kaa("A member.")]
 struct Member {
-    #[case("The member's name.")]
+    #[kaa::case("The member's name.")]
     name: String,
 }
 

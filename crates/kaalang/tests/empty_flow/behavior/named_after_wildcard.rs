@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn named_after_wildcard<T>(_: (), end: T) -> T {
     |end| return end;
 }

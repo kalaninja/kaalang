@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[action("Produce an ordinary wire.")]
+    #[kaa::action("Produce an ordinary wire.")]
     let result = || {};
 }
 

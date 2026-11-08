@@ -1,5 +1,5 @@
 error: a kaalang block requires a non-empty description
- --> tests/syntax/compile_fail/empty_description.rs:3:14
+ --> tests/syntax/compile_fail/empty_description.rs:3:19
   |
-3 |     #[action("")]
-  |              ^^
+3 |     #[kaa::action("")]
+  |                   ^^

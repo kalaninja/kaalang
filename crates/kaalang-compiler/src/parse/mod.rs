@@ -245,7 +245,7 @@ fn statements(
                 | Expr::ForLoop(ExprForLoop { attrs, .. })),
             ) if !attrs
                 .iter()
-                .any(|attribute| attribute.path().is_ident("cycle")) =>
+                .any(|attribute| is_annotation(attribute, "cycle")) =>
             {
                 return Err(cycle::structural_cycle(expression));
             }
@@ -257,7 +257,7 @@ fn statements(
             Some(Expr::While(expression)) => {
                 return Err(Error::new_spanned(
                     expression,
-                    "kaalang does not support structural `while`; use a `#[cycle(\"description\")] loop` with a question and `continue`",
+                    "kaalang does not support structural `while`; use a `#[kaa::cycle(\"description\")] loop` with a question and `continue`",
                 ));
             }
             _ => parse_block(statement)?,
@@ -398,7 +398,7 @@ pub(crate) struct BlockSyntax<'a> {
     pub(crate) kind: BlockKind,
     pub(crate) closure: Option<&'a ExprClosure>,
     pub(crate) kind_attribute: &'a Attribute,
-    /// Attributes that accompany the one declaring the kind, such as `#[case]`.
+    /// Attributes that accompany the one declaring the kind, such as `#[kaa::case]`.
     pub(crate) companions: Vec<&'a Attribute>,
     pub(crate) inputs: Vec<Input>,
     pub(crate) outputs: Vec<Ident>,
@@ -413,7 +413,7 @@ impl<'a> BlockSyntax<'a> {
         self.companions
             .iter()
             .map(|companion| {
-                if accepted.iter().any(|name| companion.path().is_ident(name)) {
+                if accepted.iter().any(|name| is_annotation(companion, name)) {
                     Ok(*companion)
                 } else {
                     Err(unexpected_companion(companion))
@@ -478,14 +478,11 @@ fn decorated_body(body: impl ToTokens) -> Error {
 }
 
 fn unexpected_companion(companion: &Attribute) -> Error {
-    let name = companion
-        .path()
-        .get_ident()
-        .expect("companion attributes are single identifiers");
+    let name = annotation_name(companion).expect("companion attributes are kaalang annotations");
 
     Error::new_spanned(
         companion,
-        format!("`#[{name}]` is not valid on this kind of kaalang block"),
+        format!("`#[kaa::{name}]` is not valid on this kind of kaalang block"),
     )
 }
 
@@ -654,7 +651,7 @@ fn block_kind(
             }
             Role::Kind(kind) => declared = Some((kind, attribute)),
             Role::Companion if declared.is_none() => {
-                return Err(if attribute.path().is_ident("case") {
+                return Err(if is_annotation(attribute, "case") {
                     choice::case_before_choice(attribute)
                 } else {
                     question::answer_before_question(attribute)
@@ -668,7 +665,7 @@ fn block_kind(
     let Some((kind, attribute)) = declared else {
         return Err(Error::new(
             fallback_span,
-            "a kaalang block must declare its kind, such as `#[action(\"description\")]`",
+            "a kaalang block must declare its kind, such as `#[kaa::action(\"description\")]`",
         ));
     };
 
@@ -684,7 +681,10 @@ enum Role {
 
 /// Classifies one attribute written on a kaalang block.
 fn attribute_role(attribute: &Attribute) -> Result<Role> {
-    let name = attribute.path().get_ident().map(ToString::to_string);
+    if attribute.path().is_ident("doc") {
+        return Ok(Role::Comment);
+    }
+    let name = annotation_name(attribute).map(ToString::to_string);
 
     Ok(match name.as_deref() {
         Some("action") => Role::Kind(BlockKind::Action),
@@ -694,11 +694,16 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some("cycle") => Role::Kind(BlockKind::Cycle),
         Some("end") => return Err(end::authored(attribute.span())),
         Some("case" | "yes" | "no") => Role::Companion,
-        Some("doc") => Role::Comment,
-        _ => {
+        Some(name) => {
             return Err(Error::new_spanned(
                 attribute,
-                "kaalang blocks support only comments and kaalang attributes",
+                format!("`kaa::{name}` is not a kaalang attribute"),
+            ));
+        }
+        None => {
+            return Err(Error::new_spanned(
+                attribute,
+                "kaalang blocks support only comments and `kaa::` attributes",
             ));
         }
     })
@@ -906,6 +911,18 @@ fn output_ident(pattern: &Pat) -> Result<Ident> {
     Ok(ident)
 }
 
+/// The name in a `#[kaa::name]` attribute, the form every block and type
+/// annotation takes.
+pub(crate) fn annotation_name(attribute: &Attribute) -> Option<&Ident> {
+    let path = attribute.path();
+    (path.leading_colon.is_none() && path.segments.len() == 2 && path.segments[0].ident == "kaa")
+        .then(|| &path.segments[1].ident)
+}
+
+pub(crate) fn is_annotation(attribute: &Attribute, name: &str) -> bool {
+    annotation_name(attribute).is_some_and(|annotation| annotation == name)
+}
+
 /// Extracts a parenthesized, nonempty description.
 pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String> {
     let Meta::List(description) = &attribute.meta else {
@@ -1021,7 +1038,7 @@ mod tests {
     fn every_flow_ends_with_an_implicit_zero_input_block() {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
-                #[action("Double the input.")]
+                #[kaa::action("Double the input.")]
                 let result = |input| { input * 2 };
 
                 |result| return result;
@@ -1044,7 +1061,7 @@ mod tests {
     fn a_flow_may_declare_at_most_one_structural_return() {
         let function: ItemFn = parse_quote! {
             fn decide(condition: bool, value: u32) -> u32 {
-                #[question("Choose a return.")]
+                #[kaa::question("Choose a return.")]
                 let (first, second) = |condition| condition;
 
                 |first, value| return value;
@@ -1062,10 +1079,10 @@ mod tests {
     fn an_authored_end_statement_is_rejected() {
         let function: ItemFn = parse_quote! {
             fn double(input: u32) -> u32 {
-                #[action("Double the input.")]
+                #[kaa::action("Double the input.")]
                 let end = |input| { input * 2 };
 
-                #[end]
+                #[kaa::end]
                 |end| {};
             }
         };
@@ -1081,17 +1098,17 @@ mod tests {
         for function in [
             parse_quote! {
                 fn effects(input: u32) {
-                    #[action("Take the input without producing a wire.")]
+                    #[kaa::action("Take the input without producing a wire.")]
                     let () = |input| { drop(input) };
-                    #[action("Finish.")]
+                    #[kaa::action("Finish.")]
                     let end = || {};
                 }
             },
             parse_quote! {
                 fn effects(input: u32) {
-                    #[action("Take the input without producing a wire.")]
+                    #[kaa::action("Take the input without producing a wire.")]
                     |input| { drop(input) };
-                    #[action("Finish.")]
+                    #[kaa::action("Finish.")]
                     let end = || {};
                 }
             },
@@ -1106,7 +1123,7 @@ mod tests {
     fn an_expression_body_is_normalized_to_a_block() {
         let function: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
-                #[action("Double the input.")]
+                #[kaa::action("Double the input.")]
                 let end = |input| input * 2;
             }
         };
@@ -1122,12 +1139,12 @@ mod tests {
 
         for (attribute, body, diagnostic) in [
             (
-                quote!(#[action("Run the body.")]),
+                quote!(#[kaa::action("Run the body.")]),
                 quote!('label: {}),
                 "kaalang block bodies do not support attributes or labels",
             ),
             (
-                quote!(#[action("Run the body.")]),
+                quote!(#[kaa::action("Run the body.")]),
                 quote!(
                     {
                         #![allow(unused)]
@@ -1136,12 +1153,12 @@ mod tests {
                 "kaalang block bodies do not support attributes or labels",
             ),
             (
-                quote!(#[cycle("Repeat the body.")]),
+                quote!(#[kaa::cycle("Repeat the body.")]),
                 quote!('label: loop {}),
                 "kaalang block bodies do not support attributes or labels",
             ),
             (
-                quote!(#[call]),
+                quote!(#[kaa::call]),
                 quote!({ ping() }),
                 "a kaalang call body is one application and takes no braces or attributes of its own; that work belongs in an action",
             ),
@@ -1159,7 +1176,7 @@ mod tests {
         let body = Group::new(Delimiter::None, quote!({}));
         let function = parse_quote! {
             fn invalid() {
-                #[action("Run the body.")]
+                #[kaa::action("Run the body.")]
                 let output = || #[allow(unused)] #body;
             }
         };
@@ -1175,10 +1192,10 @@ mod tests {
         use quote::quote;
 
         for attribute in [
-            quote!(#[call]),
-            quote!(#[action("Run the body.")]),
-            quote!(#[question("Run the body?")]),
-            quote!(#[choice("Select the body.")]),
+            quote!(#[kaa::call]),
+            quote!(#[kaa::action("Run the body.")]),
+            quote!(#[kaa::question("Run the body?")]),
+            quote!(#[kaa::choice("Select the body.")]),
         ] {
             for (body, keyword) in [(quote!(loop {}), "loop"), (quote!(for _ in 0..1 {}), "for")] {
                 let body = Group::new(Delimiter::None, body);
@@ -1192,7 +1209,7 @@ mod tests {
                 assert_eq!(
                     error(&function),
                     format!(
-                        "a `{keyword}` in a kaalang flow is a cycle and needs `#[cycle(\"description\")]`"
+                        "a `{keyword}` in a kaalang flow is a cycle and needs `#[kaa::cycle(\"description\")]`"
                     )
                 );
             }
@@ -1214,7 +1231,7 @@ mod tests {
             let body: syn::Expr = body;
             let function = parse_quote! {
                 fn invalid(input: Option<u32>) -> u32 {
-                    #[action("Attempt a control transfer.")]
+                    #[kaa::action("Attempt a control transfer.")]
                     let end = |input| #body;
                 }
             };
@@ -1258,9 +1275,9 @@ mod tests {
     fn a_bare_cycle_may_omit_its_semicolon_before_later_statements() {
         let function: ItemFn = parse_quote! {
             fn spin() -> ! {
-                #[cycle("Repeat the outer cycle.")]
+                #[kaa::cycle("Repeat the outer cycle.")]
                 loop {
-                    #[cycle("Repeat the inner cycle.")]
+                    #[kaa::cycle("Repeat the inner cycle.")]
                     loop {
                         continue;
                     }
@@ -1278,9 +1295,9 @@ mod tests {
     fn a_bare_for_cycle_may_omit_its_semicolon_before_later_statements() {
         let function: ItemFn = parse_quote! {
             fn knock() {
-                #[cycle("Knock three times.")]
+                #[kaa::cycle("Knock three times.")]
                 for _ in 0..3 {
-                    #[action("Knock once.")]
+                    #[kaa::action("Knock once.")]
                     || knock();
                 }
                 return;
@@ -1296,9 +1313,9 @@ mod tests {
     fn a_for_cycle_output_may_be_named_after_a_keyword() {
         let function: ItemFn = parse_quote! {
             fn visit(values: Vec<u32>) {
-                #[cycle("Visit every value.")]
+                #[kaa::cycle("Visit every value.")]
                 let r#match = |values| for value in values {
-                    #[action("Use the value.")]
+                    #[kaa::action("Use the value.")]
                     |value| drop(value);
                 };
 
@@ -1313,7 +1330,7 @@ mod tests {
     fn braces_may_enclose_a_cycle_loop() {
         let function: ItemFn = parse_quote! {
             fn spin() -> ! {
-                #[cycle("Repeat.")]
+                #[kaa::cycle("Repeat.")]
                 || {
                     loop {
                         continue;
@@ -1340,15 +1357,15 @@ mod tests {
     fn an_empty_output_tuple_is_rejected_for_a_question_and_a_choice() {
         let question: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
-                #[question("Ask without outputs.")]
+                #[kaa::question("Ask without outputs.")]
                 let () = |&input| { true };
             }
         };
         let choice: ItemFn = parse_quote! {
             fn invalid(input: u32) -> u32 {
-                #[choice("Pick without outputs.")]
-                #[case("First.")]
-                #[case("Second.")]
+                #[kaa::choice("Pick without outputs.")]
+                #[kaa::case("First.")]
+                #[kaa::case("Second.")]
                 let () = |&input| {
                     match input {
                         0 => (),
@@ -1372,9 +1389,9 @@ mod tests {
     fn question_answers_follow_their_attribute_order() {
         let function: ItemFn = parse_quote! {
             fn decide(input: bool) -> u8 {
-                #[question("Decide.")]
-                #[no("Use the fallback.")]
-                #[yes]
+                #[kaa::question("Decide.")]
+                #[kaa::no("Use the fallback.")]
+                #[kaa::yes]
                 let (fallback, proceed) = |input| { input };
             }
         };
@@ -1392,7 +1409,7 @@ mod tests {
 
         let implicit: ItemFn = parse_quote! {
             fn decide(input: bool) -> u8 {
-                #[question("Decide.")]
+                #[kaa::question("Decide.")]
                 let (proceed, fallback) = |input| { input };
             }
         };

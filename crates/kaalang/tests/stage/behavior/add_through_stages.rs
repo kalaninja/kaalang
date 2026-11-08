@@ -1,26 +1,26 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter {
     total: usize,
 }
 
 impl Counter {
-    #[kaalang]
+    #[kaa]
     fn add_through_stages(&mut self, value: usize) -> usize {
-        #[action("Begin adding.")]
+        #[kaa::action("Begin adding.")]
         let add = || {};
 
-        #[stage("Add the value.")]
+        #[kaa::stage("Add the value.")]
         let finish = |add| {
-            #[action("Update the receiver.")]
+            #[kaa::action("Update the receiver.")]
             let finish = |&mut self, value| {
                 self.total += value;
             };
         };
 
-        #[stage("Read the total.")]
+        #[kaa::stage("Read the total.")]
         |finish| {
-            #[action("Read the updated total.")]
+            #[kaa::action("Read the updated total.")]
             let total = |&mut self| self.total;
 
             |total| return total;

@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn preparation_without_stage_signal() {
-    #[action("Prepare without selecting a stage.")]
+    #[kaa::action("Prepare without selecting a stage.")]
     || {};
 
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |finish| {
         return;
     };

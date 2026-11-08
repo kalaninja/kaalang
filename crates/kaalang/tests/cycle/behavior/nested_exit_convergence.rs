@@ -1,37 +1,37 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_exit_convergence(mut count: usize) -> usize {
-    #[cycle("Count down to zero.")]
+    #[kaa::cycle("Count down to zero.")]
     let done = loop {
-        #[cycle("Converge the inner stopping routes.")]
+        #[kaa::cycle("Converge the inner stopping routes.")]
         let inner_done = loop {
-            #[choice("Leave the inner cycle?")]
-            #[case("Leave at zero.")]
-            #[case("Leave at one.")]
-            #[case("Count down.")]
+            #[kaa::choice("Leave the inner cycle?")]
+            #[kaa::case("Leave at zero.")]
+            #[kaa::case("Leave at one.")]
+            #[kaa::case("Count down.")]
             let (zero, one, again) = |&count| match *count {
                 0 => (),
                 1 => (),
                 _ => (),
             };
 
-            #[action("Finish at zero.")]
+            #[kaa::action("Finish at zero.")]
             let inner_done = |zero| {};
 
-            #[action("Finish at one.")]
+            #[kaa::action("Finish at one.")]
             let inner_done = |one| {};
 
-            #[action("Count down.")]
+            #[kaa::action("Count down.")]
             |again, &mut count| *count -= 1;
 
             |again| continue;
         };
 
-        #[question("Finish the outer cycle?")]
+        #[kaa::question("Finish the outer cycle?")]
         let (done, again) = |inner_done, &count| *count == 0;
 
-        #[action("Count down once more.")]
+        #[kaa::action("Count down once more.")]
         |again, &mut count| *count -= 1;
 
         |again| continue;

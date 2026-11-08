@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn reversed_empty_cycle(mut checks: usize) -> usize {
-    #[cycle("Repeat the check until its first branch leaves.")]
+    #[kaa::cycle("Repeat the check until its first branch leaves.")]
     let leave_1 = loop {
-        #[question("Check once more?")]
-        #[no("NO")]
-        #[yes("YES")]
+        #[kaa::question("Check once more?")]
+        #[kaa::no("NO")]
+        #[kaa::yes("YES")]
         let (leave_1, iterate_1) = |&mut checks| {
             *checks += 1;
             *checks < 4

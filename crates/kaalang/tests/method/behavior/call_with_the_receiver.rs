@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
@@ -9,9 +9,9 @@ fn area(rectangle: &Rectangle, scale: u32) -> u32 {
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn call_with_the_receiver(&self, scale: u32) -> u32 {
-        #[call("Compute the scaled area.")]
+        #[kaa::call("Compute the scaled area.")]
         let end = |&self, scale| area(self, scale);
 
         |end| return end;

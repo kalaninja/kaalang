@@ -368,20 +368,20 @@ mod tests {
         for source in [
             include_str!("../../../kaalang/tests/gallery/sorting/quick_sort.rs"),
             r#"
-                    #[kaalang]
+                    #[kaa]
                     fn example(go: (), a_very_long_parameter_name: u8,
                         another_very_long_parameter_name: u8,
                         one_more_very_long_parameter_name: u8) -> u8 {
-                        #[stage("Add the inputs.")]
+                        #[kaa::stage("Add the inputs.")]
                         let finish = |go| {
-                            #[action("Add the inputs.")]
+                            #[kaa::action("Add the inputs.")]
                             let finish = |a_very_long_parameter_name,
                                 another_very_long_parameter_name,
                                 one_more_very_long_parameter_name|
                                 a_very_long_parameter_name + another_very_long_parameter_name
                                     + one_more_very_long_parameter_name;
                         };
-                        #[stage("Finish.")]
+                        #[kaa::stage("Finish.")]
                         |finish| {
                             |finish| return finish;
                         };
@@ -608,11 +608,11 @@ mod tests {
     fn initial_transitions_join_the_contour_without_stretching_the_terminal_stage() {
         let staged = drawn(
             r#"
-                #[kaalang]
+                #[kaa]
                 fn long_signal() {
-                    #[action("Begin.")]
+                    #[kaa::action("Begin.")]
                     let this_is_a_very_very_very_long_signal_name = || {};
-                    #[stage("Finish.")]
+                    #[kaa::stage("Finish.")]
                     |this_is_a_very_very_very_long_signal_name| { return; };
                 }
             "#,

@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 trait Measure {
     fn measure(&self) -> usize;
@@ -7,9 +7,9 @@ trait Measure {
 struct Text(String);
 
 impl Measure for Text {
-    #[kaalang]
+    #[kaa]
     fn measure(&self) -> usize {
-        #[action("Measure the text.")]
+        #[kaa::action("Measure the text.")]
         let end = |&self| self.0.len();
 
         |end| return end;

@@ -1,27 +1,27 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The declared output `taken` is produced on two branches of the body. The two
 /// producers merge by the ordinary rules, and the merged wire leaves the cycle.
-#[kaalang]
+#[kaa]
 fn output_merged_in_the_body(
     mut items: Vec<String>,
     mut log: Vec<String>,
 ) -> (Option<String>, Vec<String>) {
-    #[cycle("Take the next item.")]
+    #[kaa::cycle("Take the next item.")]
     let taken = loop {
-        #[action("Take an item.")]
+        #[kaa::action("Take an item.")]
         let item = |&mut items| items.pop();
 
-        #[question("Is it worth logging?")]
+        #[kaa::question("Is it worth logging?")]
         let (loud, quiet) = |&item| item.is_some();
 
-        #[action("Log it and keep it.")]
+        #[kaa::action("Log it and keep it.")]
         let taken = |loud, item, &mut log| {
             log.push(format!("{item:?}"));
             item
         };
 
-        #[action("Keep it quietly.")]
+        #[kaa::action("Keep it quietly.")]
         let taken = |quiet, item| item;
     };
 

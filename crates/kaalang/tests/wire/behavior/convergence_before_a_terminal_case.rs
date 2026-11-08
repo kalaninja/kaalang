@@ -1,27 +1,27 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn convergence_before_a_terminal_case(case: u8) -> u32 {
-    #[choice("Choose whether to continue.")]
-    #[case("First continuing branch.")]
-    #[case("Second continuing branch.")]
-    #[case("Terminal case.")]
+    #[kaa::choice("Choose whether to continue.")]
+    #[kaa::case("First continuing branch.")]
+    #[kaa::case("Second continuing branch.")]
+    #[kaa::case("Terminal case.")]
     let (first, second, done) = |case| match case {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Build the first value.")]
+    #[kaa::action("Build the first value.")]
     let selected = |first| 1;
 
-    #[action("Build the second value.")]
+    #[kaa::action("Build the second value.")]
     let selected = |second| 2;
 
-    #[action("Produce the direct result.")]
+    #[kaa::action("Produce the direct result.")]
     let end = |done| 99;
 
-    #[action("Use a value from a continuing branch.")]
+    #[kaa::action("Use a value from a continuing branch.")]
     let end = |selected| selected * 10;
 
     |end| return end;

@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter {
     value: u32,
 }
 
 impl Counter {
-    #[kaalang]
+    #[kaa]
     fn invalid(&mut self, step: u32) -> u32 {
-        #[action("Advance the counter.")]
+        #[kaa::action("Advance the counter.")]
         let advanced = |&mut self, step| {
             self.value += step;
         };
 
-        #[action("Mutate the receiver without capturing it.")]
+        #[kaa::action("Mutate the receiver without capturing it.")]
         let end = |advanced| {
             self.value *= 2;
             self.value

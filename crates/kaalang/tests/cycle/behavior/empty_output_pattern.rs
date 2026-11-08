@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn empty_output_pattern() -> ! {
-    #[cycle("Repeat with an explicit empty output pattern.")]
+    #[kaa::cycle("Repeat with an explicit empty output pattern.")]
     let () = loop {
         continue;
     };

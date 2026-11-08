@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 macro_rules! magnitude {
     ($name:ident, $value:ident, $body:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name($value: i32) -> i32 {
-            #[choice("Is the value negative?")]
-            #[case("Negative.")]
-            #[case("Not negative.")]
+            #[kaa::choice("Is the value negative?")]
+            #[kaa::case("Negative.")]
+            #[kaa::case("Not negative.")]
             let (negative, other) = |$value| $body;
 
-            #[action("Negate the value.")]
+            #[kaa::action("Negate the value.")]
             let magnitude = |negative, $value| -$value;
 
-            #[action("Keep the value.")]
+            #[kaa::action("Keep the value.")]
             let magnitude = |other, $value| $value;
 
             |magnitude| return magnitude;

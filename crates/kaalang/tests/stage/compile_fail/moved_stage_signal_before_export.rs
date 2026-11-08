@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn moved_stage_signal_before_export(go: ()) -> String {
-    #[stage("Move before export.")]
+    #[kaa::stage("Move before export.")]
     let finish = |go| {
-        #[action("Create text.")]
+        #[kaa::action("Create text.")]
         let finish = |go| String::from("text");
-        #[action("Move text.")]
+        #[kaa::action("Move text.")]
         |finish| {
             drop(finish);
         };
     };
-    #[stage("Return.")]
+    #[kaa::stage("Return.")]
     |finish| {
         |finish| return finish;
     };

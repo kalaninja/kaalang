@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Two blocks capture the same `Copy` wire by value. kaalang orders them by
 /// source position and leaves the copy to Rust.
-#[kaalang]
+#[kaa]
 fn repeated_copy_captures(input: u32) -> (u32, u32) {
-    #[action("Consume the input.")]
+    #[kaa::action("Consume the input.")]
     let first = |input| input;
 
-    #[action("Consume the input again.")]
+    #[kaa::action("Consume the input again.")]
     let second = |input| input + 1;
 
     |first, second| return (first, second);

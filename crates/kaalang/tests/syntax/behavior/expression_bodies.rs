@@ -1,33 +1,33 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn expression_bodies(input: Option<u32>, visits: &Cell<u32>) -> u32 {
-    #[action("Record a visit.")]
+    #[kaa::action("Record a visit.")]
     |visits| visits.set(visits.get() + 1);
 
-    #[choice("Was a value supplied?")]
-    #[case("Use the supplied value.")]
-    #[case("Use a default.")]
+    #[kaa::choice("Was a value supplied?")]
+    #[kaa::case("Use the supplied value.")]
+    #[kaa::case("Use a default.")]
     let (value, absent) = |input| match input {
         Some(value) => value,
         None => (),
     };
 
-    #[action("Capture the supplied branch value.")]
+    #[kaa::action("Capture the supplied branch value.")]
     let number = |value| value;
 
-    #[question("Is the value positive?")]
+    #[kaa::question("Is the value positive?")]
     let (positive, zero) = |&number| *number > 0;
 
-    #[action("Double the positive value.")]
+    #[kaa::action("Double the positive value.")]
     let end = |positive, number| number * 2;
 
-    #[action("Return zero.")]
+    #[kaa::action("Return zero.")]
     let end = |zero| 0;
 
-    #[action("Return the default.")]
+    #[kaa::action("Return the default.")]
     let end = |absent| 1;
 
     |end| return end;

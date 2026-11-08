@@ -1,37 +1,37 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Actions with no outputs at flow entry, inside a branch, and directly above
 /// the block producing `end`, in both spellings.
-#[kaalang]
+#[kaa]
 fn effects_without_outputs(condition: bool, log: &Cell<u32>) -> u32 {
-    #[action("Record the flow entry.")]
+    #[kaa::action("Record the flow entry.")]
     |&log| {
         log.set(log.get() * 10 + 1);
     };
 
-    #[question("Which way?")]
+    #[kaa::question("Which way?")]
     let (yes, no) = |condition, &log| condition;
 
-    #[action("Mark the yes branch.")]
+    #[kaa::action("Mark the yes branch.")]
     let marked = |yes, &log| log.set(log.get() * 10 + 2);
 
-    #[action("Record the marked branch.")]
+    #[kaa::action("Record the marked branch.")]
     let () = |&marked, &log| log.set(log.get() * 10 + 3);
 
-    #[action("Take the yes branch.")]
+    #[kaa::action("Take the yes branch.")]
     let taken = |marked, &log| log.set(log.get() * 10 + 4);
 
-    #[action("Take the no branch.")]
+    #[kaa::action("Take the no branch.")]
     let taken = |no, &log| log.set(log.get() * 10 + 5);
 
-    #[action("Record the step above the result.")]
+    #[kaa::action("Record the step above the result.")]
     |&log| {
         log.set(log.get() * 10 + 6);
     };
 
-    #[action("Finish.")]
+    #[kaa::action("Finish.")]
     let end = |taken, &log| log.get();
 
     |end| return end;

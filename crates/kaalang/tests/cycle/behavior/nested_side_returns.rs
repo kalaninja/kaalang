@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_side_returns(flag: bool) {
-    #[cycle("Repeat level 0.")]
+    #[kaa::cycle("Repeat level 0.")]
     let leave_0 = |flag| loop {
-        #[question("Leave level 0?")]
+        #[kaa::question("Leave level 0?")]
         let (leave_0, stay_0) = |flag| flag;
-        #[cycle("Repeat level 1.")]
+        #[kaa::cycle("Repeat level 1.")]
         let leave_1 = |stay_0| loop {
-            #[question("Leave level 1?")]
+            #[kaa::question("Leave level 1?")]
             let (stay_1, leave_1) = |flag| flag;
-            #[cycle("Repeat level 2.")]
+            #[kaa::cycle("Repeat level 2.")]
             let leave_2 = |stay_1| loop {
-                #[question("Leave level 2?")]
+                #[kaa::question("Leave level 2?")]
                 let (stay_2, leave_2) = |flag| flag;
                 |stay_2| continue;
             };

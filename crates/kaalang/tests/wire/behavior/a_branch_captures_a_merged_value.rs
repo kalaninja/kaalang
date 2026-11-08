@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn a_branch_captures_a_merged_value(amount: u8, verbose: bool) -> u8 {
-    #[question("Is the amount positive?")]
+    #[kaa::question("Is the amount positive?")]
     let (positive, negative) = |amount| amount > 0;
 
-    #[action("Take the positive amount.")]
+    #[kaa::action("Take the positive amount.")]
     let (counted, seen) = |positive| (11, ());
 
-    #[action("Take the negative amount.")]
+    #[kaa::action("Take the negative amount.")]
     let (counted, seen) = |negative| (10, ());
 
-    #[question("Should the run report anything?")]
+    #[kaa::question("Should the run report anything?")]
     let (report, quiet) = |verbose| verbose;
 
-    #[action("Report the counted amount.")]
+    #[kaa::action("Report the counted amount.")]
     let end = |report, counted| counted;
 
-    #[action("Report nothing.")]
+    #[kaa::action("Report nothing.")]
     let end = |quiet, seen| 0;
 
     |end| return end;

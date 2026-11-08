@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn blocks_without_shared_wires(left: u32, right: u32) -> (u32, u32) {
-    #[action("Double the left value.")]
+    #[kaa::action("Double the left value.")]
     let doubled = |left| left * 2;
 
-    #[action("Triple the right value.")]
+    #[kaa::action("Triple the right value.")]
     let tripled = |right| right * 3;
 
     |doubled, tripled| return (doubled, tripled);

@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(text: String, done: bool) -> String {
-    #[cycle("Move outer data on a repeating route.")]
+    #[kaa::cycle("Move outer data on a repeating route.")]
     let finish = loop {
-        #[question("Finish?")]
+        #[kaa::question("Finish?")]
         let (finish, again) = |done| done;
 
-        #[action("Consume the outer value.")]
+        #[kaa::action("Consume the outer value.")]
         |again, text| drop(text);
 
         |again| continue;

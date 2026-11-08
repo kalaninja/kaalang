@@ -1,44 +1,44 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn bypass_merges_with_outputs(cached: bool, response: u8, mut retries: u8) -> u8 {
-    #[question("Is the record cached?")]
+    #[kaa::question("Is the record cached?")]
     let (hit_cache, query) = |cached| cached;
 
-    #[cycle("Query the source until it answers or the retries run out.")]
+    #[kaa::cycle("Query the source until it answers or the retries run out.")]
     let (found, missing, gave_up) = |query| loop {
-        #[choice("What did the source answer?")]
-        #[case("The record.")]
-        #[case("No such record.")]
-        #[case("A busy signal.")]
+        #[kaa::choice("What did the source answer?")]
+        #[kaa::case("The record.")]
+        #[kaa::case("No such record.")]
+        #[kaa::case("A busy signal.")]
         let (found, missing, busy) = |response| match response {
             0 => (),
             1 => (),
             _ => (),
         };
 
-        #[question("Have the retries run out?")]
+        #[kaa::question("Have the retries run out?")]
         let (gave_up, retry) = |busy, &retries| *retries == 0;
 
-        #[action("Spend one retry.")]
+        #[kaa::action("Spend one retry.")]
         let spent = |retry, &mut retries| *retries -= 1;
 
         |spent| continue;
     };
 
-    #[action("Use the cached record.")]
+    #[kaa::action("Use the cached record.")]
     let record = |hit_cache| 10;
 
-    #[action("Use the fetched record.")]
+    #[kaa::action("Use the fetched record.")]
     let record = |found| 20;
 
-    #[action("Use an empty record.")]
+    #[kaa::action("Use an empty record.")]
     let record = |missing| 30;
 
-    #[action("Format the record.")]
+    #[kaa::action("Format the record.")]
     let answer = |record| record + 1;
 
-    #[action("Report that the source gave up.")]
+    #[kaa::action("Report that the source gave up.")]
     let answer = |gave_up| 0;
 
     |answer| return answer;

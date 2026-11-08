@@ -181,13 +181,13 @@ mod tests {
     fn structural_junctions_use_their_authored_roles() {
         let source = r#"
             fn example(value: u8) -> u8 {
-                #[cycle("Choose the result.")]
+                #[kaa::cycle("Choose the result.")]
                 let result = |value| loop {
-                    #[question("Keep the value?")]
+                    #[kaa::question("Keep the value?")]
                     let (keep, zero) = |value| value > 1;
-                    #[action("Keep it.")]
+                    #[kaa::action("Keep it.")]
                     let result = |keep, value| value;
-                    #[action("Use zero.")]
+                    #[kaa::action("Use zero.")]
                     let result = |zero| 0;
                 };
                 |result| return result;
@@ -224,10 +224,10 @@ mod tests {
     fn undescribed_calls_are_told_apart_by_the_functions_they_run() {
         let source = r"
             fn example(value: u8) -> u8 {
-                #[call]
+                #[kaa::call]
                 let halved = |value| math::halve(value);
 
-                #[call]
+                #[kaa::call]
                 let end = |halved| math::square(halved);
 
                 |end| return end;

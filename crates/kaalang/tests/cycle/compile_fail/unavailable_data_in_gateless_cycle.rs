@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn unavailable_data_in_gateless_cycle(flag: bool) -> u8 {
-    #[question("Prepare a value?")]
+    #[kaa::question("Prepare a value?")]
     let (prepare, skip) = |flag| flag;
 
-    #[action("Prepare the value.")]
+    #[kaa::action("Prepare the value.")]
     let value = |prepare| 1u8;
 
-    #[action("Skip the value.")]
+    #[kaa::action("Skip the value.")]
     let ready = |skip| ();
 
-    #[action("Finish preparation.")]
+    #[kaa::action("Finish preparation.")]
     let ready = |value| ();
 
-    #[cycle("Try to read the optional value.")]
+    #[kaa::cycle("Try to read the optional value.")]
     let result = loop {
-        #[action("Copy the value.")]
+        #[kaa::action("Copy the value.")]
         let result = |value| value;
     };
 

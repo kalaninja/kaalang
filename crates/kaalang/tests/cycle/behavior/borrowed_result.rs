@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn borrowed_result(text: &str) -> &str {
-    #[cycle("Expose a borrowed outer wire.")]
+    #[kaa::cycle("Expose a borrowed outer wire.")]
     let result = |text| loop {
-        #[action("Borrow the text.")]
+        #[kaa::action("Borrow the text.")]
         let result = |text| text;
     };
 

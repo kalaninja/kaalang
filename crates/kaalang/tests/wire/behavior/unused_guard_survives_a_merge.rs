@@ -1,21 +1,21 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Repeating `_guard` declares a merge even though no later block captures it.
 /// The selected guard stays alive through common work and drops at flow exit.
-#[kaalang]
+#[kaa]
 fn unused_guard_survives_a_merge(condition: bool, cell: &RefCell<usize>) -> bool {
-    #[question("Which branch borrows the cell?")]
+    #[kaa::question("Which branch borrows the cell?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Borrow the cell on the yes branch.")]
+    #[kaa::action("Borrow the cell on the yes branch.")]
     let _guard = |yes, cell| cell.borrow_mut();
 
-    #[action("Borrow the cell on the no branch.")]
+    #[kaa::action("Borrow the cell on the no branch.")]
     let _guard = |no, cell| cell.borrow_mut();
 
-    #[action("Check that the merged guard is still alive.")]
+    #[kaa::action("Check that the merged guard is still alive.")]
     let end = |cell| cell.try_borrow_mut().is_err();
 
     |end| return end;

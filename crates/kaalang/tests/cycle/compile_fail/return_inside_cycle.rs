@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) {
-    #[cycle("Try to return from a nested branch.")]
+    #[kaa::cycle("Try to return from a nested branch.")]
     |condition| loop {
-        #[question("Return from this branch?")]
+        #[kaa::question("Return from this branch?")]
         let (leave, repeat) = |condition| condition;
 
         |leave| return;

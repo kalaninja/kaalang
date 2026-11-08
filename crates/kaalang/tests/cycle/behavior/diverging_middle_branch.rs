@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The first and third routes meet at the iteration tail, the third and fourth
 /// at the declared output, and the second never leaves its own cycle. A sibling that
 /// ends before either group's vertex is placed must not be held to a side of
 /// that vertex: only a later sibling is.
-#[kaalang]
+#[kaa]
 fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
-    #[cycle("Choose a repeating, diverging, or leaving route.")]
+    #[kaa::cycle("Choose a repeating, diverging, or leaving route.")]
     let selected = loop {
-        #[choice("Which route?")]
-        #[case("Advance and repeat.")]
-        #[case("Spin forever.")]
-        #[case("Advance, then repeat or leave.")]
-        #[case("Leave at once.")]
+        #[kaa::choice("Which route?")]
+        #[kaa::case("Advance and repeat.")]
+        #[kaa::case("Spin forever.")]
+        #[kaa::case("Advance, then repeat or leave.")]
+        #[kaa::case("Leave at once.")]
         let (advance, spin, decide, leave_now) = |mode| match mode {
             0 => (),
             1 => (),
@@ -20,26 +20,26 @@ fn diverging_middle_branch(mode: u8, stay: bool) -> u8 {
             _ => (),
         };
 
-        #[action("Advance.")]
+        #[kaa::action("Advance.")]
         let advanced = |advance| {};
 
-        #[cycle("Spin forever.")]
+        #[kaa::cycle("Spin forever.")]
         |spin| loop {
-            #[action("Spin.")]
+            #[kaa::action("Spin.")]
             || {};
 
             continue;
         };
 
-        #[question("Stay in the cycle?")]
+        #[kaa::question("Stay in the cycle?")]
         let (again, leave) = |decide, stay| stay;
 
-        #[action("Advance after the decision.")]
+        #[kaa::action("Advance after the decision.")]
         let advanced = |again| {};
 
-        #[action("Leave after the decision.")]
+        #[kaa::action("Leave after the decision.")]
         let selected = |leave, mode| mode;
-        #[action("Leave immediately.")]
+        #[kaa::action("Leave immediately.")]
         let selected = |leave_now, mode| mode;
         |advanced| continue;
     };

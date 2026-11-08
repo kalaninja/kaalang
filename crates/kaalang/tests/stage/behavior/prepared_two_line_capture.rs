@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn prepared_two_line_capture(
     first_input_value: u32,
     second_input_value: u32,
     third_input_value: u32,
     fourth_input_value: u32,
 ) -> u32 {
-    #[action("Add the values before entering the stage.")]
+    #[kaa::action("Add the values before entering the stage.")]
     let finish = |first_input_value, second_input_value, third_input_value, fourth_input_value| {
         first_input_value + second_input_value + third_input_value + fourth_input_value
     };
 
-    #[stage("Return the sum.")]
+    #[kaa::stage("Return the sum.")]
     |finish| {
         |finish| return finish;
     };

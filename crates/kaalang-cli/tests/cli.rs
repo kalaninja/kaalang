@@ -5,18 +5,18 @@ use std::{
 };
 
 const SOURCE: &str = r"
-#[kaalang]
+#[kaa]
 fn route(request: u8) -> u8 {
     |request| return request;
 }
 ";
 
 const CYCLE_SOURCE: &str = r#"
-#[kaalang]
+#[kaa]
 fn route(request: u8) -> u8 {
-    #[cycle("Use the request.")]
+    #[kaa::cycle("Use the request.")]
     let response = |request| loop {
-        #[action("Copy the request.")]
+        #[kaa::action("Copy the request.")]
         let response = |request| request;
     };
 
@@ -292,7 +292,7 @@ fn render_errors_name_the_requested_path() {
     write(
         &directory,
         "src/review.rs",
-        "#[kaalang]\nfn route(request: u8) -> u8 {}\n",
+        "#[kaa]\nfn route(request: u8) -> u8 {}\n",
     );
     let failed = run(&directory, "diagram --flow review::route");
     assert!(!failed.status.success());

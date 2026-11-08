@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn move_closure(value: i32) -> i32 {
-    #[action("Double the value.")]
+    #[kaa::action("Double the value.")]
     let doubled = move |value| { value * 2 };
 }
 

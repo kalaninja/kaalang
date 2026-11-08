@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// One choice with two disjoint convergence groups: its first two cases share
 /// one continuation and its last two share another.
-#[kaalang]
+#[kaa]
 fn two_convergence_groups(quarter: u8) -> u32 {
-    #[choice("Which quarter?")]
-    #[case("The first quarter.")]
-    #[case("The second quarter.")]
-    #[case("The third quarter.")]
-    #[case("The fourth quarter.")]
+    #[kaa::choice("Which quarter?")]
+    #[kaa::case("The first quarter.")]
+    #[kaa::case("The second quarter.")]
+    #[kaa::case("The third quarter.")]
+    #[kaa::case("The fourth quarter.")]
     let (first, second, third, fourth) = |quarter| match quarter {
         0 => (),
         1 => (),
@@ -16,22 +16,22 @@ fn two_convergence_groups(quarter: u8) -> u32 {
         _ => (),
     };
 
-    #[action("Open the early half.")]
+    #[kaa::action("Open the early half.")]
     let early = |first| 1;
 
-    #[action("Open the early half the other way.")]
+    #[kaa::action("Open the early half the other way.")]
     let early = |second| 2;
 
-    #[action("Close the early half.")]
+    #[kaa::action("Close the early half.")]
     let end = |early| early + 10;
 
-    #[action("Open the late half.")]
+    #[kaa::action("Open the late half.")]
     let late = |third| 3;
 
-    #[action("Open the late half the other way.")]
+    #[kaa::action("Open the late half the other way.")]
     let late = |fourth| 4;
 
-    #[action("Close the late half.")]
+    #[kaa::action("Close the late half.")]
     let end = |late| late + 20;
 
     |end| return end;

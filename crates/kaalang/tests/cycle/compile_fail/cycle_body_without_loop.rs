@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[cycle("Repeat without a loop body.")]
+    #[kaa::cycle("Repeat without a loop body.")]
     || continue;
 
     return;

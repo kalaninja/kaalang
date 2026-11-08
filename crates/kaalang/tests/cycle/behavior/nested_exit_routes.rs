@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_exit_routes(a: bool, b: bool, c: bool) {
-    #[cycle("Leave from any nested question.")]
+    #[kaa::cycle("Leave from any nested question.")]
     let stop = loop {
-        #[question("First?")]
+        #[kaa::question("First?")]
         let (next, stop) = |a| a;
-        #[question("Second?")]
+        #[kaa::question("Second?")]
         let (next_b, stop) = |next, b| b;
-        #[question("Third?")]
+        #[kaa::question("Third?")]
         let (again, stop) = |next_b, c| c;
         |again| continue;
     };

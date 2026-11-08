@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The move is written above the borrow, so Rust reports the borrow.
-#[kaalang]
+#[kaa]
 fn invalid(value: String) -> usize {
-    #[action("Transform the value into its length.")]
+    #[kaa::action("Transform the value into its length.")]
     let length = |value| { value.len() };
 
-    #[action("Log the value.")]
+    #[kaa::action("Log the value.")]
     |&value| {
         assert_eq!(value, "abc");
     };

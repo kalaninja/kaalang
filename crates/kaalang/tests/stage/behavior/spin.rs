@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn spin(go: ()) -> ! {
-    #[stage("Visit the first stage.")]
+    #[kaa::stage("Visit the first stage.")]
     let next = |go| {
-        #[action("Move to the second stage.")]
+        #[kaa::action("Move to the second stage.")]
         let next = |go| {};
     };
 
-    #[stage("Visit the second stage.")]
+    #[kaa::stage("Visit the second stage.")]
     let go = |next| {
-        #[action("Move back to the first stage.")]
+        #[kaa::action("Move back to the first stage.")]
         let go = |next| {};
     };
 }

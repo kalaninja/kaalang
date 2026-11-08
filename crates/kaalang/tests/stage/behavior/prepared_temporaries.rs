@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Guard<'a>(&'a RefCell<Vec<&'static str>>);
 
@@ -10,9 +10,9 @@ impl Drop for Guard<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn prepared_temporaries(events: &RefCell<Vec<&'static str>>) -> (usize, usize) {
-    #[action("Borrow temporary shared data, an entry value, and a guard.")]
+    #[kaa::action("Borrow temporary shared data, an entry value, and a guard.")]
     let (_guard, view, go) = |events| {
         (
             &Guard(events),
@@ -21,9 +21,9 @@ fn prepared_temporaries(events: &RefCell<Vec<&'static str>>) -> (usize, usize) {
         )
     };
 
-    #[stage("Use the temporary owners while the guard remains alive.")]
+    #[kaa::stage("Use the temporary owners while the guard remains alive.")]
     |go| {
-        #[action("Record the visit and measure both values.")]
+        #[kaa::action("Record the visit and measure both values.")]
         let lengths = |view, go, events| {
             events.borrow_mut().push("visit");
             (view.len(), go.len())

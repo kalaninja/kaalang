@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn count_to(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut count = || 0;
 
-    #[cycle("Count to the limit.")]
+    #[kaa::cycle("Count to the limit.")]
     let leave_1 = loop {
-        #[question("Is the counter below the limit?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is the counter below the limit?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (iterate_1, leave_1) = |&count, &limit| *count < *limit;
 
-        #[action("Increment the counter.")]
+        #[kaa::action("Increment the counter.")]
         |iterate_1, &mut count| *count += 1;
 
         |iterate_1| continue;

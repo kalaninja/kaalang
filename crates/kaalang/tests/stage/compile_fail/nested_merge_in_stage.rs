@@ -1,28 +1,28 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(take: bool, first: bool) -> u8 {
-    #[question("Enter the stage?")]
+    #[kaa::question("Enter the stage?")]
     let (yes, no) = |take| take;
 
-    #[question("Prepare the first value?")]
+    #[kaa::question("Prepare the first value?")]
     let (left, right) = |yes, first| first;
 
-    #[action("Prepare the first value.")]
+    #[kaa::action("Prepare the first value.")]
     let shared = |left| 1;
 
-    #[action("Prepare the second value.")]
+    #[kaa::action("Prepare the second value.")]
     let shared = |right| 2;
 
-    #[action("Enter the stage from the outer branch.")]
+    #[kaa::action("Enter the stage from the outer branch.")]
     let go = |shared| ();
 
-    #[cycle("Stay on the other branch.")]
+    #[kaa::cycle("Stay on the other branch.")]
     |no| loop {
         continue;
     };
 
-    #[stage("Use a merge still inside a branch.")]
+    #[kaa::stage("Use a merge still inside a branch.")]
     |go| {
         |shared| return shared;
     };

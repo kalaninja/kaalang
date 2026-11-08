@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // rustfmt would brace the `for` closure body; the flow keeps the unbraced
 // spelling, which kaalang reads as the same cycle.
-#[kaalang]
+#[kaa]
 #[rustfmt::skip]
 fn for_each_value(values: &[i64]) -> i64 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add every value to the total.")]
+    #[kaa::cycle("Add every value to the total.")]
     |values| for value in values {
-        #[action("Add the value.")]
+        #[kaa::action("Add the value.")]
         |value, &mut total| *total += *value;
     };
 

@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // An expression statement declares no outputs, and a question needs two.
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[question("Omit the question outputs.")]
+    #[kaa::question("Omit the question outputs.")]
     |&input| true;
 
     |input| return input;

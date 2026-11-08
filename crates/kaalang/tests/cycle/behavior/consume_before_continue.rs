@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn consume_before_continue(mut remaining: usize) -> Vec<String> {
-    #[action("Initialize the collection.")]
+    #[kaa::action("Initialize the collection.")]
     let mut values = || Vec::new();
 
-    #[cycle("Collect one value per iteration.")]
+    #[kaa::cycle("Collect one value per iteration.")]
     let done = loop {
-        #[question("Is another value needed?")]
+        #[kaa::question("Is another value needed?")]
         let (again, done) = |&remaining| *remaining > 0;
 
-        #[action("Create an owned value.")]
+        #[kaa::action("Create an owned value.")]
         let value = |again, &mut remaining| {
             *remaining -= 1;
             String::from("x")
         };
 
-        #[action("Consume the owned value.")]
+        #[kaa::action("Consume the owned value.")]
         let kept = |value, &mut values| values.push(value);
 
         |kept| continue;

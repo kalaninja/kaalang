@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn value() -> u32 {
     9
 }
 
-#[kaalang]
+#[kaa]
 fn uncaptured_parameter_item(value: fn() -> u32) -> u32 {
-    #[action("Read an uncaptured parameter spelling shared with an item.")]
+    #[kaa::action("Read an uncaptured parameter spelling shared with an item.")]
     let result = || value();
 
     |result| return result;

@@ -1,11 +1,11 @@
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn clone_initial_signal_by_reference(go: String) -> String {
-    #[action("Clone through a shared borrow.")]
+    #[kaa::action("Clone through a shared borrow.")]
     let copy = |&go| go.clone();
-    #[action("Use the clone.")]
+    #[kaa::action("Use the clone.")]
     |copy| drop(copy);
-    #[stage("Return the original.")]
+    #[kaa::stage("Return the original.")]
     |go| {
         |go| return go;
     };

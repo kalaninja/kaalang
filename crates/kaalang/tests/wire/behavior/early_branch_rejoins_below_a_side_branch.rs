@@ -1,36 +1,36 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// An early branch can rejoin the main path below a side branch that occupies
 /// the column next to it. The first question's NO route and the last question's
 /// NO route converge on one wire, with the odd value's action standing between
 /// them beside the main line.
-#[kaalang]
+#[kaa]
 fn early_branch_rejoins_below_a_side_branch(value: u8) -> u8 {
-    #[question("Is the value too large?")]
-    #[yes("YES")]
-    #[no("NO")]
+    #[kaa::question("Is the value too large?")]
+    #[kaa::yes("YES")]
+    #[kaa::no("NO")]
     let (large, kept) = |value| value > 9;
 
-    #[question("Is the large value even?")]
-    #[yes("YES")]
-    #[no("NO")]
+    #[kaa::question("Is the large value even?")]
+    #[kaa::yes("YES")]
+    #[kaa::no("NO")]
     let (even, odd) = |large, value| value.is_multiple_of(2);
 
-    #[action("Halve the even value.")]
+    #[kaa::action("Halve the even value.")]
     let halved = |even, value| value / 2;
 
-    #[action("Drop the odd value's last bit, then halve it.")]
+    #[kaa::action("Drop the odd value's last bit, then halve it.")]
     let halved = |odd, value| (value - 1) / 2;
 
-    #[question("Is the halved value small enough?")]
-    #[yes("YES")]
-    #[no("NO")]
+    #[kaa::question("Is the halved value small enough?")]
+    #[kaa::yes("YES")]
+    #[kaa::no("NO")]
     let (shrunk, kept) = |halved| halved < 10;
 
-    #[action("Use the halved value.")]
+    #[kaa::action("Use the halved value.")]
     let end = |shrunk, halved| halved;
 
-    #[action("Use the value as it is.")]
+    #[kaa::action("Use the value as it is.")]
     let end = |kept, value| value;
 
     |end| return end;

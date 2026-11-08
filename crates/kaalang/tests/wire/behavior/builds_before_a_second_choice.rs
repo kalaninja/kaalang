@@ -1,44 +1,44 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The first choice's branches produce `value`, which merges before the second choice.
-#[kaalang]
+#[kaa]
 fn builds_before_a_second_choice(first: u8, second: u8) -> u8 {
-    #[choice("Which build?")]
-    #[case("Build A.")]
-    #[case("Build B.")]
-    #[case("Build C.")]
+    #[kaa::choice("Which build?")]
+    #[kaa::case("Build A.")]
+    #[kaa::case("Build B.")]
+    #[kaa::case("Build C.")]
     let (a, b, c) = |first| match first {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Build A.")]
+    #[kaa::action("Build A.")]
     let value = |a| 1;
 
-    #[action("Build B.")]
+    #[kaa::action("Build B.")]
     let value = |b| 2;
 
-    #[action("Build C.")]
+    #[kaa::action("Build C.")]
     let value = |c| 3;
 
-    #[choice("Which finish?")]
-    #[case("Finish X.")]
-    #[case("Finish Y.")]
-    #[case("Finish Z.")]
+    #[kaa::choice("Which finish?")]
+    #[kaa::case("Finish X.")]
+    #[kaa::case("Finish Y.")]
+    #[kaa::case("Finish Z.")]
     let (x, y, z) = |second| match second {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Finish X.")]
+    #[kaa::action("Finish X.")]
     let end = |x, value| value + 10;
 
-    #[action("Finish Y.")]
+    #[kaa::action("Finish Y.")]
     let end = |y, value| value + 20;
 
-    #[action("Finish Z.")]
+    #[kaa::action("Finish Z.")]
     let end = |z, value| value + 30;
 
     |end| return end;

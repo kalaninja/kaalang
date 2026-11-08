@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn const_initial_cycle_signal() -> String {
-    #[cycle("Prepare text.")]
+    #[kaa::cycle("Prepare text.")]
     let go = loop {
-        #[action("Create the text.")]
+        #[kaa::action("Create the text.")]
         let go = || String::new();
     };
 
-    #[stage("Return text.")]
+    #[kaa::stage("Return text.")]
     |go| {
         |go| return go;
     };

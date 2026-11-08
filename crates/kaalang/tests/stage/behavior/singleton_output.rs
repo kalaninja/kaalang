@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn singleton_output(start: (u8, u8)) -> (u8, u8) {
-    #[stage("Increment the first field.")]
+    #[kaa::stage("Increment the first field.")]
     let (done,) = |start| {
-        #[action("Keep the tuple intact.")]
+        #[kaa::action("Keep the tuple intact.")]
         let done = |start| (start.0 + 1, start.1);
     };
 
-    #[stage("Return the tuple.")]
+    #[kaa::stage("Return the tuple.")]
     |done| {
         |done| return done;
     };

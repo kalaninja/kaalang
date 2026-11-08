@@ -101,15 +101,15 @@ mod tests {
 
         let function = syn::parse_quote! {
             fn diverging_branch(repeat: bool) {
-                #[question("Repeat forever?")]
+                #[kaa::question("Repeat forever?")]
                 let (again, finish) = |repeat| repeat;
-                #[cycle("Repeat.")]
+                #[kaa::cycle("Repeat.")]
                 |again| loop {
-                    #[action("Work.")]
+                    #[kaa::action("Work.")]
                     || ();
                     continue;
                 };
-                #[stage("Finish.")]
+                #[kaa::stage("Finish.")]
                 |finish| { return; };
             }
         };

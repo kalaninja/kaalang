@@ -1,47 +1,47 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn trailing_inner_cycle() -> usize {
-    #[action("Initialize the counters.")]
+    #[kaa::action("Initialize the counters.")]
     let (mut outer, mut inner) = || (0, 0);
 
-    #[cycle("Repeat outer iterations until the inner cycle finishes.")]
+    #[kaa::cycle("Repeat outer iterations until the inner cycle finishes.")]
     let result = loop {
-        #[action("Enter the outer iteration.")]
+        #[kaa::action("Enter the outer iteration.")]
         |&mut outer| *outer += 1;
 
-        #[cycle("Advance the inner counter or request another outer pass.")]
+        #[kaa::cycle("Advance the inner counter or request another outer pass.")]
         let inner_result = loop {
-            #[question("Is the inner counter below three?")]
-            #[no("NO")]
-            #[yes("YES")]
+            #[kaa::question("Is the inner counter below three?")]
+            #[kaa::no("NO")]
+            #[kaa::yes("YES")]
             let (leave_1, iterate_1) = |&inner| *inner < 3;
 
-            #[action("Request another outer pass.")]
+            #[kaa::action("Request another outer pass.")]
             let inner_result = |leave_1| None;
 
-            #[action("Increment the inner counter.")]
+            #[kaa::action("Increment the inner counter.")]
             let incremented = |iterate_1, &mut inner| *inner += 1;
 
-            #[question("Has the inner counter reached three?")]
+            #[kaa::question("Has the inner counter reached three?")]
             let (done, again) = |incremented, &inner| *inner == 3;
 
-            #[action("Produce the outer counter.")]
+            #[kaa::action("Produce the outer counter.")]
             let inner_result = |done, outer| Some(outer);
 
-            #[action("Finish the inner iteration.")]
+            #[kaa::action("Finish the inner iteration.")]
             |again| {};
 
             |again| continue;
         };
 
-        #[question("Did the inner cycle finish the flow?")]
+        #[kaa::question("Did the inner cycle finish the flow?")]
         let (done, again) = |&inner_result| inner_result.is_some();
 
-        #[action("Extract the result.")]
+        #[kaa::action("Extract the result.")]
         let result = |done, inner_result| inner_result.expect("the completed cycle has a result");
 
-        #[action("Finish the outer iteration.")]
+        #[kaa::action("Finish the outer iteration.")]
         |again| {};
 
         |again| continue;

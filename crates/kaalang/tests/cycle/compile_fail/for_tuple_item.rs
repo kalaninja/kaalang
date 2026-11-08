@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: Vec<u32>) {
-    #[cycle("Visit every value with its position.")]
+    #[kaa::cycle("Visit every value with its position.")]
     |values| for (index, value) in values.into_iter().enumerate() {
-        #[action("Use the pair.")]
+        #[kaa::action("Use the pair.")]
         |index, value| drop((index, value));
     };
 

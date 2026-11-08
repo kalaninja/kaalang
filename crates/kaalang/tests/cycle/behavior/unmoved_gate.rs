@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn unmoved_gate(text: String) -> usize {
-    #[cycle("Enter through an owned gate.")]
+    #[kaa::cycle("Enter through an owned gate.")]
     let entered = |text| loop {
-        #[action("Enter once.")]
+        #[kaa::action("Enter once.")]
         let entered = || {};
     };
 
-    #[action("Use the gate after the cycle.")]
+    #[kaa::action("Use the gate after the cycle.")]
     let result = |entered, text| text.len();
 
     |result| return result;

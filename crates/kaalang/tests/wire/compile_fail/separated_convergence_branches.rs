@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u8) -> u8 {
-    #[choice("Select a branch.")]
-    #[case("Take the first branch.")]
-    #[case("Finish without converging.")]
-    #[case("Take the second branch.")]
+    #[kaa::choice("Select a branch.")]
+    #[kaa::case("Take the first branch.")]
+    #[kaa::case("Finish without converging.")]
+    #[kaa::case("Take the second branch.")]
     let (first, done, second) = |value| {
         match value {
             0 => (),
@@ -14,19 +14,19 @@ fn invalid(value: u8) -> u8 {
         }
     };
 
-    #[action("Build the first value.")]
+    #[kaa::action("Build the first value.")]
     let selected = |first| { 1 };
 
-    #[action("Produce the direct result.")]
+    #[kaa::action("Produce the direct result.")]
     let direct = |done| { 2 };
 
-    #[action("Build the second value.")]
+    #[kaa::action("Build the second value.")]
     let selected = |second| { 3 };
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let result = |selected| selected;
 
-    #[action("Use the direct value.")]
+    #[kaa::action("Use the direct value.")]
     let result = |direct| direct;
 
     |result| return result;

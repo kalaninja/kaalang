@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn borrowed_common(condition: bool, prefix: String) -> String {
-    #[question("Choose a suffix.")]
+    #[kaa::question("Choose a suffix.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes suffix.")]
+    #[kaa::action("Build the yes suffix.")]
     let suffix = |yes, &prefix| format!("{prefix}-yes");
 
-    #[action("Build the no suffix.")]
+    #[kaa::action("Build the no suffix.")]
     let suffix = |no, &prefix| format!("{prefix}-no");
 
-    #[action("Use the suffix and the preserved prefix.")]
+    #[kaa::action("Use the suffix and the preserved prefix.")]
     let end = |suffix, prefix| format!("{prefix}:{suffix}");
 
     |end| return end;

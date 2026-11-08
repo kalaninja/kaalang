@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A member of the workspace.")]
+#[kaa("A member of the workspace.")]
 struct Member {
-    #[kaalang("The display name.")]
+    #[kaa("The display name.")]
     name: String,
 }
 

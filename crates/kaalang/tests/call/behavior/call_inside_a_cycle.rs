@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn bump(count: &mut usize) {
     *count += 1;
 }
 
-#[kaalang]
+#[kaa]
 fn call_inside_a_cycle(limit: usize) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut count = || 0;
 
-    #[cycle("Count to the limit.")]
+    #[kaa::cycle("Count to the limit.")]
     let leave_1 = loop {
-        #[question("Is the counter below the limit?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is the counter below the limit?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (iterate_1, leave_1) = |&count, &limit| *count < *limit;
 
-        #[call("Increment the counter.")]
+        #[kaa::call("Increment the counter.")]
         |iterate_1, &mut count| bump(count);
 
         |iterate_1| continue;

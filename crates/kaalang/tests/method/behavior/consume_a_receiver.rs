@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Message {
     text: String,
 }
 
 impl Message {
-    #[kaalang]
+    #[kaa]
     fn consume_a_receiver(self, suffix: String) -> String {
-        #[action("Append the suffix to the text.")]
+        #[kaa::action("Append the suffix to the text.")]
         let end = |self, suffix| self.text + &suffix;
 
         |end| return end;

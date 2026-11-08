@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn __kaalang_same_type(value: u8) -> u8 {
     value + 1
 }
 
-#[kaalang]
+#[kaa]
 fn type_gate_helper_hygiene(condition: bool) -> u8 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Call the authored helper for yes.")]
+    #[kaa::action("Call the authored helper for yes.")]
     let (end, _marker) = |yes| (__kaalang_same_type(1), 3u8);
 
-    #[action("Call the authored helper for no.")]
+    #[kaa::action("Call the authored helper for no.")]
     let (end, _marker) = |no| (__kaalang_same_type(2), 4);
 
     |end| return end;

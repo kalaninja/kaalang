@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn transition_to_diverging_stage(go: ()) -> ! {
-    #[stage("Enter the repeating stage.")]
+    #[kaa::stage("Enter the repeating stage.")]
     let repeat = |go| {
-        #[action("Select the repeating stage.")]
+        #[kaa::action("Select the repeating stage.")]
         let repeat = |go| {};
     };
 
-    #[stage("Repeat forever.")]
+    #[kaa::stage("Repeat forever.")]
     |repeat| {
-        #[cycle("Stay in this stage.")]
+        #[kaa::cycle("Stay in this stage.")]
         |repeat| loop {
             continue;
         };

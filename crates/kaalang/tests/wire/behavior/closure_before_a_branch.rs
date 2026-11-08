@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn closure_before_a_branch(condition: bool, base: u32) -> u32 {
-    #[action("Build a handler either branch may consume.")]
+    #[kaa::action("Build a handler either branch may consume.")]
     let handler = |base| move |delta: u32| base + delta;
 
-    #[question("Add or subtract?")]
+    #[kaa::question("Add or subtract?")]
     let (add, subtract) = |condition| condition;
 
-    #[action("Add one.")]
+    #[kaa::action("Add one.")]
     let end = |add, handler| handler(1);
 
-    #[action("Subtract one.")]
+    #[kaa::action("Subtract one.")]
     let end = |subtract, handler| handler(0) - 1;
 
     |end| return end;

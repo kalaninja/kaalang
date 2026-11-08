@@ -1,21 +1,21 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Each branch transforms the string on its selected path; the `end` outputs
 /// merge before the structural return.
-#[kaalang]
+#[kaa]
 fn branch_log_in_each_branch(condition: bool, value: String) -> usize {
-    #[question("Log the value?")]
+    #[kaa::question("Log the value?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Log.")]
+    #[kaa::action("Log.")]
     let logged = |yes, &value| {
         assert_eq!(value, "abc");
     };
 
-    #[action("Transform after logging.")]
+    #[kaa::action("Transform after logging.")]
     let end = |logged, value| value.len();
 
-    #[action("Transform without logging.")]
+    #[kaa::action("Transform without logging.")]
     let end = |no, value| value.len();
 
     |end| return end;

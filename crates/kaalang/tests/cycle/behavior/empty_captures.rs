@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn empty_captures() -> usize {
-    #[cycle("Complete without a header.")]
+    #[kaa::cycle("Complete without a header.")]
     let first = loop {
-        #[action("Produce the first unit.")]
+        #[kaa::action("Produce the first unit.")]
         let first = || {};
     };
 
-    #[cycle("Complete through an explicit empty capture list.")]
+    #[kaa::cycle("Complete through an explicit empty capture list.")]
     let second = || loop {
-        #[action("Produce the second unit.")]
+        #[kaa::action("Produce the second unit.")]
         let second = || {};
     };
 
-    #[action("Continue after both cycles.")]
+    #[kaa::action("Continue after both cycles.")]
     let result = |first, second| 7;
 
     |result| return result;

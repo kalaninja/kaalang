@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // The left marker merges over the first two cases and the right marker over
 // the last two, so neither merge group contains the other.
-#[kaalang]
+#[kaa]
 fn invalid(value: u8) -> u8 {
-    #[choice("Which cases share which marker?")]
-    #[case("Shares the left marker.")]
-    #[case("Shares both markers.")]
-    #[case("Shares the right marker.")]
+    #[kaa::choice("Which cases share which marker?")]
+    #[kaa::case("Shares the left marker.")]
+    #[kaa::case("Shares both markers.")]
+    #[kaa::case("Shares the right marker.")]
     let (a, b, c) = |value| {
         match value {
             0 => (),
@@ -16,13 +16,13 @@ fn invalid(value: u8) -> u8 {
         }
     };
 
-    #[action("Mark the left group.")]
+    #[kaa::action("Mark the left group.")]
     let (_left, end) = |a| { ((), 1) };
 
-    #[action("Mark both groups.")]
+    #[kaa::action("Mark both groups.")]
     let (_left, _right, end) = |b| { ((), (), 2) };
 
-    #[action("Mark the right group.")]
+    #[kaa::action("Mark the right group.")]
     let (_right, end) = |c| { ((), 3) };
 
     |end| return end;

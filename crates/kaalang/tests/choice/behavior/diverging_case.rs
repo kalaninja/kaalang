@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn diverging_case(reading: Option<u8>) -> u8 {
-    #[choice("Did the sensor answer?")]
-    #[case("A reading.")]
-    #[case("No reading, which the sensor rules out.")]
+    #[kaa::choice("Did the sensor answer?")]
+    #[kaa::case("A reading.")]
+    #[kaa::case("No reading, which the sensor rules out.")]
     let (answered, silent) = |reading| match reading {
         Some(level) => level,
         None => unreachable!("the sensor always answers"),
     };
 
-    #[action("Use the reading.")]
+    #[kaa::action("Use the reading.")]
     let level = |answered| answered;
 
-    #[action("Never reached: the match arm panics first.")]
+    #[kaa::action("Never reached: the match arm panics first.")]
     let level = |silent| 0;
 
     |level| return level;

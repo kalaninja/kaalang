@@ -1,7 +1,7 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
-#[value("A member.")]
+#[kaa]
+#[kaa::value("A member.")]
 struct Member;
 
 fn main() {}

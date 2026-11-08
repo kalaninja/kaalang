@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn captured_in_one_branch(condition: bool, extra: u32) -> u32 {
-    #[question("Use the extra value?")]
+    #[kaa::question("Use the extra value?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Add a fixed amount to the extra value.")]
+    #[kaa::action("Add a fixed amount to the extra value.")]
     let end = |yes, extra| extra + 5;
 
-    #[action("Ignore the extra value.")]
+    #[kaa::action("Ignore the extra value.")]
     let end = |no| 0;
 
     |end| return end;

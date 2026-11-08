@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn keep_tuple_in_single_output(input: u32) -> (u32, u32) {
-    #[action("Build one tuple-valued output.")]
+    #[kaa::action("Build one tuple-valued output.")]
     let output = |input| (input, input + 1);
 
     |output| return output;

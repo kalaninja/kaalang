@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn twice(value: u32) -> u32 {
     value * 2
@@ -8,9 +8,9 @@ fn twice(value: u32) -> u32 {
 /// the invisible group a metavariable substitutes through.
 macro_rules! applying {
     ($name:ident, $callee:path) => {
-        #[kaalang]
+        #[kaa]
         fn $name(value: u32) -> u32 {
-            #[call]
+            #[kaa::call]
             let end = |value| $callee(value);
 
             |end| return end;

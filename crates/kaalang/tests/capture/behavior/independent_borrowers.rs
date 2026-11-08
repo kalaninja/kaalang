@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn independent_borrowers(input: u32) -> (u32, u32) {
-    #[action("Produce the first value.")]
+    #[kaa::action("Produce the first value.")]
     let first = |&input| *input;
 
-    #[action("Produce the second value.")]
+    #[kaa::action("Produce the second value.")]
     let second = |&input| *input + 1;
 
     |first, second| return (first, second);

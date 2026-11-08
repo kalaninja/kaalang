@@ -1,20 +1,20 @@
 #![deny(unused_mut)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A question output declared `mut` may be borrowed mutably.
-#[kaalang]
+#[kaa]
 fn mutably_borrowed_question_output(condition: bool) -> u8 {
-    #[question("Select a branch.")]
+    #[kaa::question("Select a branch.")]
     let (mut yes, no) = |condition| condition;
 
-    #[action("Mutably borrow the selected branch output.")]
+    #[kaa::action("Mutably borrow the selected branch output.")]
     let end = |&mut yes| {
         *yes = ();
         1
     };
 
-    #[action("Use the other branch.")]
+    #[kaa::action("Use the other branch.")]
     let end = |no| 0;
 
     |end| return end;

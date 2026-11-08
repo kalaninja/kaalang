@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Guard(Rc<RefCell<Vec<&'static str>>>, &'static str);
 impl Drop for Guard {
@@ -9,35 +9,35 @@ impl Drop for Guard {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn nested_result_propagation(limit: usize, log: Rc<RefCell<Vec<&'static str>>>) -> usize {
-    #[action("Initialize the counter.")]
+    #[kaa::action("Initialize the counter.")]
     let mut count = || 0;
 
-    #[cycle("Search until the inner cycle finds the limit.")]
+    #[kaa::cycle("Search until the inner cycle finds the limit.")]
     let next = loop {
-        #[action("Enter the outer scope.")]
+        #[kaa::action("Enter the outer scope.")]
         let _outer = |&log| Guard(log.clone(), "outer");
 
-        #[cycle("Advance until the search is done.")]
+        #[kaa::cycle("Advance until the search is done.")]
         let next = loop {
-            #[action("Enter the inner scope.")]
+            #[kaa::action("Enter the inner scope.")]
             let inner = |&log| Guard(log.clone(), "inner");
 
-            #[question("Has the search finished?")]
+            #[kaa::question("Has the search finished?")]
             let (done, again) = |&count, limit| *count >= limit;
 
-            #[action("Hand over the count and the log.")]
+            #[kaa::action("Hand over the count and the log.")]
             let next = |done, count, log, inner| (count, log);
 
-            #[action("Advance the search.")]
+            #[kaa::action("Advance the search.")]
             |again, &mut count| *count += 1;
 
             |again| continue;
         };
     };
 
-    #[action("Continue after the search.")]
+    #[kaa::action("Continue after the search.")]
     let result = |next| {
         let (final_count, final_log) = next;
         final_log.borrow_mut().push("after");

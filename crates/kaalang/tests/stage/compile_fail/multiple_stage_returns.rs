@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn multiple_stage_returns(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| {
         return;
         return;

@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mismatched_entry_type(go: u32) -> u32 {
-    #[stage("Try again or finish.")]
+    #[kaa::stage("Try again or finish.")]
     let (go, done) = |go| {
-        #[question("Is more work needed?")]
+        #[kaa::question("Is more work needed?")]
         let (again, finish) = |go| go > 0;
 
-        #[action("Send the wrong type.")]
+        #[kaa::action("Send the wrong type.")]
         let go = |again| String::from("wrong");
 
-        #[action("Finish.")]
+        #[kaa::action("Finish.")]
         let done = |finish| 0u32;
     };
 
-    #[stage("Return the result.")]
+    #[kaa::stage("Return the result.")]
     |done| {
         |done| return done;
     };

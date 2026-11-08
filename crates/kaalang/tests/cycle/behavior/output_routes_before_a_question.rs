@@ -1,40 +1,40 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Two body routes export `larger`, and a question after the cycle splits its
 /// continuation. The route taken inside the body orders nothing outside it.
-#[kaalang]
+#[kaa]
 fn output_routes_before_a_question(value: u8, flag: u8) -> u8 {
-    #[cycle("Sort the value.")]
+    #[kaa::cycle("Sort the value.")]
     let (tiny, larger) = loop {
-        #[question("Is it below ten?")]
+        #[kaa::question("Is it below ten?")]
         let (low, high) = |value| value < 10;
 
-        #[question("Is it below five?")]
+        #[kaa::question("Is it below five?")]
         let (below, small) = |low, value| value < 5;
 
-        #[action("Mark a tiny value.")]
+        #[kaa::action("Mark a tiny value.")]
         let tiny = |below| {};
 
-        #[action("Mark a small value.")]
+        #[kaa::action("Mark a small value.")]
         let larger = |small| {};
 
-        #[action("Mark a high value.")]
+        #[kaa::action("Mark a high value.")]
         let larger = |high| {};
     };
 
-    #[question("Is the flag even?")]
+    #[kaa::question("Is the flag even?")]
     let (even, odd) = |larger, flag| flag.is_multiple_of(2);
 
-    #[action("Score the tiny value.")]
+    #[kaa::action("Score the tiny value.")]
     let score = |tiny| 10;
 
-    #[action("Score the even flag.")]
+    #[kaa::action("Score the even flag.")]
     let score = |even| 20;
 
-    #[action("Keep the score.")]
+    #[kaa::action("Keep the score.")]
     let result = |score| score;
 
-    #[action("Score the odd flag.")]
+    #[kaa::action("Score the odd flag.")]
     let result = |odd| 30;
 
     |result| return result;

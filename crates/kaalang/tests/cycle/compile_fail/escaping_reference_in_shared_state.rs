@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn escaping_reference_in_shared_state<'a>(mut slot: &'a mut Option<&'a u8>) {
-    #[cycle("Store a departing local in shared state.")]
+    #[kaa::cycle("Store a departing local in shared state.")]
     let finished = loop {
-        #[action("Create a local owner.")]
+        #[kaa::action("Create a local owner.")]
         let local = || 7u8;
 
-        #[action("Store its reference outside the iteration.")]
+        #[kaa::action("Store its reference outside the iteration.")]
         |&mut slot, &local| **slot = Some(local);
 
-        #[action("Complete the iteration.")]
+        #[kaa::action("Complete the iteration.")]
         let finished = || ();
     };
 

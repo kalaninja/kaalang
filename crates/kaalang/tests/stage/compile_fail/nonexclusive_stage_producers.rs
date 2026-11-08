@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nonexclusive_stage_producers(go: ()) -> u8 {
-    #[stage("Produce twice.")]
+    #[kaa::stage("Produce twice.")]
     let finish = |go| {
-        #[action("First.")]
+        #[kaa::action("First.")]
         let finish = |go| 1u8;
-        #[action("Second.")]
+        #[kaa::action("Second.")]
         let finish = || 2u8;
     };
-    #[stage("Return.")]
+    #[kaa::stage("Return.")]
     |finish| {
         |finish| return finish;
     };

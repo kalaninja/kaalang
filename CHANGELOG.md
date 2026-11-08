@@ -15,14 +15,18 @@
 - `kaalang-compiler`'s `flows` returns each flow with its path within the file
   and descends into inline modules.
 - `kaalang-compiler`'s `is_flow_attribute` is renamed `is_kaalang_attribute`.
+- The attribute is `#[kaa]`, or `#[kaalang::kaa]` through the crate path,
+  instead of `#[kaalang]`, and block attributes take its namespace:
+  `#[kaa::action("...")]` instead of `#[action("...")]`. See
+  [RFC 0009](docs/rfcs/0009-types.md).
 
 ### Added
 
-- `#[kaalang]` marks structs, enums, unions, and type aliases as annotated
-  types, with an optional description. Fields take `value` or `refer`
-  annotations, enum variants take `case`, and an alias may carry its own
-  `refer`. Rust resolves each `refer` target as the field's module sees it. See
-  [RFC 0009](docs/rfcs/0009-types.md).
+- `#[kaa]` marks structs, enums, unions, and type aliases as annotated types,
+  with an optional description. Fields take `kaa::value` or `kaa::refer`
+  annotations, enum variants take `kaa::case`, and an alias may carry its own
+  `kaa::refer`. Rust resolves each `refer` target as the field's module sees it.
+  See [RFC 0009](docs/rfcs/0009-types.md).
 
 ### Fixed
 

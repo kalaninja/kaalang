@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn origin() -> (i32, i32) {
     (0, 0)
 }
 
-#[kaalang]
+#[kaa]
 fn call_without_inputs() -> (i32, i32) {
-    #[call("Start at the origin.")]
+    #[kaa::call("Start at the origin.")]
     let end = || origin();
 
     |end| return end;

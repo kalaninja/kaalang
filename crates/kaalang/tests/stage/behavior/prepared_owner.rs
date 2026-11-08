@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Guard<'a>(&'a RefCell<Vec<&'static str>>);
 
@@ -10,20 +10,20 @@ impl Drop for Guard<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn prepared_owner(events: &RefCell<Vec<&'static str>>) -> usize {
-    #[action("Keep the guard until the flow completes.")]
+    #[kaa::action("Keep the guard until the flow completes.")]
     let _guard = |events| Guard(events);
 
-    #[action("Own the prepared text.")]
+    #[kaa::action("Own the prepared text.")]
     let owner = || String::from("prepared");
 
-    #[action("Borrow the text and enter the stage.")]
+    #[kaa::action("Borrow the text and enter the stage.")]
     let (view, go) = |&owner| (owner.as_str(), ());
 
-    #[stage("Use the prepared reference while the guard remains alive.")]
+    #[kaa::stage("Use the prepared reference while the guard remains alive.")]
     |go| {
-        #[action("Record the visit and measure the text.")]
+        #[kaa::action("Record the visit and measure the text.")]
         let length = |view, events| {
             events.borrow_mut().push("visit");
             view.len()

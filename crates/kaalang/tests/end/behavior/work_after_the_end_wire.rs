@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn work_after_the_end_wire(input: u32, other: u32) -> u32 {
-    #[action("Produce an ordinary `end` wire.")]
+    #[kaa::action("Produce an ordinary `end` wire.")]
     let end = |input| input;
 
-    #[action("Do later work.")]
+    #[kaa::action("Do later work.")]
     let later = |other| other;
 
-    #[action("Combine both values.")]
+    #[kaa::action("Combine both values.")]
     let result = |end, later| end + later;
 
     |result| return result;

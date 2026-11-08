@@ -1,30 +1,30 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn extra_step_before_the_tail(mut n: u32) -> u32 {
-    #[cycle("Climb past ten.")]
+    #[kaa::cycle("Climb past ten.")]
     let leave = loop {
-        #[question("Is the number past ten?")]
+        #[kaa::question("Is the number past ten?")]
         let (leave, rest) = |&n| *n > 10;
 
-        #[question("Step, then nest on an even number?")]
+        #[kaa::question("Step, then nest on an even number?")]
         let (nest, again) = |rest, &mut n| {
             *n += 1;
             *n % 2 == 0
         };
 
-        #[cycle("Climb to a multiple of three.")]
+        #[kaa::cycle("Climb to a multiple of three.")]
         let again = |nest| loop {
-            #[question("Is it a multiple of three?")]
+            #[kaa::question("Is it a multiple of three?")]
             let (again, more) = |&n| *n % 3 == 0;
 
-            #[action("Take one step.")]
+            #[kaa::action("Take one step.")]
             let stepped = |more, &mut n| *n += 1;
 
             |stepped| continue;
         };
 
-        #[action("Take an extra step.")]
+        #[kaa::action("Take an extra step.")]
         let bumped = |again, &mut n| *n += 1;
 
         |bumped| continue;

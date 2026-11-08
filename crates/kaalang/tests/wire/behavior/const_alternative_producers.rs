@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn const_alternative_producers(condition: bool) -> u8 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes value and an unused marker.")]
+    #[kaa::action("Build the yes value and an unused marker.")]
     let (end, _marker) = |yes| (1, 3u8);
 
-    #[action("Build the no value and an unused marker.")]
+    #[kaa::action("Build the no value and an unused marker.")]
     let (end, _marker) = |no| (2, 4);
 
     |end| return end;

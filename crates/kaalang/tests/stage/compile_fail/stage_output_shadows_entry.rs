@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_output_shadows_entry() {
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     |go| {
-        #[action("Bad.")]
+        #[kaa::action("Bad.")]
         let go = || ();
         return;
     };

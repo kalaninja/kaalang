@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn borrowed_case_input(text: String) -> usize {
-    #[choice("Borrow the text through the choice.")]
-    #[case("Keep a long text whole.")]
-    #[case("Keep the first character of a short text.")]
+    #[kaa::choice("Borrow the text through the choice.")]
+    #[kaa::case("Keep a long text whole.")]
+    #[kaa::case("Keep the first character of a short text.")]
     let (long, short) = |&text| match text.len() {
         length if length > 3 => text.as_str(),
         _ => &text[..text.len().min(1)],
     };
 
-    #[action("Measure the long text.")]
+    #[kaa::action("Measure the long text.")]
     let end = |long| long.len();
 
-    #[action("Measure the short text.")]
+    #[kaa::action("Measure the short text.")]
     let end = |short| short.len();
 
     |end| return end;

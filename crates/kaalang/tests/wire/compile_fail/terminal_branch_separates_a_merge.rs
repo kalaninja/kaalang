@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(refine: bool, finish_early: bool) -> u32 {
-    #[question("Refine the value?")]
+    #[kaa::question("Refine the value?")]
     let (nested, direct) = |refine| { refine };
 
-    #[question("Finish early?")]
+    #[kaa::question("Finish early?")]
     let (join, skip) = |nested, finish_early| { !finish_early };
 
-    #[action("Finish without the shared step.")]
+    #[kaa::action("Finish without the shared step.")]
     let end = |skip| { 100 };
 
-    #[action("Build the refined value.")]
+    #[kaa::action("Build the refined value.")]
     let shared = |join| { 1 };
 
-    #[action("Build the direct value.")]
+    #[kaa::action("Build the direct value.")]
     let shared = |direct| { 2 };
 
-    #[action("Add ten in the shared step.")]
+    #[kaa::action("Add ten in the shared step.")]
     let end = |shared| { shared + 10 };
 
     |end| return end;

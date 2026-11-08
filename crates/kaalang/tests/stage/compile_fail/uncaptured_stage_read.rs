@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn uncaptured_stage_read(go: u8) -> u8 {
-    #[stage("Read.")]
+    #[kaa::stage("Read.")]
     let answer = |go| {
-        #[action("Read without a capture.")]
+        #[kaa::action("Read without a capture.")]
         let answer = || go + 1;
     };
 
-    #[stage("Return the result.")]
+    #[kaa::stage("Return the result.")]
     |answer| {
         |answer| return answer;
     };

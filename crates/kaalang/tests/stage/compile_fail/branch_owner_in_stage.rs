@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(take: bool) -> String {
-    #[question("Enter the stage?")]
+    #[kaa::question("Enter the stage?")]
     let (yes, no) = |take| take;
 
-    #[action("Create a branch-local owner.")]
+    #[kaa::action("Create a branch-local owner.")]
     let owner = |yes| String::from("owned");
 
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = |&owner| ();
 
-    #[cycle("Stay on the other branch.")]
+    #[kaa::cycle("Stay on the other branch.")]
     |no| loop {
         continue;
     };
 
-    #[stage("Use the unmerged owner.")]
+    #[kaa::stage("Use the unmerged owner.")]
     |go| {
         |owner| return owner;
     };

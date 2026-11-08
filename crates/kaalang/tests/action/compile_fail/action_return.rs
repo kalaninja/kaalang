@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: i32) -> i32 {
-    #[action("Return the doubled value instead of producing its wire.")]
+    #[kaa::action("Return the doubled value instead of producing its wire.")]
     let doubled = |value| { return value * 2 };
 
     |doubled| return doubled;

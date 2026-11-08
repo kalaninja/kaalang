@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn captureless_closure() -> u8 {
-    #[action("Build a closure without captures.")]
+    #[kaa::action("Build a closure without captures.")]
     let f = || |x: u8| x + 1;
 
-    #[action("Call the closure.")]
+    #[kaa::action("Call the closure.")]
     let result = |f| f(6);
 
     |result| return result;

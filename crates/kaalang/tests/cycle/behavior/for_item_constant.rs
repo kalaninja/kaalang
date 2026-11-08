@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(non_upper_case_globals)]
 const item: u32 = 2;
 
-#[kaalang]
+#[kaa]
 fn for_item_constant() -> u32 {
-    #[action("Start with no visits.")]
+    #[kaa::action("Start with no visits.")]
     let mut visits = || 0;
 
-    #[cycle("Visit three items.")]
+    #[kaa::cycle("Visit three items.")]
     for _ in 0..3_u32 {
-        #[action("Count the visit.")]
+        #[kaa::action("Count the visit.")]
         |&mut visits| *visits += 1;
     }
 

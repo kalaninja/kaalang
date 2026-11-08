@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn extend(total: &mut usize, text: &str) {
     *total += text.len();
 }
 
-#[kaalang]
+#[kaa]
 fn call_a_borrowed_input(mut total: usize, text: String) -> usize {
-    #[call("Add the length of the text to the total.")]
+    #[kaa::call("Add the length of the text to the total.")]
     let extended = |&mut total, &text| extend(total, text);
 
-    #[action("Report the total.")]
+    #[kaa::action("Report the total.")]
     let end = |extended, total| total;
 
     |end| return end;

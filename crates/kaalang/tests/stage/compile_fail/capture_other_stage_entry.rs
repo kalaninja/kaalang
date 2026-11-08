@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn capture_other_stage_entry(first: ()) {
-    #[stage("First.")]
+    #[kaa::stage("First.")]
     let second = |first| {
-        #[action("Select second.")]
+        #[kaa::action("Select second.")]
         let second = |first| ();
     };
-    #[stage("Second.")]
+    #[kaa::stage("Second.")]
     |second| {
-        #[action("Read the earlier entry.")]
+        #[kaa::action("Read the earlier entry.")]
         |first| ();
         return;
     };

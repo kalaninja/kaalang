@@ -1,28 +1,28 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn conditional_entry(enabled: bool, limit: usize) -> usize {
-    #[question("Run the counter?")]
+    #[kaa::question("Run the counter?")]
     let (run, skip) = |enabled| enabled;
 
-    #[action("Initialize the selected counter.")]
+    #[kaa::action("Initialize the selected counter.")]
     let mut count = |run| 0;
 
-    #[cycle("Count to the limit when selected.")]
+    #[kaa::cycle("Count to the limit when selected.")]
     let end = |count| loop {
-        #[question("Has the counter reached the limit?")]
+        #[kaa::question("Has the counter reached the limit?")]
         let (done, again) = |&count, &limit| *count >= *limit;
 
-        #[action("Hand over the count.")]
+        #[kaa::action("Hand over the count.")]
         let end = |done, count| count;
 
-        #[action("Increment the counter.")]
+        #[kaa::action("Increment the counter.")]
         |again, &mut count| *count += 1;
 
         |again| continue;
     };
 
-    #[action("Skip the counter.")]
+    #[kaa::action("Skip the counter.")]
     let end = |skip| 99;
 
     |end| return end;

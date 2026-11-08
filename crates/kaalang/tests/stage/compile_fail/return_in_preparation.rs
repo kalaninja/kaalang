@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn return_in_preparation(go: ()) {
     return;
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| {
         return;
     };

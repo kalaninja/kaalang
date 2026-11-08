@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool, value: u32) -> u32 {
-    #[question("Choose a return.")]
+    #[kaa::question("Choose a return.")]
     let (first, second) = |condition| condition;
 
     |first, value| return value;

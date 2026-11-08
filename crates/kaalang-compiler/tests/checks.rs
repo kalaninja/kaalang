@@ -14,7 +14,7 @@ fn fixture(source: &str, name: &str) -> SemanticModel {
 fn the_public_checks_reject_broken_placement_and_references() {
     let model = model(
         "fn probe(value: u8) -> u8 {
-            #[action(\"Keep the value.\")]
+            #[kaa::action(\"Keep the value.\")]
             let kept = |value| value;
             |kept| return kept;
         }",

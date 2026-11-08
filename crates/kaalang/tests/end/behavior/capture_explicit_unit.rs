@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn capture_explicit_unit(input: ()) {
     |input| return input;
 }

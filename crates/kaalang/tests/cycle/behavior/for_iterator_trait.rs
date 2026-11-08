@@ -1,4 +1,4 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Counter(u32);
 
@@ -18,15 +18,15 @@ impl Iterator for Counter {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn for_iterator_trait(remaining: u32) -> u32 {
-    #[action("Start with no visits.")]
+    #[kaa::action("Start with no visits.")]
     let mut visits = || 0;
 
-    #[cycle("Visit every iterator item.")]
+    #[kaa::cycle("Visit every iterator item.")]
     |remaining| {
         for _ in Counter(remaining) {
-            #[action("Count the visit.")]
+            #[kaa::action("Count the visit.")]
             |&mut visits| *visits += 1;
         }
     };

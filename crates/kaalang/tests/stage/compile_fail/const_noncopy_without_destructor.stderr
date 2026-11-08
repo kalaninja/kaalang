@@ -1,8 +1,8 @@
 error[E0277]: the trait bound `NonCopy: Copy` is not satisfied
  --> tests/stage/compile_fail/const_noncopy_without_destructor.rs:6:43
   |
-5 | #[kaalang]
-  | ----------
+5 | #[kaa]
+  | ------
   | |
   | required by a bound introduced by this call
   | in this attribute macro expansion
@@ -12,14 +12,14 @@ error[E0277]: the trait bound `NonCopy: Copy` is not satisfied
 note: required by a bound in `const_noncopy_without_destructor::__kaalang_copy_entry`
  --> tests/stage/compile_fail/const_noncopy_without_destructor.rs:6:43
   |
-5 | #[kaalang]
-  | ----------
+5 | #[kaa]
+  | ------
   | |
   | required by a bound in this function
   | in this attribute macro expansion
 6 | const fn const_noncopy_without_destructor(go: NonCopy) -> u8 {
   |                                           ^^ required by this bound in `__kaalang_copy_entry`
-  = note: this error originates in the attribute macro `kaalang` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the attribute macro `kaa` (in Nightly builds, run with -Z macro-backtrace for more info)
 help: consider annotating `NonCopy` with `#[derive(Copy)]`
   |
 3 + #[derive(Copy)]

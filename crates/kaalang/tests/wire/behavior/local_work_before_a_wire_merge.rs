@@ -1,24 +1,24 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn local_work_before_a_wire_merge(condition: bool, order: &Cell<u8>) -> u32 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes value and local note.")]
+    #[kaa::action("Build the yes value and local note.")]
     let (selected, local_note) = |yes| (21, 1);
 
-    #[action("Build the no value, which has no note to record.")]
+    #[kaa::action("Build the no value, which has no note to record.")]
     let (selected, noted) = |no| (34, ());
 
     // The yes branch still owes this note to the `selected` merge, so it is
     // written above the block that captures the merged value.
-    #[action("Record the note before leaving the yes branch.")]
+    #[kaa::action("Record the note before leaving the yes branch.")]
     let noted = |local_note, &order| order.set(order.get() * 10 + local_note);
 
-    #[action("Use the merged value.")]
+    #[kaa::action("Use the merged value.")]
     let used = |selected, &order| {
         order.set(order.get() * 10 + 2);
         selected * 2

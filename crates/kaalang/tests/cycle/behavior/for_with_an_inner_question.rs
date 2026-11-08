@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_with_an_inner_question(values: &[u32], limit: u32) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add values while the total is below the limit.")]
+    #[kaa::cycle("Add values while the total is below the limit.")]
     |values| {
         for value in values {
-            #[question("Is the total below the limit?")]
+            #[kaa::question("Is the total below the limit?")]
             let (below, _full) = |&total, limit| *total < limit;
 
-            #[action("Add the value.")]
+            #[kaa::action("Add the value.")]
             let _full = |below, value, &mut total| *total += *value;
         }
     };

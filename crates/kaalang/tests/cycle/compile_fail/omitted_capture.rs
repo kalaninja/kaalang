@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(count: usize) {
-    #[cycle("Try an implicit environment capture.")]
+    #[kaa::cycle("Try an implicit environment capture.")]
     let done = loop {
-        #[question("Repeat?")]
+        #[kaa::question("Repeat?")]
         let (again, done) = |count| count > 0;
 
-        #[action("Change the counter without capturing it.")]
+        #[kaa::action("Change the counter without capturing it.")]
         |again| {
             count -= 1;
         };

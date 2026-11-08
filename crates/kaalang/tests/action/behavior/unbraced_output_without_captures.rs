@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn two() -> u32 {
     2
 }
 
-#[kaalang]
+#[kaa]
 fn unbraced_output_without_captures() -> u32 {
-    #[action("Start from forty.")]
+    #[kaa::action("Start from forty.")]
     let start = 40;
 
-    #[action("Build two.")]
+    #[kaa::action("Build two.")]
     let step = two();
 
-    #[action("Add them.")]
+    #[kaa::action("Add them.")]
     let sum = |start, step| start + step;
 
     |sum| return sum;

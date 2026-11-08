@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn non_identifier_output(value: i32) -> Vec<i32> {
-    #[action("Wrap the value.")]
+    #[kaa::action("Wrap the value.")]
     let Some(output) = |value| { Some(value) };
 }
 

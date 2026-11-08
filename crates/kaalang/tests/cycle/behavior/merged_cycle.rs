@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn merged_cycle(select_first: bool) -> usize {
-    #[question("Select the first cycle?")]
+    #[kaa::question("Select the first cycle?")]
     let (first, second) = |select_first| select_first;
 
-    #[cycle("Produce the first result.")]
+    #[kaa::cycle("Produce the first result.")]
     let result = |first| loop {
-        #[action("Build the first value.")]
+        #[kaa::action("Build the first value.")]
         let result = || 1;
     };
 
-    #[cycle("Produce the second result.")]
+    #[kaa::cycle("Produce the second result.")]
     let result = |second| loop {
-        #[action("Build the second value.")]
+        #[kaa::action("Build the second value.")]
         let result = || 2;
     };
 

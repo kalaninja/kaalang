@@ -1,19 +1,19 @@
 #![deny(unused_must_use)]
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Doc comment above the attribute.
 #[must_use]
-#[kaalang]
+#[kaa]
 #[inline]
 pub fn doubled(value: i32) -> i32 {
-    #[action("Double the value.")]
+    #[kaa::action("Double the value.")]
     let end = |value| { value * 2 };
 
     |end| return end;
 }
 
 fn main() {
-    // Fails only while `#[kaalang]` still re-emits the function's own attributes.
+    // Fails only while `#[kaa]` still re-emits the function's own attributes.
     doubled(1);
 }

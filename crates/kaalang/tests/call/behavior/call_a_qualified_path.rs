@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn call_a_qualified_path(text: &str) -> u32 {
-    #[call]
+    #[kaa::call]
     let parsed = |text| <u32 as core::str::FromStr>::from_str(text);
 
-    #[action("Take the parsed number, or zero when the text is not one.")]
+    #[kaa::action("Take the parsed number, or zero when the text is not one.")]
     let end = |parsed| parsed.unwrap_or_default();
 
     |end| return end;

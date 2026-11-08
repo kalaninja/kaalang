@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) -> u32 {
-    #[action("Produce one shared default.")]
+    #[kaa::action("Produce one shared default.")]
     let shared = || { Default::default() };
 
-    #[question("Which width?")]
+    #[kaa::question("Which width?")]
     let (narrow, wide) = |condition| { condition };
 
-    #[action("Use it as a byte.")]
+    #[kaa::action("Use it as a byte.")]
     let end = |narrow, shared| {
         let byte: u8 = shared;
         u32::from(byte)
     };
 
-    #[action("Use it as a word.")]
+    #[kaa::action("Use it as a word.")]
     let end = |wide, shared| {
         let word: u16 = shared;
         u32::from(word)

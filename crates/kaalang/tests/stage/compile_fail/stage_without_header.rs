@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_without_header(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     {
         return;
     };

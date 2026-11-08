@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: usize) -> usize {
-    #[cycle("Declare one output twice.")]
+    #[kaa::cycle("Declare one output twice.")]
     let (found, found) = |value| loop {
-        #[action("Produce the output.")]
+        #[kaa::action("Produce the output.")]
         let found = |value| value;
     };
 

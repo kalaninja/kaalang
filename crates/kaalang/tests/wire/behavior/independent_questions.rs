@@ -1,33 +1,33 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The right-hand question merges its values before the left-hand one opens
 /// its branches, so each body still runs once and in the order written.
-#[kaalang]
+#[kaa]
 fn independent_questions(left: bool, right: bool, calls: &Cell<u8>) -> u8 {
-    #[question("Choose the right value.")]
+    #[kaa::question("Choose the right value.")]
     let (x, y) = |right, &calls| {
         calls.set(calls.get() + 1);
         right
     };
 
-    #[action("Build the first right value.")]
+    #[kaa::action("Build the first right value.")]
     let value = |x| 10;
 
-    #[action("Build the second right value.")]
+    #[kaa::action("Build the second right value.")]
     let value = |y| 20;
 
-    #[question("Choose the left branch.")]
+    #[kaa::question("Choose the left branch.")]
     let (a, b) = |left, &calls| {
         calls.set(calls.get() + 1);
         left
     };
 
-    #[action("Use the left branch and the right value.")]
+    #[kaa::action("Use the left branch and the right value.")]
     let end = |a, value| value + 1;
 
-    #[action("Use the other left branch and the right value.")]
+    #[kaa::action("Use the other left branch and the right value.")]
     let end = |b, value| value + 2;
 
     |end| return end;

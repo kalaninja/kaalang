@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn preparation_wire_missing_on_a_route(choice: bool) {
-    #[question("Choose.")]
+    #[kaa::question("Choose.")]
     let (yes, no) = |choice| choice;
-    #[action("Left data.")]
+    #[kaa::action("Left data.")]
     let shared = |yes| 1;
-    #[action("Left signal.")]
+    #[kaa::action("Left signal.")]
     let go = |yes| ();
-    #[action("Right signal.")]
+    #[kaa::action("Right signal.")]
     let go = |no| ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     |go| {
         |shared| return;
     };

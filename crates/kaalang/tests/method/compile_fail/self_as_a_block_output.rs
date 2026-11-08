@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn invalid(&self) -> u32 {
-        #[action("Produce a wire named after the receiver.")]
+        #[kaa::action("Produce a wire named after the receiver.")]
         let self = |&self| self.width;
 
         |self| return self;

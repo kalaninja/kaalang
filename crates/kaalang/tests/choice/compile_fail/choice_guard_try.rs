@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u32) -> u32 {
-    #[choice("Does the predecessor stay positive?")]
-    #[case("The predecessor is positive.")]
-    #[case("There is no positive predecessor.")]
+    #[kaa::choice("Does the predecessor stay positive?")]
+    #[kaa::case("The predecessor is positive.")]
+    #[kaa::case("There is no positive predecessor.")]
     let (positive, other) = |value| {
         match value {
             current if current.checked_sub(1)? > 0 => current,
@@ -12,10 +12,10 @@ fn invalid(value: u32) -> u32 {
         }
     };
 
-    #[action("Produce the positive result.")]
+    #[kaa::action("Produce the positive result.")]
     let result = |positive| positive;
 
-    #[action("Produce the other result.")]
+    #[kaa::action("Produce the other result.")]
     let result = |other| { 0 };
 
     |result| return result;

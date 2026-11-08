@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u32) -> u32 {
-    #[call("Produce one.")]
+    #[kaa::call("Produce one.")]
     let end = |value| 1;
 
     |end| return end;

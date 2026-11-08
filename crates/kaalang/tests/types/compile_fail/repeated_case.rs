@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A publication state.")]
+#[kaa("A publication state.")]
 enum State {
-    #[case("Not yet published.")]
-    #[case("Still a draft.")]
+    #[kaa::case("Not yet published.")]
+    #[kaa::case("Still a draft.")]
     Draft,
 }
 

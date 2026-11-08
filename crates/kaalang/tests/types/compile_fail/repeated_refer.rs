@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A member.")]
+#[kaa("A member.")]
 struct Member;
 
-#[kaalang("A report.")]
+#[kaa("A report.")]
 struct Report {
-    #[refer(Member, "The author.")]
-    #[refer(Member, "The reviewer.")]
+    #[kaa::refer(Member, "The author.")]
+    #[kaa::refer(Member, "The reviewer.")]
     author: Member,
 }
 

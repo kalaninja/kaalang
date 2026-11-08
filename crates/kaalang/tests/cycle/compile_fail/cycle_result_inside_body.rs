@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[cycle("Use the result before completion.")]
+    #[kaa::cycle("Use the result before completion.")]
     let result = loop {
-        #[action("Read the unavailable result.")]
+        #[kaa::action("Read the unavailable result.")]
         |result| {};
 
-        #[action("Produce the result.")]
+        #[kaa::action("Produce the result.")]
         let result = || ();
     };
 

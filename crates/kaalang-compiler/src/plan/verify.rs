@@ -231,11 +231,11 @@ mod tests {
     fn rejects_an_export_target_that_is_not_active() {
         let mut model = crate::build(&parse_quote! {
             fn sequential() {
-                #[cycle("Leave the first cycle.")]
-                let first = loop { #[action("Finish the first cycle.")] let first = || (); };
-                #[cycle("Leave the second cycle.")]
-                let second = |first| loop { #[action("Finish the second cycle.")] let second = || (); };
-                #[action("Finish.")]
+                #[kaa::cycle("Leave the first cycle.")]
+                let first = loop { #[kaa::action("Finish the first cycle.")] let first = || (); };
+                #[kaa::cycle("Leave the second cycle.")]
+                let second = |first| loop { #[kaa::action("Finish the second cycle.")] let second = || (); };
+                #[kaa::action("Finish.")]
                 let end = |second| {};
 
                 |end| return end;
@@ -265,7 +265,7 @@ mod tests {
     fn rejects_a_return_outcome_at_a_different_block() {
         let mut model = crate::build(&parse_quote! {
             fn returned() -> u8 {
-                #[action("Build the result.")]
+                #[kaa::action("Build the result.")]
                 let result = || 1;
 
                 |result| return result;
@@ -286,11 +286,11 @@ mod tests {
     fn rejects_body_work_moved_after_an_export() {
         let mut model = crate::build(&parse_quote! {
             fn counting(mut count: usize) -> usize {
-                #[cycle("Count to three.")]
+                #[kaa::cycle("Count to three.")]
                 let done = loop {
-                    #[question("Finished?")]
+                    #[kaa::question("Finished?")]
                     let (done, again) = |count| count == 3;
-                    #[action("Advance.")]
+                    #[kaa::action("Advance.")]
                     |again, &mut count| *count += 1;
                     |again| continue;
                 };
@@ -342,11 +342,11 @@ mod tests {
     fn rejects_a_repeat_that_skips_an_enclosing_iteration_boundary() {
         let mut model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
-                #[cycle("Repeat the outer cycle.")]
+                #[kaa::cycle("Repeat the outer cycle.")]
                 |flag| loop {
-                    #[cycle("Repeat the inner cycle.")]
+                    #[kaa::cycle("Repeat the inner cycle.")]
                     let leave_1 = |flag| loop {
-                        #[question("Repeat?")]
+                        #[kaa::question("Repeat?")]
                         let (iterate_1, leave_1) = |flag| flag;
                         |iterate_1| continue;
                     };
@@ -388,16 +388,16 @@ mod tests {
     fn a_diverging_inner_cycle_propagates_through_its_parent() {
         let model = crate::build(&parse_quote! {
             fn nested(flag: bool) -> usize {
-                #[cycle("Choose whether to finish.")]
+                #[kaa::cycle("Choose whether to finish.")]
                 let leave_2 = |flag| loop {
-                    #[question("Enter the cycle?")]
+                    #[kaa::question("Enter the cycle?")]
                     let (iterate_2, leave_2) = |flag| flag;
-                    #[cycle("Repeat forever.")]
+                    #[kaa::cycle("Repeat forever.")]
                     |iterate_2| loop {
                         continue;
                     };
                 };
-                #[action("Finish.")]
+                #[kaa::action("Finish.")]
                 let end = |leave_2| 0;
 
                 |end| return end;
@@ -423,11 +423,11 @@ mod tests {
     fn rejects_a_plan_that_skips_an_independent_effect() {
         let model = crate::build(&parse_quote! {
             fn effects() {
-                #[action("First")]
+                #[kaa::action("First")]
                 let first = || {};
-                #[action("Second")]
+                #[kaa::action("Second")]
                 let second = || {};
-                #[action("Finish")]
+                #[kaa::action("Finish")]
                 let end = |first, second| {};
 
                 |end| return end;
@@ -446,11 +446,11 @@ mod tests {
     fn rejects_a_join_that_drops_a_needed_binding() {
         let mut model = crate::build(&parse_quote! {
             fn choose(flag: bool) -> u8 {
-                #[question("Choose")]
+                #[kaa::question("Choose")]
                 let (yes, no) = |flag| { flag };
-                #[action("Yes value")]
+                #[kaa::action("Yes value")]
                 let value = |yes| { 1 };
-                #[action("No value")]
+                #[kaa::action("No value")]
                 let value = |no| { 2 };
                 |value| return value;
             }
@@ -473,11 +473,11 @@ mod tests {
     fn rejects_a_plan_that_reorders_two_blocks() {
         let model = crate::build(&parse_quote! {
             fn effects() {
-                #[action("First")]
+                #[kaa::action("First")]
                 let first = || {};
-                #[action("Second")]
+                #[kaa::action("Second")]
                 let second = || {};
-                #[action("Finish")]
+                #[kaa::action("Finish")]
                 let end = |first, second| {};
 
                 |end| return end;
@@ -501,17 +501,17 @@ mod tests {
     fn rejects_a_capture_before_branch_local_work_finishes() {
         let mut function: syn::ItemFn = parse_quote! {
             fn choose(flag: bool) -> u8 {
-                #[question("Choose")]
+                #[kaa::question("Choose")]
                 let (yes, no) = |flag| { flag };
-                #[action("Yes value")]
+                #[kaa::action("Yes value")]
                 let (value, yes_work) = |yes| { (1, ()) };
-                #[action("No value")]
+                #[kaa::action("No value")]
                 let (value, no_work) = |no| { (2, ()) };
-                #[action("Finish the yes branch")]
+                #[kaa::action("Finish the yes branch")]
                 let done = |yes_work| {};
-                #[action("Finish the no branch")]
+                #[kaa::action("Finish the no branch")]
                 let done = |no_work| {};
-                #[action("Use the merged value")]
+                #[kaa::action("Use the merged value")]
                 let used = |value| { value };
                 |used, done| return used;
             }
@@ -535,29 +535,29 @@ mod tests {
             (
                 "question",
                 parse_quote! {
-                    #[question("Use the setup?")]
+                    #[kaa::question("Use the setup?")]
                     let (yes, no) = |flag| { flag };
                 },
             ),
             (
                 "choice",
                 parse_quote! {
-                    #[choice("Use the setup?")]
-                    #[case("Use it.")]
-                    #[case("Skip it.")]
+                    #[kaa::choice("Use the setup?")]
+                    #[kaa::case("Use it.")]
+                    #[kaa::case("Skip it.")]
                     let (yes, no) = |flag| { match flag { true => (), false => () } };
                 },
             ),
         ] {
             let mut function: syn::ItemFn = parse_quote! {
                 fn choose(flag: bool, seed: u8) -> u8 {
-                    #[action("Prepare the setup.")]
+                    #[kaa::action("Prepare the setup.")]
                     let (setup, fallback) = |seed| { (seed, 0) };
-                    #[question("Use the setup?")]
+                    #[kaa::question("Use the setup?")]
                     let (yes, no) = |flag| { flag };
-                    #[action("Use the setup.")]
+                    #[kaa::action("Use the setup.")]
                     let result = |yes, setup| setup;
-                    #[action("Use the fallback.")]
+                    #[kaa::action("Use the fallback.")]
                     let result = |no, fallback| fallback;
                     |result| return result;
                 }
@@ -595,17 +595,17 @@ mod tests {
     fn a_merge_completes_above_the_selection_that_decides_its_consumers() {
         let mut function: syn::ItemFn = parse_quote! {
             fn choose(report: bool, flag: bool) -> u8 {
-                #[question("Choose the value.")]
+                #[kaa::question("Choose the value.")]
                 let (first, second) = |flag| { flag };
-                #[action("First value.")]
+                #[kaa::action("First value.")]
                 let value = |first| { 1 };
-                #[action("Second value.")]
+                #[kaa::action("Second value.")]
                 let value = |second| { 2 };
-                #[question("Report the value?")]
+                #[kaa::question("Report the value?")]
                 let (yes, no) = |report| { report };
-                #[action("Report it.")]
+                #[kaa::action("Report it.")]
                 let end = |yes, value| { value };
-                #[action("Report nothing.")]
+                #[kaa::action("Report nothing.")]
                 let end = |no, value| { 0 };
 
                 |end| return end;

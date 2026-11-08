@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn ordinary_wire_names(input: usize) -> usize {
-    #[action("Produce an end wire.")]
+    #[kaa::action("Produce an end wire.")]
     let end = |input| input + 1;
 
-    #[cycle("Use completion-like names inside a cycle.")]
+    #[kaa::cycle("Use completion-like names inside a cycle.")]
     let out = |end| loop {
-        #[action("Produce a local result wire.")]
+        #[kaa::action("Produce a local result wire.")]
         let result = |end| end + 1;
 
-        #[action("Produce a local out wire.")]
+        #[kaa::action("Produce a local out wire.")]
         let out = |result| result + 1;
     };
 
-    #[action("Produce a root result wire.")]
+    #[kaa::action("Produce a root result wire.")]
     let result = |out| out + 1;
 
     |result| return result;

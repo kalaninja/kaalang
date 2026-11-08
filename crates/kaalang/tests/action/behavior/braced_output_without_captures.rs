@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn braced_output_without_captures() -> u32 {
-    #[action("Build the value.")]
+    #[kaa::action("Build the value.")]
     let value = { 40 + 2 };
 
     |value| return value;

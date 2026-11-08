@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[action("Copy the input.")]
-    #[case("The action has no cases.")]
+    #[kaa::action("Copy the input.")]
+    #[kaa::case("The action has no cases.")]
     let output = |input| { input };
 }
 

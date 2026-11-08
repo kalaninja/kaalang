@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 static ARRIVALS: AtomicUsize = AtomicUsize::new(0);
 
@@ -8,12 +8,12 @@ fn record() {
     ARRIVALS.fetch_add(1, Ordering::Relaxed);
 }
 
-#[kaalang]
+#[kaa]
 fn call_a_bare_application() -> usize {
-    #[call]
+    #[kaa::call]
     record();
 
-    #[action("Report the recorded arrivals.")]
+    #[kaa::action("Report the recorded arrivals.")]
     let end = || ARRIVALS.load(Ordering::Relaxed);
 
     |end| return end;

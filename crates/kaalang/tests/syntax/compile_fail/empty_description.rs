@@ -1,6 +1,6 @@
-#[kaalang::kaalang]
+#[kaalang::kaa]
 fn invalid(input: u32) -> u32 {
-    #[action("")]
+    #[kaa::action("")]
     let output = |input| { input };
 }
 

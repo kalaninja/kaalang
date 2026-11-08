@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_stepped_range(limit: u32) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add every even number up to the limit.")]
+    #[kaa::cycle("Add every even number up to the limit.")]
     |limit| {
         for even in (0..=limit).step_by(2) {
-            #[action("Add the number.")]
+            #[kaa::action("Add the number.")]
             |even, &mut total| *total += even;
         }
     };

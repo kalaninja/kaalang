@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 macro_rules! staged {
     ($name:ident, $entry:ident, $statement:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name(value: u32) -> u32 {
-            #[action("Prepare the entry.")]
+            #[kaa::action("Prepare the entry.")]
             let $entry = |value| value;
 
-            #[stage("Increment the entry.")]
+            #[kaa::stage("Increment the entry.")]
             $statement;
         }
     };
@@ -20,7 +20,7 @@ macro_rules! stage_body {
 }
 
 stage_body!(stage_from_a_macro, entry, {
-    #[action("Add one.")]
+    #[kaa::action("Add one.")]
     let result = |entry| entry + 1;
 
     |result| return result;

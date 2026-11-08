@@ -1,5 +1,5 @@
 error: a type parameter is not a relationship target
- --> tests/types/compile_fail/type_parameter_target.rs:5:13
+ --> tests/types/compile_fail/type_parameter_target.rs:5:18
   |
-5 |     #[refer(T, "The payload.")]
-  |             ^
+5 |     #[kaa::refer(T, "The payload.")]
+  |                  ^

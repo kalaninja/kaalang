@@ -1,25 +1,25 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_on_each_branch(values: &[i64], twice: bool) -> i64 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[question("Should every value count twice?")]
+    #[kaa::question("Should every value count twice?")]
     let (double, single) = |twice| twice;
 
-    #[cycle("Add every value twice.")]
+    #[kaa::cycle("Add every value twice.")]
     let counted = |double, values| {
         for value in values {
-            #[action("Add the value twice.")]
+            #[kaa::action("Add the value twice.")]
             |value, &mut total| *total += 2 * *value;
         }
     };
 
-    #[cycle("Add every value once.")]
+    #[kaa::cycle("Add every value once.")]
     let counted = |single, values| {
         for value in values {
-            #[action("Add the value.")]
+            #[kaa::action("Add the value.")]
             |value, &mut total| *total += *value;
         }
     };

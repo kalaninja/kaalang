@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn conditional_nested_cycle(flag: bool) -> usize {
-    #[cycle("Choose between a nested cycle and a direct result.")]
+    #[kaa::cycle("Choose between a nested cycle and a direct result.")]
     let selected = |flag| loop {
-        #[question("Enter the cycle?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Enter the cycle?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (iterate_1, leave_1) = |flag| flag;
 
-        #[action("Produce two.")]
+        #[kaa::action("Produce two.")]
         let selected = |leave_1| 2;
 
-        #[cycle("Produce one.")]
+        #[kaa::cycle("Produce one.")]
         let selected = |iterate_1| loop {
-            #[action("Produce one.")]
+            #[kaa::action("Produce one.")]
             let selected = || 1;
         };
     };

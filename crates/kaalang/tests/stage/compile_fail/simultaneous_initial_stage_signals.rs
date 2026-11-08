@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn simultaneous_initial_stage_signals() {
-    #[action("A.")]
+    #[kaa::action("A.")]
     let go = || ();
-    #[action("B.")]
+    #[kaa::action("B.")]
     let stop = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     let go = |go| {
-        #[action("Again.")]
+        #[kaa::action("Again.")]
         let go = |go| go;
     };
-    #[stage("Stop.")]
+    #[kaa::stage("Stop.")]
     |stop| {
         return;
     };

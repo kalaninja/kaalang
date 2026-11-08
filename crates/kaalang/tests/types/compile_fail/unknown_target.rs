@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A report.")]
+#[kaa("A report.")]
 struct Report {
-    #[refer(Member, "The author.")]
+    #[kaa::refer(Member, "The author.")]
     author: String,
 }
 

@@ -1,6 +1,6 @@
 use std::{cell::Cell, rc::Rc};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Guard(Rc<Cell<bool>>);
 impl Drop for Guard {
@@ -9,18 +9,18 @@ impl Drop for Guard {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn capture_from_a_branch(condition: bool, dropped: Rc<Cell<bool>>) -> Rc<Cell<bool>> {
-    #[action("Create a root return guard.")]
+    #[kaa::action("Create a root return guard.")]
     let guard = |&dropped| Guard(dropped.clone());
 
-    #[question("Is the short answer enough?")]
+    #[kaa::question("Is the short answer enough?")]
     let (end, more) = |condition| condition;
 
-    #[action("Finish the longer branch.")]
+    #[kaa::action("Finish the longer branch.")]
     let result = |more, guard, dropped| dropped;
 
-    #[action("Finish the short branch.")]
+    #[kaa::action("Finish the short branch.")]
     let result = |end, guard, dropped| dropped;
 
     |result| return result;

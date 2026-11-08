@@ -1,5 +1,5 @@
 error: this kaalang block runs while the branches of the question `Left enabled?` are still separate; give it an input from one branch, or merge those branches above it
   --> tests/wire/compile_fail/independent_questions_decide_one_block.rs:11:5
    |
-11 |     #[question("Right enabled?")]
+11 |     #[kaa::question("Right enabled?")]
    |     ^

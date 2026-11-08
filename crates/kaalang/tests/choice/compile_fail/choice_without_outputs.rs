@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // `let ()` declares no wires, and a choice needs one per case.
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[choice("Pick without outputs.")]
-    #[case("First.")]
-    #[case("Second.")]
+    #[kaa::choice("Pick without outputs.")]
+    #[kaa::case("First.")]
+    #[kaa::case("Second.")]
     let () = |&input| {
         match input {
             0 => (),

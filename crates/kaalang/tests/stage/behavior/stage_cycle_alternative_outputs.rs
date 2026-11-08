@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn stage_cycle_alternative_outputs(go: u8) -> u8 {
-    #[stage("Count down.")]
+    #[kaa::stage("Count down.")]
     let (finish, go) = |go| {
-        #[action("Read the current value.")]
+        #[kaa::action("Read the current value.")]
         let current = |go| go;
 
-        #[cycle("Choose whether to repeat the stage.")]
+        #[kaa::cycle("Choose whether to repeat the stage.")]
         let (finish, go) = |current| loop {
-            #[choice("What happens to the value?")]
-            #[case("Repeat this cycle.")]
-            #[case("Finish the flow.")]
-            #[case("Visit this stage again.")]
+            #[kaa::choice("What happens to the value?")]
+            #[kaa::case("Repeat this cycle.")]
+            #[kaa::case("Finish the flow.")]
+            #[kaa::case("Visit this stage again.")]
             let (retry, done, again) = |current| match current {
                 255 => (),
                 0 => (),
@@ -21,15 +21,15 @@ fn stage_cycle_alternative_outputs(go: u8) -> u8 {
 
             |retry| continue;
 
-            #[action("Keep the finished value.")]
+            #[kaa::action("Keep the finished value.")]
             let finish = |done, current| current;
 
-            #[action("Decrease the value.")]
+            #[kaa::action("Decrease the value.")]
             let go = |again, current| current - 1;
         };
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

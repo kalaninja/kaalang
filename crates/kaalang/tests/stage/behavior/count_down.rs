@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn count_down(count: usize) -> usize {
-    #[stage("Count down to zero.")]
+    #[kaa::stage("Count down to zero.")]
     let (count, finish) = |count| {
-        #[choice("Is another step needed?")]
-        #[case("Take the next step.")]
-        #[case("The count is zero.")]
+        #[kaa::choice("Is another step needed?")]
+        #[kaa::case("Take the next step.")]
+        #[kaa::case("The count is zero.")]
         let (count, finish) = |count| match count {
             value if value > 0 => value - 1,
             _ => 0usize,
         };
     };
 
-    #[stage("Return zero.")]
+    #[kaa::stage("Return zero.")]
     |finish| {
         |finish| return finish;
     };

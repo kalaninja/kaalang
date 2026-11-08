@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Two borrows and then a move of the same wire, in exactly that order. The
 /// move also waits for a trigger the first borrow produced. Rust checks the
 /// borrows against the move; kaalang only fixes the sequence.
-#[kaalang]
+#[kaa]
 fn borrowers_before_a_move(text: String) -> (usize, bool, String) {
-    #[action("Measure the text.")]
+    #[kaa::action("Measure the text.")]
     let (length, trigger) = |&text| (text.len(), ());
 
-    #[action("Ask whether the text is empty.")]
+    #[kaa::action("Ask whether the text is empty.")]
     let empty = |&text| text.is_empty();
 
     |trigger, text, length, empty| return (length, empty, text);

@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Try to describe a continue.")]
+    #[kaa::cycle("Try to describe a continue.")]
     loop {
         #[allow(unused)]
         continue;

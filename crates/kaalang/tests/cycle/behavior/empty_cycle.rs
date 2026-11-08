@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(dead_code)]
-#[kaalang]
+#[kaa]
 fn empty_cycle() -> usize {
-    #[cycle("Repeat forever.")]
+    #[kaa::cycle("Repeat forever.")]
     loop {
         continue;
     }

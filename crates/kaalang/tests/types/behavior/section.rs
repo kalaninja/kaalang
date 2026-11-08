@@ -1,33 +1,33 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A key naming one section.")]
+#[kaa("A key naming one section.")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct SectionId(u32);
 
 // Declared before `Section` and still refers to it.
-#[kaalang("A reader's remark pinned to a section.")]
+#[kaa("A reader's remark pinned to a section.")]
 struct Note {
-    #[value("The remark.")]
+    #[kaa::value("The remark.")]
     text: String,
-    #[refer(Section, "The section the remark is pinned to.")]
+    #[kaa::refer(Section, "The section the remark is pinned to.")]
     anchor: SectionId,
 }
 
-#[kaalang("A section of an article, nested to any depth.")]
+#[kaa("A section of an article, nested to any depth.")]
 struct Section {
-    #[value("The section's key.")]
+    #[kaa::value("The section's key.")]
     id: SectionId,
-    #[value("The section heading.")]
+    #[kaa::value("The section heading.")]
     heading: String,
-    #[refer(Note, "Remarks pinned to this section.")]
+    #[kaa::refer(Note, "Remarks pinned to this section.")]
     notes: Vec<Note>,
-    #[refer(Section, "Subsections in reading order.")]
+    #[kaa::refer(Section, "Subsections in reading order.")]
     children: Vec<Section>,
 }
 
-#[kaalang("An article's outline.")]
+#[kaa("An article's outline.")]
 struct Outline {
-    #[refer(Section, "Top-level sections in reading order.")]
+    #[kaa::refer(Section, "Top-level sections in reading order.")]
     sections: Vec<Section>,
 }
 

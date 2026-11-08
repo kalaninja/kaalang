@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn const_owned_entry(go: String) -> String {
-    #[stage("Forward the string.")]
+    #[kaa::stage("Forward the string.")]
     let finish = |go| {
-        #[action("Forward the value.")]
+        #[kaa::action("Forward the value.")]
         let finish = |go| go;
     };
 
-    #[stage("Return the string.")]
+    #[kaa::stage("Return the string.")]
     |finish| {
         |finish| return finish;
     };

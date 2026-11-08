@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn unreachable_stage() {
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Lost.")]
+    #[kaa::stage("Lost.")]
     let lost = |lost| {
-        #[action("Again.")]
+        #[kaa::action("Again.")]
         let lost = |lost| lost;
     };
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     |go| {
         return;
     };

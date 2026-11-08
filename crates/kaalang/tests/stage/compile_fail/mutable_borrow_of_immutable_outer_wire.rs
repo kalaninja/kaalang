@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_borrow_of_immutable_outer_wire() {
-    #[action("Outer.")]
+    #[kaa::action("Outer.")]
     let shared = || 1;
-    #[action("Go.")]
+    #[kaa::action("Go.")]
     let go = || ();
-    #[stage("Go.")]
+    #[kaa::stage("Go.")]
     |go| {
         |&mut shared| return;
     };

@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn nearest_cycle_outputs(mut count: usize) -> usize {
-    #[cycle("Run passes until two have finished.")]
+    #[kaa::cycle("Run passes until two have finished.")]
     let done = loop {
-        #[cycle("Complete the inner pass immediately.")]
+        #[kaa::cycle("Complete the inner pass immediately.")]
         let finished = || loop {
-            #[action("Finish the inner pass.")]
+            #[kaa::action("Finish the inner pass.")]
             let finished = || {};
         };
 
-        #[action("Advance the outer pass.")]
+        #[kaa::action("Advance the outer pass.")]
         let advanced = |finished, &mut count| *count += 1;
 
-        #[question("Have two passes finished?")]
+        #[kaa::question("Have two passes finished?")]
         let (done, again) = |advanced, &count| *count >= 2;
 
-        #[action("Finish this pass.")]
+        #[kaa::action("Finish this pass.")]
         |again| {};
 
         |again| continue;

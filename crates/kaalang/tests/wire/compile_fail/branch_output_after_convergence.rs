@@ -1,26 +1,26 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // A branch output is an ordinary wire, but it stays branch-local: reading it
 // again below its own merge is rejected like any other branch-local value, and
 // not by a rule of its own.
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) -> u32 {
-    #[question("Which way?")]
+    #[kaa::question("Which way?")]
     let (yes, no) = |condition| { condition };
 
-    #[action("Build the yes value.")]
+    #[kaa::action("Build the yes value.")]
     let selected = |yes| { 1 };
 
-    #[action("Build the no value and a note.")]
+    #[kaa::action("Build the no value and a note.")]
     let (selected, extra) = |no| { (2, 7) };
 
-    #[action("Take the shared step.")]
+    #[kaa::action("Take the shared step.")]
     let stepped = |selected| { selected * 10 };
 
-    #[action("Read the yes output again after the shared step.")]
+    #[kaa::action("Read the yes output again after the shared step.")]
     let end = |stepped, yes| { stepped };
 
-    #[action("Finish with the note.")]
+    #[kaa::action("Finish with the note.")]
     let end = |stepped, extra| { stepped + extra };
 
     |end| return end;

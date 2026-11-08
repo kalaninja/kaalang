@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 // An action without an output declaration produces no wires, so Rust
 // checks the body against `()` just as `let ()` does.
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) {
-    #[action("Omit the outputs and return a value anyway.")]
+    #[kaa::action("Omit the outputs and return a value anyway.")]
     |input| {
         let doubled = input * 2;
         doubled
     };
 
-    #[action("Finish.")]
+    #[kaa::action("Finish.")]
     let end = || {};
 
     |end| return end;

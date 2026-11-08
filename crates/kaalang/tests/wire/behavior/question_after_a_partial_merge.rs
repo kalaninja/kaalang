@@ -1,36 +1,36 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn question_after_a_partial_merge(value: u8, flag: bool) -> u8 {
-    #[choice("Which source?")]
-    #[case("First source.")]
-    #[case("Second source.")]
-    #[case("Third source.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Third source.")]
     let (first, second, third) = |value| match value {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Build the value from the first source.")]
+    #[kaa::action("Build the value from the first source.")]
     let partial = |first| 10;
 
-    #[action("Build the value from the second source.")]
+    #[kaa::action("Build the value from the second source.")]
     let partial = |second| 20;
 
-    #[action("Use the partially merged value.")]
+    #[kaa::action("Use the partially merged value.")]
     let shared = |partial| partial + 1;
 
-    #[action("Build the value from the third source.")]
+    #[kaa::action("Build the value from the third source.")]
     let shared = |third| 30;
 
-    #[question("Is the value large?")]
+    #[kaa::question("Is the value large?")]
     let (large, small) = |&shared, flag| flag && *shared > 15;
 
-    #[action("Double a large value.")]
+    #[kaa::action("Double a large value.")]
     let end = |large, shared| shared * 2;
 
-    #[action("Keep a small value.")]
+    #[kaa::action("Keep a small value.")]
     let end = |small, shared| shared;
 
     |end| return end;

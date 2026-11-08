@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn prepared_merge(seed: u32, choose: bool) -> u32 {
-    #[question("Choose the prepared value.")]
+    #[kaa::question("Choose the prepared value.")]
     let (yes, no) = |choose| choose;
 
-    #[action("Prepare the first value.")]
+    #[kaa::action("Prepare the first value.")]
     let (shared, go) = |yes, seed| (seed + 1, ());
 
-    #[action("Prepare the second value.")]
+    #[kaa::action("Prepare the second value.")]
     let (shared, go) = |no, seed| (seed + 2, ());
 
-    #[stage("Return the prepared value.")]
+    #[kaa::stage("Return the prepared value.")]
     |go| {
         |shared| return shared;
     };

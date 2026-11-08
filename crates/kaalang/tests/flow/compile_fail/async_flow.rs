@@ -1,6 +1,6 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 async fn invalid(end: u32) -> u32 {}
 
 fn main() {}

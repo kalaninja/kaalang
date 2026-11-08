@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: usize) -> usize {
-    #[cycle("Declare an output the body never produces.")]
+    #[kaa::cycle("Declare an output the body never produces.")]
     let (left, right) = |value| loop {
-        #[action("Produce only the left output.")]
+        #[kaa::action("Produce only the left output.")]
         let left = |value| value;
     };
 
-    #[action("Use the left output.")]
+    #[kaa::action("Use the left output.")]
     let result = |left| left;
 
-    #[action("Use the right output.")]
+    #[kaa::action("Use the right output.")]
     let result = |right| right;
 
     |result| return result;

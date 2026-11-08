@@ -1,21 +1,21 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Common work after a selection needs the branches to merge first. Both
 /// branches provide a unit-valued `ready` wire, and the transform follows it.
-#[kaalang]
+#[kaa]
 fn branch_log_with_merge(condition: bool, value: String) -> usize {
-    #[question("Log the value?")]
+    #[kaa::question("Log the value?")]
     let (yes, no) = |condition| condition;
 
-    #[action("Log.")]
+    #[kaa::action("Log.")]
     let ready = |yes, &value| {
         assert_eq!(value, "abc");
     };
 
-    #[action("Continue without logging.")]
+    #[kaa::action("Continue without logging.")]
     let ready = |no| {};
 
-    #[action("Transform.")]
+    #[kaa::action("Transform.")]
     let end = |ready, value| value.len();
 
     |end| return end;

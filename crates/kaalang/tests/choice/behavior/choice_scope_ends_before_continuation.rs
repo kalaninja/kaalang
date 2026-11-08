@@ -1,22 +1,22 @@
 use std::cell::{Cell, RefCell};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Both the captured input guard and the match binding leave scope before the
 /// selected continuation mutably borrows the cell. Case values have different
 /// types, and evaluating the scrutinee records exactly one visit.
-#[kaalang]
+#[kaa]
 fn choice_scope_ends_before_continuation(
     condition: bool,
     cell: &RefCell<usize>,
     evaluations: &Cell<usize>,
 ) -> usize {
-    #[action("Borrow the cell before choosing.")]
+    #[kaa::action("Borrow the cell before choosing.")]
     let input_guard = |cell| cell.borrow();
 
-    #[choice("Which increment should be applied?")]
-    #[case("Use the next value.")]
-    #[case("Use the fallback word's length.")]
+    #[kaa::choice("Which increment should be applied?")]
+    #[kaa::case("Use the next value.")]
+    #[kaa::case("Use the fallback word's length.")]
     let (number, text) = |condition, input_guard, cell, evaluations| match {
         evaluations.set(evaluations.get() + 1);
         (condition, cell.borrow())
@@ -31,14 +31,14 @@ fn choice_scope_ends_before_continuation(
         }
     };
 
-    #[action("Apply the numeric increment after leaving the choice.")]
+    #[kaa::action("Apply the numeric increment after leaving the choice.")]
     let end = |number, cell| {
         let mut value = cell.borrow_mut();
         *value += number;
         *value
     };
 
-    #[action("Apply the text length after leaving the choice.")]
+    #[kaa::action("Apply the text length after leaving the choice.")]
     let end = |text, cell| {
         let mut value = cell.borrow_mut();
         *value += text.len();

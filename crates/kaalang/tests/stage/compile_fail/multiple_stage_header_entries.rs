@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn multiple_stage_header_entries(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go, other| {
         return;
     };

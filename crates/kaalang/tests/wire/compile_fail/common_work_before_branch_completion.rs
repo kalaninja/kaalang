@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> u8 {
-    #[question("Choose the value.")]
+    #[kaa::question("Choose the value.")]
     let (yes, no) = |flag| { flag };
 
-    #[action("Build the yes value and local work.")]
+    #[kaa::action("Build the yes value and local work.")]
     let (value, local) = |yes| { (1, ()) };
 
-    #[action("Build the no value.")]
+    #[kaa::action("Build the no value.")]
     let value = |no| { 2 };
 
-    #[action("Common effect.")]
+    #[kaa::action("Common effect.")]
     || {};
 
-    #[action("Local effect.")]
+    #[kaa::action("Local effect.")]
     |local| {};
 
     |value| return value;

@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn owned_local_result(mut count: usize) -> String {
-    #[cycle("Repeat before producing an owned local result.")]
+    #[kaa::cycle("Repeat before producing an owned local result.")]
     let text = loop {
-        #[question("Has the countdown finished?")]
+        #[kaa::question("Has the countdown finished?")]
         let (done, again) = |count| count == 0;
 
-        #[action("Advance the countdown.")]
+        #[kaa::action("Advance the countdown.")]
         |again, &mut count| *count -= 1;
 
-        #[action("Build the owned result.")]
+        #[kaa::action("Build the owned result.")]
         let text = |done| String::from("done");
 
         |again| continue;

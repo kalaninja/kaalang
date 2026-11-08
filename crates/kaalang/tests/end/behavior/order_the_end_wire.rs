@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn order_the_end_wire(input: u32) -> (u32, u32, u32) {
-    #[action("Build three values.")]
+    #[kaa::action("Build three values.")]
     let (first, second, third) = |input| (input, input + 1, input + 2);
 
-    #[action("Order the three values.")]
+    #[kaa::action("Order the three values.")]
     let end = |third, first, second| (third, first, second);
 
     |end| return end;

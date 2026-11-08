@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> u32 {
-    #[question("Which route?")]
+    #[kaa::question("Which route?")]
     let (first, second) = |flag| flag;
 
-    #[action("Produce the first value.")]
+    #[kaa::action("Produce the first value.")]
     let value = |first| 1;
 
-    #[cycle("Read the value this cycle produces.")]
+    #[kaa::cycle("Read the value this cycle produces.")]
     let value = |second| loop {
-        #[action("Read the value.")]
+        #[kaa::action("Read the value.")]
         let value = |value| value + 1;
     };
 

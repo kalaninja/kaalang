@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn simultaneous_stage_outputs(go: ()) {
-    #[stage("Choose.")]
+    #[kaa::stage("Choose.")]
     let (next, finish) = |go| {
-        #[action("Next.")]
+        #[kaa::action("Next.")]
         let next = |go| ();
-        #[action("Finish.")]
+        #[kaa::action("Finish.")]
         let finish = || ();
     };
-    #[stage("Continue.")]
+    #[kaa::stage("Continue.")]
     let finish = |next| {
-        #[action("Finish later.")]
+        #[kaa::action("Finish later.")]
         let finish = |next| ();
     };
-    #[stage("Return.")]
+    #[kaa::stage("Return.")]
     |finish| {
         return;
     };

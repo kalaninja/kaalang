@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn question_value(condition: bool, shared_runs: &mut usize) -> u32 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes value.")]
+    #[kaa::action("Build the yes value.")]
     let selected = |yes| 11;
 
-    #[action("Build the no value.")]
+    #[kaa::action("Build the no value.")]
     let selected = |no| 29;
 
-    #[action("Use the selected value once.")]
+    #[kaa::action("Use the selected value once.")]
     let end = |selected, shared_runs| {
         *shared_runs += 1;
         selected

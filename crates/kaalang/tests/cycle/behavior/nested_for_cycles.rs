@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_for_cycles(rows: &[Vec<u32>]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add every row.")]
+    #[kaa::cycle("Add every row.")]
     |rows| {
         for row in rows {
-            #[cycle("Add every value of the row.")]
+            #[kaa::cycle("Add every value of the row.")]
             |row| {
                 for value in row {
-                    #[action("Add the value.")]
+                    #[kaa::action("Add the value.")]
                     |value, &mut total| *total += *value;
                 }
             };

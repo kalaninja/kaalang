@@ -1,36 +1,36 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_reference_through_nested_joins(
     outer: bool,
     inner: bool,
     mut text: String,
 ) -> (String, usize) {
-    #[question("Use the nested branch?")]
+    #[kaa::question("Use the nested branch?")]
     let (nested, fallback) = |outer| outer;
 
-    #[question("Choose the inner mutation.")]
+    #[kaa::question("Choose the inner mutation.")]
     let (first, second) = |nested, inner| inner;
 
-    #[action("Borrow and append the first suffix.")]
+    #[kaa::action("Borrow and append the first suffix.")]
     let partial = |first, &mut text| {
         text.push('a');
         text
     };
 
-    #[action("Borrow and append the second suffix.")]
+    #[kaa::action("Borrow and append the second suffix.")]
     let partial = |second, &mut text| {
         text.push('b');
         text
     };
 
-    #[action("Carry the borrowed value onward.")]
+    #[kaa::action("Carry the borrowed value onward.")]
     let view = |partial| partial;
 
-    #[action("Borrow on the fallback branch.")]
+    #[kaa::action("Borrow on the fallback branch.")]
     let view = |fallback, &mut text| text;
 
-    #[action("Mutate through the reference after both joins.")]
+    #[kaa::action("Mutate through the reference after both joins.")]
     let length = |view| {
         view.push('!');
         view.len()

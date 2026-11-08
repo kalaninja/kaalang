@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
     |future| return future;
 
-    #[action("Declare the wire too late.")]
+    #[kaa::action("Declare the wire too late.")]
     let future = |input| { input };
 
 }

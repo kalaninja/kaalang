@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> ! {
-    #[cycle("Try to borrow the gate.")]
+    #[kaa::cycle("Try to borrow the gate.")]
     |&flag| loop {};
 }
 

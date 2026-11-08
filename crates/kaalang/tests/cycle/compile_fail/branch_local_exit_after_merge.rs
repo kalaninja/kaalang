@@ -1,25 +1,25 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn branch_local_exit_after_merge(go: bool) -> u8 {
-    #[cycle("Complete after a merge.")]
+    #[kaa::cycle("Complete after a merge.")]
     let finish = |go| loop {
-        #[question("Take the first branch?")]
+        #[kaa::question("Take the first branch?")]
         let (first, second) = |go| go;
 
-        #[action("Build the first value.")]
+        #[kaa::action("Build the first value.")]
         let shared = |first| 1u8;
 
-        #[action("Build the second value.")]
+        #[kaa::action("Build the second value.")]
         let shared = |second| 2u8;
 
-        #[action("Use the merged value.")]
+        #[kaa::action("Use the merged value.")]
         let used = |shared| shared;
 
-        #[action("Exit through the first branch.")]
+        #[kaa::action("Exit through the first branch.")]
         let finish = |first, used| used;
 
-        #[action("Exit through the second branch.")]
+        #[kaa::action("Exit through the second branch.")]
         let finish = |second, used| used;
     };
 

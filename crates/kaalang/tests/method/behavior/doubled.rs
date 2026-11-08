@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 trait Measure {
     fn width(&self) -> u32;
 
-    #[kaalang]
+    #[kaa]
     fn doubled(&self) -> u32 {
-        #[action("Double the width.")]
+        #[kaa::action("Double the width.")]
         let end = |&self| self.width() * 2;
 
         |end| return end;

@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_internal_names(
     __kaalang_unnamed_done_0: u32,
     __kaalang_unnamed_item_0: u32,
     __kaalang_items: u32,
 ) -> u32 {
-    #[cycle("Complete one iteration without naming its item or output.")]
+    #[kaa::cycle("Complete one iteration without naming its item or output.")]
     for _ in 0..1 {}
 
-    #[action("Add the authored values.")]
+    #[kaa::action("Add the authored values.")]
     let __kaalang_unnamed_done_0_ =
         |__kaalang_unnamed_done_0, __kaalang_unnamed_item_0, __kaalang_items| {
             __kaalang_unnamed_done_0 + __kaalang_unnamed_item_0 + __kaalang_items

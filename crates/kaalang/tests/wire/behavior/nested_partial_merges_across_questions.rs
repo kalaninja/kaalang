@@ -1,32 +1,32 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_partial_merges_across_questions(first: bool, second: bool, third: bool) -> u32 {
-    #[question("Take the shortcut?")]
+    #[kaa::question("Take the shortcut?")]
     let (shortcut, onward) = |first| first;
 
-    #[question("Keep refining?")]
+    #[kaa::question("Keep refining?")]
     let (refine, stop) = |onward, second| second;
 
-    #[question("Refine once more?")]
+    #[kaa::question("Refine once more?")]
     let (again, settle) = |refine, third| third;
 
-    #[action("Start the inner value from two.")]
+    #[kaa::action("Start the inner value from two.")]
     let inner = |shortcut| 2;
 
-    #[action("Start the inner value from three.")]
+    #[kaa::action("Start the inner value from three.")]
     let inner = |again| 3;
 
-    #[action("Start the middle value from four.")]
+    #[kaa::action("Start the middle value from four.")]
     let middle = |settle| 4;
 
-    #[action("Wrap the inner value.")]
+    #[kaa::action("Wrap the inner value.")]
     let middle = |inner| inner * 10 + 2;
 
-    #[action("Wrap the middle value.")]
+    #[kaa::action("Wrap the middle value.")]
     let end = |middle| middle * 10 + 1;
 
-    #[action("Stop at five.")]
+    #[kaa::action("Stop at five.")]
     let end = |stop| 5;
 
     |end| return end;

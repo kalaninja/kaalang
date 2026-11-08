@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: Vec<u32>) {
-    #[cycle("Visit every value.")]
+    #[kaa::cycle("Visit every value.")]
     |values| for value in values {
-        #[action("Use the value.")]
+        #[kaa::action("Use the value.")]
         let used = |value| drop(value);
 
         |used| continue;

@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn invalid(self) -> u32 {
-        #[action("Read the width through a borrowing capture.")]
+        #[kaa::action("Read the width through a borrowing capture.")]
         let end = |&self| self.width;
 
         |end| return end;

@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn destructure_singleton_tuple(input: u32) -> u32 {
-    #[action("Extract the tuple element.")]
+    #[kaa::action("Extract the tuple element.")]
     let (mut value,) = |input| (input,);
 
-    #[action("Increment the extracted value.")]
+    #[kaa::action("Increment the extracted value.")]
     |&mut value| *value += 1;
 
     |value| return value;

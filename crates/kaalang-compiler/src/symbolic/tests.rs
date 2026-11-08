@@ -232,18 +232,18 @@ fn arbitrary_branch_work_and_captures_preserve_rejection_priority() {
     }
     let nested = branching_with_work(4).replace(
         "let data_0_0 = |case_0_0, &prepared, &config| *prepared + *config;",
-        "let (nested_yes, nested_no) = |case_0_0, &config| *config > 1;\n    #[action(\"Nested yes.\")]\n    let data_0_0 = |nested_yes, &prepared, &config| *prepared + *config;\n    #[action(\"Nested no.\")]\n    let data_0_0 = |nested_no, &prepared, &config| *prepared + *config + 1;"
-    ).replace("#[action(\"Prepare branch 0/0.\")]", "#[question(\"Nested work?\")]");
+        "let (nested_yes, nested_no) = |case_0_0, &config| *config > 1;\n    #[kaa::action(\"Nested yes.\")]\n    let data_0_0 = |nested_yes, &prepared, &config| *prepared + *config;\n    #[kaa::action(\"Nested no.\")]\n    let data_0_0 = |nested_no, &prepared, &config| *prepared + *config + 1;"
+    ).replace("#[kaa::action(\"Prepare branch 0/0.\")]", "#[kaa::question(\"Nested work?\")]");
     assert!(compare(&flow(&nested)));
 }
 
 #[test]
 fn transitive_dependencies_can_require_more_than_two_changed_answers() {
-    let mut body = String::from("#[kaalang] fn conditional(flag: bool, seed: usize) -> usize {\n");
+    let mut body = String::from("#[kaa] fn conditional(flag: bool, seed: usize) -> usize {\n");
     let mut previous = "seed".to_owned();
     for level in 0..6 {
         use std::fmt::Write;
-        writeln!(body, "#[question(\"Keep the earlier value?\")] let (reset_{level}, keep_{level}) = |&flag| *flag;\n#[action(\"Reset.\")] let step_{level} = |reset_{level}, &seed| *seed;\n#[action(\"Keep.\")] let step_{level} = |keep_{level}, &{previous}| *{previous} + 1;").expect("the source is writable");
+        writeln!(body, "#[kaa::question(\"Keep the earlier value?\")] let (reset_{level}, keep_{level}) = |&flag| *flag;\n#[kaa::action(\"Reset.\")] let step_{level} = |reset_{level}, &seed| *seed;\n#[kaa::action(\"Keep.\")] let step_{level} = |keep_{level}, &{previous}| *{previous} + 1;").expect("the source is writable");
         previous = format!("step_{level}");
     }
     body.push_str("|step_5| return step_5; }");
@@ -328,11 +328,11 @@ fn nested_cycle_frames_and_rejected_body_mutations_match_the_reference() {
     let nested = source
         .replace(
             "let (left, right) = || loop {",
-            "let (left, right) = || loop { #[cycle(\"Inner work.\")] let (left, right) = || loop {",
+            "let (left, right) = || loop { #[kaa::cycle(\"Inner work.\")] let (left, right) = || loop {",
         )
         .replace(
-            "\n};\n#[action(\"Use the left result.\")]",
-            "\n};\n};\n#[action(\"Use the left result.\")]",
+            "\n};\n#[kaa::action(\"Use the left result.\")]",
+            "\n};\n};\n#[kaa::action(\"Use the left result.\")]",
         );
     assert!(compare(&flow(&nested)));
     let mut function = flow(&source);

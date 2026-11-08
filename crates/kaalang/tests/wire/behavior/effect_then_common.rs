@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 thread_local! {
     static ORDER: RefCell<Vec<&'static str>> = const { RefCell::new(Vec::new()) };
@@ -12,38 +12,38 @@ fn record(block: &'static str) {
 
 /// A zero-output action finishes the branch before common work that captures
 /// nothing from the merge. Its serial route still passes through the junction.
-#[kaalang]
+#[kaa]
 fn effect_then_common(flag: bool) -> u8 {
-    #[question("Choose.")]
+    #[kaa::question("Choose.")]
     let (yes, no) = |flag| {
         record("choose");
         flag
     };
 
-    #[action("Yes value.")]
+    #[kaa::action("Yes value.")]
     let (value, local) = |yes| {
         record("yes");
         (1, ())
     };
 
-    #[action("Local effect.")]
+    #[kaa::action("Local effect.")]
     |local| {
         record("effect");
     };
 
-    #[action("No value.")]
+    #[kaa::action("No value.")]
     let value = |no| {
         record("no");
         2
     };
 
-    #[action("Common stamp.")]
+    #[kaa::action("Common stamp.")]
     let stamp = || {
         record("stamp");
         10
     };
 
-    #[action("Finish.")]
+    #[kaa::action("Finish.")]
     let end = |value, stamp| {
         record("finish");
         value + stamp

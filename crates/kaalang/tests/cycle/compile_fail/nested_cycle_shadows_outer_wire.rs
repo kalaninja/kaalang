@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_cycle_shadows_outer_wire(value: u8) -> u8 {
-    #[cycle("Complete an outer cycle.")]
+    #[kaa::cycle("Complete an outer cycle.")]
     let result = loop {
-        #[cycle("Try to shadow the outer value.")]
+        #[kaa::cycle("Try to shadow the outer value.")]
         let nested = loop {
-            #[action("Reuse the outer name.")]
+            #[kaa::action("Reuse the outer name.")]
             let value = || 1u8;
 
-            #[action("Complete the inner cycle.")]
+            #[kaa::action("Complete the inner cycle.")]
             let nested = |value| ();
         };
 
-        #[action("Complete the outer cycle.")]
+        #[kaa::action("Complete the outer cycle.")]
         let result = |nested| 2u8;
     };
 

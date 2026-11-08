@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct NonCopy(u8);
 
-#[kaalang]
+#[kaa]
 const fn const_noncopy_without_destructor(go: NonCopy) -> u8 {
-    #[stage("Read the value.")]
+    #[kaa::stage("Read the value.")]
     let finish = |go| {
-        #[action("Read the value.")]
+        #[kaa::action("Read the value.")]
         let finish = |go| go.0;
     };
 
-    #[stage("Return the value.")]
+    #[kaa::stage("Return the value.")]
     |finish| {
         |finish| return finish;
     };

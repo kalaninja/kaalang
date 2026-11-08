@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(condition: bool) -> u32 {
-    #[question("Choose a value.")]
+    #[kaa::question("Choose a value.")]
     let (yes, no) = |condition| { condition };
 
-    #[action("Build a number.")]
+    #[kaa::action("Build a number.")]
     let selected = |yes| { 1_u32 };
 
-    #[action("Build text.")]
+    #[kaa::action("Build text.")]
     let selected = |no| { "no" };
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let end = |selected| { 0 };
 
     |end| return end;

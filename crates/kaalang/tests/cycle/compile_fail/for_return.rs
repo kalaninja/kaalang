@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(values: &[u32]) -> u32 {
-    #[cycle("Visit every value.")]
+    #[kaa::cycle("Visit every value.")]
     |values| for value in values {
         |value| return *value;
     };

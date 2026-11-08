@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Try to continue a label.")]
+    #[kaa::cycle("Try to continue a label.")]
     loop {
         continue 'outer;
     };

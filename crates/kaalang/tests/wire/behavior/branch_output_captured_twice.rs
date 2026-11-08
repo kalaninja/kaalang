@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A branch output is an ordinary wire. The first consumer enters the branch,
 /// and the second reads the same value through it rather than from a second
 /// connection off the branch exit.
-#[kaalang]
+#[kaa]
 fn branch_output_captured_twice(condition: bool) -> u8 {
-    #[question("Choose the branch.")]
+    #[kaa::question("Choose the branch.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Start the yes branch.")]
+    #[kaa::action("Start the yes branch.")]
     let first = |yes| 1;
 
-    #[action("Read the same branch output again.")]
+    #[kaa::action("Read the same branch output again.")]
     let second = |yes| 2;
 
-    #[action("Finish the yes branch.")]
+    #[kaa::action("Finish the yes branch.")]
     let end = |first, second| first + second;
 
-    #[action("Finish the no branch.")]
+    #[kaa::action("Finish the no branch.")]
     let end = |no| 0;
 
     |end| return end;

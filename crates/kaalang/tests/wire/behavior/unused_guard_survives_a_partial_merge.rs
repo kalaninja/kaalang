@@ -1,34 +1,34 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Only the first two cases merge `_guard`. It remains alive through their
 /// shared continuation, then drops before the wider merge with the last case.
-#[kaalang]
+#[kaa]
 fn unused_guard_survives_a_partial_merge(source: u8, cell: &RefCell<usize>) -> bool {
-    #[choice("Which branch borrows the cell?")]
-    #[case("First borrower.")]
-    #[case("Second borrower.")]
-    #[case("Leave the cell unborrowed.")]
+    #[kaa::choice("Which branch borrows the cell?")]
+    #[kaa::case("First borrower.")]
+    #[kaa::case("Second borrower.")]
+    #[kaa::case("Leave the cell unborrowed.")]
     let (first, second, fallback) = |source| match source {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Borrow the cell on the first branch.")]
+    #[kaa::action("Borrow the cell on the first branch.")]
     let (_guard, ready) = |first, cell| (cell.borrow_mut(), ());
 
-    #[action("Borrow the cell on the second branch.")]
+    #[kaa::action("Borrow the cell on the second branch.")]
     let (_guard, ready) = |second, cell| (cell.borrow_mut(), ());
 
-    #[action("Check that the partially merged guard is alive.")]
+    #[kaa::action("Check that the partially merged guard is alive.")]
     let borrowed = |ready, cell| cell.try_borrow_mut().is_err();
 
-    #[action("Continue without borrowing the cell.")]
+    #[kaa::action("Continue without borrowing the cell.")]
     let borrowed = |fallback| false;
 
-    #[action("Check that the wider merge releases the partial guard.")]
+    #[kaa::action("Check that the wider merge releases the partial guard.")]
     let end = |borrowed, cell| {
         assert!(cell.try_borrow_mut().is_ok());
         borrowed

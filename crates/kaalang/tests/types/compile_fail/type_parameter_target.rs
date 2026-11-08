@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("An attachment.")]
+#[kaa("An attachment.")]
 struct Attachment<T> {
-    #[refer(T, "The payload.")]
+    #[kaa::refer(T, "The payload.")]
     payload: Box<T>,
 }
 

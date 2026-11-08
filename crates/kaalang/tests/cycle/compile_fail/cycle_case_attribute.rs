@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Try to add a case.")]
-    #[case("Unsupported.")]
+    #[kaa::cycle("Try to add a case.")]
+    #[kaa::case("Unsupported.")]
     || loop {};
 }
 

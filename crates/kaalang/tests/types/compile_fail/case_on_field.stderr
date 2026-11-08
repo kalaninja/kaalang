@@ -1,5 +1,5 @@
 error: `case` describes an enum variant
  --> tests/types/compile_fail/case_on_field.rs:5:5
   |
-5 |     #[case("The member's name.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     #[kaa::case("The member's name.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

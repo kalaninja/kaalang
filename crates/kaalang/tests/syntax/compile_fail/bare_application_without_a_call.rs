@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 fn log() {}
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u32) -> u32 {
-    #[action("Log the arrival.")]
+    #[kaa::action("Log the arrival.")]
     log();
 
-    #[action("Keep the value.")]
+    #[kaa::action("Keep the value.")]
     let end = |value| value;
 
     |end| return end;

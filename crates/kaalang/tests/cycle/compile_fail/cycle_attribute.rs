@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Try an unsupported attribute.")]
+    #[kaa::cycle("Try an unsupported attribute.")]
     #[allow(unused)]
     || loop {};
 }

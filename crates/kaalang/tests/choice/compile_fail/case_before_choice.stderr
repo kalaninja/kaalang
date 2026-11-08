@@ -1,5 +1,5 @@
-error: a `#[case("description")]` attribute must follow `#[choice("description")]`
+error: a `#[kaa::case("description")]` attribute must follow `#[kaa::choice("description")]`
  --> tests/choice/compile_fail/case_before_choice.rs:5:5
   |
-5 |     #[case("The input is negative.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |     #[kaa::case("The input is negative.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

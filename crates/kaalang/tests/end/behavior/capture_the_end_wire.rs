@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn capture_the_end_wire(input: u32) -> u32 {
-    #[action("Produce the result.")]
+    #[kaa::action("Produce the result.")]
     let end = |input| input;
 
-    #[action("Capture the ordinary `end` wire.")]
+    #[kaa::action("Capture the ordinary `end` wire.")]
     let doubled = |end| end * 2;
 
     |doubled| return doubled;

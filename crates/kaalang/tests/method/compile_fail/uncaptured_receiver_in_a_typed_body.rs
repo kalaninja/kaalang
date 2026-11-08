@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn invalid(self: &Self, scale: u32) -> u32 {
-        #[action("Read the width properly.")]
+        #[kaa::action("Read the width properly.")]
         let read = |&self| self.width;
 
-        #[action("Read the receiver without capturing it.")]
+        #[kaa::action("Read the receiver without capturing it.")]
         let end = |read, scale| read * scale + self.width;
 
         |end| return end;

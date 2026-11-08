@@ -1,30 +1,30 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// The waiting case sits between the merged cases and its endless cycle is
 /// written after their merge, but it never reaches that merge, so it cannot
 /// separate the cases.
-#[kaalang]
+#[kaa]
 fn case_waits_after_the_merge(value: u8) -> u8 {
-    #[choice("Select a branch.")]
-    #[case("Take the first branch.")]
-    #[case("Wait forever.")]
-    #[case("Take the second branch.")]
+    #[kaa::choice("Select a branch.")]
+    #[kaa::case("Take the first branch.")]
+    #[kaa::case("Wait forever.")]
+    #[kaa::case("Take the second branch.")]
     let (first, wait, second) = |value| match value {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Build the first value.")]
+    #[kaa::action("Build the first value.")]
     let selected = |first| 1;
 
-    #[action("Build the second value.")]
+    #[kaa::action("Build the second value.")]
     let selected = |second| 3;
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let result = |selected| selected + 1;
 
-    #[cycle("Wait forever.")]
+    #[kaa::cycle("Wait forever.")]
     |wait| loop {
         continue;
     };

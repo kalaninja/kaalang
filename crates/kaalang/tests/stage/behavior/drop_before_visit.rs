@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct OnDrop<'a>(&'a RefCell<Vec<&'static str>>);
 
@@ -10,23 +10,23 @@ impl Drop for OnDrop<'_> {
     }
 }
 
-#[kaalang]
+#[kaa]
 fn drop_before_visit(events: &RefCell<Vec<&'static str>>) {
-    #[action("Begin the first visit.")]
+    #[kaa::action("Begin the first visit.")]
     let first = || {};
 
-    #[stage("Own a local value.")]
+    #[kaa::stage("Own a local value.")]
     let second = |first| {
-        #[action("Create a stage local owner.")]
+        #[kaa::action("Create a stage local owner.")]
         let _local = |events| OnDrop(events);
 
-        #[action("Continue to the second stage.")]
+        #[kaa::action("Continue to the second stage.")]
         let second = || {};
     };
 
-    #[stage("Observe the next visit.")]
+    #[kaa::stage("Observe the next visit.")]
     |second| {
-        #[action("Record entry after the local was dropped.")]
+        #[kaa::action("Record entry after the local was dropped.")]
         |events| events.borrow_mut().push("next");
 
         return;

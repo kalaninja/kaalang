@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: i32) {
-    #[choice("What is the sign of the input?")]
-    #[case("The input is negative.")]
-    #[case("The input is nonnegative.")]
+    #[kaa::choice("What is the sign of the input?")]
+    #[kaa::case("The input is negative.")]
+    #[kaa::case("The input is nonnegative.")]
     let (negative, nonnegative) = |input| {
         match input {
             ..0 => (),
@@ -12,7 +12,7 @@ fn invalid(input: i32) {
         }
     };
 
-    #[action("Handle only the negative input.")]
+    #[kaa::action("Handle only the negative input.")]
     let handled = |negative| { drop(negative) };
 
     |handled| return handled;

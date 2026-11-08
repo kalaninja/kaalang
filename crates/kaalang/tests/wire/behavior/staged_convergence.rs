@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn staged_convergence(condition: bool) -> (u32, &'static str) {
-    #[question("Choose two values.")]
+    #[kaa::question("Choose two values.")]
     let (yes, no) = |condition| condition;
 
-    #[action("Build the yes values.")]
+    #[kaa::action("Build the yes values.")]
     let (number, label) = |yes| (1, "yes");
 
-    #[action("Build the no values.")]
+    #[kaa::action("Build the no values.")]
     let (number, label) = |no| (2, "no");
 
-    #[action("Use the number first.")]
+    #[kaa::action("Use the number first.")]
     let doubled = |number| number * 2;
 
     |doubled, label| return (doubled, label);

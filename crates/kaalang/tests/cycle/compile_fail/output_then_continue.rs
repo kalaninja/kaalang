@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mut count: usize) -> usize {
-    #[cycle("Produce the output, then repeat anyway.")]
+    #[kaa::cycle("Produce the output, then repeat anyway.")]
     let total = loop {
-        #[action("Produce the total.")]
+        #[kaa::action("Produce the total.")]
         let total = |&count| *count;
 
-        #[question("Is the count below ten?")]
+        #[kaa::question("Is the count below ten?")]
         let (again, _done) = |&mut count| {
             *count += 1;
             *count < 10

@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Ladder {
     top: u32,
 }
 
 impl Ladder {
-    #[kaalang]
+    #[kaa]
     fn receive_inside_a_cycle(&self, mut start: u32) -> u32 {
-        #[cycle("Climb to the top.")]
+        #[kaa::cycle("Climb to the top.")]
         let arrived = loop {
-            #[question("Is the rung below the top?")]
-            #[yes("YES")]
-            #[no("NO")]
+            #[kaa::question("Is the rung below the top?")]
+            #[kaa::yes("YES")]
+            #[kaa::no("NO")]
             let (climb, arrived) = |&start, &self| *start < self.top;
 
-            #[action("Step up one rung.")]
+            #[kaa::action("Step up one rung.")]
             |climb, &mut start| *start += 1;
 
             |climb| continue;

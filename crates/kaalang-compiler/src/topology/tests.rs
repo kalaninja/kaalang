@@ -56,7 +56,7 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
     let topology = drawn(
         r#"
         fn example() -> usize {
-            #[cycle("Repeat forever.")]
+            #[kaa::cycle("Repeat forever.")]
             loop {
                 continue;
             };
@@ -95,7 +95,7 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
     let topology = collapsed(
         r#"
         fn forever() -> ! {
-            #[cycle("Never completes.")]
+            #[kaa::cycle("Never completes.")]
             loop {
                 continue;
             };
@@ -131,15 +131,15 @@ fn nested_completing_cycles_reach_the_root_return() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
-            #[cycle("Choose the result.")]
+            #[kaa::cycle("Choose the result.")]
             let selected = |flag| loop {
-                #[question("Flag?")]
+                #[kaa::question("Flag?")]
                 let (iterate_1, leave_1) = |flag| flag;
-                #[action("Return two.")]
+                #[kaa::action("Return two.")]
                 let selected = |leave_1| 2;
-                #[cycle("Produce one.")]
+                #[kaa::cycle("Produce one.")]
                 let selected = |iterate_1| loop {
-                    #[action("Return one.")]
+                    #[kaa::action("Return one.")]
                     let selected = || 1;
                 };
             };
@@ -168,11 +168,11 @@ fn an_inner_cycle_output_reaches_the_outer_iteration_tail() {
     let topology = drawn(
         r#"
         fn example(flag: bool) -> usize {
-            #[cycle("Repeat the outer cycle.")]
+            #[kaa::cycle("Repeat the outer cycle.")]
             |flag| loop {
-                #[cycle("Leave or repeat the inner cycle.")]
+                #[kaa::cycle("Leave or repeat the inner cycle.")]
                 let leave_2 = |flag| loop {
-                    #[question("Flag?")]
+                    #[kaa::question("Flag?")]
                     let (iterate_2, leave_2) = |flag| flag;
                     |iterate_2| continue;
                 };
@@ -207,14 +207,14 @@ fn a_merged_cycle_output_reaches_the_enclosing_iteration_tail() {
     let model = model(
         r#"
         fn example(first: bool, second: bool) {
-            #[cycle("Repeat the outer cycle.")]
+            #[kaa::cycle("Repeat the outer cycle.")]
             loop {
-                #[cycle("Leave or repeat the inner cycle.")]
+                #[kaa::cycle("Leave or repeat the inner cycle.")]
                 let leave = loop {
-                    #[question("Leave immediately?")]
+                    #[kaa::question("Leave immediately?")]
                     let (leave, check) = |first| first;
 
-                    #[question("Leave after checking?")]
+                    #[kaa::question("Leave after checking?")]
                     let (leave, again) = |check, second| second;
 
                     |again| continue;
@@ -245,13 +245,13 @@ fn work_after_a_merge_keeps_the_cycle_result_separate() {
     let model = model(
         r#"
         fn example(flag: bool) {
-            #[cycle("Choose, then finish.")]
+            #[kaa::cycle("Choose, then finish.")]
             let done = |flag| loop {
-                #[question("Which route?")]
+                #[kaa::question("Which route?")]
                 let (done, other) = |flag| flag;
-                #[action("Finish the other route.")]
+                #[kaa::action("Finish the other route.")]
                 let done = |other| {};
-                #[action("Finish after the merge.")]
+                #[kaa::action("Finish after the merge.")]
                 |done| {};
             };
             |done| return;
@@ -272,11 +272,11 @@ fn reduction_preserves_a_direct_branch_beside_a_longer_branch() {
     let topology = drawn(
         r#"
         fn example(condition: bool) -> u8 {
-            #[question("Use the value directly?")]
+            #[kaa::question("Use the value directly?")]
             let (value, needs_work) = |condition| { condition };
-            #[action("Prepare the other value.")]
+            #[kaa::action("Prepare the other value.")]
             let value = |needs_work| { () };
-            #[action("Use the merged value.")]
+            #[kaa::action("Use the merged value.")]
             let result = |value| { 1 };
             |result| return result;
         }
@@ -311,15 +311,15 @@ fn every_node_and_exit_has_one_identity() {
     let topology = drawn(
         r#"
         fn example(r#type: u8, _spare: u8, _: u8) -> u8 {
-            #[choice("Pick a case.")]
-            #[case("Near.")]
-            #[case("Far.")]
+            #[kaa::choice("Pick a case.")]
+            #[kaa::case("Near.")]
+            #[kaa::case("Far.")]
             let (near, far) = |r#type| { match r#type { 0 => 1, _ => 2 } };
-            #[action("Split the near value.")]
+            #[kaa::action("Split the near value.")]
             let (width, depth, _unused) = |near| { (near, near, ()) };
-            #[action("Use both dimensions.")]
+            #[kaa::action("Use both dimensions.")]
             let result = |&width, depth| { *width + depth };
-            #[action("Use the far value.")]
+            #[kaa::action("Use the far value.")]
             let result = |far| { far };
             |result| return result;
         }
@@ -418,15 +418,15 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     let two_consumers = drawn(
         r#"
         fn example(condition: bool) -> u8 {
-            #[question("Choose a value?")]
+            #[kaa::question("Choose a value?")]
             let (yes, no) = |condition| { condition };
-            #[action("Build the yes value.")]
+            #[kaa::action("Build the yes value.")]
             let value = |yes| { 1 };
-            #[action("Build the no value.")]
+            #[kaa::action("Build the no value.")]
             let value = |no| { 2 };
-            #[action("Double the merged value.")]
+            #[kaa::action("Double the merged value.")]
             let doubled = |&value| { *value * 2 };
-            #[action("Add both.")]
+            #[kaa::action("Add both.")]
             let result = |value, doubled| { value + doubled };
             |result| return result;
         }

@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Rectangle {
     width: u32,
 }
 
 impl Rectangle {
-    #[kaalang]
+    #[kaa]
     fn invalid(&self, scale: u32) -> u32 {
-        #[action("Scale a constant instead of the receiver.")]
+        #[kaa::action("Scale a constant instead of the receiver.")]
         let end = |scale| scale * 2;
 
         |end| return end;

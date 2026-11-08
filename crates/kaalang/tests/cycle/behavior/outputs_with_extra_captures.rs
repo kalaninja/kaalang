@@ -1,17 +1,17 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Each continuation of a three-output cycle also captures an outer wire, so
 /// every exit keeps its own hand-over label. Collapsed, the side exits share
 /// one row and each label stands where its route turns down.
-#[kaalang]
+#[kaa]
 fn outputs_with_extra_captures(mut state: u8, bonus: u8) -> u8 {
-    #[cycle("Settle on a colour.")]
+    #[kaa::cycle("Settle on a colour.")]
     let (red, green, blue) = loop {
-        #[choice("Which colour is it?")]
-        #[case("Red.")]
-        #[case("Green.")]
-        #[case("Blue.")]
-        #[case("Not settled yet.")]
+        #[kaa::choice("Which colour is it?")]
+        #[kaa::case("Red.")]
+        #[kaa::case("Green.")]
+        #[kaa::case("Blue.")]
+        #[kaa::case("Not settled yet.")]
         let (red, green, blue, other) = |&state| match *state {
             0 => (),
             1 => (),
@@ -19,19 +19,19 @@ fn outputs_with_extra_captures(mut state: u8, bonus: u8) -> u8 {
             _ => (),
         };
 
-        #[action("Try again.")]
+        #[kaa::action("Try again.")]
         let stepped = |other, &mut state| *state -= 1;
 
         |stepped| continue;
     };
 
-    #[action("Score red.")]
+    #[kaa::action("Score red.")]
     let score = |red, bonus| 10 + bonus;
 
-    #[action("Score green.")]
+    #[kaa::action("Score green.")]
     let score = |green, bonus| 20 + bonus;
 
-    #[action("Score blue.")]
+    #[kaa::action("Score blue.")]
     let score = |blue, bonus| 30 + bonus;
 
     |score| return score;

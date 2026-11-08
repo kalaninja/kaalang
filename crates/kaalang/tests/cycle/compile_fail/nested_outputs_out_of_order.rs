@@ -1,21 +1,21 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mut count: u32) -> u32 {
-    #[cycle("Run the outer cycle.")]
+    #[kaa::cycle("Run the outer cycle.")]
     let result = loop {
-        #[cycle("Settle the count.")]
+        #[kaa::cycle("Settle the count.")]
         let (ready, retry) = loop {
-            #[question("Is the count positive?")]
+            #[kaa::question("Is the count positive?")]
             let (retry, ready) = |&count| *count > 0;
         };
 
-        #[action("Count down.")]
+        #[kaa::action("Count down.")]
         let stepped = |retry, &mut count| *count -= 1;
 
         |stepped| continue;
 
-        #[action("Keep the count.")]
+        #[kaa::action("Keep the count.")]
         let result = |ready, count| count;
     };
 

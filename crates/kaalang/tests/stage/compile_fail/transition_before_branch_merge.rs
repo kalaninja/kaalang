@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn transition_before_branch_merge(go: (), flag: bool) {
-    #[question("Select a branch.")]
+    #[kaa::question("Select a branch.")]
     let (yes, no) = |flag| flag;
 
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| {
         return;
     };

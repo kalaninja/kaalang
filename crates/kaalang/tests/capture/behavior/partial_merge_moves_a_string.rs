@@ -1,46 +1,46 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A non-`Copy` value passes the inner join of a partial merge and then the
 /// outer one, moving at each step.
-#[kaalang]
+#[kaa]
 fn partial_merge_moves_a_string(source: u8, order: &Cell<u32>) -> String {
-    #[choice("Which source?")]
-    #[case("First source.")]
-    #[case("Second source.")]
-    #[case("Third source.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Third source.")]
     let (first, second, third) = |source| match source {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[action("Build the text from the first source.")]
+    #[kaa::action("Build the text from the first source.")]
     let partial = |first, &order| {
         order.set(order.get() * 10 + 1);
         String::from("first")
     };
 
-    #[action("Build the text from the second source.")]
+    #[kaa::action("Build the text from the second source.")]
     let partial = |second, &order| {
         order.set(order.get() * 10 + 2);
         String::from("second")
     };
 
-    #[action("Extend the partially merged text.")]
+    #[kaa::action("Extend the partially merged text.")]
     let shared = |partial, &order| {
         order.set(order.get() * 10 + 3);
         partial + "-extended"
     };
 
-    #[action("Build the text from the third source.")]
+    #[kaa::action("Build the text from the third source.")]
     let shared = |third, &order| {
         order.set(order.get() * 10 + 4);
         String::from("third")
     };
 
-    #[action("Finish with the merged text.")]
+    #[kaa::action("Finish with the merged text.")]
     let end = |shared, &order| {
         order.set(order.get() * 10 + 5);
         shared

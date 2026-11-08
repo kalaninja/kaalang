@@ -1,24 +1,24 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_unconditional_cycles(limit: usize) -> usize {
-    #[cycle("Run the nested counter.")]
+    #[kaa::cycle("Run the nested counter.")]
     let result = |limit| loop {
-        #[action("Initialize the counter.")]
+        #[kaa::action("Initialize the counter.")]
         let mut count = || 0;
 
-        #[cycle("Count to the limit.")]
+        #[kaa::cycle("Count to the limit.")]
         let done = loop {
-            #[question("Has the counter reached the limit?")]
+            #[kaa::question("Has the counter reached the limit?")]
             let (done, again) = |&count, &limit| *count == *limit;
 
-            #[action("Increment the counter.")]
+            #[kaa::action("Increment the counter.")]
             |again, &mut count| *count += 1;
 
             |again| continue;
         };
 
-        #[action("Hand over the count.")]
+        #[kaa::action("Hand over the count.")]
         let result = |done, count| count;
     };
 

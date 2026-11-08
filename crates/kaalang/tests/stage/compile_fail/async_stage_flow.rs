@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 async fn async_stage_flow(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| {
         return;
     };

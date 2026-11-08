@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(count: usize) -> ! {
-    #[cycle("Try to shadow an outer wire.")]
+    #[kaa::cycle("Try to shadow an outer wire.")]
     loop {
-        #[action("Replace the counter.")]
+        #[kaa::action("Replace the counter.")]
         let count = || 1;
     };
 }

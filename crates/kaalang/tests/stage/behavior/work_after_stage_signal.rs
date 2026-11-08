@@ -1,16 +1,16 @@
 use std::cell::RefCell;
 
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn work_after_stage_signal(go: (), events: &RefCell<Vec<&'static str>>) -> u8 {
-    #[stage("Prepare the result.")]
+    #[kaa::stage("Prepare the result.")]
     let finish = |go| {
-        #[action("Create the outgoing signal.")]
+        #[kaa::action("Create the outgoing signal.")]
         let finish = |go| 7u8;
-        #[action("Run the remaining work.")]
+        #[kaa::action("Run the remaining work.")]
         |events| events.borrow_mut().push("work");
     };
-    #[stage("Return the result.")]
+    #[kaa::stage("Return the result.")]
     |finish| {
         |finish| return finish;
     };

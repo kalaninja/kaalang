@@ -1,32 +1,32 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn nested_cycles(limit: usize) -> usize {
-    #[action("Initialize the outer counter.")]
+    #[kaa::action("Initialize the outer counter.")]
     let mut outer = || 0;
 
-    #[cycle("Advance the outer counter to the limit.")]
+    #[kaa::cycle("Advance the outer counter to the limit.")]
     let done = loop {
-        #[action("Initialize the iteration counter.")]
+        #[kaa::action("Initialize the iteration counter.")]
         let mut inner = || 0;
 
-        #[cycle("Advance the inner counter to the outer counter.")]
+        #[kaa::cycle("Advance the inner counter to the outer counter.")]
         let leave_1 = loop {
-            #[question("Is the iteration counter below the outer counter?")]
-            #[yes("YES")]
-            #[no("NO")]
+            #[kaa::question("Is the iteration counter below the outer counter?")]
+            #[kaa::yes("YES")]
+            #[kaa::no("NO")]
             let (iterate_1, leave_1) = |&inner, &outer| *inner < *outer;
 
-            #[action("Increment the iteration counter.")]
+            #[kaa::action("Increment the iteration counter.")]
             |iterate_1, &mut inner| *inner += 1;
 
             |iterate_1| continue;
         };
 
-        #[question("Has the outer counter reached the limit?")]
+        #[kaa::question("Has the outer counter reached the limit?")]
         let (done, again) = |leave_1, &outer, &limit| *outer == *limit;
 
-        #[action("Increment the outer counter.")]
+        #[kaa::action("Increment the outer counter.")]
         |again, &mut outer| *outer += 1;
 
         |again| continue;

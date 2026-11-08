@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn internal_stage_parameter_names(
     first: u32,
     __kaalang_wire_0: u32,
     r#__kaalang_wire_0_: u32,
 ) -> (u32, u32, u32) {
-    #[stage("Forward the first input.")]
+    #[kaa::stage("Forward the first input.")]
     let next = |first| {
-        #[action("Forward.")]
+        #[kaa::action("Forward.")]
         let next = |first| first;
     };
 
-    #[stage("Keep the inputs.")]
+    #[kaa::stage("Keep the inputs.")]
     |next| {
-        #[action("Collect the values.")]
+        #[kaa::action("Collect the values.")]
         let result = |next, __kaalang_wire_0, r#__kaalang_wire_0_| {
             (next, __kaalang_wire_0, r#__kaalang_wire_0_)
         };

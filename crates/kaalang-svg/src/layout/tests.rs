@@ -7,24 +7,24 @@ use crate::{captions::Captions, text::joined};
 fn actions_and_cases_in_one_row_share_their_upper_edge() {
     let scene = drawn((
         r#"
-        #[kaalang]
+        #[kaa]
         fn example(choose: bool) {
-            #[question("Choose a route.")]
+            #[kaa::question("Choose a route.")]
             let (take, skip) = |choose| choose;
-            #[choice("Choose a case.")]
-            #[case("First case.")]
-            #[case("Second case.")]
+            #[kaa::choice("Choose a case.")]
+            #[kaa::case("First case.")]
+            #[kaa::case("Second case.")]
             let (first, second) = |take| match take {
                 () if false => (),
                 _ => (),
             };
-            #[action("Prepare the other route.")]
+            #[kaa::action("Prepare the other route.")]
             let ready = |skip| ();
-            #[action("Complete the other route with a description that wraps across several lines and needs more space than a short case caption.")]
+            #[kaa::action("Complete the other route with a description that wraps across several lines and needs more space than a short case caption.")]
             let end = |ready| ();
-            #[action("Complete the first case.")]
+            #[kaa::action("Complete the first case.")]
             let end = |first| ();
-            #[action("Complete the second case.")]
+            #[kaa::action("Complete the second case.")]
             let end = |second| ();
             |end| return;
         }
@@ -193,16 +193,16 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
     use unicode_segmentation::UnicodeSegmentation;
 
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn example(flag: bool) {
-            #[question("Choose a cycle.")]
+            #[kaa::question("Choose a cycle.")]
             let (left, right) = |flag| flag;
-            #[cycle("Collect.")]
+            #[kaa::cycle("Collect.")]
             let done = |left| loop {
-                #[action("Collect the results.")]
+                #[kaa::action("Collect the results.")]
                 let done = |left| ();
             };
-            #[cycle("Skip.")]
+            #[kaa::cycle("Skip.")]
             |right| loop { continue; };
             |done| return;
         }
@@ -324,13 +324,13 @@ fn merge_labels_preserve_borrows_and_different_handovers() {
         };
         let function = syn::parse_quote! {
             fn borrowed_merge(condition: bool) -> usize {
-                #[question("Choose a value.")]
+                #[kaa::question("Choose a value.")]
                 let (yes, no) = |condition| { condition };
-                #[action("Build the yes value.")]
+                #[kaa::action("Build the yes value.")]
                 let #outputs = |yes| { todo!() };
-                #[action("Build the no value.")]
+                #[kaa::action("Build the no value.")]
                 let value = |no| { String::new() };
-                #[action("Measure the value.")]
+                #[kaa::action("Measure the value.")]
                 let end = |&value| { value.len() };
 
                 |end| return end;
@@ -422,21 +422,21 @@ const FIXTURES: [(&str, &str); 18] = [
 ];
 
 const SHARED_INPUTS: &str = r#"
-    #[kaalang]
+    #[kaa]
     fn shared_inputs() -> u8 {
-        #[action("Produce the first value.")]
+        #[kaa::action("Produce the first value.")]
         let first = || { 2 };
 
-        #[action("Produce the second value.")]
+        #[kaa::action("Produce the second value.")]
         let second = || { 3 };
 
-        #[action("Add the values.")]
+        #[kaa::action("Add the values.")]
         let sum = |&first, &second| { first + second };
 
-        #[action("Multiply the values.")]
+        #[kaa::action("Multiply the values.")]
         let product = |&first, &second| { first * second };
 
-        #[action("Finish from both combinations.")]
+        #[kaa::action("Finish from both combinations.")]
         let end = |sum, product| { sum + product };
 
         |end| return end;
@@ -606,13 +606,13 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
 fn long_wire_labels_clear_a_tall_neighbor() {
     let source = format!(
         r#"
-        #[kaalang]
+        #[kaa]
         fn example(condition: bool) -> u8 {{
-            #[question("Choose a branch.")]
+            #[kaa::question("Choose a branch.")]
             let (the_rather_long_named_left_branch_wire, no) = |condition| {{ condition }};
-            #[action("Short action.")]
+            #[kaa::action("Short action.")]
             let end = |the_rather_long_named_left_branch_wire| {{ 1 }};
-            #[action({:?})]
+            #[kaa::action({:?})]
             let end = |no| {{ 2 }};
 
             |end| return end;
@@ -653,7 +653,7 @@ fn long_labels_enlarge_only_their_adjacent_row_gaps() {
 fn a_right_question_branch_description_replaces_its_output_above_the_connection() {
     let (source, flow) = fixture!("question/behavior", "run_question");
     let source = source
-        .replace(r#"#[no("The condition is false.")]"#, "#[no]")
+        .replace(r#"#[kaa::no("The condition is false.")]"#, "#[kaa::no]")
         .replace(
             "The condition is true.",
             "Take the longer continuation description that must wrap beside the branch.",
@@ -771,27 +771,27 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
     // K3,3 in the capture dependencies needs no visual crossings: every
     // producer and consumer executes in sequence, with captures kept intact.
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn serial(first_seed: u8, second_seed: u8, third_seed: u8) -> u8 {
-            #[action("Produce the first value.")]
+            #[kaa::action("Produce the first value.")]
             let first = |first_seed| { first_seed };
 
-            #[action("Produce the second value.")]
+            #[kaa::action("Produce the second value.")]
             let second = |second_seed| { second_seed };
 
-            #[action("Produce the third value.")]
+            #[kaa::action("Produce the third value.")]
             let third = |third_seed| { third_seed };
 
-            #[action("Combine the values one way.")]
+            #[kaa::action("Combine the values one way.")]
             let one = |&first, &second, &third| { first + second + third };
 
-            #[action("Combine the values another way.")]
+            #[kaa::action("Combine the values another way.")]
             let two = |&first, &second, &third| { first * second * third };
 
-            #[action("Combine the values a third way.")]
+            #[kaa::action("Combine the values a third way.")]
             let three = |&first, &second, &third| { first ^ second ^ third };
 
-            #[action("Finish from all three combinations.")]
+            #[kaa::action("Finish from all three combinations.")]
             let end = |one, two, three| { one + two + three };
 
             |end| return end;
@@ -883,7 +883,7 @@ pub(super) fn end_node(scene: &Scene) -> NodeId {
 #[test]
 fn start_separates_the_flow_name_and_typed_parameters() {
     let source = r"
-        #[kaalang]
+        #[kaa]
         fn example<'a, T>(r#type: &'a T, _: usize) -> &'a T
         where
             T: Copy,
@@ -916,7 +916,7 @@ fn capsule_captions_fit_the_curved_outline() {
             .collect::<Vec<_>>()
             .join(", ");
         let source = format!(
-            "#[kaalang] fn capsule(end: ({return_type})) -> ({return_type}) {{ |end| return end; }}"
+            "#[kaa] fn capsule(end: ({return_type})) -> ({return_type}) {{ |end| return end; }}"
         );
         let scene = drawn((&source, "capsule"));
         for id in [NodeId::Start, end_node(&scene)] {
@@ -1035,7 +1035,10 @@ fn a_cycle_that_only_repeats_draws_its_described_boundary() {
 fn a_side_back_edge_clears_a_wrapped_branch_description() {
     let (source, flow) = fixture!("cycle/behavior", "empty_trailing_cycle");
     let description = "Restart the entire outer iteration after the inner cycle finishes.";
-    let source = source.replace("#[no(\"NO\")]", &format!("#[no(\"{description}\")]"));
+    let source = source.replace(
+        "#[kaa::no(\"NO\")]",
+        &format!("#[kaa::no(\"{description}\")]"),
+    );
     let scene = drawn((&source, flow));
     let label = scene
         .labels
@@ -1196,26 +1199,26 @@ fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
 #[test]
 fn a_back_edge_inside_a_nested_back_edge_is_caught_by_the_geometry_check() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn nested_contours(mode: u8) -> u8 {
-            #[cycle("Repeat the outer cycle.")]
+            #[kaa::cycle("Repeat the outer cycle.")]
             |mode| loop {
-                #[question("Repeat the outer cycle?")]
+                #[kaa::question("Repeat the outer cycle?")]
                 let (again, enter) = |mode| mode == 0;
 
-                #[action("Repeat the outer cycle.")]
+                #[kaa::action("Repeat the outer cycle.")]
                 |again| ();
 
-                #[action("Take the first step.")]
+                #[kaa::action("Take the first step.")]
                 let first = |enter| ();
 
-                #[action("Take the second step.")]
+                #[kaa::action("Take the second step.")]
                 let second = |first| ();
 
-                #[action("Take the third step.")]
+                #[kaa::action("Take the third step.")]
                 let third = |second| ();
 
-                #[cycle("Repeat the inner cycle.")]
+                #[kaa::cycle("Repeat the inner cycle.")]
                 |third| loop {
                     continue;
                 };
@@ -1337,7 +1340,7 @@ fn clearing_one_label_can_take_more_than_one_lane() {
 /// model: a cycle whose three cases repeat, repeat and leave.
 fn far_contour() -> String {
     let probe = kaalang_testing::shapes::cycle_routes(&["repeat", "repeat", "leave"]);
-    format!("#[kaalang]\n{probe}")
+    format!("#[kaa]\n{probe}")
 }
 
 /// A far contour retains its recorded column; measuring only body boxes would
@@ -1487,7 +1490,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     let sources = kaalang_testing::shapes::cycle_shapes()
         .into_iter()
         .chain(kaalang_testing::shapes::question_shapes())
-        .map(|source| format!("#[kaalang]\n{source}"))
+        .map(|source| format!("#[kaa]\n{source}"))
         .collect::<Vec<_>>();
     assert_eq!(sources.len(), 2835);
 
@@ -1511,7 +1514,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
 fn every_accepted_alternative_output_shape_renders_in_both_views() {
     let mut drawn = 0;
     for source in kaalang_testing::shapes::alternative_bodies(2..=4) {
-        let source = format!("#[kaalang]\n{source}");
+        let source = format!("#[kaa]\n{source}");
         for collapse_cycles in [false, true] {
             match crate::render_source_with_options(
                 &source,

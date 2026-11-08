@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn native_loops(limit: usize) -> usize {
-    #[cycle("Run native Rust control flow once.")]
+    #[kaa::cycle("Run native Rust control flow once.")]
     let count = |limit| loop {
-        #[action("Count with local Rust control flow.")]
+        #[kaa::action("Count with local Rust control flow.")]
         let count = |limit| {
             let mut count = 0;
             'counting: while count < limit {

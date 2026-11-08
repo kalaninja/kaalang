@@ -1,20 +1,20 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_reference_to_a_branch_local(condition: bool, mut fallback: String) -> usize {
-    #[question("Create a local owner?")]
+    #[kaa::question("Create a local owner?")]
     let (yes, no) = |condition| { condition };
 
-    #[action("Create the branch-local owner.")]
+    #[kaa::action("Create the branch-local owner.")]
     let mut local = |yes| { String::from("local") };
 
-    #[action("Try to carry its mutable reference past the merge.")]
+    #[kaa::action("Try to carry its mutable reference past the merge.")]
     let view = |&mut local| { local };
 
-    #[action("Borrow an owner that outlives the merge.")]
+    #[kaa::action("Borrow an owner that outlives the merge.")]
     let view = |no, &mut fallback| { fallback };
 
-    #[action("Use the merged reference.")]
+    #[kaa::action("Use the merged reference.")]
     let end = |view| { view.len() };
 
     |end| return end;

@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// One choice owning a nested pair of groups over its first three cases and a
 /// separate group over its last two.
-#[kaalang]
+#[kaa]
 fn disjoint_and_nested_groups(source: u8) -> u8 {
-    #[choice("Which source?")]
-    #[case("First.")]
-    #[case("Second.")]
-    #[case("Third.")]
-    #[case("Fourth.")]
-    #[case("Fifth.")]
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First.")]
+    #[kaa::case("Second.")]
+    #[kaa::case("Third.")]
+    #[kaa::case("Fourth.")]
+    #[kaa::case("Fifth.")]
     let (a, b, c, d, e) = |source| match source {
         0 => (),
         1 => (),
@@ -18,28 +18,28 @@ fn disjoint_and_nested_groups(source: u8) -> u8 {
         _ => (),
     };
 
-    #[action("First value.")]
+    #[kaa::action("First value.")]
     let ab = |a| 1;
 
-    #[action("Second value.")]
+    #[kaa::action("Second value.")]
     let ab = |b| 2;
 
-    #[action("Close the first pair.")]
+    #[kaa::action("Close the first pair.")]
     let abc = |ab| ab + 10;
 
-    #[action("Third value.")]
+    #[kaa::action("Third value.")]
     let abc = |c| 3;
 
-    #[action("Finish the first three.")]
+    #[kaa::action("Finish the first three.")]
     let end = |abc| abc + 100;
 
-    #[action("Fourth value.")]
+    #[kaa::action("Fourth value.")]
     let de = |d| 4;
 
-    #[action("Fifth value.")]
+    #[kaa::action("Fifth value.")]
     let de = |e| 5;
 
-    #[action("Finish the last two.")]
+    #[kaa::action("Finish the last two.")]
     let end = |de| de + 200;
 
     |end| return end;

@@ -1,30 +1,30 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn effect_before_a_nested_terminal_branch(
     outer: bool,
     inner: bool,
     log: &mut Vec<&'static str>,
 ) -> u32 {
-    #[action("Record the effect before branching.")]
+    #[kaa::action("Record the effect before branching.")]
     let logged = |log| log.push("effect");
 
-    #[question("Take the nested branch?")]
+    #[kaa::question("Take the nested branch?")]
     let (nested, direct) = |outer, &inner| outer;
 
-    #[question("Finish early?")]
+    #[kaa::question("Finish early?")]
     let (early, late) = |nested, inner| inner;
 
-    #[action("Produce the early result.")]
+    #[kaa::action("Produce the early result.")]
     let end = |early, logged| 1;
 
-    #[action("Build the late value.")]
+    #[kaa::action("Build the late value.")]
     let selected = |late| 2;
 
-    #[action("Build the direct value.")]
+    #[kaa::action("Build the direct value.")]
     let selected = |direct| 3;
 
-    #[action("Use the selected value.")]
+    #[kaa::action("Use the selected value.")]
     let end = |selected, logged| selected * 10;
 
     |end| return end;

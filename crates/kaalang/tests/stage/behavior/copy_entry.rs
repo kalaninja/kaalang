@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 const fn copy_entry<T: Copy>(go: T) -> T {
-    #[stage("Forward the copied entry.")]
+    #[kaa::stage("Forward the copied entry.")]
     let finish = |go| {
-        #[action("Forward the value.")]
+        #[kaa::action("Forward the value.")]
         let finish = |go| go;
     };
 
-    #[stage("Return the copied entry.")]
+    #[kaa::stage("Return the copied entry.")]
     |finish| {
         |finish| return finish;
     };

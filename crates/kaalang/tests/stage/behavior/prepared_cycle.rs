@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn prepared_cycle(seed: u32) -> u32 {
-    #[cycle("Produce shared data.")]
+    #[kaa::cycle("Produce shared data.")]
     let mut shared = loop {
-        #[action("Compute the result.")]
+        #[kaa::action("Compute the result.")]
         let shared = |seed| seed + 1;
     };
 
-    #[action("Enter the stage.")]
+    #[kaa::action("Enter the stage.")]
     let go = || {};
 
-    #[stage("Return the prepared result.")]
+    #[kaa::stage("Return the prepared result.")]
     |go| {
-        #[action("Increment the shared result.")]
+        #[kaa::action("Increment the shared result.")]
         |&mut shared| *shared += 1;
 
         |shared| return shared;

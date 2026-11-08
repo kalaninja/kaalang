@@ -1,16 +1,16 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn merged_exit(stop: bool, mut remaining: usize) -> usize {
-    #[cycle("Count down until either stopping condition is met.")]
+    #[kaa::cycle("Count down until either stopping condition is met.")]
     let leave = loop {
-        #[question("Stop immediately?")]
+        #[kaa::question("Stop immediately?")]
         let (leave, check) = |stop| stop;
 
-        #[question("Has the countdown finished?")]
+        #[kaa::question("Has the countdown finished?")]
         let (leave, again) = |check, remaining| remaining == 0;
 
-        #[action("Advance the countdown.")]
+        #[kaa::action("Advance the countdown.")]
         |again, &mut remaining| *remaining -= 1;
 
         |again| continue;

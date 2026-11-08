@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn run_choice_with_guard(value: i32) -> i32 {
-    #[choice("Is the value a positive even number?")]
-    #[case("The value is positive and even.")]
-    #[case("The value is not positive and even.")]
+    #[kaa::choice("Is the value a positive even number?")]
+    #[kaa::case("The value is positive and even.")]
+    #[kaa::case("The value is not positive and even.")]
     let (positive_even, other) = |value| match value {
         matched @ 1.. if matched % 2 == 0 => matched,
         _ => (),
     };
 
-    #[action("Produce the positive-even result.")]
+    #[kaa::action("Produce the positive-even result.")]
     let end = |positive_even| positive_even;
 
-    #[action("Produce the other result.")]
+    #[kaa::action("Produce the other result.")]
     let end = |other| 0;
 
     |end| return end;

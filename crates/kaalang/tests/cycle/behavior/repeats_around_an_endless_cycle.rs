@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
-    #[cycle("Settle the mode.")]
+    #[kaa::cycle("Settle the mode.")]
     let leave = loop {
-        #[choice("Which route?")]
-        #[case("Advance on the left.")]
-        #[case("Serve forever.")]
-        #[case("Advance on the right.")]
-        #[case("Leave.")]
+        #[kaa::choice("Which route?")]
+        #[kaa::case("Advance on the left.")]
+        #[kaa::case("Serve forever.")]
+        #[kaa::case("Advance on the right.")]
+        #[kaa::case("Leave.")]
         let (left, serve, right, leave) = |&mode| match *mode {
             0 => (),
             1 => (),
@@ -16,29 +16,29 @@ fn repeats_around_an_endless_cycle(mut mode: u8) -> u8 {
             _ => (),
         };
 
-        #[action("Settle from the left.")]
+        #[kaa::action("Settle from the left.")]
         let advanced = |left, &mut mode| *mode = 3;
 
-        #[cycle("Serve requests forever.")]
+        #[kaa::cycle("Serve requests forever.")]
         |serve| loop {
-            #[choice("Which request?")]
-            #[case("A read.")]
-            #[case("A write.")]
+            #[kaa::choice("Which request?")]
+            #[kaa::case("A read.")]
+            #[kaa::case("A write.")]
             let (read, write) = |&mode| match *mode {
                 0 => (),
                 _ => (),
             };
 
-            #[action("Serve a read.")]
+            #[kaa::action("Serve a read.")]
             let served = |read| {};
 
-            #[action("Serve a write.")]
+            #[kaa::action("Serve a write.")]
             let served = |write| {};
 
             |served| continue;
         };
 
-        #[action("Settle from the right.")]
+        #[kaa::action("Settle from the right.")]
         let advanced = |right, &mut mode| *mode = 3;
 
         |advanced| continue;

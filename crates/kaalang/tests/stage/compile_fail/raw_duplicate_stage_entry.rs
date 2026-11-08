@@ -1,13 +1,13 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn raw_duplicate_stage_entry(go: ()) {
-    #[stage("First.")]
+    #[kaa::stage("First.")]
     let next = |go| {
-        #[action("Forward.")]
+        #[kaa::action("Forward.")]
         let next = |go| ();
     };
-    #[stage("Again.")]
+    #[kaa::stage("Again.")]
     |r#go| {
         return;
     };

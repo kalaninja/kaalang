@@ -7,11 +7,11 @@ const COLLAPSED: RenderOptions = RenderOptions {
 /// One flow carrying every label case at once, with a distinct wire name for
 /// each so a duplicate in the description is detectable by counting.
 const SOURCE: &str = r#"
-    #[kaalang]
+    #[kaa]
     fn describe(seed: u8, _spare: u8) -> u8 {
-        #[choice("Pick a lane.")]
-        #[case("The near lane.")]
-        #[case("The far lane.")]
+        #[kaa::choice("Pick a lane.")]
+        #[kaa::case("The near lane.")]
+        #[kaa::case("The far lane.")]
         let (near, far) = |seed| {
             match seed {
                 0 => (),
@@ -19,19 +19,19 @@ const SOURCE: &str = r#"
             }
         };
 
-        #[action("Split <the> near lane & measure it.")]
+        #[kaa::action("Split <the> near lane & measure it.")]
         let (width, depth) = |near| { (1, 2) };
 
-        #[action("Measure the width.")]
+        #[kaa::action("Measure the width.")]
         let measured = |&width| { *width };
 
-        #[action("Gauge the depth.")]
+        #[kaa::action("Gauge the depth.")]
         let gauged = |depth| { depth };
 
-        #[action("Finish from the near lane.")]
+        #[kaa::action("Finish from the near lane.")]
         let end = |measured, gauged| { measured + gauged };
 
-        #[action("Finish from the far lane.")]
+        #[kaa::action("Finish from the far lane.")]
         let end = |far| { 9 };
 
         |end| return end;
@@ -74,11 +74,11 @@ fn renders_an_accessible_standalone_svg() {
 #[test]
 fn staged_svg_preserves_authored_text_and_describes_stage_links() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn suspicious() {
-            #[action("kaalang-title")]
+            #[kaa::action("kaalang-title")]
             let go = || {};
-            #[stage("back-edge-arrow and kaalang-description")]
+            #[kaa::stage("back-edge-arrow and kaalang-description")]
             |go| { return; };
         }
     "#;
@@ -108,15 +108,15 @@ fn staged_svg_preserves_authored_text_and_describes_stage_links() {
 #[test]
 fn stage_signals_are_unlabeled_through_producers_and_merges() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn example(choose: bool) -> u8 {
-            #[question("Choose the prepared value.")]
+            #[kaa::question("Choose the prepared value.")]
             let (yes, no) = |choose| choose;
-            #[action("Prepare the first value.")]
+            #[kaa::action("Prepare the first value.")]
             let (mut next_stage, shared) = |yes| ((), 1);
-            #[action("Prepare the second value.")]
+            #[kaa::action("Prepare the second value.")]
             let (mut next_stage, shared) = |no| ((), 2);
-            #[stage("Return the value.")]
+            #[kaa::stage("Return the value.")]
             |next_stage| { |shared| return shared; };
         }
     "#;
@@ -145,12 +145,12 @@ fn staged_outer_wires_use_capture_labels_without_data_panels() {
 #[test]
 fn renders_markdown_as_styled_svg_text_and_math_paths() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn styled(value: u8) -> u8 {
-            #[action("**Bold** *italic* ~~old~~ `code` x^2^ H~2~O")]
+            #[kaa::action("**Bold** *italic* ~~old~~ `code` x^2^ H~2~O")]
             let decorated = |value| value;
 
-            #[action("> Quote: $\\frac{1}{2}$.")]
+            #[kaa::action("> Quote: $\\frac{1}{2}$.")]
             let result = |decorated| decorated;
             |result| return result;
         }
@@ -183,9 +183,9 @@ fn renders_markdown_as_styled_svg_text_and_math_paths() {
 #[test]
 fn renders_tex_colors_without_losing_inherited_or_explicit_colors() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn colors() {
-            #[action(r#"<color name="purple">$\frac{1}{2}$ **$\textcolor{black}{x}$**</color> $\definecolor{accent}{HTML}{010203}\textcolor{accent}{x}$ $\fcolorbox{blue}{yellow}{x}$"#)]
+            #[kaa::action(r#"<color name="purple">$\frac{1}{2}$ **$\textcolor{black}{x}$**</color> $\definecolor{accent}{HTML}{010203}\textcolor{accent}{x}$ $\fcolorbox{blue}{yellow}{x}$"#)]
             {};
             return;
         }
@@ -207,7 +207,8 @@ fn renders_tex_colors_without_losing_inherited_or_explicit_colors() {
 #[test]
 fn clips_a_wide_formula_without_losing_its_accessible_text() {
     let body = format!("{}x", "x+".repeat(70));
-    let source = format!("#[kaalang] fn wide() {{ #[action(\"<u>${body}$</u>\")] {{}}; return; }}");
+    let source =
+        format!("#[kaa] fn wide() {{ #[kaa::action(\"<u>${body}$</u>\")] {{}}; return; }}");
     let svg = render_source(&source, "wide").expect("the formula fits by clipping");
 
     assert!(svg.contains("<svg class=\"md-math\" style=\"overflow: hidden\""));
@@ -235,11 +236,11 @@ fn clips_a_wide_formula_without_losing_its_accessible_text() {
 #[test]
 fn renders_paired_inline_styles_as_svg_without_html() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn styled(value: u8) -> u8 {
-            #[action(r#"<mark>**Bright**</mark> <u>underlined</u> <color name="red">red</color>"#)]
+            #[kaa::action(r#"<mark>**Bright**</mark> <u>underlined</u> <color name="red">red</color>"#)]
             let decorated = |value| value;
-            #[action(r#"<color name="purple"><u>$x^2$</u></color>"#)]
+            #[kaa::action(r#"<color name="purple"><u>$x^2$</u></color>"#)]
             let result = |decorated| decorated;
             |result| return result;
         }
@@ -259,9 +260,9 @@ fn renders_paired_inline_styles_as_svg_without_html() {
 #[test]
 fn highlight_offsets_follow_a_grapheme_split_across_styles() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn highlighted(value: u8) -> u8 {
-            #[action(r#"<mark>e</mark>́<mark>x</mark>"#)]
+            #[kaa::action(r#"<mark>e</mark>́<mark>x</mark>"#)]
             let result = |value| value;
             |result| return result;
         }
@@ -292,9 +293,9 @@ fn highlight_offsets_follow_a_grapheme_split_across_styles() {
 #[test]
 fn a_highlight_boundary_keeps_an_emoji_grapheme_together() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn emoji(value: u8) -> u8 {
-            #[action(r#"<mark>👩</mark>&zwj;💻"#)]
+            #[kaa::action(r#"<mark>👩</mark>&zwj;💻"#)]
             let result = |value| value;
             |result| return result;
         }
@@ -311,9 +312,9 @@ fn a_highlight_boundary_keeps_an_emoji_grapheme_together() {
 #[test]
 fn ordinary_styled_text_keeps_graphemes_together() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn graphemes() {
-            #[action("**👩**&zwj;💻 and e<color name=\"red\">\u{301}</color>")]
+            #[kaa::action("**👩**&zwj;💻 and e<color name=\"red\">\u{301}</color>")]
             {};
             return;
         }
@@ -327,9 +328,9 @@ fn ordinary_styled_text_keeps_graphemes_together() {
 #[test]
 fn a_single_highlighted_grapheme_uses_its_measured_advance() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn measured() {
-            #[action("<mark>W</mark>$x$")]
+            #[kaa::action("<mark>W</mark>$x$")]
             {};
             return;
         }
@@ -349,9 +350,9 @@ fn a_single_highlighted_grapheme_uses_its_measured_advance() {
 #[test]
 fn width_only_formula_advances_text_without_an_empty_svg() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn spaced() {
-            #[action(r"a<u>$\,$</u>b")]
+            #[kaa::action(r"a<u>$\,$</u>b")]
             {};
             return;
         }
@@ -369,7 +370,7 @@ fn width_only_formula_advances_text_without_an_empty_svg() {
 #[test]
 fn a_formula_above_the_label_height_limit_stays_literal() {
     let formula = r"$x\rule{1em}{12.01em}$";
-    let source = format!("#[kaalang] fn huge() {{ #[action(r\"{formula}\")] {{}}; return; }}");
+    let source = format!("#[kaa] fn huge() {{ #[kaa::action(r\"{formula}\")] {{}}; return; }}");
     let svg = render_source(&source, "huge").expect("oversized math uses literal fallback");
 
     assert!(svg.contains(&format!("<title xml:space=\"preserve\">{formula}</title>")));
@@ -438,9 +439,9 @@ fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
 #[test]
 fn unsupported_html_tags_are_escaped_around_styled_contents() {
     let source = r#"
-        #[kaalang]
+        #[kaa]
         fn literal(value: u8) -> u8 {
-            #[action("<b>**warning**</b> <b><u>x</u></b>\n<b><i>x</b><mark>**y**</mark></i>")]
+            #[kaa::action("<b>**warning**</b> <b><u>x</u></b>\n<b><i>x</b><mark>**y**</mark></i>")]
             let result = |value| value;
             |result| return result;
         }
@@ -458,13 +459,13 @@ fn unsupported_html_tags_are_escaped_around_styled_contents() {
 #[test]
 fn surrounding_styles_reach_formula_paths_and_decorations() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn formula(value: u8) -> u8 {
-            #[action(r#"**~~*<u><mark>$x$</mark></u>*~~**"#)]
+            #[kaa::action(r#"**~~*<u><mark>$x$</mark></u>*~~**"#)]
             let first = |value| value;
-            #[action(r#"^$x$^ and ~$x$~"#)]
+            #[kaa::action(r#"^$x$^ and ~$x$~"#)]
             let second = |first| first;
-            #[action("> $x$")]
+            #[kaa::action("> $x$")]
             let result = |second| second;
             |result| return result;
         }
@@ -483,15 +484,15 @@ fn surrounding_styles_reach_formula_paths_and_decorations() {
 #[test]
 fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
     let source = r##"
-        #[kaalang]
+        #[kaa]
         fn highlighted(condition: bool) -> u8 {
-            #[question("Choose.")]
-            #[yes(r#"<mark>take it</mark>"#)]
-            #[no]
+            #[kaa::question("Choose.")]
+            #[kaa::yes(r#"<mark>take it</mark>"#)]
+            #[kaa::no]
             let (yes, no) = |condition| condition;
-            #[action("Yes.")]
+            #[kaa::action("Yes.")]
             let end = |yes| 1;
-            #[action("No.")]
+            #[kaa::action("No.")]
             let end = |no| 0;
             |end| return end;
         }
@@ -574,15 +575,15 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
     ] {
         for (preparation, expected) in [
             format!(
-                r#"#[action("Prepare values.")]
+                r#"#[kaa::action("Prepare values.")]
                 let ({outputs}) = || ({values});"#
             ),
             format!(
-                r#"#[question("Choose values?")]
+                r#"#[kaa::question("Choose values?")]
                 let (yes, no) = |_choose| _choose;
-                #[action("Prepare the first alternative.")]
+                #[kaa::action("Prepare the first alternative.")]
                 let ({outputs}) = |yes| ({values});
-                #[action("Prepare the second alternative.")]
+                #[kaa::action("Prepare the second alternative.")]
                 let ({outputs}) = |no| ({values});"#
             ),
         ]
@@ -590,12 +591,12 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
         .zip(expected)
         {
             let source = format!(
-                r#"#[kaalang]
+                r#"#[kaa]
                 fn example(_choose: bool) -> u8 {{
                     {preparation}
-                    #[cycle("Use the values.")]
+                    #[kaa::cycle("Use the values.")]
                     let done = loop {{
-                        #[action("Add to the first value.")]
+                        #[kaa::action("Add to the first value.")]
                         let done = |second, &mut first| {{
                             *first += second;
                             *first
@@ -694,7 +695,7 @@ fn the_description_names_every_role_and_label_once() {
 #[test]
 fn the_end_label_omits_the_arrow_regardless_of_spacing() {
     for output in ["->u8", "-> u8", "->\n\tu8"] {
-        let source = format!("#[kaalang] fn example(end: u8){output} {{ |end| return end; }}");
+        let source = format!("#[kaa] fn example(end: u8){output} {{ |end| return end; }}");
         let svg = render_source(&source, "example").unwrap();
         assert!(!svg.contains("-&gt;"), "{output}");
         assert!(describe(&svg).contains("End: u8 capturing end"), "{output}");

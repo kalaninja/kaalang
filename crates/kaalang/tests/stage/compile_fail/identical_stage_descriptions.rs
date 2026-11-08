@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn identical_stage_descriptions(go: ()) -> u8 {
-    #[stage("Same description.")]
+    #[kaa::stage("Same description.")]
     let finish = |go| {
-        #[action("Select the next stage.")]
+        #[kaa::action("Select the next stage.")]
         let finish = |go| 7u8;
     };
 
-    #[stage(r"Same description.")]
+    #[kaa::stage(r"Same description.")]
     |finish| {
         |finish| return finish;
     };

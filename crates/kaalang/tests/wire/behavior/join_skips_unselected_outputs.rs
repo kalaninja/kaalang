@@ -1,23 +1,23 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn join_skips_unselected_outputs(outer: bool, inner: bool) -> u8 {
-    #[question("Choose an outer branch.")]
+    #[kaa::question("Choose an outer branch.")]
     let (left, right) = |outer| outer;
 
-    #[action("Prepare the left branch.")]
+    #[kaa::action("Prepare the left branch.")]
     let (probe, left_value) = |left| ((), 1);
 
-    #[question("Take the far left branch?")]
+    #[kaa::question("Take the far left branch?")]
     let (far, near) = |probe, inner| !inner;
 
-    #[action("Produce the near left value and an unused alternative.")]
+    #[kaa::action("Produce the near left value and an unused alternative.")]
     let (_unused, selected) = |near, &left_value| ((), *left_value);
 
-    #[action("Produce the far left value.")]
+    #[kaa::action("Produce the far left value.")]
     let selected = |far, &left_value| *left_value;
 
-    #[action("Produce the right value and an unused alternative.")]
+    #[kaa::action("Produce the right value and an unused alternative.")]
     let (_unused, selected) = |right| ((), 2);
 
     |selected| return selected;

@@ -1,22 +1,22 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn for_with_a_diverging_branch(values: &[u32]) -> u32 {
-    #[action("Start with a total of zero.")]
+    #[kaa::action("Start with a total of zero.")]
     let mut total = || 0;
 
-    #[cycle("Add the values, spinning forever on a zero.")]
+    #[kaa::cycle("Add the values, spinning forever on a zero.")]
     |values| {
         for value in values {
-            #[question("Is the value zero?")]
+            #[kaa::question("Is the value zero?")]
             let (zero, nonzero) = |value| *value == 0;
 
-            #[action("Add the value.")]
+            #[kaa::action("Add the value.")]
             |nonzero, value, &mut total| *total += *value;
 
-            #[cycle("Spin forever.")]
+            #[kaa::cycle("Spin forever.")]
             |zero| loop {
-                #[action("Wait.")]
+                #[kaa::action("Wait.")]
                 let waited = || std::hint::spin_loop();
 
                 |waited| continue;

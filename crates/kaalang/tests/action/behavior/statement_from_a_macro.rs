@@ -1,17 +1,17 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A flow written by another macro, whose whole zero-output action statement
 /// arrives wrapped in the invisible group a metavariable substitutes through.
 macro_rules! counting {
     ($name:ident, $counter:ident, $statement:expr) => {
-        #[kaalang]
+        #[kaa]
         fn $name($counter: &Cell<u32>) -> u32 {
-            #[action("Count one visit.")]
+            #[kaa::action("Count one visit.")]
             $statement;
 
-            #[action("Read the count.")]
+            #[kaa::action("Read the count.")]
             let end = |$counter| $counter.get();
 
             |end| return end;

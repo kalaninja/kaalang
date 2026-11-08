@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_borrow_after_move(mut text: String) -> usize {
-    #[action("Move the text into a mutable local.")]
+    #[kaa::action("Move the text into a mutable local.")]
     let moved = |mut text| {
         text.push('!');
         text
     };
 
-    #[action("Try to mutate the moved wire.")]
+    #[kaa::action("Try to mutate the moved wire.")]
     let end = |&mut text, moved| {
         text.push('?');
         moved.len()

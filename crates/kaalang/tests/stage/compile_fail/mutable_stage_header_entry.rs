@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutable_stage_header_entry(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |mut go| {
         return;
     };

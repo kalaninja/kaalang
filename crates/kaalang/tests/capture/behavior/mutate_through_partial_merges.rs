@@ -1,41 +1,41 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn mutate_through_partial_merges(source: u8, refine: bool) -> Vec<u8> {
-    #[choice("Choose the source.")]
-    #[case("Refined source.")]
-    #[case("Second source.")]
-    #[case("Fallback.")]
+    #[kaa::choice("Choose the source.")]
+    #[kaa::case("Refined source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Fallback.")]
     let (first, second, third) = |source| match source {
         0 => (),
         1 => (),
         _ => (),
     };
 
-    #[question("Refine the first source?")]
+    #[kaa::question("Refine the first source?")]
     let (yes, no) = |first, refine| refine;
 
-    #[action("Build the refined value.")]
+    #[kaa::action("Build the refined value.")]
     let mut partial = |yes| vec![1];
 
-    #[action("Build the unrefined value.")]
+    #[kaa::action("Build the unrefined value.")]
     let mut partial = |no| vec![2];
 
-    #[action("Build the second value.")]
+    #[kaa::action("Build the second value.")]
     let mut partial = |second| vec![3];
 
-    #[action("Extend the partially merged value.")]
+    #[kaa::action("Extend the partially merged value.")]
     |&mut partial| {
         partial.push(4);
     };
 
-    #[action("Carry the partial value to the outer merge.")]
+    #[kaa::action("Carry the partial value to the outer merge.")]
     let mut shared = |partial| partial;
 
-    #[action("Build the fallback value.")]
+    #[kaa::action("Build the fallback value.")]
     let mut shared = |third| vec![0];
 
-    #[action("Extend the fully merged value.")]
+    #[kaa::action("Extend the fully merged value.")]
     |&mut shared| {
         shared.push(5);
     };

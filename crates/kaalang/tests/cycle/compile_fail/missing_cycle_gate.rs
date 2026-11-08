@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> ! {
-    #[cycle("Gate on a missing wire.")]
+    #[kaa::cycle("Gate on a missing wire.")]
     |missing| loop {};
 }
 

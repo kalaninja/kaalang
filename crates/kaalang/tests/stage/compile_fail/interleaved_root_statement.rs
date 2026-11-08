@@ -1,12 +1,12 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn interleaved_root_statement(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     |go| {
         return;
     };
-    #[action("Too late.")]
+    #[kaa::action("Too late.")]
     || ();
 }
 

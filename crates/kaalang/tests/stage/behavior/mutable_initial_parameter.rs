@@ -1,9 +1,9 @@
-use kaalang::kaalang;
-#[kaalang]
+use kaalang::kaa;
+#[kaa]
 fn mutable_initial_parameter(mut go: u8) -> u8 {
-    #[action("Change the initial value.")]
+    #[kaa::action("Change the initial value.")]
     |&mut go| *go += 1;
-    #[stage("Return the received value.")]
+    #[kaa::stage("Return the received value.")]
     |go| {
         |go| return go;
     };

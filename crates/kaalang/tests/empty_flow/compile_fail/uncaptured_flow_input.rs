@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(value: u8) {
-    #[action("Finish without the flow input.")]
+    #[kaa::action("Finish without the flow input.")]
     let end = || {};
 
     |end| return end;

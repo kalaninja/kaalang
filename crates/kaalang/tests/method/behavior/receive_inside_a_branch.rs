@@ -1,21 +1,21 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Gate {
     limit: u32,
 }
 
 impl Gate {
-    #[kaalang]
+    #[kaa]
     fn receive_inside_a_branch(&self, value: u32) -> u32 {
-        #[question("Is the value above the limit?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is the value above the limit?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (above, below) = |&self, &value| *value > self.limit;
 
-        #[action("Clamp the value to the limit.")]
+        #[kaa::action("Clamp the value to the limit.")]
         let end = |above, &self| self.limit;
 
-        #[action("Keep the value.")]
+        #[kaa::action("Keep the value.")]
         let end = |below, value| value;
 
         |end| return end;

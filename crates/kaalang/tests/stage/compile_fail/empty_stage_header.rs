@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn empty_stage_header(go: ()) {
-    #[stage("Finish.")]
+    #[kaa::stage("Finish.")]
     || {
         return;
     };

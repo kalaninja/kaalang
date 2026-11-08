@@ -1,55 +1,55 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn end_below_nested_back_edges(mut mode: u8) -> u8 {
-    #[cycle("Choose an outer route until one produces a result.")]
+    #[kaa::cycle("Choose an outer route until one produces a result.")]
     let selected = loop {
-        #[choice("Which outer route?")]
-        #[case("Enter the inner cycle.")]
-        #[case("Finish with seven.")]
-        #[case("Finish with nine.")]
+        #[kaa::choice("Which outer route?")]
+        #[kaa::case("Enter the inner cycle.")]
+        #[kaa::case("Finish with seven.")]
+        #[kaa::case("Finish with nine.")]
         let (enter, seven, nine) = |mode| match mode {
             0 | 3 => (),
             1 => (),
             _ => (),
         };
 
-        #[cycle("Choose an inner route until one completes.")]
+        #[kaa::cycle("Choose an inner route until one completes.")]
         let inner_result = |enter| loop {
-            #[choice("Which inner route?")]
-            #[case("Repeat the inner cycle.")]
-            #[case("Repeat the outer cycle.")]
-            #[case("Finish with eleven.")]
+            #[kaa::choice("Which inner route?")]
+            #[kaa::case("Repeat the inner cycle.")]
+            #[kaa::case("Repeat the outer cycle.")]
+            #[kaa::case("Finish with eleven.")]
             let (repeat, leave, eleven) = |&mode| match *mode {
                 0 | 3 => (),
                 1 => (),
                 _ => (),
             };
 
-            #[action("Advance to the next route.")]
+            #[kaa::action("Advance to the next route.")]
             |repeat, &mut mode| *mode += 1;
 
-            #[action("Continue with the outer cycle.")]
+            #[kaa::action("Continue with the outer cycle.")]
             let inner_result = |leave| None;
 
-            #[action("Produce eleven.")]
+            #[kaa::action("Produce eleven.")]
             let inner_result = |eleven| Some(11);
 
             |repeat| continue;
         };
 
-        #[question("Did the inner cycle produce a result?")]
+        #[kaa::question("Did the inner cycle produce a result?")]
         let (repeat_outer, finish_inner) = |&inner_result| inner_result.is_none();
 
-        #[action("Extract the inner result.")]
+        #[kaa::action("Extract the inner result.")]
         let selected = |finish_inner, inner_result| {
             inner_result.expect("the completing inner route has a result")
         };
 
-        #[action("Produce seven.")]
+        #[kaa::action("Produce seven.")]
         let selected = |seven| 7;
 
-        #[action("Produce nine.")]
+        #[kaa::action("Produce nine.")]
         let selected = |nine| 9;
 
         |repeat_outer| continue;

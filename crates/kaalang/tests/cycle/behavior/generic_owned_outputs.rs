@@ -1,33 +1,33 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// Owned alternative outputs of an unconstrained generic type in a `const fn`.
 /// Each output moves the same value into its own result block.
-#[kaalang]
+#[kaa]
 const fn generic_owned_outputs<T>(value: T, mut remaining: usize, take_left: bool) -> T {
-    #[cycle("Count down, then pick a side.")]
+    #[kaa::cycle("Count down, then pick a side.")]
     let (left, right) = loop {
-        #[question("Is any count left?")]
+        #[kaa::question("Is any count left?")]
         let (again, decide) = |&remaining| *remaining > 0;
 
-        #[action("Count down.")]
+        #[kaa::action("Count down.")]
         let stepped = |again, &mut remaining| *remaining -= 1;
 
         |stepped| continue;
 
-        #[question("Take the left side?")]
+        #[kaa::question("Take the left side?")]
         let (take, skip) = |decide, take_left| take_left;
 
-        #[action("Hand the value to the left.")]
+        #[kaa::action("Hand the value to the left.")]
         let left = |take, value| value;
 
-        #[action("Hand the value to the right.")]
+        #[kaa::action("Hand the value to the right.")]
         let right = |skip, value| value;
     };
 
-    #[action("Keep the left value.")]
+    #[kaa::action("Keep the left value.")]
     let chosen = |left| left;
 
-    #[action("Keep the right value.")]
+    #[kaa::action("Keep the right value.")]
     let chosen = |right| right;
 
     |chosen| return chosen;

@@ -1,27 +1,27 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn cycle_on_each_branch(up: bool, mut n: u32) -> u32 {
-    #[question("Count up?")]
+    #[kaa::question("Count up?")]
     let (rise, fall) = |up| up;
 
-    #[cycle("Count up to ten.")]
+    #[kaa::cycle("Count up to ten.")]
     let done = |rise| loop {
-        #[question("Reached ten?")]
+        #[kaa::question("Reached ten?")]
         let (done, more) = |&n| *n >= 10;
 
-        #[action("Step up.")]
+        #[kaa::action("Step up.")]
         let stepped = |more, &mut n| *n += 1;
 
         |stepped| continue;
     };
 
-    #[cycle("Count down to zero.")]
+    #[kaa::cycle("Count down to zero.")]
     let done = |fall| loop {
-        #[question("Reached zero?")]
+        #[kaa::question("Reached zero?")]
         let (done, more) = |&n| *n == 0;
 
-        #[action("Step down.")]
+        #[kaa::action("Step down.")]
         let stepped = |more, &mut n| *n -= 1;
 
         |stepped| continue;

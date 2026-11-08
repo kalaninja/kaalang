@@ -1,15 +1,15 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(unreachable_code)]
-#[kaalang]
+#[kaa]
 fn skeleton(seed: u32) -> u32 {
-    #[question("Accept the seed?")]
+    #[kaa::question("Accept the seed?")]
     let (accepted, rejected) = |&seed| todo!();
 
-    #[action("Keep the accepted seed.")]
+    #[kaa::action("Keep the accepted seed.")]
     let end = |accepted, seed| todo!();
 
-    #[action("Keep the rejected seed.")]
+    #[kaa::action("Keep the rejected seed.")]
     let end = |rejected, seed| todo!();
 
     |end| return end;

@@ -2,41 +2,41 @@
 //! question and installed after it, so neither a while nor a do-while header
 //! fits. Newton's method walks down to the integer square root.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn middle_exit(number: u64) -> u64 {
-    #[question("Is the number positive?")]
-    #[yes("YES")]
-    #[no("NO")]
+    #[kaa::question("Is the number positive?")]
+    #[kaa::yes("YES")]
+    #[kaa::no("NO")]
     let (positive, zero) = |number| number > 0;
 
-    #[action("🤔 Start with a guess at or above the square root.")]
+    #[kaa::action("🤔 Start with a guess at or above the square root.")]
     let mut guess = |positive, number| number / 2 + 1;
 
-    #[cycle("Lower the guess until it is the integer square root.")]
+    #[kaa::cycle("Lower the guess until it is the integer square root.")]
     let root = |guess| loop {
-        #[action("Divide the number by the current guess.")]
+        #[kaa::action("Divide the number by the current guess.")]
         let quotient = |number, guess| number / guess;
 
-        #[action("⚖️ Average the guess and quotient to get a new guess.")]
+        #[kaa::action("⚖️ Average the guess and quotient to get a new guess.")]
         let next = |guess, quotient| u64::midpoint(guess, quotient);
 
-        #[question("Is the new guess at least as large as the current one?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is the new guess at least as large as the current one?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (done, again) = |next, guess| next >= guess;
 
-        #[action("✅ Use the current guess as the integer square root.")]
+        #[kaa::action("✅ Use the current guess as the integer square root.")]
         let root = |done, guess| guess;
 
-        #[action("🔽 Replace the current guess with the smaller new guess.")]
+        #[kaa::action("🔽 Replace the current guess with the smaller new guess.")]
         |again, next, &mut guess| *guess = next;
 
         |again| continue;
     };
 
-    #[action("⭕ The square root of zero is zero.")]
+    #[kaa::action("⭕ The square root of zero is zero.")]
     let root = |zero| 0;
 
     |root| return root;

@@ -2,24 +2,24 @@
 //! Euclid's algorithm replaces the pair with a smaller one that shares its
 //! divisors, until the second number is gone.
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn while_loop(mut a: u64, mut b: u64) -> u64 {
-    #[cycle("Reduce the pair to its greatest common divisor.")]
+    #[kaa::cycle("Reduce the pair to its greatest common divisor.")]
     let divisor = loop {
-        #[question("Is the second number zero?")]
-        #[yes("YES")]
-        #[no("NO")]
+        #[kaa::question("Is the second number zero?")]
+        #[kaa::yes("YES")]
+        #[kaa::no("NO")]
         let (done, again) = |b| b == 0;
 
-        #[action("🟰 Use the first number as the greatest common divisor.")]
+        #[kaa::action("🟰 Use the first number as the greatest common divisor.")]
         let divisor = |done, a| a;
 
-        #[action("➗ Divide the first number by the second; keep the remainder.")]
+        #[kaa::action("➗ Divide the first number by the second; keep the remainder.")]
         let remainder = |again, a, b| a % b;
 
-        #[action("Replace the pair with the second number and the remainder.")]
+        #[kaa::action("Replace the pair with the second number and the remainder.")]
         |remainder, &mut a, &mut b| {
             (*a, *b) = (*b, remainder);
         };

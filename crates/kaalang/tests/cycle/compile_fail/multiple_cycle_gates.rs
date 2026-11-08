@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(first: bool, second: bool) -> ! {
-    #[cycle("Try two gates.")]
+    #[kaa::cycle("Try two gates.")]
     |first, second| loop {};
 }
 

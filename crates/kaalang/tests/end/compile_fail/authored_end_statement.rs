@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(input: u32) -> u32 {
-    #[end]
+    #[kaa::end]
     |input| {};
 
     |input| return input;

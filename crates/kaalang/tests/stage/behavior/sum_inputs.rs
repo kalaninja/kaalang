@@ -1,18 +1,18 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn sum_inputs(
     first_input_value: u32,
     second_input_value: u32,
     third_input_value: u32,
     fourth_input_value: u32,
 ) -> u32 {
-    #[action("Begin.")]
+    #[kaa::action("Begin.")]
     let go = || {};
 
-    #[stage("Return the sum.")]
+    #[kaa::stage("Return the sum.")]
     |go| {
-        #[action("Add the inputs.")]
+        #[kaa::action("Add the inputs.")]
         let sum = |first_input_value, second_input_value, third_input_value, fourth_input_value| {
             first_input_value + second_input_value + third_input_value + fourth_input_value
         };

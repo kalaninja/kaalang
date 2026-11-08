@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() {
-    #[action("Create the values.")]
+    #[kaa::action("Create the values.")]
     let values = || vec![1, 2, 3];
 
-    #[cycle("Visit the indices.")]
+    #[kaa::cycle("Visit the indices.")]
     |values| {
         for _ in 0..values.len() {
-            #[action("Read an alias whose header scope has ended.")]
+            #[kaa::action("Read an alias whose header scope has ended.")]
             || assert!(!values.is_empty());
         }
     };

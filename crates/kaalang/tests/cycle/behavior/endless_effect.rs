@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[allow(dead_code)]
-#[kaalang]
+#[kaa]
 fn endless_effect(mut count: usize) -> ! {
-    #[cycle("Increment forever.")]
+    #[kaa::cycle("Increment forever.")]
     loop {
-        #[action("Increment the counter.")]
+        #[kaa::action("Increment the counter.")]
         |&mut count| *count = count.wrapping_add(1);
 
         continue;

@@ -1,26 +1,26 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn terminal_case_after_repeats(mut mode: u8) -> u8 {
-    #[cycle("Repeat until the finishing case.")]
+    #[kaa::cycle("Repeat until the finishing case.")]
     let result = loop {
-        #[choice("Which route?")]
-        #[case("Advance on the left.")]
-        #[case("Advance on the right.")]
-        #[case("Finish after the repeating cases.")]
+        #[kaa::choice("Which route?")]
+        #[kaa::case("Advance on the left.")]
+        #[kaa::case("Advance on the right.")]
+        #[kaa::case("Finish after the repeating cases.")]
         let (left, right, finish) = |mode| match mode {
             0 => (),
             2.. => (),
             _ => (),
         };
 
-        #[action("Finish from the final case.")]
+        #[kaa::action("Finish from the final case.")]
         let result = |finish| 7;
 
-        #[action("Advance through the left case.")]
+        #[kaa::action("Advance through the left case.")]
         let advanced = |left, &mut mode| *mode = 1;
 
-        #[action("Advance through the right case.")]
+        #[kaa::action("Advance through the right case.")]
         let advanced = |right, &mut mode| *mode = 1;
 
         |advanced| continue;

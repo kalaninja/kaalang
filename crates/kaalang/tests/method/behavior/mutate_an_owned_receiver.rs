@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 struct Tally {
     total: u32,
 }
 
 impl Tally {
-    #[kaalang]
+    #[kaa]
     fn mutate_an_owned_receiver(mut self, step: u32) -> Self {
-        #[action("Add the step to the total.")]
+        #[kaa::action("Add the step to the total.")]
         let added = |self, step| {
             self.total += step;
             self
         };
 
-        #[action("Double the total.")]
+        #[kaa::action("Double the total.")]
         let end = |added| Self {
             total: added.total * 2,
         };

@@ -1,11 +1,11 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
 /// A `return` expression or `?` operator inside a nested closure
 /// or item definition belongs to that Rust construct, not to the kaalang block
 /// body around it.
-#[kaalang]
+#[kaa]
 fn own_nested_control_flow(input: u32) -> u32 {
-    #[action("Combine values from constructs that own their control flow.")]
+    #[kaa::action("Combine values from constructs that own their control flow.")]
     let end = |input| {
         // Lowering binds the inputs ahead of the authored statements, so an item
         // written first in the body would still follow a statement and trip

@@ -1,29 +1,29 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A description owned by an entry.")]
+#[kaa("A description owned by an entry.")]
 #[derive(Clone, Debug, PartialEq)]
 struct Details {
-    #[value("The description text.")]
+    #[kaa::value("The description text.")]
     text: String,
 }
 
-#[kaalang("The description for the current revision.")]
+#[kaa("The description for the current revision.")]
 type CurrentDetails = Details;
 
-#[kaalang("The description retained for an earlier revision.")]
+#[kaa("The description retained for an earlier revision.")]
 type RevisionDetails = Details;
 
-#[kaalang("An ordered sequence of earlier descriptions.")]
-#[refer(RevisionDetails, "Earlier descriptions in revision order.")]
+#[kaa("An ordered sequence of earlier descriptions.")]
+#[kaa::refer(RevisionDetails, "Earlier descriptions in revision order.")]
 type History = Vec<RevisionDetails>;
 
-#[kaalang("An article with its current and earlier descriptions.")]
+#[kaa("An article with its current and earlier descriptions.")]
 struct Article {
-    #[refer(CurrentDetails, "The current description.")]
+    #[kaa::refer(CurrentDetails, "The current description.")]
     current: CurrentDetails,
-    #[refer(History, "The article's revision history.")]
+    #[kaa::refer(History, "The article's revision history.")]
     history: History,
-    #[refer(RevisionDetails, "The revision readers saw last.")]
+    #[kaa::refer(RevisionDetails, "The revision readers saw last.")]
     last_seen: Option<RevisionDetails>,
 }
 

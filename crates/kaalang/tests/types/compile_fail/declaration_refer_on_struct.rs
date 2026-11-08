@@ -1,10 +1,10 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang("A member.")]
+#[kaa("A member.")]
 struct Member;
 
-#[kaalang("A key in the member directory.")]
-#[refer(Member, "The member the key names.")]
+#[kaa("A key in the member directory.")]
+#[kaa::refer(Member, "The member the key names.")]
 struct MemberId(u32);
 
 fn main() {}

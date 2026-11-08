@@ -1,5 +1,5 @@
 error: a kaalang cycle requires a non-empty description
- --> tests/cycle/compile_fail/empty_cycle_description.rs:5:13
+ --> tests/cycle/compile_fail/empty_cycle_description.rs:5:18
   |
-5 |     #[cycle("")]
-  |             ^^
+5 |     #[kaa::cycle("")]
+  |                  ^^

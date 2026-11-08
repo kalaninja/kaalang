@@ -1,14 +1,14 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(mut state: u8) -> u8 {
-    #[cycle("Settle on a colour.")]
+    #[kaa::cycle("Settle on a colour.")]
     let (red, green, blue) = loop {
-        #[choice("Which colour is it?")]
-        #[case("Red.")]
-        #[case("Green.")]
-        #[case("Blue.")]
-        #[case("Not settled yet.")]
+        #[kaa::choice("Which colour is it?")]
+        #[kaa::case("Red.")]
+        #[kaa::case("Green.")]
+        #[kaa::case("Blue.")]
+        #[kaa::case("Not settled yet.")]
         let (red, green, blue, other) = |&state| match *state {
             0 => (),
             1 => (),
@@ -16,22 +16,22 @@ fn invalid(mut state: u8) -> u8 {
             _ => (),
         };
 
-        #[action("Try again.")]
+        #[kaa::action("Try again.")]
         let stepped = |other, &mut state| *state -= 1;
 
         |stepped| continue;
     };
 
-    #[action("Score red.")]
+    #[kaa::action("Score red.")]
     let score = |red| 10;
 
-    #[action("Score green.")]
+    #[kaa::action("Score green.")]
     let result = |green| 20;
 
-    #[action("Score blue.")]
+    #[kaa::action("Score blue.")]
     let score = |blue| 30;
 
-    #[action("Keep the score.")]
+    #[kaa::action("Keep the score.")]
     let result = |score| score;
 
     |result| return result;

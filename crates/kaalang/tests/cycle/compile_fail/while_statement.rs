@@ -1,8 +1,8 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid(flag: bool) -> ! {
-    #[question("Repeat?")]
+    #[kaa::question("Repeat?")]
     while (|flag| flag) {}
 }
 

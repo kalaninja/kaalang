@@ -1,9 +1,9 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn invalid() -> u8 {
-    #[action("Produce the result.")]
-    #[yes]
+    #[kaa::action("Produce the result.")]
+    #[kaa::yes]
     let end = || { 1 };
 
     |end| return end;

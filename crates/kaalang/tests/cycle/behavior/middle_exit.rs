@@ -1,19 +1,19 @@
-use kaalang::kaalang;
+use kaalang::kaa;
 
-#[kaalang]
+#[kaa]
 fn middle_exit(limit: usize) -> Vec<usize> {
-    #[action("Initialize the counter and log.")]
+    #[kaa::action("Initialize the counter and log.")]
     let (mut initial_count, mut initial_log) = || (0, Vec::new());
 
-    #[cycle("Record iterations through the requested limit.")]
+    #[kaa::cycle("Record iterations through the requested limit.")]
     let done = loop {
-        #[action("Record the start of the iteration.")]
+        #[kaa::action("Record the start of the iteration.")]
         |&initial_count, &mut initial_log| initial_log.push(*initial_count);
 
-        #[question("Stop before advancing?")]
+        #[kaa::question("Stop before advancing?")]
         let (done, again) = |&initial_count, limit| *initial_count == limit;
 
-        #[action("Advance and record the rest of the iteration.")]
+        #[kaa::action("Advance and record the rest of the iteration.")]
         |again, &mut initial_count, &mut initial_log| {
             *initial_count += 1;
             initial_log.push(99);
