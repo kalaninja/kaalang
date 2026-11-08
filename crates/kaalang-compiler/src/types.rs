@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{
     is_kaalang_attribute,
-    parse::{description, is_annotation},
+    parse::{annotation_name, description},
 };
 
 /// A struct, enum, union, or type alias marked `#[kaa]`.
@@ -127,7 +127,7 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
 
     let mut alias_relationship = None;
     for attribute in attributes {
-        match annotation(attribute) {
+        match annotation(attribute)? {
             Some("value") => {
                 return Err(Error::new_spanned(
                     attribute,
@@ -195,7 +195,7 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
     let annotated: Item = syn::parse_quote!(#attribute #item);
 
     // Only the annotations go: rustc rejects a `#[kaa]` left on a field or variant.
-    let unannotated = |attribute: &Attribute| annotation(attribute).is_none();
+    let unannotated = |attribute: &Attribute| annotation_name(attribute).is_none();
     let mut fields: Vec<&mut syn::Field> = match &mut item {
         Item::Struct(declaration) => {
             declaration.attrs.retain(unannotated);
@@ -241,12 +241,21 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
     Ok(quote! { #item #imports })
 }
 
-/// The name of a type annotation kaalang consumes: `kaa::value`, `kaa::refer`,
-/// or `kaa::case`.
-fn annotation(attribute: &Attribute) -> Option<&'static str> {
-    ["value", "refer", "case"]
+/// The type annotation `attribute` names: `kaa::value`, `kaa::refer`, or
+/// `kaa::case`. Any other name under `kaa::` is rejected.
+fn annotation(attribute: &Attribute) -> Result<Option<&'static str>> {
+    let Some(name) = annotation_name(attribute) else {
+        return Ok(None);
+    };
+    let known = ["value", "refer", "case"]
         .into_iter()
-        .find(|name| is_annotation(attribute, name))
+        .find(|known| name == known);
+    known.map(Some).ok_or_else(|| {
+        Error::new_spanned(
+            attribute,
+            format!("`kaa::{name}` is not a kaalang type annotation"),
+        )
+    })
 }
 
 fn fields<'a>(
@@ -258,7 +267,7 @@ fn fields<'a>(
         .map(|field| {
             let mut annotation = None;
             for attribute in &field.attrs {
-                let parsed = match self::annotation(attribute) {
+                let parsed = match self::annotation(attribute)? {
                     Some("value") => Annotation::Value(description(attribute, "kaalang value")?),
                     Some("refer") => Annotation::Refer(relationship(attribute, generics)?),
                     Some(_) => return Err(misplaced_case(attribute)),
@@ -283,7 +292,7 @@ fn fields<'a>(
 fn variant_case(attributes: &[Attribute]) -> Result<Option<String>> {
     let mut case = None;
     for attribute in attributes {
-        match annotation(attribute) {
+        match annotation(attribute)? {
             Some("case") => {
                 if case
                     .replace(description(attribute, "kaalang case")?)

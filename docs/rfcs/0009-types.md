@@ -181,7 +181,8 @@ RFCs 0001 to 0008, wherever they write it: a flow is marked `#[kaa]` instead of
 attributes become `#[kaa::action]`, `#[kaa::call]`, `#[kaa::question]`,
 `#[kaa::yes]`, `#[kaa::no]`, `#[kaa::choice]`, `#[kaa::case]`, `#[kaa::cycle]`,
 and `#[kaa::stage]`. Their arguments, placement, and meaning do not change, and
-a bare block attribute is no longer kaalang's.
+a bare block attribute is no longer kaalang's. Every name under `kaa::` belongs
+to kaalang, and one it does not define is rejected, on a type as in a flow.
 
 ## 3. Relationship meaning
 
@@ -337,12 +338,12 @@ under `cfg` are read as written.
 ## 7. Validation and acceptance scenarios
 
 The annotation parser must diagnose duplicate or malformed `kaa` attributes,
-unsupported declaration forms, empty descriptions, a `value`, `refer`, or `case`
-without its description, repeated or conflicting field, variant, and alias
-annotations, a `case` outside an enum variant, a declaration-level `value`, a
-declaration-level `refer` on anything but an alias, and parameterized `refer`
-targets at their source locations. An unannotated field is not a
-missing-description error.
+unsupported declaration forms, an unknown name under `kaa::`, empty
+descriptions, a `value`, `refer`, or `case` without its description, repeated or
+conflicting field, variant, and alias annotations, a `case` outside an enum
+variant, a declaration-level `value`, a declaration-level `refer` on anything
+but an alias, and parameterized `refer` targets at their source locations. An
+unannotated field is not a missing-description error.
 
 Relationship resolution must diagnose an unknown target, including a type
 parameter of the enclosing declaration. It must preserve alias names and must
