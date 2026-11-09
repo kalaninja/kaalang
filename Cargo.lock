@@ -200,7 +200,9 @@ version = "0.2.0"
 dependencies = [
  "cargo_metadata",
  "clap",
+ "kaalang-compiler",
  "kaalang-svg",
+ "proc-macro2",
  "same-file",
  "syn",
 ]

@@ -1,32 +1,76 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-use clap::builder::NonEmptyStringValueParser;
+use clap::{ArgGroup, builder::NonEmptyStringValueParser};
 use kaalang_svg::RenderError;
 
-use crate::workspace;
+use crate::{datatype, workspace};
 
 #[derive(clap::Args)]
+#[command(group(ArgGroup::new("item").required(true).args(["flow", "type"])))]
 pub(super) struct Diagram {
-    /// Package to take the flow from
+    /// Package to take the flow or type from
     #[arg(short)]
     package: Option<String>,
     /// Rust path of the flow from its crate root
     #[arg(long, value_parser = NonEmptyStringValueParser::new())]
-    flow: String,
+    flow: Option<String>,
+    /// Rust path of the type from its crate root
+    #[arg(long = "type", id = "type", value_parser = NonEmptyStringValueParser::new())]
+    ty: Option<String>,
     #[arg(
         short,
-        help = "Output path [default: ./NAME.svg after the flow path's last segment, or ./NAME_collapsed.svg with --collapse-cycles]"
+        help = "Output path [default: ./NAME.svg after the path's last segment, or ./NAME_collapsed.svg with --collapse-cycles]"
     )]
     output: Option<PathBuf>,
     /// Draw each cycle as one described node
-    #[arg(long)]
+    #[arg(long, conflicts_with = "type")]
     collapse_cycles: bool,
 }
 
 impl Diagram {
-    /// Renders the flow and prints the written path.
+    /// Renders the flow or type and prints the written path.
     pub(super) fn run(self) -> Result<(), String> {
-        let found = workspace::find(&self.flow, self.package.as_deref())?;
+        let (path, svg, sources) = match (&self.flow, &self.ty) {
+            (Some(flow), _) => {
+                let (svg, file) = self.flow(flow)?;
+                (flow, svg, vec![file])
+            }
+            (None, Some(ty)) => {
+                let drawn = datatype::draw(ty, self.package.as_deref())?;
+                (ty, drawn.svg, drawn.files)
+            }
+            (None, None) => unreachable!("clap requires --flow or --type"),
+        };
+        let name = path
+            .rsplit_once("::")
+            .map_or(path.as_str(), |(_, name)| name);
+        let name = name.strip_prefix("r#").unwrap_or(name);
+        let output = self.output.unwrap_or_else(|| {
+            PathBuf::from(if self.collapse_cycles {
+                format!("{name}_collapsed.svg")
+            } else {
+                format!("{name}.svg")
+            })
+        });
+        for source in &sources {
+            if overwrites(source, &output)? {
+                return Err("the output path would overwrite the source file".to_owned());
+            }
+        }
+        // Rendering finished in memory, so a failed render never touches the output.
+        fs::write(&output, &svg)
+            .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
+
+        println!("{}", output.display());
+        Ok(())
+    }
+
+    /// Renders the flow at `path` and returns it with the file declaring it.
+    fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
+        let found = workspace::find(path, self.package.as_deref())?;
         let svg = kaalang_svg::render_source_with_options(
             &found.source,
             &found.path_in_file,
@@ -39,41 +83,23 @@ impl Diagram {
             if let RenderError::InvalidFlow { name, .. }
             | RenderError::UnroutableTopology { name, .. } = &mut error
             {
-                name.clone_from(&self.flow);
+                path.clone_into(name);
             }
             format!("{}: {error}", found.file.display())
         })?;
-        let name = self
-            .flow
-            .rsplit_once("::")
-            .map_or(self.flow.as_str(), |(_, name)| name);
-        let name = name.strip_prefix("r#").unwrap_or(name);
-        let output = self.output.unwrap_or_else(|| {
-            PathBuf::from(if self.collapse_cycles {
-                format!("{name}_collapsed.svg")
-            } else {
-                format!("{name}.svg")
-            })
-        });
-        let same_source = match same_file::is_same_file(&found.file, &output) {
-            Ok(same) => same,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
-            Err(error) => {
-                return Err(format!(
-                    "could not check output `{}`: {error}",
-                    output.display()
-                ));
-            }
-        };
-        if same_source {
-            return Err("the output path would overwrite the source file".to_owned());
-        }
-        // Rendering finished in memory, so a failed flow never touches the output.
-        fs::write(&output, &svg)
-            .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
+        Ok((svg, found.file))
+    }
+}
 
-        println!("{}", output.display());
-        Ok(())
+/// Whether writing `output` would replace `source`, even through a link.
+fn overwrites(source: &Path, output: &Path) -> Result<bool, String> {
+    match same_file::is_same_file(source, output) {
+        Ok(same) => Ok(same),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(format!(
+            "could not check output `{}`: {error}",
+            output.display()
+        )),
     }
 }
 
@@ -92,6 +118,29 @@ mod tests {
     #[test]
     fn rejects_an_empty_flow_name() {
         let line = "cargo-kaalang diagram --flow=";
+        assert!(Cli::try_parse_from(line.split_whitespace()).is_err());
+    }
+
+    #[test]
+    fn takes_exactly_one_of_flow_and_type() {
+        for line in [
+            "cargo-kaalang diagram",
+            "cargo-kaalang diagram --flow decide --type Member",
+            "cargo-kaalang diagram --type=",
+        ] {
+            assert!(
+                Cli::try_parse_from(line.split_whitespace()).is_err(),
+                "{line}"
+            );
+        }
+        assert!(
+            Cli::try_parse_from("cargo-kaalang diagram --type Member".split_whitespace()).is_ok()
+        );
+    }
+
+    #[test]
+    fn rejects_collapse_cycles_with_a_type() {
+        let line = "cargo-kaalang diagram --type Member --collapse-cycles";
         assert!(Cli::try_parse_from(line.split_whitespace()).is_err());
     }
 }

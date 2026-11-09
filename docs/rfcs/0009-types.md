@@ -349,18 +349,27 @@ workspace and searches every member crate, for the item and for incoming types.
 When the path exists in several packages, `-p` names the package to take it
 from. Each target of a package (its library, binaries, tests, examples, and
 benches) is a separate crate; a path declared in more than one of them cannot be
-selected. Exactly one of `--flow` and `--type` is given. `--collapse-cycles`
-applies to flows and is rejected with `--type`. Without `-o`, the command writes
-`./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
-`--collapse-cycles`. A `--flow` path that names no `#[kaa]` function, or a
-`--type` path that names no struct, enum, union, or type alias, is a failure;
-one that matches several without `-p` is a failure that lists them with their
-packages. With `--type`, the command resolves every relationship in the
-workspace to find the incoming types, and one whose target is not a type of the
-workspace is a failure too. The command creates or replaces the output only
-after the selected declaration and, for a type, its incoming types are validated
-and the diagram rendered. On success it prints the output path; on failure it
-writes a diagnostic to stderr and exits with a nonzero status.
+selected, unless they all include the one file that declares it. Exactly one of
+`--flow` and `--type` is given. `--collapse-cycles` applies to flows and is
+rejected with `--type`. Without `-o`, the command writes `./<name>.svg` from the
+last path segment, or `./<name>_collapsed.svg` with `--collapse-cycles`. A
+`--flow` path that names no `#[kaa]` function, or a `--type` path that names no
+struct, enum, union, or type alias, is a failure; one that matches several
+without `-p` is a failure that lists them with their packages. With `--type`,
+the command resolves every relationship in the workspace to find the incoming
+types, and one whose target is not a type of the workspace is a failure too.
+
+The command reads each crate from its root through its `mod` declarations, as
+Rust does, and resolves a `refer` target by Rust's path rules from the module
+that declares the field: `crate`, `self`, and `super`, declared items, `use`
+imports with renames, groups, and globs, and the workspace's libraries by their
+crate names, renamed dependencies included. It reads the source as written, so
+an item under `cfg` counts. A target the source alone cannot resolve, such as a
+name an item macro may declare, draws no line and is reported as a warning. The
+command creates or replaces the output only after the selected declaration and,
+for a type, its incoming types are validated and the diagram rendered. On
+success it prints the output path; on failure it writes a diagnostic to stderr
+and exits with a nonzero status.
 
 This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
 of §4 under which the renderer selects one function by its unqualified name and
@@ -436,11 +445,6 @@ whole-domain diagrams are outside this RFC's scope.
 
 Before implementation, resolve:
 
-- **Discovery and resolution.** How the workspace's declarations are found and
-  how a path or a `refer` target is resolved across crates, modules, and
-  imports. An attribute macro receives its item, not an already resolved graph
-  of neighboring declarations.
-  [Rust Reference: attribute macros](https://doc.rust-lang.org/reference/procedural-macros.html#attribute-macros).
 - **Large incoming sets.** Routing, grouping, and placement when incoming cards
   no longer fit comfortably in one row, while keeping source order and
   deterministic results.

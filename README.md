@@ -453,6 +453,12 @@ Open `fizzbuzz.svg` in a browser. Replace the flow's path from its crate root to
 render another example; add `--collapse-cycles` for the compact cycle view shown
 above. The output is a standalone SVG with no external rendering tools required.
 
+Draw a type with the types that refer to it the same way, by its path:
+
+```sh
+cargo kaalang diagram --type model::Member
+```
+
 ## Read more
 
 - [RFCs](https://github.com/kalaninja/kaalang/tree/main/docs/rfcs), the source

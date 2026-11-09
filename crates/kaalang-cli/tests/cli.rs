@@ -42,17 +42,30 @@ fn package(name: &str, source: &str) -> PathBuf {
 /// A fresh workspace named for one test, whose members `first` and `second`
 /// both declare the flow `route`.
 fn two_packages(name: &str) -> PathBuf {
+    workspace(name, &[("first", SOURCE), ("second", SOURCE)])
+}
+
+/// A fresh workspace named for one test, with a member for each package name
+/// and its library root.
+fn workspace(name: &str, members: &[(&str, &str)]) -> PathBuf {
     let directory = Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
     let _ = fs::remove_dir_all(&directory);
-    let members = "[workspace]\nmembers = [\"first\", \"second\"]\nresolver = \"3\"\n";
-    write(&directory, "Cargo.toml", members);
-    for member in ["first", "second"] {
+    let listed: Vec<String> = members
+        .iter()
+        .map(|(member, _)| format!("\"{member}\""))
+        .collect();
+    let root = format!(
+        "[workspace]\nmembers = [{}]\nresolver = \"3\"\n",
+        listed.join(", ")
+    );
+    write(&directory, "Cargo.toml", &root);
+    for (member, source) in members {
         write(
             &directory,
             &format!("{member}/Cargo.toml"),
             &manifest(member),
         );
-        write(&directory, &format!("{member}/src/lib.rs"), SOURCE);
+        write(&directory, &format!("{member}/src/lib.rs"), source);
     }
     directory
 }
@@ -367,4 +380,160 @@ fn an_unknown_package_fails() {
         stderr.contains("package `missing` is not a member"),
         "{stderr}"
     );
+}
+
+/// The positions in `svg` of each of `names`, which must all occur.
+fn positions(svg: &str, names: &[&str]) -> Vec<usize> {
+    names
+        .iter()
+        .map(|name| {
+            svg.find(name)
+                .unwrap_or_else(|| panic!("{name} is not drawn"))
+        })
+        .collect()
+}
+
+#[test]
+fn a_type_is_drawn_with_the_types_that_refer_to_it() {
+    let directory = package("cli-type", "mod model;\nmod review;\n");
+    write(
+        &directory,
+        "src/model.rs",
+        "#[kaa(\"A member.\")]\npub struct Member {\n    name: String,\n}\n",
+    );
+    write(
+        &directory,
+        "src/review.rs",
+        "use crate::model::Member as Person;\n\n#[kaa(\"A report.\")]\nstruct Report {\n    #[kaa::refer(Person, \"The author.\")]\n    author: u32,\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type model::Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    positions(&svg, &["review::Report", "model::Member"]);
+    assert!(svg.contains("relationship-route"));
+}
+
+#[test]
+fn a_plain_type_may_be_the_focus() {
+    let directory = package(
+        "cli-plain-type",
+        "pub struct Timestamp {\n    seconds: u64,\n}\n\n#[kaa]\nstruct Change {\n    #[kaa::refer(Timestamp, \"When it was saved.\")]\n    saved: Timestamp,\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type Timestamp");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Timestamp.svg")).unwrap();
+    positions(&svg, &["Change", "Timestamp"]);
+}
+
+#[test]
+fn incoming_types_follow_crate_order() {
+    let directory = workspace(
+        "cli-type-order",
+        &[
+            (
+                "app",
+                "pub struct Member;\n#[kaa]\nstruct FromLib {\n    #[kaa::refer(Member, \"m\")]\n    m: u8,\n}\n",
+            ),
+            (
+                "alpha",
+                "#[kaa]\nstruct FromAlpha {\n    #[kaa::refer(app::Member, \"m\")]\n    m: u8,\n}\n",
+            ),
+        ],
+    );
+    let refer = |name: &str| {
+        format!(
+            "#[kaa]\nstruct {name} {{\n    #[kaa::refer(app::Member, \"m\")]\n    m: u8,\n}}\nfn main() {{}}\n"
+        )
+    };
+    write(&directory, "app/tests/check.rs", &refer("FromTest"));
+    write(&directory, "app/src/main.rs", &refer("FromBin"));
+    let rendered = run(&directory, "diagram --type Member -p app");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    let found = positions(
+        &svg,
+        &[
+            ">FromLib<",
+            ">app::FromBin<",
+            ">check::FromTest<",
+            ">alpha::FromAlpha<",
+        ],
+    );
+    assert!(found.is_sorted(), "{found:?}");
+}
+
+#[test]
+fn a_file_that_two_crates_include_gives_one_card() {
+    let directory = package("cli-type-shared-file", "pub mod model;\n");
+    write(&directory, "src/main.rs", "mod model;\nfn main() {}\n");
+    write(
+        &directory,
+        "src/model.rs",
+        "pub struct Member;\n#[kaa]\npub struct Report {\n    #[kaa::refer(Member, \"m\")]\n    m: u8,\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type model::Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    assert_eq!(svg.matches(r#"class="card""#).count(), 1, "{svg}");
+}
+
+#[test]
+fn targets_that_are_not_types_of_the_workspace_fail_listing_each() {
+    let directory = package(
+        "cli-type-targets",
+        "pub struct Member;\ntrait Named {}\nmod model {}\n\n#[kaa]\nstruct Report {\n    #[kaa::refer(String, \"a\")]\n    a: String,\n    #[kaa::refer(Named, \"b\")]\n    b: u8,\n    #[kaa::refer(model, \"c\")]\n    c: u8,\n}\n",
+    );
+    let failed = run(&directory, "diagram --type Member");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    for listed in [
+        "src/lib.rs:7:18: `String` is not a type of this workspace",
+        "src/lib.rs:9:18: `Named` is a trait, not a type",
+        "src/lib.rs:11:18: `model` is a module, not a type",
+    ] {
+        assert!(stderr.contains(listed), "{stderr}");
+    }
+    assert!(!directory.join("Member.svg").exists());
+}
+
+#[test]
+fn an_unresolvable_target_warns_and_draws_no_line() {
+    let directory = package(
+        "cli-type-unresolved",
+        "pub struct Member;\ngenerate!();\n\n#[kaa]\nstruct Report {\n    #[kaa::refer(Generated, \"g\")]\n    g: u8,\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let stderr = String::from_utf8_lossy(&rendered.stderr);
+    for listed in ["warning", "`Generated`", "item macro"] {
+        assert!(stderr.contains(listed), "{stderr}");
+    }
+}
+
+#[test]
+fn a_type_path_in_two_packages_fails_until_one_is_selected() {
+    let directory = workspace(
+        "cli-type-two-packages",
+        &[
+            ("first", "pub struct Member;\n"),
+            ("second", "pub struct Member;\n"),
+        ],
+    );
+    let failed = run(&directory, "diagram --type Member");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    for listed in ["first: lib `first`", "second: lib `second`", "-p <PACKAGE>"] {
+        assert!(stderr.contains(listed), "{stderr}");
+    }
+    let rendered = run(&directory, "diagram -p second --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+}
+
+#[test]
+fn the_type_option_does_not_find_a_flow() {
+    let directory = package("cli-type-flow", SOURCE);
+    let failed = run(&directory, "diagram --type route");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(stderr.contains("type `route` was not found"), "{stderr}");
 }

@@ -4,7 +4,9 @@ use clap::{Parser, Subcommand};
 
 use crate::diagram::Diagram;
 
+mod datatype;
 mod diagram;
+mod resolve;
 mod workspace;
 
 /// The binary's name from its `[[bin]]` entry.
@@ -19,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Render one flow as an SVG file
+    /// Render one flow or type as an SVG file
     Diagram(Diagram),
 }
 

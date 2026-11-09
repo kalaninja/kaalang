@@ -7,15 +7,15 @@ This is an implementation map. The language and algorithm contracts live in
 
 ## Crate boundaries
 
-| Crate                                                       | Responsibility                                                                                                                                                 |
-| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                       |
-| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                     |
-| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. |
-| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                               |
-| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, lay out type diagrams, and serialize standalone SVG.                                       |
-| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Find the selected flow in the cargo workspace, call the SVG entry point, and write the completed diagram.                                                      |
-| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness. This crate is unpublished and used only by tests.                |
+| Crate                                                       | Responsibility                                                                                                                                                                          |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                |
+| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                                              |
+| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes.                          |
+| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                        |
+| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, lay out type diagrams, and serialize standalone SVG.                                                                |
+| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Find the selected flow or type in the cargo workspace, resolve every `refer` target there to find the type's incoming types, call the SVG entry point, and write the completed diagram. |
+| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness. This crate is unpublished and used only by tests.                                         |
 
 ```mermaid
 flowchart TD

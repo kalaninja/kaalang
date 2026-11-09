@@ -24,6 +24,11 @@
 
 ### Added
 
+- `cargo kaalang diagram --type <path>` draws a type diagram: the type at that
+  Rust path from its crate root, under every datatype of the workspace that
+  refers to it. It resolves each `refer` target by Rust's path rules and fails
+  on a target that is not a type of the workspace. See
+  [RFC 0009](docs/rfcs/0009-types.md).
 - `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
   optional description. Fields take `kaa::value` or `kaa::refer` annotations,
   enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.
