@@ -423,6 +423,44 @@ With the partitioning cycle collapsed, the four stages are easier to see:
 ·
 [Expanded diagram](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.svg)
 
+## Types
+
+A struct, enum, union, or type alias marked `#[kaa]` is a datatype. Its fields
+carry descriptions, and a field can name the type it stands for, even when Rust
+stores only a key:
+
+```rust ignore
+#[kaa("An order a customer placed in the shop.")]
+struct Order {
+    #[kaa::value("The order's number, unique in the shop.")]
+    number: OrderNumber,
+    #[kaa::refer(Customer, "Who placed the order.")]
+    customer: CustomerId,
+    #[kaa::refer(Line, "What was ordered, in the order it was added.")]
+    lines: Vec<Line>,
+}
+
+#[kaa("Money received for an order.")]
+struct Payment {
+    #[kaa::refer(Order, "The order the money is for.")]
+    order: OrderNumber,
+    #[kaa::value("The amount received.")]
+    amount: Money,
+    #[kaa::value("The bank's reference for the transfer.")]
+    reference: String,
+}
+```
+
+`value` describes a field. `refer` also names the type the field refers to:
+`Payment` stores the order's number, and refers to `Order`. The annotations do
+not change the Rust declaration, and Rust checks that each target exists.
+
+A type's diagram draws it under every type that refers to it:
+
+[![Diagram of the Order type under the types that refer to it](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/order/order.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/order/order.svg)
+
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/order/mod.rs)
+
 ## Try it
 
 Add the macro to a project:
@@ -453,10 +491,10 @@ Open `fizzbuzz.svg` in a browser. Replace the flow's path from its crate root to
 render another example; add `--collapse-cycles` for the compact cycle view shown
 above. The output is a standalone SVG with no external rendering tools required.
 
-Draw a type with the types that refer to it the same way, by its path:
+Draw the `Order` type the same way, by its path:
 
 ```sh
-cargo kaalang diagram --type model::Member
+cargo kaalang diagram --type order::Order
 ```
 
 ## Read more

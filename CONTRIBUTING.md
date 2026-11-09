@@ -137,7 +137,8 @@ that diff. Read it before committing: nothing else checks that the new diagrams
 still make sense.
 
 Gallery examples may group related flows in one source file and share a test.
-Each flow still gets its own `<flow>.svg` beside that file.
+Each flow still gets its own `<flow>.svg` beside that file. A gallery directory
+may hold types instead, drawn as a type fixture is.
 
 Type fixtures live in `crates/kaalang/tests/datatype/`, one directory per case,
 named for the case, so that the directory listing is the list of cases. Each
