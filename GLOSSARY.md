@@ -97,7 +97,8 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 - **groove**, **bus**, **port**, **trunk**: the strip in the focus under each
   enum variant; the line a row's lines drop into, along a groove or below a
   struct's row; the square where a groove's bus leaves the focus; and the line
-  beside a card that its lines join on the way to the focus.
+  beside a column of incoming cards, or beside the focus, that their lines join
+  on the way to the focus.
 - **node**: a drawn unit for a block, a merge, or the synthetic start and end.
 - **node kinds**: start, stage entry, action, call, question, select, case,
   cycle, for-entry, for-end, transition, merge, end. A return draws only its

@@ -224,7 +224,7 @@ A type diagram shows:
    focus, including that type's immediate structure.
 3. One directed line from each explicit relationship of an incoming type to the
    focus, and from each relationship of the focus to itself. The relationships
-   of one card join one line on their way to the focus.
+   of one column of cards join one line on their way to the focus.
 
 The selected source is the workspace the focus type belongs to. A relationship
 target and an incoming type may be declared in any crate of that workspace.
@@ -307,20 +307,20 @@ order must not determine card order.
 Lines point from the source component toward the focus card, and bend only at
 right angles. Routes avoid text, and run inside a card only along its grooves.
 Every listed tile reaches its card's right side, so a line from an incoming card
-starts there, level with its target; beside the card, its lines join one line
-that drops into the focus. The focus is wide enough to receive every incoming
-line from above. The focus's own lines leave each tile where it meets the card's
-edge: a struct's through the bottom edge, joining one line below the card, and a
-union field's through the right side, level with its target. An enum variant's
-tiles do not all reach an edge, so every variant ends in a groove, used or not,
-so that the variants read alike; each line drops from its tile into the groove's
-bus, which leaves the card through a port on its right side. Beside the card,
-the focus's lines join one line. That line climbs outside the card and arrives
-at its top edge, right of every incoming line: a relationship whose target is
-the focus itself draws no second card. Mutually recursive types need no rule:
-each is an ordinary incoming type of the other. This RFC does not establish a
-general routing algorithm or a planarity guarantee for arbitrary numbers of
-incoming relationships.
+starts there, level with its target; beside the column, the lines of its cards
+join one line that drops into the focus. The focus is wide enough to receive
+every incoming line from above. The focus's own lines leave each tile where it
+meets the card's edge: a struct's through the bottom edge, joining one line
+below the card, and a union field's through the right side, level with its
+target. An enum variant's tiles do not all reach an edge, so every variant ends
+in a groove, used or not, so that the variants read alike; each line drops from
+its tile into the groove's bus, which leaves the card through a port on its
+right side. Beside the card, the focus's lines join one line. That line climbs
+outside the card and arrives at its top edge, right of every incoming line: a
+relationship whose target is the focus itself draws no second card. Mutually
+recursive types need no rule: each is an ordinary incoming type of the other.
+This RFC does not establish a general routing algorithm or a planarity guarantee
+for arbitrary numbers of incoming relationships.
 
 The renderer keeps the layers close enough to read as one view. It does not
 reserve space for omitted target cards.

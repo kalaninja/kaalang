@@ -3,8 +3,8 @@
 //!
 //! Routes never cross, and run inside a card only along a groove. An incoming
 //! card lists its tiles one under another, so each reaches the card's right
-//! side: a line starts there, level with its target, and joins the card's trunk
-//! beside it, which drops into the focus. The focus sets a struct's tiles side
+//! side: a line starts there, level with its target, and joins its column's
+//! trunk, which drops into the focus. The focus sets a struct's tiles side
 //! by side, each row widened to the card's edge, and is widened to reach under
 //! every trunk. Its own lines leave each tile where it touches the card's edge:
 //! a struct's from the bottom edge into one bus below the card, a union's from
@@ -282,7 +282,7 @@ pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUs
     }
 }
 
-/// The incoming cards in rows, each route stopped on its card's trunk, where
+/// The incoming cards in rows, each route stopped on its column's trunk, where
 /// it turns down toward the focus.
 struct Row {
     cards: Vec<CardShape>,
@@ -293,10 +293,8 @@ struct Row {
 
 /// Sets the incoming cards side by side in source order, each group from a new
 /// row, wrapping into further rows after `columns` cards, or else into rows no
-/// wider than `limit`. The cards of a
-/// column share its width, and each trunk drops through the gap right of its
-/// column in a lane of its own, the lower its row the nearer the column, so
-/// that no line from a lower card crosses one from above.
+/// wider than `limit`. The cards of a column share its width and one trunk,
+/// which drops through the gap right of the column into the focus.
 fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
     let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
     let lengths: Vec<usize> = groups.iter().map(|group| group.len()).collect();
@@ -342,7 +340,7 @@ fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
             x: grid.lefts[column],
             y: tops[line],
         };
-        let trunk = origin.x + width + CHANNEL_INSET + lanes(grid.below(index)) * LANE;
+        let trunk = origin.x + width + CHANNEL_INSET;
         for anchor in &built.anchors {
             let at = offset(anchor.at, origin);
             row.routes.push(Route {
@@ -392,34 +390,15 @@ impl Grid {
         let mut x = MARGIN;
         for column in 0..used {
             grid.lefts.push(x);
-            x += grid.widths[column] + grid.gutter(column) + CARD_GAP - CHANNEL_INSET;
+            x += grid.widths[column] + CARD_GAP;
         }
         grid
     }
 
-    /// How many cards of the same column sit in rows below the `index`th.
-    fn below(&self, index: usize) -> usize {
-        let (line, column) = self.cells[index];
-        self.cells
-            .iter()
-            .filter(|&&(other, other_column)| other_column == column && other > line)
-            .count()
-    }
-
-    /// From a column's right side to its farthest trunk.
-    fn gutter(&self, column: usize) -> i32 {
-        let cards = self
-            .cells
-            .iter()
-            .filter(|&&(_, other)| other == column)
-            .count();
-        CHANNEL_INSET + lanes(cards.saturating_sub(1)) * LANE
-    }
-
-    /// From the left margin to the last column's farthest trunk.
+    /// From the left margin to the last column's trunk.
     fn width(&self) -> i32 {
         let last = self.widths.len() - 1;
-        self.lefts[last] + self.widths[last] + self.gutter(last) - MARGIN
+        self.lefts[last] + self.widths[last] + CHANNEL_INSET - MARGIN
     }
 }
 
@@ -1229,7 +1208,7 @@ mod tests {
 
     #[test]
     fn a_focus_wider_than_a_screen_makes_room_for_more_columns() {
-        let incoming: Vec<Card> = (0..12)
+        let incoming: Vec<Card> = (0..16)
             .map(|index| {
                 card(
                     &format!("Source{index}"),
@@ -1245,8 +1224,8 @@ mod tests {
         };
         let narrow = layout(&[&incoming], &focus(1), None);
         let wide = layout(&[&incoming], &focus(14), None);
-        assert!(wide.cards[12].width > 1800);
-        assert!(rows(&wide, 12) < rows(&narrow, 12));
+        assert!(wide.cards[16].width > 1800);
+        assert!(rows(&wide, 16) < rows(&narrow, 16));
         routes_neither_cross_nor_enter(&wide);
     }
 
