@@ -82,8 +82,9 @@ pub(super) struct Scope {
     pub(super) imports: Vec<(String, UsePath)>,
     /// The module path of each glob import.
     pub(super) globs: Vec<UsePath>,
-    /// Whether an item macro may declare names this scope does not list.
-    pub(super) macros: bool,
+    /// Whether names this scope does not list may be declared here: by an
+    /// item macro, or in a file that could not be read.
+    pub(super) opaque: bool,
 }
 
 pub(super) enum Declared {
@@ -306,7 +307,10 @@ struct Walk<'a> {
 
 /// Reads the file of the module at `path` and follows its `mod` declarations,
 /// returning the module. A crate root, a `mod.rs`, and a `#[path]` file own
-/// their directory; another file `a.rs` keeps its submodules in `a/`.
+/// their directory; another file `a.rs` keeps its submodules in `a/`. A file
+/// that cannot be read or parsed is skipped and listed, and its module stays
+/// declared with an opaque scope, so that a path into it is unknown rather than
+/// outside the workspace.
 fn walk_file(
     walk: &mut Walk,
     file: &Path,
@@ -314,33 +318,24 @@ fn walk_file(
     path: String,
     parent: Option<usize>,
 ) -> Option<usize> {
-    let skip = |walk: &mut Walk, error: &dyn std::fmt::Display| {
-        walk.skipped.push(format!("{}: {error}", file.display()));
-        None
-    };
-    let canonical = match fs::canonicalize(file) {
-        Ok(canonical) => canonical,
-        // A module file may be generated or belong to another configuration.
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return None,
-        Err(error) => return skip(walk, &error),
+    let (canonical, source, parsed, scope) = match read(file) {
+        Ok((canonical, source, parsed)) => (canonical, source, Some(parsed), Scope::default()),
+        Err(error) => {
+            // A missing module file may be generated or belong to another
+            // configuration.
+            if error.kind() != io::ErrorKind::NotFound {
+                walk.skipped.push(format!("{}: {error}", file.display()));
+            }
+            let opaque = Scope {
+                opaque: true,
+                ..Scope::default()
+            };
+            (file.to_owned(), String::new(), None, opaque)
+        }
     };
     if walk.open.contains(&canonical) {
         return None;
     }
-    let source = match fs::read_to_string(file) {
-        Ok(source) => source,
-        Err(error) => return skip(walk, &error),
-    };
-    let parsed = match syn::parse_file(&source) {
-        Ok(parsed) => parsed,
-        Err(error) => return skip(walk, &error),
-    };
-
-    let base = file.parent().unwrap_or(Path::new(""));
-    let directory = match file.file_stem() {
-        Some(stem) if !owns_directory => base.join(stem),
-        _ => base.to_owned(),
-    };
     let module = walk.modules.len();
     walk.modules.push(Module {
         path,
@@ -351,12 +346,27 @@ fn walk_file(
             source,
         }),
         in_file: String::new(),
-        scope: Scope::default(),
+        scope,
     });
-    walk.open.push(canonical);
-    walk_items(walk, &parsed.items, module, &directory, base);
-    walk.open.pop();
+    if let Some(parsed) = parsed {
+        let base = file.parent().unwrap_or(Path::new(""));
+        let directory = match file.file_stem() {
+            Some(stem) if !owns_directory => base.join(stem),
+            _ => base.to_owned(),
+        };
+        walk.open.push(canonical);
+        walk_items(walk, &parsed.items, module, &directory, base);
+        walk.open.pop();
+    }
     Some(module)
+}
+
+/// A module file's canonical path, source, and items.
+fn read(file: &Path) -> io::Result<(PathBuf, String, syn::File)> {
+    let canonical = fs::canonicalize(file)?;
+    let source = fs::read_to_string(file)?;
+    let parsed = syn::parse_file(&source).map_err(io::Error::other)?;
+    Ok((canonical, source, parsed))
 }
 
 /// Declares the names among `items` in `module` and follows its `mod`
@@ -428,7 +438,7 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
             // An invocation may expand to items; a `macro_rules!` definition
             // has a name and declares none.
             Item::Macro(invocation) if invocation.ident.is_none() => {
-                walk.modules[module].scope.macros = true;
+                walk.modules[module].scope.opaque = true;
                 continue;
             }
             _ => continue,

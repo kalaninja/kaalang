@@ -541,6 +541,21 @@ fn an_unresolvable_target_warns_and_draws_no_line() {
 }
 
 #[test]
+fn a_target_in_a_file_that_could_not_be_read_warns_and_draws_no_line() {
+    let directory = package(
+        "cli-type-skipped-target",
+        "mod broken;\npub struct Member;\n\n#[kaa]\nstruct Report {\n    #[kaa::refer(broken::Thing, \"t\")]\n    t: u8,\n}\n",
+    );
+    write(&directory, "src/broken.rs", "fn (");
+    let rendered = run(&directory, "diagram --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let stderr = String::from_utf8_lossy(&rendered.stderr);
+    for listed in ["warning", "broken.rs", "`broken::Thing`"] {
+        assert!(stderr.contains(listed), "{stderr}");
+    }
+}
+
+#[test]
 fn a_type_path_in_two_packages_fails_until_one_is_selected() {
     let directory = workspace(
         "cli-type-two-packages",

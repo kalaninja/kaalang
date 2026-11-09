@@ -134,7 +134,7 @@ impl<'a> Resolver<'a> {
             Some(found) => found,
             None => self.library(krate, name).unwrap_or_else(|| {
                 // shortcut: a name an item macro declares is not seen, so a module with one cannot tell it from the prelude; upgrade by expanding the macro.
-                if self.crates[krate].modules[module].scope.macros {
+                if self.crates[krate].modules[module].scope.opaque {
                     Def::Unknown("an item macro in its module may declare it")
                 } else {
                     Def::Outside

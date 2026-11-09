@@ -44,9 +44,9 @@ pub(super) fn draw(
         }
         message
     })?;
-    let drawn = relationships(&crates, &declarations, focus)?;
     workspace::warn_skipped(path, &skipped);
     warn("warning: these types could not be read:", &unreadable);
+    let drawn = relationships(&crates, &declarations, focus)?;
     render(&crates, focus, &drawn, options)
 }
 
