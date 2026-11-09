@@ -27,7 +27,7 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape, .call .node-shape { fill: #f8fafc; }
       .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
-      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .cycle .node-shape { fill: #f0fdf4; }
       .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
@@ -35,8 +35,9 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
-      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .cycle-caption .md-math { color: #166534; }
       .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
       .md-bold { font-weight: 800; }
       .md-italic { font-style: italic; }
@@ -52,7 +53,6 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
       .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
       .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .cycle-caption .md-math { color: #166534; }
       .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
       .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
       .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }

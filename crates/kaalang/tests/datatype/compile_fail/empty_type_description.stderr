@@ -1,0 +1,5 @@
+error: a kaalang type requires a non-empty description
+ --> tests/datatype/compile_fail/empty_type_description.rs:3:7
+  |
+3 | #[kaa("")]
+  |       ^^

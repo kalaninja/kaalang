@@ -1,0 +1,5 @@
+error: `value` describes a field; a type takes its description from `#[kaa("description")]`
+ --> tests/datatype/compile_fail/declaration_value.rs:4:1
+  |
+4 | #[kaa::value("A member.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^

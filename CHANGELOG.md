@@ -15,6 +15,8 @@
 - `kaalang-compiler`'s `flows` returns each flow with its path within the file
   and descends into inline modules.
 - `kaalang-compiler`'s `is_flow_attribute` is renamed `is_kaalang_attribute`.
+- `kaalang-svg`'s `RenderError` gains `TypeNotFound`, `AmbiguousType`, and
+  `InvalidType`.
 - The attribute is `#[kaa]`, or `#[kaalang::kaa]` through the crate path,
   instead of `#[kaalang]`, and block attributes take its namespace:
   `#[kaa::action("...")]` instead of `#[action("...")]`. See
@@ -22,11 +24,26 @@
 
 ### Added
 
-- `#[kaa]` marks structs, enums, unions, and type aliases as annotated types,
-  with an optional description. Fields take `kaa::value` or `kaa::refer`
-  annotations, enum variants take `kaa::case`, and an alias may carry its own
-  `kaa::refer`. Rust resolves each `refer` target as the field's module sees it.
-  See [RFC 0009](docs/rfcs/0009-types.md).
+- `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
+  optional description. Fields take `kaa::value` or `kaa::refer` annotations,
+  enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.
+  Rust resolves each `refer` target as the field's module sees it. A plain type,
+  without `#[kaa]`, may be a target too and has a diagram. See
+  [RFC 0009](docs/rfcs/0009-types.md).
+- `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for the
+  focus and one for each incoming type: the focus card under a row of incoming
+  cards, with a line for each relationship they draw into it. `type_names` lists
+  a file's types.
+- `kaalang-compiler` reads type declarations: `type_items` collects them,
+  datatypes and plain types alike, with their paths within the file,
+  `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,
+  fields, variants, and relationships, and `expand_type` expands it for the
+  macro.
+
+### Changed
+
+- Flow diagrams draw cycle nodes and cycle boundaries with the same stroke width
+  as every other outline and line.
 
 ### Fixed
 

@@ -24,6 +24,13 @@ pub(crate) const FORMULA_UNDERLINE_OFFSET: (i32, i32) = (1, 10);
 pub(crate) const FORMULA_STRIKETHROUGH_OFFSET: (i32, i32) = (1, 3);
 pub(crate) const FORMULA_UNDERLINE_PADDING: i32 = 2;
 pub(crate) const TEXT_ADVANCE_SCALE: i64 = 10_000;
+/// Font size of a node label or a description. The serializers write the
+/// stylesheet from this, so measurement and rendering cannot disagree.
+pub(crate) const LABEL_FONT: i32 = 14;
+/// Baseline-to-baseline distance between the lines of a label or description.
+pub(crate) const LINE_HEIGHT: i32 = 18;
+/// Font size of secondary text: wire labels, a card's kind, a field's name.
+pub(crate) const SECONDARY_FONT: i32 = 12;
 const COLOR_MARKER_START: u32 = 0x0001_0203;
 
 // Estimated character widths, in hundredths of an em.
@@ -279,8 +286,13 @@ pub(crate) struct RichText {
 
 impl RichText {
     pub(crate) fn literal(text: impl Into<String>) -> Self {
+        Self::styled(text.into(), Style::default())
+    }
+
+    /// Source-derived text in one style, measured as that style renders.
+    pub(crate) fn styled(text: impl AsRef<str>, style: Style) -> Self {
         let mut result = Self::default();
-        result.push(text.into(), Style::default());
+        result.push(text, style);
         result.finish();
         result
     }
@@ -332,7 +344,11 @@ impl RichText {
     }
 
     pub(crate) fn push_literal(&mut self, text: &str) {
-        self.push(text, Style::default());
+        self.push_styled(text, Style::default());
+    }
+
+    pub(crate) fn push_styled(&mut self, text: &str, style: Style) {
+        self.push(text, style);
         self.finish();
     }
 
@@ -1086,7 +1102,7 @@ mod tests {
         Color, Dim, RichText, Script, Style, joined, line_ink, svg_dimension, text_width,
         wrap_literal, wrap_text,
     };
-    use crate::layout::{LABEL_FONT, NODE_LABEL_WIDTH};
+    use crate::{flow::layout::NODE_LABEL_WIDTH, text::LABEL_FONT};
 
     #[test]
     fn indices_do_not_reinterpret_code_escapes_entities_or_literal_fallbacks() {

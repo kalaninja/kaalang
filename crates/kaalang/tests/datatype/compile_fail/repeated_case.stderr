@@ -1,0 +1,5 @@
+error: an enum variant takes one `case` annotation
+ --> tests/datatype/compile_fail/repeated_case.rs:6:5
+  |
+6 |     #[kaa::case("Still a draft.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

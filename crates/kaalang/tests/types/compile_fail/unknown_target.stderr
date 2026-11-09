@@ -1,5 +1,0 @@
-error[E0432]: unresolved import `Member`
- --> tests/types/compile_fail/unknown_target.rs:5:18
-  |
-5 |     #[kaa::refer(Member, "The author.")]
-  |                  ^^^^^^ no external crate `Member`

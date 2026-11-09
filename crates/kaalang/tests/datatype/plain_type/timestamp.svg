@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="362" height="400" viewBox="0 0 362 400" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Timestamp</title>
+  <desc id="kaalang-description">Type Timestamp with incoming types Change.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Change</title>
+      <rect class="card-shape" x="32" y="32" width="270" height="192"/>
+      <path class="card-rules" d="M 32 102 L 302 102 M 32 176 L 302 176"/>
+      <rect class="card-outline" x="32" y="32" width="270" height="192"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">Change</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="288" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A change saved to a document.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="46" dy="0">saved</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">Timestamp</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="128" dy="0">When the change was </tspan><tspan x="128" dy="18">saved.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="288" dy="0">▸ <tspan class="md-code">Timestamp</tspan></tspan></text>
+      <text class="field-name" y="197" xml:space="preserve"><tspan x="46" dy="0">summary</tspan></text>
+      <text class="field-type" y="213" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
+      <text class="description" y="199" xml:space="preserve"><tspan x="128" dy="0">What changed.</tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Timestamp</title>
+      <rect class="card-shape" x="32" y="272" width="298" height="96"/>
+      <path class="card-rules" d="M 32 320 L 330 320 M 181 320 L 181 368"/>
+      <rect class="card-outline" x="32" y="272" width="298" height="96"/>
+      <text class="type-name" y="304" xml:space="preserve"><tspan x="46" dy="0">Timestamp</tspan></text>
+      <text class="type-kind" text-anchor="end" y="304" xml:space="preserve"><tspan x="316" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="field-name" y="341" xml:space="preserve"><tspan x="46" dy="0">seconds</tspan></text>
+      <text class="field-type" y="357" xml:space="preserve"><tspan x="46" dy="0">u64</tspan></text>
+      <text class="field-name" y="341" xml:space="preserve"><tspan x="195" dy="0">nanos</tspan></text>
+      <text class="field-type" y="357" xml:space="preserve"><tspan x="195" dy="0">u32</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Change → Timestamp</title>
+      <path class="relationship" d="M 302 160 L 316 160 L 316 272" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="302" cy="160" r="4"/>
+    </g>
+  </g>
+</svg>

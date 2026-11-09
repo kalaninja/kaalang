@@ -20,22 +20,26 @@ ownership, borrowing, and type checking.
 
 ### 1.1 Terms
 
-- An **annotated type** is a Rust type declaration marked `#[kaa]`.
+- A **datatype** is a Rust type declaration marked `#[kaa]`, as a flow is a
+  function marked `#[kaa]`. A type without the mark is a **plain type**.
 - A **relationship** is one explicit `refer` annotation on a field or alias. It
   has a source component, the annotated field or alias, a target, and a
   description.
-- The **focus type** is the annotated type selected for a type diagram.
-- An **incoming type** is another annotated type with an explicit relationship
+- The **focus type** is the type selected for a type diagram, a datatype or a
+  plain type.
+- An **incoming type** is another datatype with an explicit relationship
   targeting the focus type.
-- A **type card** contains a declaration's name, optional description, and
+- A **card** is the drawing of one type: its name, optional description, and
   structure.
+- A **tile** is the drawing of one component of a card's structure: a field, an
+  enum variant, or an alias's right-hand side.
 
 These terms describe type diagrams. A relationship is neither a flow wire nor a
 control-flow connection.
 
 ## 2. Annotations
 
-### 2.1 Annotated types
+### 2.1 Datatypes
 
 ```rust
 #[kaa("A member that can appear in several roles.")]
@@ -45,11 +49,13 @@ struct Member {
 }
 ```
 
-`#[kaa]` marks a type declaration as it marks a flow. On a type it may carry one
+`#[kaa]` marks a type declaration as a datatype. On a type it may carry one
 description, a nonempty Rust string literal, as `#[kaa("description")]`; a type
 without one is described by its name. The attribute applies to named, tuple, and
 unit structs, enums, unions, and type aliases. Generic parameters and lifetimes
-remain part of the Rust declaration.
+remain part of the Rust declaration. A plain type also has a card and may be a
+relationship target: the annotation adds descriptions and relationships to what
+Rust declares.
 
 The Rust identifier supplies the name; a card header qualifies it with its
 module path (§4.2). There is no separate display-name argument. Descriptions
@@ -83,8 +89,9 @@ struct Article<'a> {
 `value("description")` describes a field without declaring a relationship.
 
 `refer(Target, "description")` describes a relationship and names exactly one
-target: an annotated type, written without parameters as a name or a path, as
-the field's module sees it. The field's Rust type remains a separate part of its
+target: a struct, enum, union, or type alias of the workspace, a datatype or a
+plain type, written without parameters as a name or a path, as the field's
+module sees it. The field's Rust type remains a separate part of its
 declaration. A relationship description also serves as the field description;
 there is no second description attribute.
 
@@ -215,8 +222,9 @@ A type diagram shows:
 1. One card for the focus type, including its complete immediate structure.
 2. One card for each incoming type in the selected source, placed above the
    focus, including that type's immediate structure.
-3. One directed line for each explicit relationship from an incoming type to the
-   focus.
+3. One directed line from each explicit relationship of an incoming type to the
+   focus, and from each relationship of the focus to itself. The relationships
+   of one card join one line on their way to the focus.
 
 The selected source is the workspace the focus type belongs to. A relationship
 target and an incoming type may be declared in any crate of that workspace.
@@ -235,33 +243,44 @@ with the crate name when the crate differs from the focus type's, with the
 generic parameters and lifetimes as declared: `model::Attachment<T>`. It also
 identifies the Rust declaration form and its representation where applicable.
 
-Products are horizontal: a struct's fields occupy a row in declaration order.
-Sums are vertical: enum variants occupy successive rows in declaration order,
-and each variant's fields form their own horizontal product after its name and
-its description, when supplied. Variants keep their actual field counts; shorter
-variants do not acquire artificial fields or equal-width filler cells.
+In the focus card, products are horizontal: a struct's fields occupy a row in
+declaration order. Sums are vertical: enum variants occupy successive rows in
+declaration order, and each variant's fields form their own horizontal product
+after its name and its description, when supplied. Variants keep their actual
+field counts; shorter variants do not acquire artificial fields or equal-width
+filler tiles. Instead, the tiles of every row in the focus widen evenly to reach
+the card's right side.
+
+An incoming card lists its tiles one under another in declaration order, so that
+the row of incoming cards stays narrow however many fields they have. Each
+listed tile shows its name and type in one column and its description and target
+in the next; a variant's tiles are listed under its name and description, set in
+from it.
 
 A union presents its fields as overlapping storage alternatives, vertically. It
 is not drawn as a tagged enum. An alias shows its definition as described in
 §2.3. Unit structs and variants show their names without invented components.
 
-Only annotated declarations have type cards. The renderer does not expand the
-implementation of `String`, `Vec`, `HashMap`, `Box`, or other unannotated types.
-An array is one field with its Rust type, including the length, not one cell per
-element. A field that names another annotated type still occupies one cell; its
-target's fields are not recursively inlined.
+Only the workspace's own type declarations have cards, datatypes and plain types
+alike; the card of a plain type shows its Rust structure without descriptions.
+The renderer does not expand the implementation of `String`, `Vec`, `HashMap`,
+`Box`, or any other type from outside the workspace. An array is one field with
+its Rust type, including the length, not one tile per element. A field that
+names another type of the workspace still occupies one tile; its target's fields
+are not recursively inlined.
 
-A field cell reads from top to bottom:
+A field tile in the focus reads from top to bottom:
 
 1. Field name or tuple position.
 2. Authored Rust type, including lifetimes and generic arguments.
 3. Description, when supplied.
 4. Relationship target, when supplied.
 
-Relationship targets align with the bottom of their product row. They show an
-arrowhead, the same for every relationship, and the target name, without a
-`refer` label. Incoming lines identify their source component, so neither the
-field name nor its description is duplicated on the line.
+Relationship targets close their tile at its bottom right, aligned with the
+bottom of their product row in the focus. They show an arrowhead, the same for
+every relationship, and the target name, without a `refer` label. Incoming lines
+identify their source component, so neither the field name nor its description
+is duplicated on the line.
 
 ### 4.3 Arrangement
 
@@ -269,19 +288,33 @@ Incoming cards follow source order from left to right above the focus, whether
 they are declared before or after it: the two layers show the direction of
 relationships, not declaration order. Source order reads each crate from its
 root: items in declaration order, with a module's items at the position of its
-`mod` declaration. The focus type's crate comes first, then the other workspace
-members by package name. Field and variant order is never changed to improve
-routing. The same source and rendering settings produce the same arrangement;
-hash-map iteration or compiler field order must not determine card order.
+`mod` declaration. The focus type's crate comes first, then the other crates of
+its package, then the other workspace members by package name. Within a package,
+its library and binaries come first as one group, then its tests, examples, and
+benches; each group is ordered by target name, and targets of the same name by
+the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file
+that several crates include through `mod` gives one card, at its first position.
+Field and variant order is never changed to improve routing. The same source and
+rendering settings produce the same arrangement; hash-map iteration or compiler
+field order must not determine card order.
 
-Lines point from the source component toward the focus card. Prefer a straight
-vertical segment; any necessary bends are right angles. Routes must avoid text
-and unrelated card interiors. A relationship whose target is the focus itself
-leaves its cell through the card's bottom edge, passes outside the card, and
-arrives at its top edge like any incoming line; no second card is drawn.
-Mutually recursive types need no rule: each is an ordinary incoming type of the
-other. This RFC does not establish a general routing algorithm or a planarity
-guarantee for arbitrary numbers of incoming relationships.
+Lines point from the source component toward the focus card, and bend only at
+right angles. Routes avoid text, and run inside a card only along its grooves.
+Every listed tile reaches its card's right side, so a line from an incoming card
+starts there, level with its target; beside the card, its lines join one line
+that drops into the focus. The focus is wide enough to receive every incoming
+line from above. The focus's own lines leave each tile where it meets the card's
+edge: a struct's through the bottom edge, joining one line below the card, and a
+union field's through the right side, level with its target. An enum variant's
+tiles do not all reach an edge, so every variant ends in a groove, used or not,
+so that the variants read alike; each line drops from its tile into the groove's
+bus, which leaves the card through a port on its right side. Beside the card,
+the focus's lines join one line. That line climbs outside the card and arrives
+at its top edge, right of every incoming line: a relationship whose target is
+the focus itself draws no second card. Mutually recursive types need no rule:
+each is an ordinary incoming type of the other. This RFC does not establish a
+general routing algorithm or a planarity guarantee for arbitrary numbers of
+incoming relationships.
 
 The renderer keeps the layers close enough to read as one view. It does not
 reserve space for omitted target cards.
@@ -291,8 +324,10 @@ reserve space for omitted target cards.
 Read representation from Rust's `repr` attributes. Show `repr(Rust)` when a
 nominal type uses the default, and preserve explicit representations and
 modifiers, including `C`, `transparent`, integer enum representations, `align`,
-and `packed`. Rust decides which combinations are valid. An alias has no
-independent representation label.
+and `packed`. Rust decides which combinations are valid. Several `repr`
+attributes combine into one label. A `repr` under `cfg_attr` makes the
+representation depend on the target, so the card shows the declaration form
+without one. An alias has no independent representation label.
 
 Representation does not specify a relationship kind. `repr(C)` on one type does
 not change the representation of its field types, and a `repr(Rust)` struct need
@@ -317,12 +352,15 @@ benches) is a separate crate; a path declared in more than one of them cannot be
 selected. Exactly one of `--flow` and `--type` is given. `--collapse-cycles`
 applies to flows and is rejected with `--type`. Without `-o`, the command writes
 `./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
-`--collapse-cycles`. A path that names no `#[kaa]` declaration of the requested
-kind is a failure; one that matches several without `-p` is a failure that lists
-them with their packages. The command creates or replaces the output only after
-the selected declaration and, for a type, its incoming types are validated and
-the diagram rendered. On success it prints the output path; on failure it writes
-a diagnostic to stderr and exits with a nonzero status.
+`--collapse-cycles`. A `--flow` path that names no `#[kaa]` function, or a
+`--type` path that names no struct, enum, union, or type alias, is a failure;
+one that matches several without `-p` is a failure that lists them with their
+packages. With `--type`, the command resolves every relationship in the
+workspace to find the incoming types, and one whose target is not a type of the
+workspace is a failure too. The command creates or replaces the output only
+after the selected declaration and, for a type, its incoming types are validated
+and the diagram rendered. On success it prints the output path; on failure it
+writes a diagnostic to stderr and exits with a nonzero status.
 
 This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
 of §4 under which the renderer selects one function by its unqualified name and
@@ -341,15 +379,18 @@ The annotation parser must diagnose duplicate or malformed `kaa` attributes,
 unsupported declaration forms, an unknown name under `kaa::`, empty
 descriptions, a `value`, `refer`, or `case` without its description, repeated or
 conflicting field, variant, and alias annotations, a `case` outside an enum
-variant, a declaration-level `value`, a declaration-level `refer` on anything
-but an alias, and parameterized `refer` targets at their source locations. An
-unannotated field is not a missing-description error.
+variant, a `value` or `refer` on an enum variant, a declaration-level `value`, a
+declaration-level `refer` on anything but an alias, and parameterized `refer`
+targets at their source locations. An unannotated field is not a
+missing-description error.
 
 Relationship resolution must diagnose an unknown target, including a type
-parameter of the enclosing declaration. It must preserve alias names and must
-not substitute field storage types for explicit relationship targets. Checking
-references across declarations requires the selected source context; this RFC
-does not assume that an attribute invocation can discover it alone.
+parameter of the enclosing declaration, and a target that is not a struct, enum,
+union, or type alias of the workspace, such as `String`, a trait, or a module:
+it has no card to draw. It must preserve alias names and must not substitute
+field storage types for explicit relationship targets. Checking references
+across declarations requires the selected source context; this RFC does not
+assume that an attribute invocation can discover it alone.
 
 Acceptance scenarios:
 
@@ -367,11 +408,14 @@ Acceptance scenarios:
 | `refer(T)` inside `Attachment<T>`                      | Reject the type parameter as a target.                             |
 | A field referring to the focus itself                  | Route the line around the card; draw no second card.               |
 | Multiple fields referring to the focus                 | Draw the incoming type once and retain the separate relationships. |
-| An unannotated container or a large array              | Keep one field cell, with no element expansion.                    |
+| An unannotated container or a large array              | Keep one field tile, with no element expansion.                    |
 | Focus view                                             | Draw incoming types above it and omit target cards below.          |
 | The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                      |
 | The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                          |
-| Incoming types from two crates                         | Order the focus type's crate first, then by package and target.    |
+| Incoming types from two crates                         | Order the focus type's crate first, then its package, then others. |
+| A focus type without `#[kaa]`                          | Draw its Rust structure without descriptions.                      |
+| `refer` to a plain type of the workspace               | Draw the relationship as to any other type.                        |
+| `refer` to `String`, a trait, or a module              | Fail naming the relationship and its target.                       |
 
 ## 8. Compatibility and exclusions
 
@@ -385,7 +429,7 @@ The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The
 attribute emits the declaration unchanged, removing only its `value`, `refer`,
 and `case` annotations; derives, representation attributes, and conditional
-compilation pass through. Type cards show no traits, methods, or behavior, and
+compilation pass through. Cards show no traits, methods, or behavior, and
 whole-domain diagrams are outside this RFC's scope.
 
 ## 9. Open questions

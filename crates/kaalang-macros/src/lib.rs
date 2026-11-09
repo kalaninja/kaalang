@@ -8,7 +8,7 @@ use quote::ToTokens;
 use syn::{Error, Item, parse_macro_input};
 
 /// Turns a function written as a kaalang flow into ordinary Rust, after checking
-/// that the flow has a diagram, or checks an annotated type and emits it without
+/// that the flow has a diagram, or checks a datatype and emits it without
 /// its annotations. The [`kaalang`](https://docs.rs/kaalang) crate documentation
 /// describes the syntax.
 #[proc_macro_attribute]

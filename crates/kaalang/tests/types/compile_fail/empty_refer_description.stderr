@@ -1,5 +1,0 @@
-error: a kaalang relationship requires a non-empty description
- --> tests/types/compile_fail/empty_refer_description.rs:8:26
-  |
-8 |     #[kaa::refer(Member, " ")]
-  |                          ^^^

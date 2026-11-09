@@ -1,0 +1,5 @@
+error: a kaalang type description must be a string literal
+ --> tests/datatype/compile_fail/type_description_not_a_string.rs:3:7
+  |
+3 | #[kaa(Member)]
+  |       ^^^^^^

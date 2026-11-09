@@ -1,0 +1,5 @@
+error: `case` describes an enum variant
+ --> tests/datatype/compile_fail/declaration_case.rs:4:1
+  |
+4 | #[kaa::case("Anyone may approve.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

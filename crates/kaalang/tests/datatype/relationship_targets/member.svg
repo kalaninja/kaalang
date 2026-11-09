@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1139" height="686" viewBox="0 0 1139 686" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Member</title>
+  <desc id="kaalang-description">Type Member with incoming types MemberRef&lt;&apos;a&gt;, Report&lt;&apos;a&gt; (4 relationships), directory::Team.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">MemberRef&lt;&apos;a&gt;</title>
+      <rect class="card-shape" x="32" y="32" width="337" height="144"/>
+      <path class="card-rules" d="M 32 102 L 369 102"/>
+      <rect class="card-outline" x="32" y="32" width="337" height="144"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">MemberRef&lt;&apos;a&gt;</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="355" dy="0">type alias</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A member that may be unknown.</tspan></text>
+      <text class="field-type" y="123" xml:space="preserve"><tspan x="46" dy="0">Option&lt;&amp;&apos;a Member&gt;</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="195" dy="0">The member, when </tspan><tspan x="195" dy="18">known.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="355" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Report&lt;&apos;a&gt;</title>
+      <rect class="card-shape" x="401" y="32" width="323" height="432"/>
+      <path class="card-rules" d="M 401 102 L 724 102 M 401 150 L 724 150 M 401 206 L 724 206 M 401 298 L 724 298 M 401 390 L 724 390"/>
+      <rect class="card-outline" x="401" y="32" width="323" height="432"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="415" dy="0">Report&lt;&apos;a&gt;</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="710" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="415" dy="0">A report with its assigned participants.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="415" dy="0">revision</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="415" dy="0">u32</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="550" dy="0">The current revision.</tspan></text>
+      <text class="field-name" y="171" xml:space="preserve"><tspan x="415" dy="0">author</tspan></text>
+      <text class="field-type" y="187" xml:space="preserve"><tspan x="415" dy="0">&amp;&apos;a Member</tspan></text>
+      <text class="description" y="173" xml:space="preserve"><tspan x="550" dy="0">The author.</tspan></text>
+      <text class="target" text-anchor="end" y="195" xml:space="preserve"><tspan x="710" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="field-name" y="227" xml:space="preserve"><tspan x="415" dy="0">assignee</tspan></text>
+      <text class="field-type" y="243" xml:space="preserve"><tspan x="415" dy="0">MemberId</tspan></text>
+      <text class="description" y="229" xml:space="preserve"><tspan x="550" dy="0">The assignee, </tspan><tspan x="550" dy="18">resolved through the </tspan><tspan x="550" dy="18">directory.</tspan></text>
+      <text class="target" text-anchor="end" y="287" xml:space="preserve"><tspan x="710" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="field-name" y="319" xml:space="preserve"><tspan x="415" dy="0">delegate</tspan></text>
+      <text class="field-type" y="335" xml:space="preserve"><tspan x="415" dy="0">Option&lt;MemberId&gt;</tspan></text>
+      <text class="description" y="321" xml:space="preserve"><tspan x="550" dy="0">An optional delegate, </tspan><tspan x="550" dy="18">resolved through the </tspan><tspan x="550" dy="18">directory.</tspan></text>
+      <text class="target" text-anchor="end" y="379" xml:space="preserve"><tspan x="710" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="field-name" y="411" xml:space="preserve"><tspan x="415" dy="0">contributors</tspan></text>
+      <text class="field-type" y="427" xml:space="preserve"><tspan x="415" dy="0">Vec&lt;MemberId&gt;</tspan></text>
+      <text class="description" y="413" xml:space="preserve"><tspan x="550" dy="0">Contributors in the </tspan><tspan x="550" dy="18">order of their keys.</tspan></text>
+      <text class="target" text-anchor="end" y="453" xml:space="preserve"><tspan x="710" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">directory::Team</title>
+      <rect class="card-shape" x="756" y="32" width="323" height="200"/>
+      <path class="card-rules" d="M 756 102 L 1079 102 M 756 158 L 1079 158"/>
+      <rect class="card-outline" x="756" y="32" width="323" height="200"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="770" dy="0">directory::Team</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1065" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="770" dy="0">A team led by one member.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="770" dy="0">lead</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="770" dy="0">MemberId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="882" dy="0">The team lead.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1065" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="770" dy="0">others</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="770" dy="0">Vec&lt;MemberId&gt;</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="882" dy="0">The keys of the other </tspan><tspan x="882" dy="18">members.</tspan></text>
+      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="1065" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Member</title>
+      <rect class="card-shape" x="32" y="512" width="1075" height="142"/>
+      <path class="card-rules" d="M 32 582 L 1107 582"/>
+      <rect class="card-outline" x="32" y="512" width="1075" height="142"/>
+      <text class="type-name" y="544" xml:space="preserve"><tspan x="46" dy="0">Member</tspan></text>
+      <text class="type-kind" text-anchor="end" y="544" xml:space="preserve"><tspan x="1093" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="567" xml:space="preserve"><tspan x="46" dy="0">A member that can appear in several roles.</tspan></text>
+      <text class="field-name" y="603" xml:space="preserve"><tspan x="46" dy="0">name</tspan></text>
+      <text class="field-type" y="619" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
+      <text class="description" y="643" xml:space="preserve"><tspan x="46" dy="0">The member&apos;s display name.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">MemberRef&lt;&apos;a&gt; → Member</title>
+      <path class="relationship" d="M 369 160 L 383 160 L 383 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="369" cy="160" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
+      <path class="relationship" d="M 724 190 L 738 190 L 738 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="724" cy="190" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
+      <path class="relationship" d="M 724 282 L 738 282 L 738 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="724" cy="282" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
+      <path class="relationship" d="M 724 374 L 738 374 L 738 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="724" cy="374" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
+      <path class="relationship" d="M 724 448 L 738 448 L 738 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="724" cy="448" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">directory::Team → Member</title>
+      <path class="relationship" d="M 1079 142 L 1093 142 L 1093 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1079" cy="142" r="4"/>
+    </g>
+  </g>
+</svg>

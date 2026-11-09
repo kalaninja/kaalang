@@ -1,4 +1,4 @@
-//! Parses and validates kaalang flows and annotated types, decides flow
+//! Parses and validates kaalang flows and datatypes, decides flow
 //! diagram arrangements, and lowers flows to Rust.
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
@@ -12,6 +12,10 @@ pub use self::{
     construct::{
         Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
     },
+    datatype::{
+        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
+        type_declaration, type_items,
+    },
     executions::Executions,
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
@@ -19,16 +23,13 @@ pub use self::{
         Iteration, Join, JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis,
         WireMerge,
     },
-    types::{
-        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
-        type_declaration,
-    },
 };
 
 mod analyze;
 mod choice;
 mod codegen;
 mod construct;
+mod datatype;
 mod executions;
 pub mod geometry;
 mod model;
@@ -39,7 +40,6 @@ mod scope;
 mod stage;
 mod symbolic;
 pub mod topology;
-mod types;
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///

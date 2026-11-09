@@ -1,0 +1,5 @@
+error: a relationship is written `#[kaa::refer(Target, "description")]`
+ --> tests/datatype/compile_fail/refer_without_description.rs:8:5
+  |
+8 |     #[kaa::refer(Member)]
+  |     ^^^^^^^^^^^^^^^^^^^^^

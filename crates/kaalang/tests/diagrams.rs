@@ -17,6 +17,13 @@ fn draws_a_diagram_beside_every_executable_fixture() {
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
         let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
+        let module = directory.file_name().unwrap().to_str().unwrap();
+        let suite = fs::read_to_string(directory.parent().unwrap().join("main.rs")).unwrap();
+        assert!(
+            suite.contains(&format!("mod {module};")),
+            "{} is not declared by its suite's main.rs",
+            directory.display()
+        );
         // Collected up front because the loop below writes into this directory.
         let paths: Vec<PathBuf> = read_directory(&directory).collect();
 
@@ -40,8 +47,13 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                     name.strip_prefix("r#").unwrap_or(name)
                 })
                 .collect();
-            // A `mod.rs` that only lists the fixtures beside it draws nothing.
+            // A file without flows draws its types, and a `mod.rs` that
+            // only lists the fixtures beside it draws nothing.
             if names.is_empty() {
+                for (name, svg) in type_diagrams(&source, fixture) {
+                    draw(&mut current, directory.join(format!("{name}.svg")), &svg);
+                    drawn += 1;
+                }
                 continue;
             }
 
@@ -89,17 +101,11 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                     if collapse_cycles && expanded.as_ref() == Some(&svg) {
                         continue;
                     }
-                    let diagram = directory.join(format!("{name}{suffix}.svg"));
-                    assert!(
-                        !current.contains(&diagram),
-                        "multiple fixtures draw {}",
-                        diagram.display()
+                    draw(
+                        &mut current,
+                        directory.join(format!("{name}{suffix}.svg")),
+                        &svg,
                     );
-                    // Rewriting an unchanged diagram would spin file watchers on every run.
-                    if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
-                        fs::write(&diagram, &svg).unwrap();
-                    }
-                    current.push(diagram);
                     if !collapse_cycles {
                         expanded = Some(svg);
                     }
@@ -117,6 +123,102 @@ fn draws_a_diagram_beside_every_executable_fixture() {
     }
 
     assert!(drawn > 0, "no executable fixture was found under {tests:?}");
+}
+
+fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
+    assert!(
+        !current.contains(&diagram),
+        "multiple fixtures draw {}",
+        diagram.display()
+    );
+    // Rewriting an unchanged diagram would spin file watchers on every run.
+    if !fs::read_to_string(&diagram).is_ok_and(|previous| previous == svg) {
+        fs::write(&diagram, svg)
+            .unwrap_or_else(|error| panic!("could not write {}: {error}", diagram.display()));
+    }
+    current.push(diagram);
+}
+
+/// One diagram for every type of a fixture without flows, named
+/// after the type. A type's incoming types are those in the same file whose
+/// `refer` names it bare, a convention that stands in for the resolver of
+/// `cargo kaalang`.
+fn type_diagrams(source: &str, fixture: &Path) -> Vec<(String, String)> {
+    let fixture = fixture.display();
+    let file = syn::parse_file(source).unwrap_or_else(|error| panic!("{fixture}: {error}"));
+    // Each type with the targets of its relationships, in source order.
+    let types: Vec<(String, Vec<String>)> = kaalang_compiler::type_items(&file.items)
+        .into_iter()
+        .map(|(path, item)| {
+            let declaration = kaalang_compiler::type_declaration(&item)
+                .unwrap_or_else(|error| panic!("{fixture}: {path}: {error}"));
+            let targets = declaration
+                .relationships()
+                .iter()
+                .map(|relationship| {
+                    relationship
+                        .target
+                        .get_ident()
+                        .map_or_else(String::new, ToString::to_string)
+                })
+                .collect();
+            (path, targets)
+        })
+        .collect();
+    types
+        .iter()
+        .map(|(focus, _)| {
+            let name = last_segment(focus);
+            let drawn: Vec<(&str, Vec<usize>)> = types
+                .iter()
+                .map(|(path, targets)| {
+                    let positions = (0..targets.len())
+                        .filter(|&index| targets[index] == name)
+                        .collect();
+                    (path.as_str(), positions)
+                })
+                .collect();
+            let incoming: Vec<_> = drawn
+                .iter()
+                .filter(|(path, positions)| path != focus && !positions.is_empty())
+                .map(|drawn| card(source, drawn))
+                .collect();
+            let own = drawn
+                .iter()
+                .find(|(path, _)| path == focus)
+                .expect("the focus is among the file's types");
+            let svg = kaalang_svg::render_type(card(source, own), &incoming)
+                .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
+            (snake_case(name), svg)
+        })
+        .collect()
+}
+
+fn snake_case(name: &str) -> String {
+    let mut snake = String::new();
+    for (index, character) in name.char_indices() {
+        if character.is_uppercase() && index > 0 {
+            snake.push('_');
+        }
+        snake.extend(character.to_lowercase());
+    }
+    snake
+}
+
+fn last_segment(path: &str) -> &str {
+    path.rsplit_once("::").map_or(path, |(_, name)| name)
+}
+
+fn card<'a>(
+    source: &'a str,
+    (path, relationships): &'a (&'a str, Vec<usize>),
+) -> kaalang_svg::TypeCard<'a> {
+    kaalang_svg::TypeCard {
+        source,
+        path,
+        header: path,
+        relationships,
+    }
 }
 
 /// Every module directory inside a test suite. `compile_fail` fixtures are

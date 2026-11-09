@@ -1,5 +1,0 @@
-error: a field takes one `value` or `refer` annotation
- --> tests/types/compile_fail/repeated_refer.rs:9:5
-  |
-9 |     #[kaa::refer(Member, "The reviewer.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

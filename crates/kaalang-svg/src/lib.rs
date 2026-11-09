@@ -1,15 +1,31 @@
-//! Renders validated kaalang flows as standalone SVG diagrams.
+//! Renders validated kaalang flows and type diagrams as standalone SVG.
 //!
 //! It serves `cargo kaalang`, and its API may change in any minor release.
 
-use std::{error::Error, fmt, rc::Rc};
+use std::{error::Error, fmt};
 
 use proc_macro2::Span;
-use syn::{File, Item, ItemFn, Meta, ReturnType, Signature, spanned::Spanned};
+use syn::File;
 
-mod captions;
-mod layout;
-mod svg;
+/// Appends one line to the SVG. Writing to a `String` cannot fail.
+macro_rules! emit {
+    ($svg:expr, $($argument:tt)*) => {
+        writeln!($svg, $($argument)*).expect("writing to a String cannot fail")
+    };
+}
+
+/// Appends to the SVG without ending the line. Under `xml:space="preserve"` the
+/// whitespace between `<text>` and its `<tspan>` children is rendered content,
+/// so a label is written as one unbroken line.
+macro_rules! emit_inline {
+    ($svg:expr, $($argument:tt)*) => {
+        write!($svg, $($argument)*).expect("writing to a String cannot fail")
+    };
+}
+
+mod datatype;
+mod flow;
+mod markup;
 mod text;
 
 /// Presentation options for one rendered flow.
@@ -19,7 +35,8 @@ pub struct RenderOptions {
     pub collapse_cycles: bool,
 }
 
-/// An error produced while selecting, validating, or rendering a kaalang flow.
+/// An error produced while selecting, validating, or rendering a kaalang flow
+/// or type diagram.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RenderError {
     /// The input is not a syntactically valid Rust file.
@@ -48,6 +65,18 @@ pub enum RenderError {
         /// The spatial rule the realized geometry could not meet, naming the
         /// connections, or the label and node, that break it.
         reason: String,
+    },
+    /// No type has the requested path.
+    TypeNotFound(String),
+    /// More than one type has the requested path.
+    AmbiguousType(String),
+    /// The selected type's annotations are not valid.
+    InvalidType {
+        name: String,
+        /// The 1-based source line and column where the error starts.
+        line: usize,
+        column: usize,
+        message: String,
     },
     /// A rendered label contains a character that XML 1.0 cannot represent.
     InvalidLabelCharacter {
@@ -89,6 +118,21 @@ impl fmt::Display for RenderError {
             Self::UnroutableTopology { name, reason } => {
                 write!(formatter, "could not route kaalang flow `{name}`: {reason}")
             }
+            Self::TypeNotFound(name) => {
+                write!(formatter, "type `{name}` was not found")
+            }
+            Self::AmbiguousType(name) => {
+                write!(formatter, "multiple types have the path `{name}`")
+            }
+            Self::InvalidType {
+                name,
+                line,
+                column,
+                message,
+            } => write!(
+                formatter,
+                "invalid type `{name}` at {line}:{column}: {message}"
+            ),
             Self::InvalidLabelCharacter {
                 character,
                 line,
@@ -132,44 +176,7 @@ pub fn render_source_with_options(
     flow_path: &str,
     options: RenderOptions,
 ) -> Result<String, RenderError> {
-    let file = parse_file(source)?;
-    let parser_source = parser_source(source, &file);
-    let function = select_flow(&file.items, flow_path)?;
-    let mut model = kaalang_compiler::build_with_options(&function, options.collapse_cycles)
-        .map_err(|error| invalid_flow(flow_path, &error))?;
-    kaalang_render::compact_arrangement(&mut model);
-    for stage in &mut model.stages {
-        kaalang_render::compact_arrangement(stage);
-    }
-    let start = layout::start_text(parser_source, &function.sig);
-    let parameters = layout::parameter_text(parser_source, &function.sig);
-    let return_type = layout::return_text(parser_source, &function.sig.output);
-    validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
-    let unroutable = |reason| RenderError::UnroutableTopology {
-        name: flow_path.to_owned(),
-        reason,
-    };
-    if !model.stages.is_empty() {
-        for (stage, analysis) in model.stages.iter().zip(&model.analysis.stages) {
-            let span = analysis.entry.span();
-            validate_description(&analysis.description, span, "stage description")?;
-            validate_labels(stage, &function.sig, &start, &[], &return_type)?;
-        }
-        let scene =
-            layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
-        return Ok(svg::serialize_staged(&scene, &model.analysis));
-    }
-    // Each formula is laid out once, here rather than per layout attempt.
-    // Validation above has already parsed the same descriptions, without their
-    // math, to read the characters a reader would see.
-    let captions = Rc::new(captions::derive(&model, &start, &return_type));
-    let scene = layout::layout(&model, &captions, &parameters).map_err(unroutable)?;
-
-    Ok(svg::serialize(
-        &scene,
-        &model.analysis.name.to_string(),
-        None,
-    ))
+    flow::render(source, flow_path, options)
 }
 
 /// Lists the path within a UTF-8 Rust source file of every `#[kaa]`
@@ -181,6 +188,56 @@ pub fn render_source_with_options(
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust.
 pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
     Ok(kaalang_compiler::flows(&parse_file(source)?.items)
+        .into_iter()
+        .map(|(path, _)| path)
+        .collect())
+}
+
+/// One card of a type diagram: a type, the name its header shows,
+/// and its relationships drawn as lines into the focus.
+#[derive(Clone, Copy, Debug)]
+pub struct TypeCard<'a> {
+    /// The UTF-8 Rust source file that declares the type.
+    pub source: &'a str,
+    /// The type's path within that file, as [`type_names`] lists it.
+    pub path: &'a str,
+    /// The name the card shows before the type's generics, such as its path
+    /// from its crate root.
+    pub header: &'a str,
+    /// The relationships drawn as lines into the focus, by their position
+    /// among the type's relationships in source order. On the focus card, these
+    /// are its relationships to itself.
+    pub relationships: &'a [usize],
+}
+
+/// Renders a type diagram: the focus card under one row of incoming cards, in
+/// the given order, with a line for each relationship they draw into the focus.
+///
+/// # Errors
+///
+/// Returns [`RenderError::Parse`] when a card's source is not valid Rust,
+/// [`RenderError::TypeNotFound`] or [`RenderError::AmbiguousType`] when a card's
+/// path does not name exactly one type, [`RenderError::InvalidType`]
+/// when that type's annotations are not valid, and
+/// [`RenderError::InvalidLabelCharacter`] when a card's text contains a character
+/// XML 1.0 cannot represent.
+///
+/// # Panics
+///
+/// Panics when a card draws a relationship index its type does not have.
+pub fn render_type(focus: TypeCard<'_>, incoming: &[TypeCard<'_>]) -> Result<String, RenderError> {
+    datatype::render(focus, incoming)
+}
+
+/// Lists the path within a UTF-8 Rust source file of every struct, enum, union,
+/// and type alias, datatype or plain type, in source order and with duplicates:
+/// `Member`, or `directory::Team` inside an inline module.
+///
+/// # Errors
+///
+/// Returns [`RenderError::Parse`] when `source` is not valid Rust.
+pub fn type_names(source: &str) -> Result<Vec<String>, RenderError> {
+    Ok(kaalang_compiler::type_items(&parse_file(source)?.items)
         .into_iter()
         .map(|(path, _)| path)
         .collect())
@@ -206,96 +263,19 @@ fn parser_source<'a>(source: &'a str, file: &File) -> &'a str {
         .map_or(source, |shebang| &source[shebang.len()..])
 }
 
-fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
-    let mut matches = kaalang_compiler::flows(items)
-        .into_iter()
-        .filter(|(path, _)| path == flow_path);
-    let Some((_, function)) = matches.next() else {
-        return Err(RenderError::FlowNotFound(flow_path.to_owned()));
-    };
-    if matches.next().is_some() {
-        return Err(RenderError::AmbiguousFlow(flow_path.to_owned()));
-    }
-    if let Some(attribute) = function
-        .attrs
-        .iter()
-        .filter(|attribute| kaalang_compiler::is_kaalang_attribute(attribute))
-        .find(|attribute| match &attribute.meta {
-            Meta::Path(_) => false,
-            Meta::List(arguments) => !arguments.tokens.is_empty(),
-            Meta::NameValue(_) => true,
-        })
-    {
-        return Err(invalid_flow(
-            flow_path,
-            &syn::Error::new_spanned(attribute, "#[kaa] on a function does not accept arguments"),
-        ));
-    }
-
-    Ok(function)
+/// The authored text under a span with every whitespace run collapsed to one space.
+fn collapsed(source: &str, span: Span) -> String {
+    collapsed_text(&source[span.byte_range()])
 }
 
-/// Reports a flow-level error at its source position.
-fn invalid_flow(flow_name: &str, error: &syn::Error) -> RenderError {
-    let (line, column) = location(error.span());
-    RenderError::InvalidFlow {
-        name: flow_name.to_owned(),
-        line,
-        column,
-        message: error.to_string(),
-    }
+fn collapsed_text(text: &str) -> String {
+    text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Returns the 1-based line and column where a span starts.
 fn location(span: Span) -> (usize, usize) {
     let start = span.start();
     (start.line, start.column + 1)
-}
-
-/// Checks authored descriptions and source-derived labels for invalid XML characters.
-fn validate_labels(
-    model: &kaalang_compiler::SemanticModel,
-    signature: &Signature,
-    start: &str,
-    parameters: &[String],
-    return_type: &str,
-) -> Result<(), RenderError> {
-    for block in &model.analysis.flow.blocks {
-        if block.kind == kaalang_compiler::BlockKind::Call && block.description.is_none() {
-            validate_label(&block.callee(), block.span, "call label")?;
-        }
-        let description = block
-            .description
-            .as_deref()
-            .map(|text| (text, "block description".to_owned()));
-        let cases = block
-            .case_descriptions
-            .iter()
-            .enumerate()
-            .map(|(case, text)| (text.as_str(), format!("case {} description", case + 1)));
-        let branches = block
-            .question_branches
-            .iter()
-            .enumerate()
-            .filter_map(|(branch, answer)| {
-                answer
-                    .description
-                    .as_deref()
-                    .map(|text| (text, format!("question branch {} description", branch + 1)))
-            });
-        for (label, context) in description.into_iter().chain(cases).chain(branches) {
-            validate_description(label, block.span, context)?;
-        }
-    }
-    validate_label(start, signature.span(), "flow header")?;
-    for (index, (parameter, text)) in signature.inputs.iter().zip(parameters).enumerate() {
-        validate_label(text, parameter.span(), format!("parameter {}", index + 1))?;
-    }
-    if let ReturnType::Type(_, ty) = &signature.output {
-        validate_label(return_type, ty.span(), "return type")?;
-    }
-
-    Ok(())
 }
 
 fn validate_description(
@@ -337,6 +317,91 @@ const fn valid_xml_character(character: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn selects_one_type_by_its_path_annotated_or_not() {
+        let source = "#[kaa] struct Twin;\n#[kaa] struct Twin;\nmod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
+        let card = |path| TypeCard {
+            source,
+            path,
+            header: path,
+            relationships: &[],
+        };
+
+        assert_eq!(
+            render_type(card("Missing"), &[]),
+            Err(RenderError::TypeNotFound("Missing".into()))
+        );
+        assert_eq!(
+            render_type(card("Twin"), &[]),
+            Err(RenderError::AmbiguousType("Twin".into()))
+        );
+        assert!(matches!(
+            render_type(card("model::Empty"), &[]),
+            Err(RenderError::InvalidType { name, line: 3, .. }) if name == "model::Empty"
+        ));
+        assert!(render_type(card("Plain"), &[]).is_ok_and(|svg| svg.contains("id")));
+    }
+
+    #[test]
+    fn lists_types_by_their_paths_with_duplicates() {
+        let source = "#[kaa] struct Twin;\n#[kaa] struct Twin;\nmod model { #[kaa] struct Empty; }\nstruct Plain;\n";
+
+        assert_eq!(
+            type_names(source),
+            Ok(vec![
+                "Twin".into(),
+                "Twin".into(),
+                "model::Empty".into(),
+                "Plain".into()
+            ])
+        );
+    }
+
+    #[test]
+    fn rejects_type_text_that_xml_cannot_represent() {
+        let source = "#[kaa(\"bad\\u{1}text\")]\nstruct Bad;\n";
+
+        assert_eq!(
+            render_type(
+                TypeCard {
+                    source,
+                    path: "Bad",
+                    header: "Bad",
+                    relationships: &[],
+                },
+                &[],
+            ),
+            Err(RenderError::InvalidLabelCharacter {
+                character: '\u{1}',
+                line: 1,
+                column: 1,
+                context: "description of type `Bad`".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn shows_a_representation_only_when_it_does_not_depend_on_the_target() {
+        let source = "#[kaa] #[repr(C)] #[repr(align(8))] struct Combined(u8);\n#[kaa] #[cfg_attr(unix, cfg_attr(target_pointer_width = \"64\", repr(C)))] struct Conditional(u8);\n";
+        let svg = |path| {
+            render_type(
+                TypeCard {
+                    source,
+                    path,
+                    header: path,
+                    relationships: &[],
+                },
+                &[],
+            )
+            .unwrap()
+        };
+
+        assert!(svg("Combined").contains(">struct · repr(C, align(8))</tspan>"));
+        let conditional = svg("Conditional");
+        assert!(conditional.contains(">struct</tspan>"));
+        assert!(!conditional.contains("repr("));
+    }
 
     #[test]
     fn requires_an_exact_kaalang_attribute() {
@@ -398,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn reports_kaalang_arguments_as_an_invalid_flow() {
+    fn reports_kaa_arguments_as_an_invalid_flow() {
         for attribute in ["kaa", "kaalang::kaa"] {
             let source = format!(
                 "#[{attribute}(unexpected)]\nfn invalid(input: u8) -> u8 {{\n    #[kaa::action(\"Return the input\")]\n    let end = |input| {{ input }};\n    |end| return end;\n}}\n"

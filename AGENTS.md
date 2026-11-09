@@ -18,7 +18,8 @@ tests, commit messages, and pull request content.
   Read it before naming a new concept.
 - `crates/kaalang-compiler/` parses and resolves flows into the shared validated
   semantic model, decides the diagram, exposes its common arrangement checks,
-  and lowers the verified plan to Rust.
+  and lowers the verified plan to Rust. It also parses type declarations and
+  expands datatypes.
 - `crates/kaalang-macros/` owns the procedural macro entry point and nothing
   else. A `proc-macro` crate may export only its macros, so anything kept here
   could not be called, tested, or measured from another crate.
@@ -26,7 +27,8 @@ tests, commit messages, and pull request content.
   arrangement into the shared rows, columns, and routes every renderer starts
   from.
 - `crates/kaalang-svg/` measures the shared arrangement and renders standalone
-  SVG without changing its structural layout.
+  SVG without changing its structural layout, and lays out and renders type
+  diagrams.
 - `crates/kaalang-testing/` owns the shared test material: the fixture corpus,
   generated performance probes and cycle shapes, and the harness the budgets
   use. Nothing outside a test depends on it.

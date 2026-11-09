@@ -1,0 +1,5 @@
+error: a kaalang case attribute requires a parenthesized description
+ --> tests/datatype/compile_fail/case_without_description.rs:5:5
+  |
+5 |     #[kaa::case]
+  |     ^^^^^^^^^^^^

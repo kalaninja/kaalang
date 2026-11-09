@@ -1,0 +1,5 @@
+error: a type takes one `#[kaa]` attribute
+ --> tests/datatype/compile_fail/duplicate_kaa.rs:4:1
+  |
+4 | #[kaa("The same member again.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

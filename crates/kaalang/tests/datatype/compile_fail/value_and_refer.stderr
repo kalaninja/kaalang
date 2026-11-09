@@ -1,0 +1,5 @@
+error: a field takes one `value` or `refer` annotation
+ --> tests/datatype/compile_fail/value_and_refer.rs:9:5
+  |
+9 |     #[kaa::refer(Member, "The author.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

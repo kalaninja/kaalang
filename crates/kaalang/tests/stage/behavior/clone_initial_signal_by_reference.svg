@@ -20,7 +20,7 @@
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape, .call .node-shape { fill: #f8fafc; }
       .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
-      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .cycle .node-shape { fill: #f0fdf4; }
       .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
@@ -28,7 +28,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
-      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
@@ -88,7 +88,7 @@
       .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
       .action .node-shape, .call .node-shape { fill: #f8fafc; }
       .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
-      .cycle .node-shape { fill: #f0fdf4; stroke-width: 2; }
+      .cycle .node-shape { fill: #f0fdf4; }
       .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
       .question .node-shape { fill: #fffbeb; }
       .select .node-shape, .case .node-shape { fill: #f5f3ff; }
@@ -96,7 +96,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
-      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.5; stroke-dasharray: 7 5; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }

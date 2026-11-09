@@ -137,6 +137,14 @@ committing: nothing else checks that the new diagrams still make sense.
 Gallery examples may group related flows in one source file and share a test.
 Each flow still gets its own `<flow>.svg` beside that file.
 
+Type fixtures live in `crates/kaalang/tests/datatype/`, one directory per case,
+named for the case, so that the directory listing is the list of cases. Each
+declares only the types its case needs and a test of their behavior. A fixture
+without flows draws a diagram into its directory for every type its `mod.rs`
+declares, datatype or plain type, named after the type in snake case. A type's
+incoming types there are those in the same file that refer to it by its bare
+name.
+
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
 diagrams. They exercise heavy combinations of language features and receive the

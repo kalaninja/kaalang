@@ -1,5 +1,0 @@
-error: a relationship target is written without parameters
- --> tests/types/compile_fail/parameterized_target.rs:8:28
-  |
-8 |     #[kaa::refer(Attachment<u8>, "The uploaded content.")]
-  |                            ^^^^

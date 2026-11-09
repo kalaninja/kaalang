@@ -1,0 +1,5 @@
+error: expected non-macro attribute, found attribute macro `kaa`
+ --> tests/datatype/compile_fail/kaa_on_field.rs:5:7
+  |
+5 |     #[kaa("The display name.")]
+  |       ^^^ not a non-macro attribute

@@ -1,0 +1,5 @@
+error: `value` and `refer` describe fields; an enum variant takes `#[kaa::case("description")]`
+ --> tests/datatype/compile_fail/value_on_variant.rs:5:5
+  |
+5 |     #[kaa::value("Not yet published.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

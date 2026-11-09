@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="424" height="676" viewBox="0 0 424 676" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for State</title>
+  <desc id="kaalang-description">Type State with incoming types Document.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Document</title>
+      <rect class="card-shape" x="32" y="32" width="263" height="210"/>
+      <path class="card-rules" d="M 32 120 L 295 120 M 32 168 L 295 168"/>
+      <rect class="card-outline" x="32" y="32" width="263" height="210"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">Document</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="281" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A document with its publication </tspan><tspan x="46" dy="18">state.</tspan></text>
+      <text class="field-name" y="141" xml:space="preserve"><tspan x="46" dy="0">title</tspan></text>
+      <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
+      <text class="description" y="143" xml:space="preserve"><tspan x="106" dy="0">The display title.</tspan></text>
+      <text class="field-name" y="189" xml:space="preserve"><tspan x="46" dy="0">state</tspan></text>
+      <text class="field-type" y="205" xml:space="preserve"><tspan x="46" dy="0">State</tspan></text>
+      <text class="description" y="191" xml:space="preserve"><tspan x="106" dy="0">The current publication </tspan><tspan x="106" dy="18">state.</tspan></text>
+      <text class="target" text-anchor="end" y="231" xml:space="preserve"><tspan x="281" dy="0">▸ <tspan class="md-code">State</tspan></tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">State</title>
+      <rect class="card-shape" x="32" y="290" width="360" height="354"/>
+      <rect class="card-groove" x="32" y="372" width="360" height="20"/>
+      <rect class="card-groove" x="32" y="498" width="360" height="20"/>
+      <rect class="card-groove" x="32" y="624" width="360" height="20"/>
+      <path class="card-rules" d="M 32 338 L 392 338 M 32 372 L 392 372 M 32 392 L 392 392 M 32 426 L 392 426 M 218 426 L 218 498 M 32 498 L 392 498 M 32 518 L 392 518 M 32 552 L 392 552 M 32 624 L 392 624"/>
+      <rect class="card-outline" x="32" y="290" width="360" height="354"/>
+      <text class="type-name" y="322" xml:space="preserve"><tspan x="46" dy="0">State</tspan></text>
+      <text class="type-kind" text-anchor="end" y="322" xml:space="preserve"><tspan x="378" dy="0">enum · repr(u8)</tspan></text>
+      <text class="variant-name" y="361" xml:space="preserve"><tspan x="46" dy="0">Draft</tspan></text>
+      <text class="description" y="361" xml:space="preserve"><tspan x="101" dy="0">Not yet published.</tspan></text>
+      <text class="variant-name" y="415" xml:space="preserve"><tspan x="46" dy="0">Published</tspan></text>
+      <text class="field-name" y="447" xml:space="preserve"><tspan x="46" dy="0">revision</tspan></text>
+      <text class="field-type" y="463" xml:space="preserve"><tspan x="46" dy="0">u32</tspan></text>
+      <text class="description" y="487" xml:space="preserve"><tspan x="46" dy="0">The published revision.</tspan></text>
+      <text class="field-name" y="447" xml:space="preserve"><tspan x="232" dy="0">note</tspan></text>
+      <text class="field-type" y="463" xml:space="preserve"><tspan x="232" dy="0">String</tspan></text>
+      <text class="description" y="487" xml:space="preserve"><tspan x="232" dy="0">The publication note.</tspan></text>
+      <text class="variant-name" y="541" xml:space="preserve"><tspan x="46" dy="0">Archived</tspan></text>
+      <text class="field-name" y="573" xml:space="preserve"><tspan x="46" dy="0">0</tspan></text>
+      <text class="field-type" y="589" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
+      <text class="description" y="613" xml:space="preserve"><tspan x="46" dy="0">The archive reason.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Document → State</title>
+      <path class="relationship" d="M 295 226 L 309 226 L 309 290" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="295" cy="226" r="4"/>
+    </g>
+  </g>
+</svg>
