@@ -47,6 +47,10 @@
   `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,
   its `Field`s and `Variant`s with their `Annotation`s, and its `Relationship`s,
   and `expand_type` expands it for the macro.
+- Diagrams mark visibility before a name as UML does: `+` for `pub`, `~` for a
+  restricted form such as `pub(crate)`, and `-` for private, on a flow's start
+  label, a type card's name, and each field tile outside an enum variant.
+  `Field` keeps the declared `visibility`.
 
 ### Changed
 

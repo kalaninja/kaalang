@@ -4,7 +4,7 @@
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
-    Attribute, Error, Generics, Ident, Item, LitStr, Meta, Path, Result, Token, Type,
+    Attribute, Error, Generics, Ident, Item, LitStr, Meta, Path, Result, Token, Type, Visibility,
     parse::ParseStream, spanned::Spanned,
 };
 
@@ -41,6 +41,8 @@ pub struct Variant {
 pub struct Field {
     /// `None` for a tuple field, which is named by its position.
     pub name: Option<Ident>,
+    /// As declared; `Inherited` on every enum-variant field.
+    pub visibility: Visibility,
     pub ty: Type,
     pub annotation: Option<Annotation>,
 }
@@ -318,6 +320,7 @@ fn fields<'a>(
             }
             Ok(Field {
                 name: field.ident.clone(),
+                visibility: field.vis.clone(),
                 ty: field.ty.clone(),
                 annotation,
             })

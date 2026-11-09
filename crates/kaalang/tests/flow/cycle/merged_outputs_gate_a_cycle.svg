@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1556" viewBox="0 0 1140 1556" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for merged_outputs_gate_a_cycle</title>
-  <desc id="kaalang-description">Cycles: Count the first number past five. with inputs mut first and outputs even or odd; Count the second number past three. with inputs base, mut second and outputs large or small. Nodes: Start: merged_outputs_gate_a_cycle with parameters mut first: u32; mut second: u32 handing over mut first, mut second; Question: Past five? capturing &amp;first handing over past / again; Action: Count the first number up. capturing again, &amp;mut first handing over stepped; Question: Is it even? capturing past, &amp;first handing over even / odd; Action: Start from one. capturing even handing over base; Action: Start from two. capturing odd handing over base; Question: Past three? capturing &amp;second handing over past / again; Action: Count the second number up. capturing again, &amp;mut second handing over stepped; Question: Is it large? capturing past, &amp;second handing over large / small; Action: Add three. capturing large, base handing over result; Action: Add two. capturing small, base handing over result; End: u32 capturing result; Merge: base; Merge: result. Connections: Start: merged_outputs_gate_a_cycle to the entry of the cycle; Question: Past five? branch 1 to Question: Is it even?; Question: Past five? branch 2 to Action: Count the first number up.; Action: Count the first number up. to the iteration tail of the cycle; Question: Is it even? branch 1 to the even result of the cycle; Question: Is it even? branch 2 to the odd result of the cycle; Action: Start from one. to the base merge; Action: Start from two. to the base merge; Question: Past three? branch 1 to Question: Is it large?; Question: Past three? branch 2 to Action: Count the second number up.; Action: Count the second number up. to the iteration tail of the cycle; Question: Is it large? branch 1 to the large result of the cycle; Question: Is it large? branch 2 to the small result of the cycle; Action: Add three. to the result merge; Action: Add two. to the result merge; the base merge to the entry of the cycle; the result merge to End: u32; the entry of the cycle to Question: Past five?; the even result of the cycle to Action: Start from one.; the odd result of the cycle to Action: Start from two.; the entry of the cycle to Question: Past three?; the large result of the cycle to Action: Add three.; the small result of the cycle to Action: Add two.; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count the first number past five. with inputs mut first and outputs even or odd; Count the second number past three. with inputs base, mut second and outputs large or small. Nodes: Start: - merged_outputs_gate_a_cycle with parameters mut first: u32; mut second: u32 handing over mut first, mut second; Question: Past five? capturing &amp;first handing over past / again; Action: Count the first number up. capturing again, &amp;mut first handing over stepped; Question: Is it even? capturing past, &amp;first handing over even / odd; Action: Start from one. capturing even handing over base; Action: Start from two. capturing odd handing over base; Question: Past three? capturing &amp;second handing over past / again; Action: Count the second number up. capturing again, &amp;mut second handing over stepped; Question: Is it large? capturing past, &amp;second handing over large / small; Action: Add three. capturing large, base handing over result; Action: Add two. capturing small, base handing over result; End: u32 capturing result; Merge: base; Merge: result. Connections: Start: - merged_outputs_gate_a_cycle to the entry of the cycle; Question: Past five? branch 1 to Question: Is it even?; Question: Past five? branch 2 to Action: Count the first number up.; Action: Count the first number up. to the iteration tail of the cycle; Question: Is it even? branch 1 to the even result of the cycle; Question: Is it even? branch 2 to the odd result of the cycle; Action: Start from one. to the base merge; Action: Start from two. to the base merge; Question: Past three? branch 1 to Question: Is it large?; Question: Past three? branch 2 to Action: Count the second number up.; Action: Count the second number up. to the iteration tail of the cycle; Question: Is it large? branch 1 to the large result of the cycle; Question: Is it large? branch 2 to the small result of the cycle; Action: Add three. to the result merge; Action: Add two. to the result merge; the base merge to the entry of the cycle; the result merge to End: u32; the entry of the cycle to Question: Past five?; the even result of the cycle to Action: Start from one.; the odd result of the cycle to Action: Start from two.; the entry of the cycle to Question: Past three?; the large result of the cycle to Action: Add three.; the small result of the cycle to Action: Add two.; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -41,7 +63,7 @@
   <g class="connections">
     <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 200 94 L 200 170
+      M 200 98 L 200 170
       M 200 314 L 200 386
       M 340 278 L 920 278 L 920 386
       M 920 458 L 920 530
@@ -73,7 +95,7 @@
     " marker-end="url(#back-edge-arrow)"/>
     <text class="connection-label code" x="213" y="760" xml:space="preserve"><tspan x="213" dy="0">base</tspan></text>
     <text class="connection-label code" x="213" y="1408" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label code" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut first, mut second</tspan></text>
+    <text class="connection-label code" x="213" y="116" xml:space="preserve"><tspan x="213" dy="0">mut first, mut second</tspan></text>
     <text class="connection-label code" x="213" y="332" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
     <text class="connection-label code" x="353" y="296" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
     <text class="connection-label code" x="933" y="476" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
@@ -110,8 +132,12 @@
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(200 65)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">merged_outputs_gate_a_cycle</tspan></text>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-117.18" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">merged_outputs_gate_a_cycle</tspan></text>
+      </g>
     </g>
     <g class="node question" transform="translate(200 278)">
       <title xml:space="preserve">Past five?</title>

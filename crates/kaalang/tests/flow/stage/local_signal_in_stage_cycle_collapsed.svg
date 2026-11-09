@@ -1,18 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="762" viewBox="0 0 1188 762" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for local_signal_in_stage_cycle</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: local_signal_in_stage_cycle with parameters go: (). Stage go. Nodes: Stage: Keep a local signal in a cycle.; Cycle: Produce a local value. capturing go handing over local; Action: Select the next stage. capturing local; Stage transition: Produce the final signal.. Connections: Stage: Keep a local signal in a cycle. to Cycle: Produce a local value.; Cycle: Produce a local value. to Action: Select the next stage.; Action: Select the next stage. to Stage transition: Produce the final signal.. Transition to stage next. Stage next. Nodes: Stage: Produce the final signal.; Action: Produce the declared signal. capturing next; Stage transition: Return the value.. Connections: Stage: Produce the final signal. to Action: Produce the declared signal.; Action: Produce the declared signal. to Stage transition: Return the value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="770" viewBox="0 0 1188 770" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for local_signal_in_stage_cycle</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: - local_signal_in_stage_cycle with parameters go: (). Stage go. Nodes: Stage: Keep a local signal in a cycle.; Cycle: Produce a local value. capturing go handing over local; Action: Select the next stage. capturing local; Stage transition: Produce the final signal.. Connections: Stage: Keep a local signal in a cycle. to Cycle: Produce a local value.; Cycle: Produce a local value. to Action: Select the next stage.; Action: Select the next stage. to Stage transition: Produce the final signal.. Transition to stage next. Stage next. Nodes: Stage: Produce the final signal.; Action: Produce the declared signal. capturing next; Stage transition: Return the value.. Connections: Stage: Produce the final signal. to Action: Produce the declared signal.; Action: Produce the declared signal. to Stage transition: Return the value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 114 L 232 150 "/>
-<path d="M 232 150 L 232 186 "/>
-<path d="M 232 670 L 232 738 "/>
-<path d="M 612 150 L 612 186 "/>
-<path d="M 612 670 L 612 738 "/>
-<path d="M 992 150 L 992 186 "/>
-<path d="M 232 150 L 992 150 "/>
-<path d="M 612 738 L 24 738 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 122 L 232 158 "/>
+<path d="M 232 158 L 232 194 "/>
+<path d="M 232 678 L 232 746 "/>
+<path d="M 612 158 L 612 194 "/>
+<path d="M 612 678 L 612 746 "/>
+<path d="M 992 158 L 992 194 "/>
+<path d="M 232 158 L 992 158 "/>
+<path d="M 612 746 L 24 746 L 24 158 L 232 158 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="130" viewBox="0 0 680 130" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for local_signal_in_stage_cycle</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: local_signal_in_stage_cycle with parameters go: ().</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: - local_signal_in_stage_cycle with parameters go: ().</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -35,6 +35,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <g class="cycle-regions">
@@ -44,19 +66,23 @@
     "/>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">local_signal_in_stage_cycle</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-117.18" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">local_signal_in_stage_cycle</tspan></text>
+      </g>
     </g>
   </g>
 </svg>
 </g>
-<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for local_signal_in_stage_cycle</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Keep a local signal in a cycle.; Cycle: Produce a local value. capturing go handing over local; Action: Select the next stage. capturing local; Stage transition: Produce the final signal.. Connections: Stage: Keep a local signal in a cycle. to Cycle: Produce a local value.; Cycle: Produce a local value. to Action: Select the next stage.; Action: Select the next stage. to Stage transition: Produce the final signal..</desc>
   <defs>
@@ -81,6 +107,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -122,7 +149,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(440 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for local_signal_in_stage_cycle</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Produce the final signal.; Action: Produce the declared signal. capturing next; Stage transition: Return the value.. Connections: Stage: Produce the final signal. to Action: Produce the declared signal.; Action: Produce the declared signal. to Stage transition: Return the value..</desc>
   <defs>
@@ -147,6 +174,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -180,7 +208,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(820 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
+<g transform="translate(820 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
   <title id="kaalang-part-3-title">kaalang diagram for local_signal_in_stage_cycle</title>
   <desc id="kaalang-part-3-description">Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc>
   <defs>
@@ -205,6 +233,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }

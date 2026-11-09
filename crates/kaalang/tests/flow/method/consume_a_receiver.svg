@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="396" viewBox="0 0 680 396" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for consume_a_receiver</title>
-  <desc id="kaalang-description">Nodes: Start: consume_a_receiver with parameters self; suffix: String handing over self, suffix; Action: Append the suffix to the text. capturing self, suffix handing over end; End: String capturing end. Connections: Start: consume_a_receiver to Action: Append the suffix to the text.; Action: Append the suffix to the text. to End: String.</desc>
+  <desc id="kaalang-description">Nodes: Start: - consume_a_receiver with parameters self; suffix: String handing over self, suffix; Action: Append the suffix to the text. capturing self, suffix handing over end; End: String capturing end. Connections: Start: - consume_a_receiver to Action: Append the suffix to the text.; Action: Append the suffix to the text. to End: String.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -44,7 +66,10 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">consume_a_receiver</tspan></text>
+      <g class="label">
+        <text class="md-badge" x="-82.46" y="5.16" text-anchor="middle">−</text>
+        <text x="-75.46" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> consume_a_receiver</tspan></text>
+      </g>
     </g>
     <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Append the suffix to the text.</title>

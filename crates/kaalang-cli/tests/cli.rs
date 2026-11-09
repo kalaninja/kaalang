@@ -478,10 +478,10 @@ fn incoming_types_follow_crate_order() {
     let found = positions(
         &svg,
         &[
-            ">FromLib<",
-            ">app::FromBin<",
-            ">check::FromTest<",
-            ">alpha::FromAlpha<",
+            "FromLib<",
+            "app::FromBin<",
+            "check::FromTest<",
+            "alpha::FromAlpha<",
         ],
     );
     assert!(found.is_sorted(), "{found:?}");

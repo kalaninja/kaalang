@@ -461,6 +461,10 @@ A type's diagram draws it under every type that refers to it:
 
 [Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/order/mod.rs)
 
+A type's name and its fields, like a flow's name in its start node, carry a UML
+visibility marker: `+` for `pub`, `~` for `pub(crate)` and other restricted
+forms, and `-` for private.
+
 ## Try it
 
 Add the macro to a project:

@@ -7,9 +7,10 @@ use latex_rust::Dim;
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::text::{
-    Color, FORMULA_STRIKETHROUGH_OFFSET, FORMULA_UNDERLINE_OFFSET, FORMULA_UNDERLINE_PADDING,
-    Formula, RichText, SCRIPT_FONT_SCALE, SUBSCRIPT_SHIFT, SUPERSCRIPT_SHIFT, Script, Style,
-    TEXT_ADVANCE_SCALE, block_metrics, line_ink, shaping_spans, svg_dimension,
+    BADGE_CENTER, BADGE_GLYPH_DROP, Color, FORMULA_STRIKETHROUGH_OFFSET, FORMULA_UNDERLINE_OFFSET,
+    FORMULA_UNDERLINE_PADDING, Formula, RichText, SCRIPT_FONT_SCALE, SUBSCRIPT_SHIFT,
+    SUPERSCRIPT_SHIFT, Script, Style, StyledSpan, TEXT_ADVANCE_SCALE, block_metrics, line_ink,
+    shaping_spans, svg_dimension,
 };
 
 /// The margin around a flow or type diagram; a staged flow's composition keeps
@@ -152,8 +153,51 @@ pub(crate) fn needs_composed_lines(lines: &[RichText]) -> bool {
     lines
         .iter()
         .flat_map(RichText::spans)
-        .any(|span| span.formula.is_some() || span.style.highlight)
+        .any(|span| span.formula.is_some() || span.style.highlight || span.style.badge)
 }
+
+/// The shapes behind a line's runs: a highlight's box.
+fn write_decorations(
+    svg: &mut String,
+    indent: &str,
+    shaped: &[(StyledSpan, i64, usize)],
+    mut x: Dim,
+    baseline: i32,
+    font_size: i32,
+) {
+    for (span, advance, _) in shaped {
+        let advance = Dim::ratio(*advance, TEXT_ADVANCE_SCALE);
+        if span.style.highlight && !advance.is_zero() {
+            let (ascent, descent) = line_ink(std::slice::from_ref(span), font_size);
+            let ascent = Dim::from_i64(i64::from(ascent));
+            let descent = Dim::from_i64(i64::from(descent));
+            let top = Dim::from_i64(i64::from(baseline)) - &ascent;
+            let height = ascent + descent;
+            emit!(
+                svg,
+                "{indent}  <rect class=\"md-highlight-box\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\"/>",
+                svg_dimension(&x),
+                svg_dimension(&top),
+                svg_dimension(&advance),
+                svg_dimension(&height)
+            );
+        }
+        x = x + advance;
+    }
+}
+
+/// Where a badge's marker is centered on a line.
+fn badge_center_y(baseline: i32, font_size: i32) -> Dim {
+    Dim::from_i64(i64::from(baseline))
+        - Dim::ratio(
+            i64::from(font_size) * i64::from(BADGE_CENTER.0),
+            i64::from(BADGE_CENTER.1),
+        )
+}
+
+/// The visibility badge: its marker in the secondary color.
+pub(crate) const BADGE_STYLE: &str =
+    "      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }\n";
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn write_composed_lines(
@@ -188,39 +232,41 @@ pub(crate) fn write_composed_lines(
             TextAnchor::Middle => x - width / Dim::from_i64(2),
             TextAnchor::End => x - width,
         };
-        let mut decorated_x = start.clone();
-        for (span, advance, _) in &shaped {
-            let advance = Dim::ratio(*advance, TEXT_ADVANCE_SCALE);
-            if span.style.highlight && !advance.is_zero() {
-                let (ascent, descent) = line_ink(std::slice::from_ref(span), font_size);
-                let ascent = Dim::from_i64(i64::from(ascent));
-                let descent = Dim::from_i64(i64::from(descent));
-                let top = Dim::from_i64(i64::from(baseline)) - &ascent;
-                let height = ascent + descent;
-                emit!(
-                    svg,
-                    "{indent}  <rect class=\"md-highlight-box\" x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\"/>",
-                    svg_dimension(&decorated_x),
-                    svg_dimension(&top),
-                    svg_dimension(&advance),
-                    svg_dimension(&height)
-                );
-            }
-            decorated_x = decorated_x + advance;
-        }
+        write_decorations(svg, indent, &shaped, start.clone(), baseline, font_size);
+        // A badge alone leaves the runs their natural width: the line may be
+        // measured in another style than its element's class renders.
+        let pinned = shaped
+            .iter()
+            .any(|(span, _, _)| span.style.highlight || span.formula.is_some());
         let mut cursor = start;
+        // A highlighted or badged span is a run of its own.
+        let decorated = |style: Style| style.highlight || style.badge;
         for run in shaped.chunk_by(|(left, _, left_index), (right, _, right_index)| {
             left.formula.is_none()
                 && right.formula.is_none()
-                && left.style.highlight == right.style.highlight
-                && (!left.style.highlight || left_index == right_index)
+                && decorated(left.style) == decorated(right.style)
+                && (!decorated(left.style) || left_index == right_index)
         }) {
             let width = Dim::ratio(
                 run.iter().map(|(_, advance, _)| *advance).sum(),
                 TEXT_ADVANCE_SCALE,
             );
             let first = &run[0].0;
-            if let Some(formula) = &first.formula {
+            if first.style.badge {
+                emit!(
+                    svg,
+                    "{indent}  <text class=\"md-badge\" x=\"{}\" y=\"{}\" text-anchor=\"middle\">{}</text>",
+                    svg_dimension(&(cursor.clone() + width.clone() / Dim::from_i64(2))),
+                    svg_dimension(
+                        &(badge_center_y(baseline, font_size)
+                            + Dim::ratio(
+                                i64::from(font_size) * i64::from(BADGE_GLYPH_DROP.0),
+                                i64::from(BADGE_GLYPH_DROP.1),
+                            ))
+                    ),
+                    escape(&first.text.replace('-', "−"))
+                );
+            } else if let Some(formula) = &first.formula {
                 write_formula(
                     svg,
                     indent,
@@ -235,21 +281,28 @@ pub(crate) fn write_composed_lines(
                 if first.style.highlight {
                     emit_inline!(svg, " style=\"stroke: none\"");
                 }
+                emit_inline!(
+                    svg,
+                    " x=\"{}\" y=\"{baseline}\" text-anchor=\"start\"",
+                    svg_dimension(&cursor)
+                );
                 // The run must occupy exactly the width it was measured at, or
                 // the next run and the highlight box drift off its ink. The
                 // estimate errs wide, so spacing uses the gaps when there
                 // are any; a single grapheme must scale its outline instead.
-                emit_inline!(
-                    svg,
-                    " x=\"{}\" y=\"{baseline}\" text-anchor=\"start\" textLength=\"{}\" lengthAdjust=\"{}\" xml:space=\"preserve\">",
-                    svg_dimension(&cursor),
-                    svg_dimension(&width),
-                    if run.len() == 1 && run[0].0.text.graphemes(true).count() == 1 {
-                        "spacingAndGlyphs"
-                    } else {
-                        "spacing"
-                    }
-                );
+                if pinned {
+                    emit_inline!(
+                        svg,
+                        " textLength=\"{}\" lengthAdjust=\"{}\"",
+                        svg_dimension(&width),
+                        if run.len() == 1 && run[0].0.text.graphemes(true).count() == 1 {
+                            "spacingAndGlyphs"
+                        } else {
+                            "spacing"
+                        }
+                    );
+                }
+                emit_inline!(svg, " xml:space=\"preserve\">");
                 for (span, _, _) in run {
                     write_span(svg, &span.text, span.style);
                 }

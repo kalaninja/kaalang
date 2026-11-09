@@ -2,7 +2,7 @@ use kaalang::kaa;
 
 #[allow(unreachable_code)]
 #[kaa]
-fn skeleton(seed: u32) -> u32 {
+pub fn skeleton(seed: u32) -> u32 {
     #[kaa::question("Accept the seed?")]
     let (accepted, rejected) = |&seed| todo!();
 

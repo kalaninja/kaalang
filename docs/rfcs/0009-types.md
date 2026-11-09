@@ -271,7 +271,8 @@ are not recursively inlined.
 
 A field tile in the focus reads from top to bottom:
 
-1. Field name or tuple position.
+1. Visibility marker, except in a variant, then the field name or tuple
+   position.
 2. Authored Rust type, including lifetimes and generic arguments.
 3. Description, when supplied.
 4. Relationship target, when supplied.
@@ -281,6 +282,13 @@ bottom of their product row in the focus. They show an arrowhead, the same for
 every relationship, and the target name, without a `refer` label. Incoming lines
 identify their source component, so neither the field name nor its description
 is duplicated on the line.
+
+Visibility is a UML marker before the name: `+` for `pub`, `~` for a restricted
+form such as `pub(crate)` or `pub(super)`, and `-` for private. The header
+carries the type's marker before its name and a field tile its field's. An enum
+variant's fields take the enum's visibility and carry none. A flow's start label
+carries the function's marker before the header the same way. This extends what
+RFC 0002 §4.1 retains.
 
 ### 4.3 Arrangement
 
@@ -437,11 +445,11 @@ Acceptance scenarios:
 
 ## 8. Compatibility and exclusions
 
-This RFC adds a proposed type view alongside flows. Beyond the provisions §2.5
-and §6 name, it does not supersede the execution, lowering, or control-flow
-drawing rules in the accepted RFCs. Their flow terms retain their existing
-meanings. A type relationship is not evidence of execution order or of a value
-being moved or borrowed.
+This RFC adds a proposed type view alongside flows. Beyond the provisions §2.5,
+§4.2, and §6 name, it does not supersede the execution, lowering, or
+control-flow drawing rules in the accepted RFCs. Their flow terms retain their
+existing meanings. A type relationship is not evidence of execution order or of
+a value being moved or borrowed.
 
 The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The

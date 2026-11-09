@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="777" height="518" viewBox="0 0 777 518" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for Section</title>
-  <desc id="kaalang-description">Type Section with incoming types Note, Outline; it refers to itself once.</desc>
+  <title id="kaalang-title">kaalang type diagram for - Section</title>
+  <desc id="kaalang-description">Type - Section with incoming types - Note, - Outline; it refers to itself once.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -19,59 +19,90 @@
       .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
       .relationship-source { fill: currentColor; }
       .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
     </style>
     <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card">
-      <title xml:space="preserve">Note</title>
+      <title xml:space="preserve">- Note</title>
       <rect class="card-shape" x="32" y="32" width="270" height="210"/>
       <path class="card-rules" d="M 32 120 L 302 120 M 32 168 L 302 168"/>
       <rect class="card-outline" x="32" y="32" width="270" height="210"/>
-      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">Note</tspan></text>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Note</text>
+      </g>
       <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="288" dy="0">struct · repr(Rust)</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A reader&apos;s remark pinned to a </tspan><tspan x="46" dy="18">section.</tspan></text>
-      <text class="field-name" y="141" xml:space="preserve"><tspan x="46" dy="0">text</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="140.28" text-anchor="middle">−</text>
+        <text x="58" y="141" text-anchor="start" xml:space="preserve"> text</text>
+      </g>
       <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
       <text class="description" y="143" xml:space="preserve"><tspan x="128" dy="0">The remark.</tspan></text>
-      <text class="field-name" y="189" xml:space="preserve"><tspan x="46" dy="0">anchor</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="188.28" text-anchor="middle">−</text>
+        <text x="58" y="189" text-anchor="start" xml:space="preserve"> anchor</text>
+      </g>
       <text class="field-type" y="205" xml:space="preserve"><tspan x="46" dy="0">SectionId</tspan></text>
       <text class="description" y="191" xml:space="preserve"><tspan x="128" dy="0">The section the </tspan><tspan x="128" dy="18">remark is pinned to.</tspan></text>
       <text class="target" text-anchor="end" y="231" xml:space="preserve"><tspan x="288" dy="0">▸ <tspan class="md-code">Section</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">Outline</title>
+      <title xml:space="preserve">- Outline</title>
       <rect class="card-shape" x="334" y="32" width="293" height="144"/>
       <path class="card-rules" d="M 334 102 L 627 102"/>
       <rect class="card-outline" x="334" y="32" width="293" height="144"/>
-      <text class="type-name" y="64" xml:space="preserve"><tspan x="348" dy="0">Outline</tspan></text>
+      <g class="type-name">
+        <text class="md-badge" x="357" y="62.92" text-anchor="middle">−</text>
+        <text x="366" y="64" text-anchor="start" xml:space="preserve"> Outline</text>
+      </g>
       <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="613" dy="0">struct · repr(Rust)</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="348" dy="0">An article&apos;s outline.</tspan></text>
-      <text class="field-name" y="123" xml:space="preserve"><tspan x="348" dy="0">sections</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="354" y="122.28" text-anchor="middle">−</text>
+        <text x="360" y="123" text-anchor="start" xml:space="preserve"> sections</text>
+      </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="348" dy="0">Vec&lt;Section&gt;</tspan></text>
       <text class="description" y="125" xml:space="preserve"><tspan x="453" dy="0">Top-level sections in </tspan><tspan x="453" dy="18">reading order.</tspan></text>
       <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="613" dy="0">▸ <tspan class="md-code">Section</tspan></tspan></text>
     </g>
     <g class="card focus">
-      <title xml:space="preserve">Section</title>
+      <title xml:space="preserve">- Section</title>
       <rect class="card-shape" x="32" y="290" width="699" height="182"/>
       <path class="card-rules" d="M 32 360 L 731 360 M 186 360 L 186 472 M 355 360 L 355 472 M 543 360 L 543 472"/>
       <rect class="card-outline" x="32" y="290" width="699" height="182"/>
-      <text class="type-name" y="322" xml:space="preserve"><tspan x="46" dy="0">Section</tspan></text>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="320.92" text-anchor="middle">−</text>
+        <text x="64" y="322" text-anchor="start" xml:space="preserve"> Section</text>
+      </g>
       <text class="type-kind" text-anchor="end" y="322" xml:space="preserve"><tspan x="717" dy="0">struct · repr(Rust)</tspan></text>
       <text class="description" y="345" xml:space="preserve"><tspan x="46" dy="0">A section of an article, nested to any depth.</tspan></text>
-      <text class="field-name" y="381" xml:space="preserve"><tspan x="46" dy="0">id</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="380.28" text-anchor="middle">−</text>
+        <text x="58" y="381" text-anchor="start" xml:space="preserve"> id</text>
+      </g>
       <text class="field-type" y="397" xml:space="preserve"><tspan x="46" dy="0">SectionId</tspan></text>
       <text class="description" y="421" xml:space="preserve"><tspan x="46" dy="0">The section&apos;s key.</tspan></text>
-      <text class="field-name" y="381" xml:space="preserve"><tspan x="200" dy="0">heading</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="206" y="380.28" text-anchor="middle">−</text>
+        <text x="212" y="381" text-anchor="start" xml:space="preserve"> heading</text>
+      </g>
       <text class="field-type" y="397" xml:space="preserve"><tspan x="200" dy="0">String</tspan></text>
       <text class="description" y="421" xml:space="preserve"><tspan x="200" dy="0">The section heading.</tspan></text>
-      <text class="field-name" y="381" xml:space="preserve"><tspan x="369" dy="0">notes</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="375" y="380.28" text-anchor="middle">−</text>
+        <text x="381" y="381" text-anchor="start" xml:space="preserve"> notes</text>
+      </g>
       <text class="field-type" y="397" xml:space="preserve"><tspan x="369" dy="0">Vec&lt;Note&gt;</tspan></text>
       <text class="description" y="421" xml:space="preserve"><tspan x="369" dy="0">Remarks pinned to </tspan><tspan x="369" dy="18">this section.</tspan></text>
       <text class="target" text-anchor="end" y="461" xml:space="preserve"><tspan x="529" dy="0">▸ <tspan class="md-code">Note</tspan></tspan></text>
-      <text class="field-name" y="381" xml:space="preserve"><tspan x="557" dy="0">children</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="563" y="380.28" text-anchor="middle">−</text>
+        <text x="569" y="381" text-anchor="start" xml:space="preserve"> children</text>
+      </g>
       <text class="field-type" y="397" xml:space="preserve"><tspan x="557" dy="0">Vec&lt;Section&gt;</tspan></text>
       <text class="description" y="421" xml:space="preserve"><tspan x="557" dy="0">Subsections in </tspan><tspan x="557" dy="18">reading order.</tspan></text>
       <text class="target" text-anchor="end" y="461" xml:space="preserve"><tspan x="717" dy="0">▸ <tspan class="md-code">Section</tspan></tspan></text>
@@ -79,17 +110,17 @@
   </g>
   <g class="relationships">
     <g class="relationship-route">
-      <title xml:space="preserve">Note → Section</title>
+      <title xml:space="preserve">- Note → - Section</title>
       <path class="relationship" d="M 302 226 L 316 226 L 316 290" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="302" cy="226" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">Outline → Section</title>
+      <title xml:space="preserve">- Outline → - Section</title>
       <path class="relationship" d="M 627 160 L 641 160 L 641 290" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="627" cy="160" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">Section → Section</title>
+      <title xml:space="preserve">- Section → - Section</title>
       <path class="relationship" d="M 654 472 L 654 486 L 745 486 L 745 276 L 717 276 L 717 290" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="654" cy="472" r="4"/>
     </g>

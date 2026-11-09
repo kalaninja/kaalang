@@ -10,7 +10,7 @@ use crate::{
         Point, Scene,
     },
     markup::{
-        BASE_STYLE, FONT_WEIGHT_BOLD, FONT_WEIGHT_MEDIUM, FONT_WEIGHT_REGULAR,
+        BADGE_STYLE, BASE_STYLE, FONT_WEIGHT_BOLD, FONT_WEIGHT_MEDIUM, FONT_WEIGHT_REGULAR,
         FONT_WEIGHT_SEMIBOLD, MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker,
         escape, markdown_styles, needs_composed_lines, write_composed_lines, write_lines,
         write_title,
@@ -120,7 +120,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str, part: Option<usize>) -> 
       .code {{ font-family: {MONOSPACE}; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: {STROKE_WIDTH}; stroke-dasharray: {CYCLE_DASH_LENGTH} {CYCLE_DASH_GAP}; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: {FONT_WEIGHT_SEMIBOLD}; paint-order: stroke; stroke: #ffffff; stroke-width: {CYCLE_CAPTION_HALO}px; }}
-{cycle_math}{markdown_styles}{stage_styles}{cap_styles}    </style>
+{BADGE_STYLE}{cycle_math}{markdown_styles}{stage_styles}{cap_styles}    </style>
   </defs>
 {background}  <g class="cycle-regions">
 "#

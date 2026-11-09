@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="390" viewBox="0 0 680 390" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="398" viewBox="0 0 680 398" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for end_below_nested_back_edges</title>
-  <desc id="kaalang-description">Nodes: Start: end_below_nested_back_edges with parameters mut mode: u8 handing over mut mode; Cycle: Choose an outer route until one produces a result. capturing mut mode handing over selected; End: u8 capturing selected. Connections: Start: end_below_nested_back_edges to Cycle: Choose an outer route until one produces a result.; Cycle: Choose an outer route until one produces a result. to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: - end_below_nested_back_edges with parameters mut mode: u8 handing over mut mode; Cycle: Choose an outer route until one produces a result. capturing mut mode handing over selected; End: u8 capturing selected. Connections: Start: - end_below_nested_back_edges to Cycle: Choose an outer route until one produces a result.; Cycle: Choose an outer route until one produces a result. to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -30,29 +52,33 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 228 L 172 300
+      M 172 98 L 172 170
+      M 172 236 L 172 308
     "/>
-    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut mode</tspan></text>
-    <text class="connection-label code" x="185" y="289" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">mut mode</tspan></text>
+    <text class="connection-label code" x="185" y="297" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">end_below_nested_back_edges</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-117.18" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">end_below_nested_back_edges</tspan></text>
+      </g>
     </g>
-    <g class="node cycle" transform="translate(172 195)">
+    <g class="node cycle" transform="translate(172 203)">
       <title xml:space="preserve">Choose an outer route until one produces a result.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="8"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Choose an outer route until </tspan><tspan x="-124" dy="18">one produces a result.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node end" transform="translate(172 329)">
+    <g class="node end" transform="translate(172 337)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

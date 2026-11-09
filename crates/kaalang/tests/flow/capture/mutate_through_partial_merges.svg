@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1396" viewBox="0 0 1424 1396" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1414" viewBox="0 0 1424 1414" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for mutate_through_partial_merges</title>
-  <desc id="kaalang-description">Nodes: Start: mutate_through_partial_merges with parameters source: u8; refine: bool handing over source, refine; Select: Choose the source. capturing source; Case: Refined source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over third; Question: Refine the first source? capturing first, refine handing over yes / no; Action: Build the refined value. capturing yes handing over mut partial; Action: Build the unrefined value. capturing no handing over mut partial; Action: Build the second value. capturing second handing over mut partial; Action: Extend the partially merged value. capturing &amp;mut partial; Action: Carry the partial value to the outer merge. capturing partial handing over mut shared; Action: Build the fallback value. capturing third handing over mut shared; Action: Extend the fully merged value. capturing &amp;mut shared; End: Vec&lt;u8&gt; capturing shared; Merge: mut partial; Merge: mut shared. Connections: Start: mutate_through_partial_merges to Select: Choose the source.; Select: Choose the source. to Case: Refined source.; Select: Choose the source. to Case: Second source.; Select: Choose the source. to Case: Fallback.; Case: Refined source. to Question: Refine the first source?; Case: Second source. to Action: Build the second value.; Case: Fallback. to Action: Build the fallback value.; Question: Refine the first source? branch 1 to Action: Build the refined value.; Question: Refine the first source? branch 2 to Action: Build the unrefined value.; Action: Build the refined value. to the mut partial merge; Action: Build the unrefined value. to the mut partial merge; Action: Build the second value. to the mut partial merge; Action: Extend the partially merged value. to Action: Carry the partial value to the outer merge.; Action: Carry the partial value to the outer merge. to the mut shared merge; Action: Build the fallback value. to the mut shared merge; Action: Extend the fully merged value. to End: Vec&lt;u8&gt;; the mut partial merge to Action: Extend the partially merged value.; the mut shared merge to Action: Extend the fully merged value..</desc>
+  <desc id="kaalang-description">Nodes: Start: - mutate_through_partial_merges with parameters source: u8; refine: bool handing over source, refine; Select: Choose the source. capturing source; Case: Refined source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over third; Question: Refine the first source? capturing first, refine handing over yes / no; Action: Build the refined value. capturing yes handing over mut partial; Action: Build the unrefined value. capturing no handing over mut partial; Action: Build the second value. capturing second handing over mut partial; Action: Extend the partially merged value. capturing &amp;mut partial; Action: Carry the partial value to the outer merge. capturing partial handing over mut shared; Action: Build the fallback value. capturing third handing over mut shared; Action: Extend the fully merged value. capturing &amp;mut shared; End: Vec&lt;u8&gt; capturing shared; Merge: mut partial; Merge: mut shared. Connections: Start: - mutate_through_partial_merges to Select: Choose the source.; Select: Choose the source. to Case: Refined source.; Select: Choose the source. to Case: Second source.; Select: Choose the source. to Case: Fallback.; Case: Refined source. to Question: Refine the first source?; Case: Second source. to Action: Build the second value.; Case: Fallback. to Action: Build the fallback value.; Question: Refine the first source? branch 1 to Action: Build the refined value.; Question: Refine the first source? branch 2 to Action: Build the unrefined value.; Action: Build the refined value. to the mut partial merge; Action: Build the unrefined value. to the mut partial merge; Action: Build the second value. to the mut partial merge; Action: Extend the partially merged value. to Action: Carry the partial value to the outer merge.; Action: Carry the partial value to the outer merge. to the mut shared merge; Action: Build the fallback value. to the mut shared merge; Action: Extend the fully merged value. to End: Vec&lt;u8&gt;; the mut partial merge to Action: Extend the partially merged value.; the mut shared merge to Action: Extend the fully merged value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -30,119 +52,124 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 98 L 172 170
-      M 172 242 L 172 314
-      M 300 206 L 892 206 L 892 314
-      M 300 206 L 1252 206 L 1252 314
-      M 172 384 L 172 456
-      M 892 384 L 892 456
-      M 1252 384 L 1252 456
-      M 172 528 L 172 600
-      M 312 492 L 532 492 L 532 600
-      M 172 664 L 172 740
-      M 532 664 L 532 740 L 172 740
-      M 892 528 L 892 740 L 172 740
-      M 172 880 L 172 952
-      M 172 1018 L 172 1094
-      M 1252 528 L 1252 1094 L 172 1094
-      M 172 1234 L 172 1306
-      M 172 740 L 172 816
-      M 172 1094 L 172 1170
+      M 172 116 L 172 188
+      M 172 260 L 172 332
+      M 300 224 L 892 224 L 892 332
+      M 300 224 L 1252 224 L 1252 332
+      M 172 402 L 172 474
+      M 892 402 L 892 474
+      M 1252 402 L 1252 474
+      M 172 546 L 172 618
+      M 312 510 L 532 510 L 532 618
+      M 172 682 L 172 758
+      M 532 682 L 532 758 L 172 758
+      M 892 546 L 892 758 L 172 758
+      M 172 898 L 172 970
+      M 172 1036 L 172 1112
+      M 1252 546 L 1252 1112 L 172 1112
+      M 172 1252 L 172 1324
+      M 172 758 L 172 834
+      M 172 1112 L 172 1188
     "/>
-    <text class="connection-label code" x="185" y="758" xml:space="preserve"><tspan x="185" dy="0">mut partial</tspan></text>
-    <text class="connection-label code" x="185" y="1112" xml:space="preserve"><tspan x="185" dy="0">mut shared</tspan></text>
-    <text class="connection-label code" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">second</tspan></text>
-    <text class="connection-label code" x="1265" y="445" xml:space="preserve"><tspan x="1265" dy="0">third</tspan></text>
-    <text class="connection-label code" x="185" y="589" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label code" x="545" y="589" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
-    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">source, refine</tspan></text>
-    <text class="connection-label code" x="185" y="402" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
-    <text class="connection-label code" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first, refine</tspan></text>
-    <text class="connection-label code" x="185" y="805" xml:space="preserve"><tspan x="185" dy="0">&amp;mut partial</tspan></text>
-    <text class="connection-label code" x="185" y="941" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
-    <text class="connection-label code" x="185" y="1159" xml:space="preserve"><tspan x="185" dy="0">&amp;mut shared</tspan></text>
-    <text class="connection-label code" x="185" y="1295" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label code" x="185" y="776" xml:space="preserve"><tspan x="185" dy="0">mut partial</tspan></text>
+    <text class="connection-label code" x="185" y="1130" xml:space="preserve"><tspan x="185" dy="0">mut shared</tspan></text>
+    <text class="connection-label code" x="905" y="463" xml:space="preserve"><tspan x="905" dy="0">second</tspan></text>
+    <text class="connection-label code" x="1265" y="463" xml:space="preserve"><tspan x="1265" dy="0">third</tspan></text>
+    <text class="connection-label code" x="185" y="607" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="545" y="607" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">source, refine</tspan></text>
+    <text class="connection-label code" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
+    <text class="connection-label code" x="185" y="463" xml:space="preserve"><tspan x="185" dy="0">first, refine</tspan></text>
+    <text class="connection-label code" x="185" y="823" xml:space="preserve"><tspan x="185" dy="0">&amp;mut partial</tspan></text>
+    <text class="connection-label code" x="185" y="959" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label code" x="185" y="1177" xml:space="preserve"><tspan x="185" dy="0">&amp;mut shared</tspan></text>
+    <text class="connection-label code" x="185" y="1313" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 65 L 408 65"/>
-    <g class="parameter-panel" transform="translate(528 65)">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan><tspan x="-104" dy="18">refine: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 740)">
+    <g class="node merge" transform="translate(172 758)">
       <title xml:space="preserve">the mut partial merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 1094)">
+    <g class="node merge" transform="translate(172 1112)">
       <title xml:space="preserve">the mut shared merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">mutate_through_partial_merge</tspan><tspan x="0" dy="18">s</tspan></text>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">mutate_through_partial_merge</tspan></text>
+        <text x="-4.34" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">s</tspan></text>
+      </g>
     </g>
-    <g class="node select" transform="translate(172 206)">
+    <g class="node select" transform="translate(172 224)">
       <title xml:space="preserve">Choose the source.</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose the source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 349)">
+    <g class="node case" transform="translate(172 367)">
       <title xml:space="preserve">Refined source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Refined source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 349)">
+    <g class="node case" transform="translate(892 367)">
       <title xml:space="preserve">Second source.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second source.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1252 349)">
+    <g class="node case" transform="translate(1252 367)">
       <title xml:space="preserve">Fallback.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Fallback.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 492)">
+    <g class="node question" transform="translate(172 510)">
       <title xml:space="preserve">Refine the first source?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Refine the first source?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 632)">
+    <g class="node action" transform="translate(172 650)">
       <title xml:space="preserve">Build the refined value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the refined value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 632)">
+    <g class="node action" transform="translate(532 650)">
       <title xml:space="preserve">Build the unrefined value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the unrefined value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 492)">
+    <g class="node action" transform="translate(892 510)">
       <title xml:space="preserve">Build the second value.</title>
       <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 848)">
+    <g class="node action" transform="translate(172 866)">
       <title xml:space="preserve">Extend the partially merged value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extend the partially merged value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 985)">
+    <g class="node action" transform="translate(172 1003)">
       <title xml:space="preserve">Carry the partial value to the outer merge.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Carry the partial value to the </tspan><tspan x="-124" dy="18">outer merge.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1252 492)">
+    <g class="node action" transform="translate(1252 510)">
       <title xml:space="preserve">Build the fallback value.</title>
       <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the fallback value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1202)">
+    <g class="node action" transform="translate(172 1220)">
       <title xml:space="preserve">Extend the fully merged value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extend the fully merged value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1335)">
+    <g class="node end" transform="translate(172 1353)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;u8&gt;</tspan></text>
     </g>

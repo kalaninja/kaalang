@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="639" height="246" viewBox="0 0 639 246" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for Article</title>
-  <desc id="kaalang-description">Type Article.</desc>
+  <title id="kaalang-title">kaalang type diagram for - Article</title>
+  <desc id="kaalang-description">Type - Article.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -19,28 +19,41 @@
       .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
       .relationship-source { fill: currentColor; }
       .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
     </style>
     <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card focus">
-      <title xml:space="preserve">Article</title>
+      <title xml:space="preserve">- Article</title>
       <rect class="card-shape" x="32" y="32" width="575" height="182"/>
       <path class="card-rules" d="M 32 102 L 607 102 M 220 102 L 220 214 M 408 102 L 408 214"/>
       <rect class="card-outline" x="32" y="32" width="575" height="182"/>
-      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">Article</tspan></text>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Article</text>
+      </g>
       <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="593" dy="0">struct · repr(Rust)</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">An article with its current and earlier descriptions.</tspan></text>
-      <text class="field-name" y="123" xml:space="preserve"><tspan x="46" dy="0">current</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="122.28" text-anchor="middle">−</text>
+        <text x="58" y="123" text-anchor="start" xml:space="preserve"> current</text>
+      </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">CurrentDetails</tspan></text>
       <text class="description" y="163" xml:space="preserve"><tspan x="46" dy="0">The current </tspan><tspan x="46" dy="18">description.</tspan></text>
       <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="206" dy="0">▸ <tspan class="md-code">CurrentDetails</tspan></tspan></text>
-      <text class="field-name" y="123" xml:space="preserve"><tspan x="234" dy="0">history</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="240" y="122.28" text-anchor="middle">−</text>
+        <text x="246" y="123" text-anchor="start" xml:space="preserve"> history</text>
+      </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="234" dy="0">History</tspan></text>
       <text class="description" y="163" xml:space="preserve"><tspan x="234" dy="0">The article&apos;s revision </tspan><tspan x="234" dy="18">history.</tspan></text>
       <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="394" dy="0">▸ <tspan class="md-code">History</tspan></tspan></text>
-      <text class="field-name" y="123" xml:space="preserve"><tspan x="422" dy="0">last_seen</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="428" y="122.28" text-anchor="middle">−</text>
+        <text x="434" y="123" text-anchor="start" xml:space="preserve"> last_seen</text>
+      </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="422" dy="0">Option&lt;RevisionDetails&gt;</tspan></text>
       <text class="description" y="163" xml:space="preserve"><tspan x="422" dy="0">The revision readers </tspan><tspan x="422" dy="18">saw last.</tspan></text>
       <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="593" dy="0">▸ <tspan class="md-code">RevisionDetails</tspan></tspan></text>

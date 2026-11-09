@@ -5,11 +5,11 @@ use std::num::NonZeroUsize;
 
 use kaalang_compiler::{Annotation, Field, TypeForm};
 use proc_macro2::{Span, TokenStream, TokenTree};
-use syn::{Item, Meta, ext::IdentExt, spanned::Spanned};
+use syn::{Item, Meta, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
     RenderError, TypeCard, collapsed, collapsed_text, location, parse_file, parser_source,
-    validate_description, validate_label,
+    validate_description, validate_label, with_visibility,
 };
 
 mod layout;
@@ -108,7 +108,7 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
         _ => String::new(),
     };
     let read = Card {
-        name: format!("{}{generics}", card.header),
+        name: with_visibility(visibility(&item), &format!("{}{generics}", card.header)),
         kind: kind(source, &item),
         description: declaration.description,
         structure,
@@ -121,7 +121,7 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
 /// in source order, as `TypeDeclaration::relationships` lists them.
 fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usize) {
     let mut relationships = 0;
-    let mut tiles = |fields: &[Field]| -> Vec<Tile> {
+    let mut tiles = |fields: &[Field], in_variant: bool| -> Vec<Tile> {
         fields
             .iter()
             .enumerate()
@@ -140,13 +140,17 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
                         )
                     }
                 };
+                let name = field
+                    .name
+                    .as_ref()
+                    .map_or_else(|| position.to_string(), |name| name.unraw().to_string());
                 Tile {
-                    label: Some(
-                        field
-                            .name
-                            .as_ref()
-                            .map_or_else(|| position.to_string(), |name| name.unraw().to_string()),
-                    ),
+                    // A variant's fields take the enum's visibility.
+                    label: Some(if in_variant {
+                        name
+                    } else {
+                        with_visibility(&field.visibility, &name)
+                    }),
                     ty: collapsed(source, field.ty.span()),
                     description,
                     drawn: target
@@ -159,8 +163,8 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
     };
     let structure = match form {
         TypeForm::Struct(fields) | TypeForm::Union(fields) if fields.is_empty() => Structure::Empty,
-        TypeForm::Struct(fields) => Structure::Row(tiles(fields)),
-        TypeForm::Union(fields) => Structure::Stack(tiles(fields)),
+        TypeForm::Struct(fields) => Structure::Row(tiles(fields, false)),
+        TypeForm::Union(fields) => Structure::Stack(tiles(fields, false)),
         TypeForm::Enum(variants) if variants.is_empty() => Structure::Empty,
         TypeForm::Enum(variants) => Structure::Variants(
             variants
@@ -168,7 +172,7 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
                 .map(|variant| VariantTile {
                     name: variant.name.unraw().to_string(),
                     case: variant.case.clone(),
-                    tiles: tiles(&variant.fields),
+                    tiles: tiles(&variant.fields, true),
                 })
                 .collect(),
         ),
@@ -186,6 +190,16 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
         }
     };
     (structure, relationships)
+}
+
+fn visibility(item: &Item) -> &Visibility {
+    match item {
+        Item::Struct(declaration) => &declaration.vis,
+        Item::Enum(declaration) => &declaration.vis,
+        Item::Union(declaration) => &declaration.vis,
+        Item::Type(declaration) => &declaration.vis,
+        _ => unreachable!("`type_items` lists only the supported forms"),
+    }
 }
 
 /// `struct · repr(Rust)`: the form, and the representation Rust's `repr`

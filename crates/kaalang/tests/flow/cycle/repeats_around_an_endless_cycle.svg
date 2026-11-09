@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1336" viewBox="0 0 1840 1336" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1354" viewBox="0 0 1840 1354" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for repeats_around_an_endless_cycle</title>
-  <desc id="kaalang-description">Cycles: Settle the mode. with inputs mut mode and outputs leave; Serve requests forever. with inputs serve, mut mode and outputs (). Nodes: Start: repeats_around_an_endless_cycle with parameters mut mode: u8 handing over mut mode; Select: Which route? capturing &amp;mode; Case: Advance on the left. handing over left; Case: Serve forever. handing over serve; Case: Advance on the right. handing over right; Case: Leave. handing over leave; Action: Settle from the left. capturing left, &amp;mut mode handing over advanced; Select: Which request? capturing &amp;mode; Case: A read. handing over read; Case: A write. handing over write; Action: Serve a read. capturing read handing over served; Action: Serve a write. capturing write handing over served; Action: Settle from the right. capturing right, &amp;mut mode handing over advanced; End: u8 capturing mode; Merge: advanced; Merge: served. Connections: Start: repeats_around_an_endless_cycle to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Serve forever.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Leave.; Case: Advance on the left. to Action: Settle from the left.; Case: Serve forever. to the entry of the cycle; Case: Advance on the right. to Action: Settle from the right.; Case: Leave. to End: u8; Action: Settle from the left. to the advanced merge at the iteration tail of the cycle; Select: Which request? to Case: A read.; Select: Which request? to Case: A write.; Case: A read. to Action: Serve a read.; Case: A write. to Action: Serve a write.; Action: Serve a read. to the served merge at the iteration tail of the cycle; Action: Serve a write. to the served merge at the iteration tail of the cycle; Action: Settle from the right. to the advanced merge at the iteration tail of the cycle; the entry of the cycle to Select: Which route?; the entry of the cycle to Select: Which request?; Repeat from the served merge at the iteration tail of the cycle to the entry of the cycle; Repeat from the advanced merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Settle the mode. with inputs mut mode and outputs leave; Serve requests forever. with inputs serve, mut mode and outputs (). Nodes: Start: - repeats_around_an_endless_cycle with parameters mut mode: u8 handing over mut mode; Select: Which route? capturing &amp;mode; Case: Advance on the left. handing over left; Case: Serve forever. handing over serve; Case: Advance on the right. handing over right; Case: Leave. handing over leave; Action: Settle from the left. capturing left, &amp;mut mode handing over advanced; Select: Which request? capturing &amp;mode; Case: A read. handing over read; Case: A write. handing over write; Action: Serve a read. capturing read handing over served; Action: Serve a write. capturing write handing over served; Action: Settle from the right. capturing right, &amp;mut mode handing over advanced; End: u8 capturing mode; Merge: advanced; Merge: served. Connections: Start: - repeats_around_an_endless_cycle to the entry of the cycle; Select: Which route? to Case: Advance on the left.; Select: Which route? to Case: Serve forever.; Select: Which route? to Case: Advance on the right.; Select: Which route? to Case: Leave.; Case: Advance on the left. to Action: Settle from the left.; Case: Serve forever. to the entry of the cycle; Case: Advance on the right. to Action: Settle from the right.; Case: Leave. to End: u8; Action: Settle from the left. to the advanced merge at the iteration tail of the cycle; Select: Which request? to Case: A read.; Select: Which request? to Case: A write.; Case: A read. to Action: Serve a read.; Case: A write. to Action: Serve a write.; Action: Serve a read. to the served merge at the iteration tail of the cycle; Action: Serve a write. to the served merge at the iteration tail of the cycle; Action: Settle from the right. to the advanced merge at the iteration tail of the cycle; the entry of the cycle to Select: Which route?; the entry of the cycle to Select: Which request?; Repeat from the served merge at the iteration tail of the cycle to the entry of the cycle; Repeat from the advanced merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,144 +23,171 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Settle the mode.</title>
-    <rect class="cycle-boundary" x="32" y="135" width="1776" height="1070" rx="12"/>
-    <text class="cycle-caption" x="1796" y="149" text-anchor="end" xml:space="preserve"><tspan x="1796" dy="0">Settle the mode.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="153" width="1776" height="1070" rx="12"/>
+    <text class="cycle-caption" x="1796" y="167" text-anchor="end" xml:space="preserve"><tspan x="1796" dy="0">Settle the mode.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Serve requests forever.</title>
-    <rect class="cycle-boundary" x="392" y="525" width="716" height="600" rx="12"/>
-    <text class="cycle-caption" x="1096" y="539" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Serve requests forever.</tspan></text>
+    <rect class="cycle-boundary" x="392" y="543" width="716" height="600" rx="12"/>
+    <text class="cycle-caption" x="1096" y="557" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Serve requests forever.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 220 98 L 220 170
-      M 220 314 L 220 386
-      M 348 278 L 580 278 L 580 386
-      M 348 278 L 1300 278 L 1300 386
-      M 348 278 L 1660 278 L 1660 386
-      M 220 456 L 220 528
-      M 580 456 L 580 560
-      M 1300 456 L 1300 528
-      M 1660 456 L 1660 1246
-      M 220 592 L 220 1170
-      M 580 736 L 580 808
-      M 708 700 L 940 700 L 940 808
-      M 580 878 L 580 950
-      M 940 878 L 940 950
-      M 580 1014 L 580 1090
-      M 940 1014 L 940 1090 L 580 1090
-      M 1300 592 L 1300 1170 L 220 1170
-      M 220 170 L 220 242
-      M 580 560 L 580 664
+      M 220 116 L 220 188
+      M 220 332 L 220 404
+      M 348 296 L 580 296 L 580 404
+      M 348 296 L 1300 296 L 1300 404
+      M 348 296 L 1660 296 L 1660 404
+      M 220 474 L 220 546
+      M 580 474 L 580 578
+      M 1300 474 L 1300 546
+      M 1660 474 L 1660 1264
+      M 220 610 L 220 1188
+      M 580 754 L 580 826
+      M 708 718 L 940 718 L 940 826
+      M 580 896 L 580 968
+      M 940 896 L 940 968
+      M 580 1032 L 580 1108
+      M 940 1032 L 940 1108 L 580 1108
+      M 1300 610 L 1300 1188 L 220 1188
+      M 220 188 L 220 260
+      M 580 578 L 580 682
     "/>
     <path class="connection" d="
-      M 580 1090 L 420 1090 L 420 560 L 580 560
+      M 580 1108 L 420 1108 L 420 578 L 580 578
     " marker-end="url(#back-edge-arrow)"/>
     <path class="connection" d="
-      M 220 1170 L 60 1170 L 60 170 L 220 170
+      M 220 1188 L 60 1188 L 60 188 L 220 188
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label code" x="233" y="1188" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
-    <text class="connection-label code" x="593" y="1108" xml:space="preserve"><tspan x="593" dy="0">served</tspan></text>
-    <text class="connection-label code" x="593" y="939" xml:space="preserve"><tspan x="593" dy="0">read</tspan></text>
-    <text class="connection-label code" x="953" y="939" xml:space="preserve"><tspan x="953" dy="0">write</tspan></text>
-    <text class="connection-label code" x="233" y="116" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
-    <text class="connection-label code" x="233" y="474" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
-    <text class="connection-label code" x="593" y="474" xml:space="preserve"><tspan x="593" dy="0">serve</tspan></text>
-    <text class="connection-label code" x="1313" y="474" xml:space="preserve"><tspan x="1313" dy="0">right</tspan></text>
-    <text class="connection-label code" x="1673" y="474" xml:space="preserve"><tspan x="1673" dy="0">leave</tspan></text>
-    <text class="connection-label code" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;mode</tspan></text>
-    <text class="connection-label code" x="233" y="517" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
-    <text class="connection-label code" x="593" y="653" xml:space="preserve"><tspan x="593" dy="0">&amp;mode</tspan></text>
-    <text class="connection-label code" x="1313" y="517" xml:space="preserve"><tspan x="1313" dy="0">right, &amp;mut mode</tspan></text>
-    <text class="connection-label code" x="1673" y="1235" xml:space="preserve"><tspan x="1673" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="233" y="1206" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
+    <text class="connection-label code" x="593" y="1126" xml:space="preserve"><tspan x="593" dy="0">served</tspan></text>
+    <text class="connection-label code" x="593" y="957" xml:space="preserve"><tspan x="593" dy="0">read</tspan></text>
+    <text class="connection-label code" x="953" y="957" xml:space="preserve"><tspan x="953" dy="0">write</tspan></text>
+    <text class="connection-label code" x="233" y="134" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
+    <text class="connection-label code" x="233" y="492" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label code" x="593" y="492" xml:space="preserve"><tspan x="593" dy="0">serve</tspan></text>
+    <text class="connection-label code" x="1313" y="492" xml:space="preserve"><tspan x="1313" dy="0">right</tspan></text>
+    <text class="connection-label code" x="1673" y="492" xml:space="preserve"><tspan x="1673" dy="0">leave</tspan></text>
+    <text class="connection-label code" x="233" y="249" xml:space="preserve"><tspan x="233" dy="0">&amp;mode</tspan></text>
+    <text class="connection-label code" x="233" y="535" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="593" y="671" xml:space="preserve"><tspan x="593" dy="0">&amp;mode</tspan></text>
+    <text class="connection-label code" x="1313" y="535" xml:space="preserve"><tspan x="1313" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="1673" y="1253" xml:space="preserve"><tspan x="1673" dy="0">mode</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 360 65 L 456 65"/>
-    <g class="parameter-panel" transform="translate(576 65)">
+    <path class="parameter-link" d="M 360 74 L 456 74"/>
+    <g class="parameter-panel" transform="translate(576 74)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
     </g>
-    <g class="node merge" transform="translate(220 1170)">
+    <g class="node merge" transform="translate(220 1188)">
       <title xml:space="preserve">the advanced merge at the iteration tail of the cycle</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(580 1090)">
+    <g class="node merge" transform="translate(580 1108)">
       <title xml:space="preserve">the served merge at the iteration tail of the cycle</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(220 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">repeats_around_an_endless_cy</tspan><tspan x="0" dy="18">cle</tspan></text>
+    <g class="node start" transform="translate(220 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">repeats_around_an_endless_cy</tspan></text>
+        <text x="-13.02" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">cle</tspan></text>
+      </g>
     </g>
-    <g class="node select" transform="translate(220 278)">
+    <g class="node select" transform="translate(220 296)">
       <title xml:space="preserve">Which route?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which route?</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 421)">
+    <g class="node case" transform="translate(220 439)">
       <title xml:space="preserve">Advance on the left.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the left.</tspan></text>
     </g>
-    <g class="node case" transform="translate(580 421)">
+    <g class="node case" transform="translate(580 439)">
       <title xml:space="preserve">Serve forever.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Serve forever.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1300 421)">
+    <g class="node case" transform="translate(1300 439)">
       <title xml:space="preserve">Advance on the right.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Advance on the right.</tspan></text>
     </g>
-    <g class="node case" transform="translate(1660 421)">
+    <g class="node case" transform="translate(1660 439)">
       <title xml:space="preserve">Leave.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Leave.</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 560)">
+    <g class="node action" transform="translate(220 578)">
       <title xml:space="preserve">Settle from the left.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Settle from the left.</tspan></text>
     </g>
-    <g class="node select" transform="translate(580 700)">
+    <g class="node select" transform="translate(580 718)">
       <title xml:space="preserve">Which request?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which request?</tspan></text>
     </g>
-    <g class="node case" transform="translate(580 843)">
+    <g class="node case" transform="translate(580 861)">
       <title xml:space="preserve">A read.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A read.</tspan></text>
     </g>
-    <g class="node case" transform="translate(940 843)">
+    <g class="node case" transform="translate(940 861)">
       <title xml:space="preserve">A write.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">A write.</tspan></text>
     </g>
-    <g class="node action" transform="translate(580 982)">
+    <g class="node action" transform="translate(580 1000)">
       <title xml:space="preserve">Serve a read.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Serve a read.</tspan></text>
     </g>
-    <g class="node action" transform="translate(940 982)">
+    <g class="node action" transform="translate(940 1000)">
       <title xml:space="preserve">Serve a write.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Serve a write.</tspan></text>
     </g>
-    <g class="node action" transform="translate(1300 560)">
+    <g class="node action" transform="translate(1300 578)">
       <title xml:space="preserve">Settle from the right.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Settle from the right.</tspan></text>
     </g>
-    <g class="node end" transform="translate(1660 1275)">
+    <g class="node end" transform="translate(1660 1293)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

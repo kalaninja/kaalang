@@ -5,7 +5,7 @@
 use std::{error::Error, fmt, num::NonZeroUsize};
 
 use proc_macro2::Span;
-use syn::File;
+use syn::{File, Visibility};
 
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
@@ -281,6 +281,17 @@ fn parser_source<'a>(source: &'a str, file: &File) -> &'a str {
 /// The authored text under a span with every whitespace run collapsed to one space.
 fn collapsed(source: &str, span: Span) -> String {
     collapsed_text(&source[span.byte_range()])
+}
+
+/// `text` after its UML visibility marker: `+` for `pub`, `~` for a restricted
+/// form such as `pub(crate)`, and `-` for private.
+fn with_visibility(visibility: &Visibility, text: &str) -> String {
+    let marker = match visibility {
+        Visibility::Public(_) => '+',
+        Visibility::Restricted(_) => '~',
+        Visibility::Inherited => '-',
+    };
+    format!("{marker} {text}")
 }
 
 fn collapsed_text(text: &str) -> String {

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="902" viewBox="0 0 1064 902" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="920" viewBox="0 0 1064 920" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_terminal_branch_drops_a_wire</title>
-  <desc id="kaalang-description">Nodes: Start: nested_terminal_branch_drops_a_wire with parameters outer: bool; inner: bool handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Action: Prepare the nested values. capturing nested handing over probe, extra; Question: Finish early? capturing probe, inner handing over early / late; Action: Produce the early result without the extra value. capturing early handing over end; Action: Combine the late result with the extra value. capturing late, extra handing over end; Action: Produce the direct result. capturing direct handing over end; End: u32 capturing end; Merge: end. Connections: Start: nested_terminal_branch_drops_a_wire to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Action: Prepare the nested values.; Question: Take the nested branch? branch 2 to Action: Produce the direct result.; Action: Prepare the nested values. to Question: Finish early?; Question: Finish early? branch 1 to Action: Produce the early result without the extra value.; Question: Finish early? branch 2 to Action: Combine the late result with the extra value.; Action: Produce the early result without the extra value. to the end merge; Action: Combine the late result with the extra value. to the end merge; Action: Produce the direct result. to the end merge; the end merge to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: - nested_terminal_branch_drops_a_wire with parameters outer: bool; inner: bool handing over outer, inner; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Action: Prepare the nested values. capturing nested handing over probe, extra; Question: Finish early? capturing probe, inner handing over early / late; Action: Produce the early result without the extra value. capturing early handing over end; Action: Combine the late result with the extra value. capturing late, extra handing over end; Action: Produce the direct result. capturing direct handing over end; End: u32 capturing end; Merge: end. Connections: Start: - nested_terminal_branch_drops_a_wire to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Action: Prepare the nested values.; Question: Take the nested branch? branch 2 to Action: Produce the direct result.; Action: Prepare the nested values. to Question: Finish early?; Question: Finish early? branch 1 to Action: Produce the early result without the extra value.; Question: Finish early? branch 2 to Action: Combine the late result with the extra value.; Action: Produce the early result without the extra value. to the end merge; Action: Combine the late result with the extra value. to the end merge; Action: Produce the direct result. to the end merge; the end merge to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -30,73 +52,78 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 98 L 172 170
-      M 172 242 L 172 314
-      M 312 206 L 892 206 L 892 314
-      M 172 378 L 172 450
-      M 172 522 L 172 594
-      M 312 486 L 532 486 L 532 594
-      M 172 660 L 172 736
-      M 532 660 L 532 736 L 172 736
-      M 892 378 L 892 736 L 172 736
-      M 172 736 L 172 812
+      M 172 116 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 892 224 L 892 332
+      M 172 396 L 172 468
+      M 172 540 L 172 612
+      M 312 504 L 532 504 L 532 612
+      M 172 678 L 172 754
+      M 532 678 L 532 754 L 172 754
+      M 892 396 L 892 754 L 172 754
+      M 172 754 L 172 830
     "/>
-    <text class="connection-label code" x="185" y="754" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
-    <text class="connection-label code" x="905" y="303" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
-    <text class="connection-label code" x="185" y="583" xml:space="preserve"><tspan x="185" dy="0">early</tspan></text>
-    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">outer, inner</tspan></text>
-    <text class="connection-label code" x="185" y="396" xml:space="preserve"><tspan x="185" dy="0">probe, extra</tspan></text>
-    <text class="connection-label code" x="325" y="504" xml:space="preserve"><tspan x="325" dy="0">late</tspan></text>
-    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">outer, &amp;inner</tspan></text>
-    <text class="connection-label code" x="185" y="439" xml:space="preserve"><tspan x="185" dy="0">probe, inner</tspan></text>
-    <text class="connection-label code" x="545" y="583" xml:space="preserve"><tspan x="545" dy="0">late, extra</tspan></text>
+    <text class="connection-label code" x="185" y="772" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
+    <text class="connection-label code" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label code" x="185" y="601" xml:space="preserve"><tspan x="185" dy="0">early</tspan></text>
+    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">outer, inner</tspan></text>
+    <text class="connection-label code" x="185" y="414" xml:space="preserve"><tspan x="185" dy="0">probe, extra</tspan></text>
+    <text class="connection-label code" x="325" y="522" xml:space="preserve"><tspan x="325" dy="0">late</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">outer, &amp;inner</tspan></text>
+    <text class="connection-label code" x="185" y="457" xml:space="preserve"><tspan x="185" dy="0">probe, inner</tspan></text>
+    <text class="connection-label code" x="545" y="601" xml:space="preserve"><tspan x="545" dy="0">late, extra</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 65 L 408 65"/>
-    <g class="parameter-panel" transform="translate(528 65)">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 736)">
+    <g class="node merge" transform="translate(172 754)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">nested_terminal_branch_drops</tspan><tspan x="0" dy="18">_a_wire</tspan></text>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">nested_terminal_branch_drops</tspan></text>
+        <text x="-30.38" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">_a_wire</tspan></text>
+      </g>
     </g>
-    <g class="node question" transform="translate(172 206)">
+    <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Take the nested branch?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the nested branch?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 346)">
+    <g class="node action" transform="translate(172 364)">
       <title xml:space="preserve">Prepare the nested values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Prepare the nested values.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 486)">
+    <g class="node question" transform="translate(172 504)">
       <title xml:space="preserve">Finish early?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish early?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 627)">
+    <g class="node action" transform="translate(172 645)">
       <title xml:space="preserve">Produce the early result without the extra value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Produce the early result without </tspan><tspan x="-124" dy="18">the extra value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 627)">
+    <g class="node action" transform="translate(532 645)">
       <title xml:space="preserve">Combine the late result with the extra value.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Combine the late result with the </tspan><tspan x="-124" dy="18">extra value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 346)">
+    <g class="node action" transform="translate(892 364)">
       <title xml:space="preserve">Produce the direct result.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the direct result.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 841)">
+    <g class="node end" transform="translate(172 859)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

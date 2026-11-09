@@ -28,7 +28,7 @@ pub(crate) fn render(
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
     }
-    let start = layout::start_text(parser_source, &function.sig);
+    let start = layout::start_text(parser_source, &function);
     let parameters = layout::parameter_text(parser_source, &function.sig);
     let return_type = layout::return_text(parser_source, &function.sig.output);
     validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;

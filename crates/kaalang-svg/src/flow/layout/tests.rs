@@ -378,7 +378,7 @@ fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement
     kaalang_render::compact_arrangement(&mut model);
     change(&mut model.arrangement);
     let model = model;
-    let start = start_text(source, &function.sig);
+    let start = start_text(source, &function);
     let parameters = parameter_text(source, &function.sig);
     let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
     let scene =
@@ -901,7 +901,7 @@ fn start_separates_the_flow_name_and_typed_parameters() {
     let scene = drawn((source, "example"));
     assert_eq!(
         scene.captions.label(NodeId::Start).as_ref(),
-        "example<'a, T> where T: Copy,"
+        "- example<'a, T> where T: Copy,"
     );
     let parameters = scene.parameters.as_ref().expect("the flow has parameters");
     assert_eq!(parameters.parameters, ["r#type: &'a T", "_: usize"]);

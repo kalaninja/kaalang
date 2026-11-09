@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="826" viewBox="0 0 1120 826" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="834" viewBox="0 0 1120 834" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for state_machine_without_stages</title>
-  <desc id="kaalang-description">Cycles: Follow state transitions until Finish. with inputs mut state and outputs done. Nodes: Start: state_machine_without_stages with parameters mut state: State handing over mut state; Select: Which state is selected? capturing &amp;state; Case: First handing over first; Case: Second handing over second; Case: Finish handing over done; Action: Continue to Second. capturing first, &amp;mut state handing over changed; Action: Continue to Finish. capturing second, &amp;mut state handing over changed; End: () capturing nothing; Merge: changed. Connections: Start: state_machine_without_stages to the entry of the cycle; Select: Which state is selected? to Case: First; Select: Which state is selected? to Case: Second; Select: Which state is selected? to Case: Finish; Case: First to Action: Continue to Second.; Case: Second to Action: Continue to Finish.; Case: Finish to End: (); Action: Continue to Second. to the changed merge at the iteration tail of the cycle; Action: Continue to Finish. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which state is selected?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Follow state transitions until Finish. with inputs mut state and outputs done. Nodes: Start: - state_machine_without_stages with parameters mut state: State handing over mut state; Select: Which state is selected? capturing &amp;state; Case: First handing over first; Case: Second handing over second; Case: Finish handing over done; Action: Continue to Second. capturing first, &amp;mut state handing over changed; Action: Continue to Finish. capturing second, &amp;mut state handing over changed; End: () capturing nothing; Merge: changed. Connections: Start: - state_machine_without_stages to the entry of the cycle; Select: Which state is selected? to Case: First; Select: Which state is selected? to Case: Second; Select: Which state is selected? to Case: Finish; Case: First to Action: Continue to Second.; Case: Second to Action: Continue to Finish.; Case: Finish to End: (); Action: Continue to Second. to the changed merge at the iteration tail of the cycle; Action: Continue to Finish. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which state is selected?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .cycle-caption .md-math { color: #166534; }
       .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
       .md-bold { font-weight: 800; }
@@ -50,82 +51,86 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Follow state transitions until Finish.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="1056" height="568" rx="12"/>
-    <text class="cycle-caption" x="1076" y="141" text-anchor="end" xml:space="preserve"><tspan x="1076" dy="0">Follow state transitions until <tspan class="md-code">Finish</tspan>.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="135" width="1056" height="568" rx="12"/>
+    <text class="cycle-caption" x="1076" y="149" text-anchor="end" xml:space="preserve"><tspan x="1076" dy="0">Follow state transitions until <tspan class="md-code">Finish</tspan>.</tspan></text>
     </g>
   </g>
   <g class="connections">
     <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
     <path class="connection" d="
-      M 220 90 L 220 162
-      M 220 306 L 220 378
-      M 348 270 L 580 270 L 580 378
-      M 348 270 L 940 270 L 940 378
-      M 220 448 L 220 520
-      M 580 448 L 580 520
-      M 940 448 L 940 736
-      M 220 584 L 220 660
-      M 580 584 L 580 660 L 220 660
-      M 220 162 L 220 234
+      M 220 98 L 220 170
+      M 220 314 L 220 386
+      M 348 278 L 580 278 L 580 386
+      M 348 278 L 940 278 L 940 386
+      M 220 456 L 220 528
+      M 580 456 L 580 528
+      M 940 456 L 940 744
+      M 220 592 L 220 668
+      M 580 592 L 580 668 L 220 668
+      M 220 170 L 220 242
     "/>
     <path class="connection" d="
-      M 220 660 L 60 660 L 60 162 L 220 162
+      M 220 668 L 60 668 L 60 170 L 220 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label code" x="233" y="678" xml:space="preserve"><tspan x="233" dy="0">changed</tspan></text>
-    <text class="connection-label code" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut state</tspan></text>
-    <text class="connection-label code" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">first</tspan></text>
-    <text class="connection-label code" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">second</tspan></text>
-    <text class="connection-label code" x="953" y="466" xml:space="preserve"><tspan x="953" dy="0">done</tspan></text>
-    <text class="connection-label code" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;state</tspan></text>
-    <text class="connection-label code" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">first, &amp;mut state</tspan></text>
-    <text class="connection-label code" x="593" y="509" xml:space="preserve"><tspan x="593" dy="0">second, &amp;mut state</tspan></text>
-    <text class="connection-label code" x="953" y="725" xml:space="preserve"><tspan x="953" dy="0">()</tspan></text>
+    <text class="connection-label code" x="233" y="686" xml:space="preserve"><tspan x="233" dy="0">changed</tspan></text>
+    <text class="connection-label code" x="233" y="116" xml:space="preserve"><tspan x="233" dy="0">mut state</tspan></text>
+    <text class="connection-label code" x="233" y="474" xml:space="preserve"><tspan x="233" dy="0">first</tspan></text>
+    <text class="connection-label code" x="593" y="474" xml:space="preserve"><tspan x="593" dy="0">second</tspan></text>
+    <text class="connection-label code" x="953" y="474" xml:space="preserve"><tspan x="953" dy="0">done</tspan></text>
+    <text class="connection-label code" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;state</tspan></text>
+    <text class="connection-label code" x="233" y="517" xml:space="preserve"><tspan x="233" dy="0">first, &amp;mut state</tspan></text>
+    <text class="connection-label code" x="593" y="517" xml:space="preserve"><tspan x="593" dy="0">second, &amp;mut state</tspan></text>
+    <text class="connection-label code" x="953" y="733" xml:space="preserve"><tspan x="953" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 360 61 L 456 61"/>
-    <g class="parameter-panel" transform="translate(576 61)">
+    <path class="parameter-link" d="M 360 65 L 456 65"/>
+    <g class="parameter-panel" transform="translate(576 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut state: State</tspan></text>
     </g>
-    <g class="node merge" transform="translate(220 660)">
+    <g class="node merge" transform="translate(220 668)">
       <title xml:space="preserve">the changed merge at the iteration tail of the cycle</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(220 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">state_machine_without_stages</tspan></text>
+    <g class="node start" transform="translate(220 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">state_machine_without_stages</tspan></text>
+      </g>
     </g>
-    <g class="node select" transform="translate(220 270)">
+    <g class="node select" transform="translate(220 278)">
       <title xml:space="preserve">Which state is selected?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which state is selected?</tspan></text>
     </g>
-    <g class="node case" transform="translate(220 413)">
+    <g class="node case" transform="translate(220 421)">
       <title xml:space="preserve">First</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First</tspan></text>
     </g>
-    <g class="node case" transform="translate(580 413)">
+    <g class="node case" transform="translate(580 421)">
       <title xml:space="preserve">Second</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second</tspan></text>
     </g>
-    <g class="node case" transform="translate(940 413)">
+    <g class="node case" transform="translate(940 421)">
       <title xml:space="preserve">Finish</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish</tspan></text>
     </g>
-    <g class="node action" transform="translate(220 552)">
+    <g class="node action" transform="translate(220 560)">
       <title xml:space="preserve">Continue to Second.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to <tspan class="md-code">Second</tspan>.</tspan></text>
     </g>
-    <g class="node action" transform="translate(580 552)">
+    <g class="node action" transform="translate(580 560)">
       <title xml:space="preserve">Continue to Finish.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to <tspan class="md-code">Finish</tspan>.</tspan></text>
     </g>
-    <g class="node end" transform="translate(940 765)">
+    <g class="node end" transform="translate(940 773)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>

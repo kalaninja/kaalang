@@ -160,7 +160,7 @@ impl Text {
         if self == Self::Description {
             RichText::markdown(text)
         } else {
-            RichText::styled(text, self.style())
+            RichText::marked(text, self.style())
         }
     }
 
@@ -169,8 +169,8 @@ impl Text {
     }
 
     /// Wraps at `budget`. Literal lines drop the style they were measured in,
-    /// which their stylesheet rule supplies instead; a description and a
-    /// target mix styles and keep them.
+    /// which their stylesheet rule supplies instead, and keep their visibility
+    /// badge; a description and a target mix styles and keep them.
     fn wrap(self, text: &RichText, budget: i32) -> Vec<RichText> {
         let lines = wrap_text(text, budget.max(1), self.font());
         if matches!(self, Self::Description | Self::Target) {
@@ -178,7 +178,7 @@ impl Text {
         } else {
             lines
                 .iter()
-                .map(|line| RichText::literal(line.as_ref()))
+                .map(|line| RichText::marked(line.as_ref(), Style::default()))
                 .collect()
         }
     }
@@ -763,7 +763,7 @@ impl SizedCard {
     /// structure starts. The description wraps at `natural`.
     fn header(&self, built: &mut Built, natural: i32) -> i32 {
         let mut y = CARD_PADDING_Y;
-        let name = vec![RichText::literal(self.name.as_ref())];
+        let name = vec![RichText::marked(self.name.as_ref(), Style::default())];
         let kind = vec![RichText::literal(self.kind.as_ref())];
         // The kind shares the name's baseline.
         let kind_top = y + Text::Name.first_baseline(&name) - Text::Kind.first_baseline(&kind);

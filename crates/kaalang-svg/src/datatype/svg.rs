@@ -3,9 +3,10 @@ use std::fmt::Write;
 use super::layout::{CardShape, NAME_FONT, Route, Text, TextBlock, TypeScene};
 use crate::{
     markup::{
-        BASE_STYLE, DOT_RADIUS, FONT_WEIGHT_BOLD, FONT_WEIGHT_REGULAR, FONT_WEIGHT_SEMIBOLD,
-        MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker, escape,
-        markdown_styles, needs_composed_lines, write_composed_lines, write_lines, write_title,
+        BADGE_STYLE, BASE_STYLE, DOT_RADIUS, FONT_WEIGHT_BOLD, FONT_WEIGHT_REGULAR,
+        FONT_WEIGHT_SEMIBOLD, MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker,
+        escape, markdown_styles, needs_composed_lines, write_composed_lines, write_lines,
+        write_title,
     },
     text::{LABEL_FONT, SECONDARY_FONT, block_metrics},
 };
@@ -64,7 +65,7 @@ pub(super) fn serialize(scene: &TypeScene) -> String {
       .relationship {{ fill: none; stroke: currentColor; stroke-width: {STROKE_WIDTH}; stroke-linejoin: round; }}
       .relationship-source {{ fill: currentColor; }}
       .port {{ fill: #ffffff; stroke: currentColor; stroke-width: {STROKE_WIDTH}; }}
-{markdown_styles}    </style>
+{BADGE_STYLE}{markdown_styles}    </style>
     {marker}
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>

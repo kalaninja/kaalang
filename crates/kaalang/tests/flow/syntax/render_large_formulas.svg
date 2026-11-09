@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="700" viewBox="0 0 680 700" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_large_formulas</title>
-  <desc id="kaalang-description">Nodes: Start: render_large_formulas with parameters value: u32 handing over value; Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix} capturing value handing over rendered; Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$ capturing rendered handing over literal; End: u32 capturing literal. Connections: Start: render_large_formulas to Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix}; Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix} to Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$; Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$ to End: u32.</desc>
+  <desc id="kaalang-description">Nodes: Start: - render_large_formulas with parameters value: u32 handing over value; Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix} capturing value handing over rendered; Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$ capturing rendered handing over literal; End: u32 capturing literal. Connections: Start: - render_large_formulas to Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix}; Action: \begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix} to Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$; Action: $\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20 \\ 11 &amp; 22\end{matrix}$ to End: u32.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .cycle-caption .md-math { color: #166534; }
       .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
       .md-bold { font-weight: 800; }
@@ -67,7 +68,10 @@
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">render_large_formulas</tspan></text>
+      <g class="label">
+        <text class="md-badge" x="-95.48" y="5.16" text-anchor="middle">−</text>
+        <text x="-88.48" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> render_large_formulas</tspan></text>
+      </g>
     </g>
     <g class="node action" transform="translate(172 263)">
       <title xml:space="preserve">\begin{matrix}1 &amp; 2 \\ 2 &amp; 4 \\ 3 &amp; 6 \\ 4 &amp; 8 \\ 5 &amp; 10 \\ 6 &amp; 12 \\ 7 &amp; 14 \\ 8 &amp; 16 \\ 9 &amp; 18 \\ 10 &amp; 20\end{matrix}</title>

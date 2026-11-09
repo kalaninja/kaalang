@@ -56,11 +56,22 @@ const CODE: Style = Style {
     strikethrough: false,
     underline: false,
     highlight: false,
+    badge: false,
     code: true,
     quote: false,
     script: None,
     color: None,
 };
+
+/// The cell a visibility badge's marker is centered in, as a percentage of the
+/// font size.
+const BADGE_WIDTH_PERCENT: i64 = 100;
+/// The circle's center above the baseline, as a fraction of the font size:
+/// where `+`, `-`, and `~` have theirs.
+pub(crate) const BADGE_CENTER: (i32, i32) = (9, 25);
+/// The marker's baseline below the circle's center, as a fraction of the font
+/// size: the markers sit a third of their own size above it, in every font.
+pub(crate) const BADGE_GLYPH_DROP: (i32, i32) = (3, 10);
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)] // A span combines independent CSS effects.
@@ -70,6 +81,8 @@ pub(crate) struct Style {
     pub(crate) strikethrough: bool,
     pub(crate) underline: bool,
     pub(crate) highlight: bool,
+    /// A visibility marker, centered in a cell of its own.
+    pub(crate) badge: bool,
     pub(crate) code: bool,
     pub(crate) quote: bool,
     pub(crate) script: Option<Script>,
@@ -313,6 +326,32 @@ impl RichText {
     /// Rust source: a name, a type, or a path, measured and set in code.
     pub(crate) fn code(text: impl AsRef<str>) -> Self {
         Self::styled(text, CODE)
+    }
+
+    /// Rust source behind its visibility marker, as `with_visibility` writes
+    /// it: the marker becomes a badge. Without one, the whole text is source.
+    pub(crate) fn marked_code(text: &str) -> Self {
+        Self::marked(text, CODE)
+    }
+
+    /// `text` in one style, with a leading visibility marker as a badge.
+    pub(crate) fn marked(text: &str, style: Style) -> Self {
+        let mut result = Self::default();
+        match text.split_once(' ') {
+            Some((marker @ ("+" | "~" | "-"), rest)) => {
+                result.push(
+                    marker,
+                    Style {
+                        badge: true,
+                        ..style
+                    },
+                );
+                result.push(format!(" {rest}"), style);
+            }
+            _ => result.push(text, style),
+        }
+        result.finish();
+        result
     }
 
     /// Whether the text is Rust source and nothing else.
@@ -789,6 +828,7 @@ fn active_style(effects: &[TagEnd], inline: &[InlineEffect], quote: bool) -> Sty
         highlight: inline
             .iter()
             .any(|effect| matches!(effect, InlineEffect::Highlight)),
+        badge: false,
         code: false,
         quote,
         script: effects.iter().rev().find_map(|effect| match effect {
@@ -825,6 +865,10 @@ fn advance(character: char, code: bool) -> i32 {
 }
 
 fn cluster_advance(cluster: &str, style: Style, font_size: i32) -> i64 {
+    if style.badge {
+        // The cell, whatever glyph it holds.
+        return BADGE_WIDTH_PERCENT * i64::from(font_size) * 100;
+    }
     let character = cluster
         .chars()
         .next()

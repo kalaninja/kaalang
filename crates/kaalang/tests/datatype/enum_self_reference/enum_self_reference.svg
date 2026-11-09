@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="475" height="580" viewBox="0 0 475 580" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for Query</title>
-  <desc id="kaalang-description">Type Query; it refers to itself 3 times.</desc>
+  <title id="kaalang-title">kaalang type diagram for - Query</title>
+  <desc id="kaalang-description">Type - Query; it refers to itself 3 times.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -19,20 +19,24 @@
       .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
       .relationship-source { fill: currentColor; }
       .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
     </style>
     <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card focus">
-      <title xml:space="preserve">Query</title>
+      <title xml:space="preserve">- Query</title>
       <rect class="card-shape" x="32" y="56" width="397" height="492"/>
       <rect class="card-groove" x="32" y="254" width="397" height="20"/>
       <rect class="card-groove" x="32" y="380" width="397" height="20"/>
       <rect class="card-groove" x="32" y="528" width="397" height="20"/>
       <path class="card-rules" d="M 32 126 L 429 126 M 32 160 L 429 160 M 225 160 L 225 254 M 32 254 L 429 254 M 32 274 L 429 274 M 32 308 L 429 308 M 32 380 L 429 380 M 32 400 L 429 400 M 32 434 L 429 434 M 32 528 L 429 528"/>
       <rect class="card-outline" x="32" y="56" width="397" height="492"/>
-      <text class="type-name" y="88" xml:space="preserve"><tspan x="46" dy="0">Query</tspan></text>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="86.92" text-anchor="middle">−</text>
+        <text x="64" y="88" text-anchor="start" xml:space="preserve"> Query</text>
+      </g>
       <text class="type-kind" text-anchor="end" y="88" xml:space="preserve"><tspan x="415" dy="0">enum · repr(Rust)</tspan></text>
       <text class="description" y="111" xml:space="preserve"><tspan x="46" dy="0">A query that selects sections by their headings.</tspan></text>
       <text class="variant-name" y="149" xml:space="preserve"><tspan x="46" dy="0">Both</tspan></text>
@@ -60,17 +64,17 @@
   </g>
   <g class="relationships">
     <g class="relationship-route">
-      <title xml:space="preserve">Query → Query</title>
+      <title xml:space="preserve">- Query → - Query</title>
       <path class="relationship" d="M 162 254 L 162 264 L 443 264 L 443 42 L 415 42 L 415 56" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="162" cy="254" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">Query → Query</title>
+      <title xml:space="preserve">- Query → - Query</title>
       <path class="relationship" d="M 366 254 L 366 264 L 443 264 L 443 42 L 415 42 L 415 56" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="366" cy="254" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">Query → Query</title>
+      <title xml:space="preserve">- Query → - Query</title>
       <path class="relationship" d="M 366 528 L 366 538 L 443 538 L 443 42 L 415 42 L 415 56" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="366" cy="528" r="4"/>
     </g>

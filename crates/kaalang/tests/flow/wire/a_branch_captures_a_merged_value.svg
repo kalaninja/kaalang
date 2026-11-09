@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="980" viewBox="0 0 704 980" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="998" viewBox="0 0 704 998" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for a_branch_captures_a_merged_value</title>
-  <desc id="kaalang-description">Nodes: Start: a_branch_captures_a_merged_value with parameters amount: u8; verbose: bool handing over amount, verbose; Question: Is the amount positive? capturing amount handing over positive / negative; Action: Take the positive amount. capturing positive handing over counted, seen; Action: Take the negative amount. capturing negative handing over counted, seen; Question: Should the run report anything? capturing verbose handing over report / quiet; Action: Report the counted amount. capturing report, counted handing over end; Action: Report nothing. capturing quiet, seen handing over end; End: u8 capturing end; Merge: counted, seen; Merge: end. Connections: Start: a_branch_captures_a_merged_value to Question: Is the amount positive?; Question: Is the amount positive? branch 1 to Action: Take the positive amount.; Question: Is the amount positive? branch 2 to Action: Take the negative amount.; Action: Take the positive amount. to the counted and seen merge; Action: Take the negative amount. to the counted and seen merge; Question: Should the run report anything? branch 1 to Action: Report the counted amount.; Question: Should the run report anything? branch 2 to Action: Report nothing.; Action: Report the counted amount. to the end merge; Action: Report nothing. to the end merge; the counted and seen merge to Question: Should the run report anything?; the end merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: - a_branch_captures_a_merged_value with parameters amount: u8; verbose: bool handing over amount, verbose; Question: Is the amount positive? capturing amount handing over positive / negative; Action: Take the positive amount. capturing positive handing over counted, seen; Action: Take the negative amount. capturing negative handing over counted, seen; Question: Should the run report anything? capturing verbose handing over report / quiet; Action: Report the counted amount. capturing report, counted handing over end; Action: Report nothing. capturing quiet, seen handing over end; End: u8 capturing end; Merge: counted, seen; Merge: end. Connections: Start: - a_branch_captures_a_merged_value to Question: Is the amount positive?; Question: Is the amount positive? branch 1 to Action: Take the positive amount.; Question: Is the amount positive? branch 2 to Action: Take the negative amount.; Action: Take the positive amount. to the counted and seen merge; Action: Take the negative amount. to the counted and seen merge; Question: Should the run report anything? branch 1 to Action: Report the counted amount.; Question: Should the run report anything? branch 2 to Action: Report nothing.; Action: Report the counted amount. to the end merge; Action: Report nothing. to the end merge; the counted and seen merge to Question: Should the run report anything?; the end merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -30,79 +52,84 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 98 L 172 170
-      M 172 242 L 172 314
-      M 312 206 L 532 206 L 532 314
-      M 172 378 L 172 454
-      M 532 378 L 532 454 L 172 454
-      M 172 602 L 172 674
-      M 312 566 L 532 566 L 532 674
-      M 172 738 L 172 814
-      M 532 738 L 532 814 L 172 814
-      M 172 454 L 172 530
-      M 172 814 L 172 890
+      M 172 116 L 172 188
+      M 172 260 L 172 332
+      M 312 224 L 532 224 L 532 332
+      M 172 396 L 172 472
+      M 532 396 L 532 472 L 172 472
+      M 172 620 L 172 692
+      M 312 584 L 532 584 L 532 692
+      M 172 756 L 172 832
+      M 532 756 L 532 832 L 172 832
+      M 172 472 L 172 548
+      M 172 832 L 172 908
     "/>
-    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
-    <text class="connection-label code" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">positive</tspan></text>
-    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">negative</tspan></text>
-    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">amount, verbose</tspan></text>
-    <text class="connection-label code" x="185" y="620" xml:space="preserve"><tspan x="185" dy="0">report</tspan></text>
-    <text class="connection-label code" x="325" y="584" xml:space="preserve"><tspan x="325" dy="0">quiet</tspan></text>
-    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">amount</tspan></text>
-    <text class="connection-label code" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">verbose</tspan></text>
-    <text class="connection-label code" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">report, counted</tspan></text>
-    <text class="connection-label code" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">quiet, seen</tspan></text>
+    <text class="connection-label code" x="185" y="490" xml:space="preserve"><tspan x="185" dy="0">counted, seen</tspan></text>
+    <text class="connection-label code" x="185" y="850" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">positive</tspan></text>
+    <text class="connection-label code" x="545" y="321" xml:space="preserve"><tspan x="545" dy="0">negative</tspan></text>
+    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">amount, verbose</tspan></text>
+    <text class="connection-label code" x="185" y="638" xml:space="preserve"><tspan x="185" dy="0">report</tspan></text>
+    <text class="connection-label code" x="325" y="602" xml:space="preserve"><tspan x="325" dy="0">quiet</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">amount</tspan></text>
+    <text class="connection-label code" x="185" y="537" xml:space="preserve"><tspan x="185" dy="0">verbose</tspan></text>
+    <text class="connection-label code" x="185" y="681" xml:space="preserve"><tspan x="185" dy="0">report, counted</tspan></text>
+    <text class="connection-label code" x="545" y="681" xml:space="preserve"><tspan x="545" dy="0">quiet, seen</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 65 L 408 65"/>
-    <g class="parameter-panel" transform="translate(528 65)">
+    <path class="parameter-link" d="M 312 74 L 408 74"/>
+    <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">amount: u8</tspan><tspan x="-104" dy="18">verbose: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 454)">
+    <g class="node merge" transform="translate(172 472)">
       <title xml:space="preserve">the counted and seen merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 814)">
+    <g class="node merge" transform="translate(172 832)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">a_branch_captures_a_merged_v</tspan><tspan x="0" dy="18">alue</tspan></text>
+    <g class="node start" transform="translate(172 74)">
+      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">a_branch_captures_a_merged_v</tspan></text>
+        <text x="-17.36" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">alue</tspan></text>
+      </g>
     </g>
-    <g class="node question" transform="translate(172 206)">
+    <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Is the amount positive?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the amount positive?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 346)">
+    <g class="node action" transform="translate(172 364)">
       <title xml:space="preserve">Take the positive amount.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the positive amount.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 346)">
+    <g class="node action" transform="translate(532 364)">
       <title xml:space="preserve">Take the negative amount.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the negative amount.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 566)">
+    <g class="node question" transform="translate(172 584)">
       <title xml:space="preserve">Should the run report anything?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Should the run report </tspan><tspan x="0" dy="18">anything?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 706)">
+    <g class="node action" transform="translate(172 724)">
       <title xml:space="preserve">Report the counted amount.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report the counted amount.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 706)">
+    <g class="node action" transform="translate(532 724)">
       <title xml:space="preserve">Report nothing.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report nothing.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 919)">
+    <g class="node end" transform="translate(172 937)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>

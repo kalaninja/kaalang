@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1180" height="1330" viewBox="0 0 1180 1330" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for sequential_exits</title>
-  <desc id="kaalang-description">Cycles: Run work between two stopping checks. with inputs mut initial_count, before_limit, mut initial_log, after_limit and outputs done. Nodes: Start: sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over mut initial_count, mut initial_log; Question: Stop before the work? capturing &amp;initial_count, before_limit, &amp;mut initial_log handing over done / work; Action: Perform the work and advance the counter. capturing work, &amp;mut initial_count, &amp;mut initial_log handing over worked; Question: Stop after the work? capturing worked, &amp;initial_count, after_limit, &amp;mut initial_log handing over done / again; Action: Finish the iteration. capturing again, &amp;mut initial_log; Action: Continue after the cycle. capturing done, mut initial_log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result; Merge: done. Connections: Start: sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the cycle; Question: Stop before the work? branch 1 to the done merge at the cycle result; Question: Stop before the work? branch 2 to Action: Perform the work and advance the counter.; Action: Perform the work and advance the counter. to Question: Stop after the work?; Question: Stop after the work? branch 1 to the done merge at the cycle result; Question: Stop after the work? branch 2 to Action: Finish the iteration.; Action: Finish the iteration. to the iteration tail of the cycle; Action: Continue after the cycle. to End: Vec&lt;&amp;&apos;static str&gt;; the done merge at the cycle result to Action: Continue after the cycle.; the entry of the cycle to Question: Stop before the work?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Run work between two stopping checks. with inputs mut initial_count, before_limit, mut initial_log, after_limit and outputs done. Nodes: Start: - sequential_exits with parameters before_limit: usize; after_limit: usize handing over before_limit, after_limit; Action: Initialize the counter and log. capturing nothing handing over mut initial_count, mut initial_log; Question: Stop before the work? capturing &amp;initial_count, before_limit, &amp;mut initial_log handing over done / work; Action: Perform the work and advance the counter. capturing work, &amp;mut initial_count, &amp;mut initial_log handing over worked; Question: Stop after the work? capturing worked, &amp;initial_count, after_limit, &amp;mut initial_log handing over done / again; Action: Finish the iteration. capturing again, &amp;mut initial_log; Action: Continue after the cycle. capturing done, mut initial_log handing over result; End: Vec&lt;&amp;&apos;static str&gt; capturing result; Merge: done. Connections: Start: - sequential_exits to Action: Initialize the counter and log.; Action: Initialize the counter and log. to the entry of the cycle; Question: Stop before the work? branch 1 to the done merge at the cycle result; Question: Stop before the work? branch 2 to Action: Perform the work and advance the counter.; Action: Perform the work and advance the counter. to Question: Stop after the work?; Question: Stop after the work? branch 1 to the done merge at the cycle result; Question: Stop after the work? branch 2 to Action: Finish the iteration.; Action: Finish the iteration. to the iteration tail of the cycle; Action: Continue after the cycle. to End: Vec&lt;&amp;&apos;static str&gt;; the done merge at the cycle result to Action: Continue after the cycle.; the entry of the cycle to Question: Stop before the work?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -23,6 +23,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -77,7 +99,10 @@
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">sequential_exits</tspan></text>
+      <g class="label">
+        <text class="md-badge" x="-73.78" y="5.16" text-anchor="middle">−</text>
+        <text x="-66.78" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> sequential_exits</tspan></text>
+      </g>
     </g>
     <g class="node action" transform="translate(200 202)">
       <title xml:space="preserve">Initialize the counter and log.</title>

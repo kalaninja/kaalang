@@ -1,18 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1568" height="626" viewBox="0 0 1568 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_measure_chosen_text</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: prepared_measure_chosen_text; Action: Begin by choosing a greeting. capturing nothing; Stage transition: Choose the text.. Connections: Start: prepared_measure_chosen_text to Action: Begin by choosing a greeting.; Action: Begin by choosing a greeting. to Stage transition: Choose the text.. Transition to stage choose. Stage text. Nodes: Stage: Measure the chosen text.; Action: Count the bytes of the text. capturing &amp;text; Stage transition: Return the length.. Connections: Stage: Measure the chosen text. to Action: Count the bytes of the text.; Action: Count the bytes of the text. to Stage transition: Return the length.. Transition to stage finish. Stage choose. Nodes: Stage: Choose the text.; Action: Choose a greeting. capturing nothing; Stage transition: Measure the chosen text.. Connections: Stage: Choose the text. to Action: Choose a greeting.; Action: Choose a greeting. to Stage transition: Measure the chosen text.. Transition to stage text. Stage finish. Nodes: Stage: Return the length.; End: usize capturing finish. Connections: Stage: Return the length. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1568" height="634" viewBox="0 0 1568 634" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for prepared_measure_chosen_text</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: - prepared_measure_chosen_text; Action: Begin by choosing a greeting. capturing nothing; Stage transition: Choose the text.. Connections: Start: - prepared_measure_chosen_text to Action: Begin by choosing a greeting.; Action: Begin by choosing a greeting. to Stage transition: Choose the text.. Transition to stage choose. Stage text. Nodes: Stage: Measure the chosen text.; Action: Count the bytes of the text. capturing &amp;text; Stage transition: Return the length.. Connections: Stage: Measure the chosen text. to Action: Count the bytes of the text.; Action: Count the bytes of the text. to Stage transition: Return the length.. Transition to stage finish. Stage choose. Nodes: Stage: Choose the text.; Action: Choose a greeting. capturing nothing; Stage transition: Measure the chosen text.. Connections: Stage: Choose the text. to Action: Choose a greeting.; Action: Choose a greeting. to Stage transition: Measure the chosen text.. Transition to stage text. Stage finish. Nodes: Stage: Return the length.; End: usize capturing finish. Connections: Stage: Return the length. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 534 L 232 602 "/>
-<path d="M 612 150 L 612 186 "/>
-<path d="M 612 534 L 612 602 "/>
-<path d="M 992 150 L 992 186 "/>
-<path d="M 992 534 L 992 602 "/>
-<path d="M 1372 150 L 1372 186 "/>
-<path d="M 232 150 L 1372 150 "/>
-<path d="M 992 602 L 24 602 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 542 L 232 610 "/>
+<path d="M 612 158 L 612 194 "/>
+<path d="M 612 542 L 612 610 "/>
+<path d="M 992 158 L 992 194 "/>
+<path d="M 992 542 L 992 610 "/>
+<path d="M 1372 158 L 1372 194 "/>
+<path d="M 232 158 L 1372 158 "/>
+<path d="M 992 610 L 24 610 L 24 158 L 232 158 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="542" viewBox="0 0 344 542" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="550" viewBox="0 0 344 550" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for prepared_measure_chosen_text</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: prepared_measure_chosen_text; Action: Begin by choosing a greeting. capturing nothing; Stage transition: Choose the text.. Connections: Start: prepared_measure_chosen_text to Action: Begin by choosing a greeting.; Action: Begin by choosing a greeting. to Stage transition: Choose the text..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: - prepared_measure_chosen_text; Action: Begin by choosing a greeting. capturing nothing; Stage transition: Choose the text.. Connections: Start: - prepared_measure_chosen_text to Action: Begin by choosing a greeting.; Action: Begin by choosing a greeting. to Stage transition: Choose the text..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -35,6 +35,28 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .cycle-caption .md-math { color: #166534; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -44,22 +66,26 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 226 L 172 440
+      M 172 98 L 172 170
+      M 172 234 L 172 448
     "/>
-    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_measure_chosen_text</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label">
+        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
+        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
+        <text x="-121.52" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">prepared_measure_chosen_text</tspan></text>
+      </g>
     </g>
-    <g class="node action" transform="translate(172 194)">
+    <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Begin by choosing a greeting.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Begin by choosing a greeting.</tspan></text>
     </g>
-    <g class="node stage-transition" transform="translate(172 475)">
+    <g class="node stage-transition" transform="translate(172 483)">
       <title xml:space="preserve">Choose the text.</title>
       <polygon class="node-shape" points="0,-35 120,-17 120,35 -120,35 -120,-17"/>
       <text class="label" y="15" xml:space="preserve"><tspan x="0" dy="0">Choose the text.</tspan></text>
@@ -67,7 +93,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(440 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for prepared_measure_chosen_text</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Measure the chosen text.; Action: Count the bytes of the text. capturing &amp;text; Stage transition: Return the length.. Connections: Stage: Measure the chosen text. to Action: Count the bytes of the text.; Action: Count the bytes of the text. to Stage transition: Return the length..</desc>
   <defs>
@@ -92,6 +118,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -126,7 +153,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(820 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(820 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for prepared_measure_chosen_text</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Choose the text.; Action: Choose a greeting. capturing nothing; Stage transition: Measure the chosen text.. Connections: Stage: Choose the text. to Action: Choose a greeting.; Action: Choose a greeting. to Stage transition: Measure the chosen text..</desc>
   <defs>
@@ -151,6 +178,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -185,7 +213,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(1200 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
+<g transform="translate(1200 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-3-title" aria-describedby="kaalang-part-3-description">
   <title id="kaalang-part-3-title">kaalang diagram for prepared_measure_chosen_text</title>
   <desc id="kaalang-part-3-description">Nodes: Stage: Return the length.; End: usize capturing finish. Connections: Stage: Return the length. to End: usize.</desc>
   <defs>
@@ -210,6 +238,7 @@
       .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }

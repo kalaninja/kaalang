@@ -14,7 +14,7 @@ use kaalang_compiler::{
     Arrangement, RunLine, SemanticModel, Side,
     topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex},
 };
-use syn::{ReturnType, Signature, spanned::Spanned};
+use syn::{ItemFn, ReturnType, Signature, spanned::Spanned};
 
 use self::label::{label_rect, vertical_gaps};
 pub(crate) use self::{
@@ -26,6 +26,7 @@ use crate::{
     flow::captions::Captions,
     markup::{DOT_RADIUS, MARGIN},
     text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
+    with_visibility,
 };
 
 mod action;
@@ -322,18 +323,19 @@ fn clear_labels(scene: &mut Scene) -> i32 {
 }
 
 /// The authored flow header without its parameters and return type.
-pub(crate) fn start_text(source: &str, signature: &Signature) -> String {
+pub(crate) fn start_text(source: &str, function: &ItemFn) -> String {
+    let signature = &function.sig;
     let start = signature.span().byte_range().start;
     let end = signature.paren_token.span.open().byte_range().start;
-    let function = signature.fn_token.span.byte_range();
+    let keyword = signature.fn_token.span.byte_range();
     let mut header = source[start..end].to_owned();
-    header.replace_range(function.start - start..function.end - start, "");
+    header.replace_range(keyword.start - start..keyword.end - start, "");
     let mut authored = collapsed_text(&header);
     if let Some(where_clause) = &signature.generics.where_clause {
         authored.push(' ');
         authored.push_str(&collapsed(source, where_clause.span()));
     }
-    authored
+    with_visibility(&function.vis, &authored)
 }
 
 /// The authored flow parameters, one per panel row and without separating commas.
