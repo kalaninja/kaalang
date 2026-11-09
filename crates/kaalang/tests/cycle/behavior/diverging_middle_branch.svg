@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -66,26 +67,26 @@
     <path class="connection" d="
       M 220 896 L 60 896 L 60 170 L 220 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="233" y="914" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
-    <text class="connection-label" x="1313" y="914" xml:space="preserve"><tspan x="1313" dy="0">selected</tspan></text>
-    <text class="connection-label" x="233" y="529" xml:space="preserve"><tspan x="233" dy="0">advance</tspan></text>
-    <text class="connection-label" x="953" y="673" xml:space="preserve"><tspan x="953" dy="0">again</tspan></text>
-    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mode, stay</tspan></text>
-    <text class="connection-label" x="593" y="486" xml:space="preserve"><tspan x="593" dy="0">spin</tspan></text>
-    <text class="connection-label" x="953" y="486" xml:space="preserve"><tspan x="953" dy="0">decide</tspan></text>
-    <text class="connection-label" x="1673" y="486" xml:space="preserve"><tspan x="1673" dy="0">leave_now</tspan></text>
-    <text class="connection-label" x="1093" y="594" xml:space="preserve"><tspan x="1093" dy="0">leave</tspan></text>
-    <text class="connection-label" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="593" y="673" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
-    <text class="connection-label" x="953" y="529" xml:space="preserve"><tspan x="953" dy="0">decide, stay</tspan></text>
-    <text class="connection-label" x="1313" y="673" xml:space="preserve"><tspan x="1313" dy="0">leave, mode</tspan></text>
-    <text class="connection-label" x="1673" y="529" xml:space="preserve"><tspan x="1673" dy="0">leave_now, mode</tspan></text>
+    <text class="connection-label code" x="233" y="914" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
+    <text class="connection-label code" x="1313" y="914" xml:space="preserve"><tspan x="1313" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="233" y="529" xml:space="preserve"><tspan x="233" dy="0">advance</tspan></text>
+    <text class="connection-label code" x="953" y="673" xml:space="preserve"><tspan x="953" dy="0">again</tspan></text>
+    <text class="connection-label code" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mode, stay</tspan></text>
+    <text class="connection-label code" x="593" y="486" xml:space="preserve"><tspan x="593" dy="0">spin</tspan></text>
+    <text class="connection-label code" x="953" y="486" xml:space="preserve"><tspan x="953" dy="0">decide</tspan></text>
+    <text class="connection-label code" x="1673" y="486" xml:space="preserve"><tspan x="1673" dy="0">leave_now</tspan></text>
+    <text class="connection-label code" x="1093" y="594" xml:space="preserve"><tspan x="1093" dy="0">leave</tspan></text>
+    <text class="connection-label code" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="593" y="673" xml:space="preserve"><tspan x="593" dy="0">()</tspan></text>
+    <text class="connection-label code" x="953" y="529" xml:space="preserve"><tspan x="953" dy="0">decide, stay</tspan></text>
+    <text class="connection-label code" x="1313" y="673" xml:space="preserve"><tspan x="1313" dy="0">leave, mode</tspan></text>
+    <text class="connection-label code" x="1673" y="529" xml:space="preserve"><tspan x="1673" dy="0">leave_now, mode</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 65 L 456 65"/>
     <g class="parameter-panel" transform="translate(576 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan><tspan x="-104" dy="18">stay: bool</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan><tspan x="-104" dy="18">stay: bool</tspan></text>
     </g>
     <g class="node merge" transform="translate(220 896)">
       <title xml:space="preserve">the advanced merge at the iteration tail of the cycle</title>
@@ -97,7 +98,7 @@
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">diverging_middle_branch</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">diverging_middle_branch</tspan></text>
     </g>
     <g class="node select" transform="translate(220 278)">
       <title xml:space="preserve">Which route?</title>
@@ -156,7 +157,7 @@
     </g>
     <g class="node end" transform="translate(1300 1001)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

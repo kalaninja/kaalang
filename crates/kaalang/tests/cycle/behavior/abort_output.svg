@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -53,22 +54,22 @@
     <path class="connection" d="
       M 220 664 L 60 664 L 60 170 L 220 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="593" y="894" xml:space="preserve"><tspan x="593" dy="0">result</tspan></text>
-    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mut count, limit</tspan></text>
-    <text class="connection-label" x="233" y="474" xml:space="preserve"><tspan x="233" dy="0">below</tspan></text>
-    <text class="connection-label" x="593" y="474" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
-    <text class="connection-label" x="953" y="474" xml:space="preserve"><tspan x="953" dy="0">abort</tspan></text>
-    <text class="connection-label" x="233" y="610" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;count, &amp;limit</tspan></text>
-    <text class="connection-label" x="233" y="517" xml:space="preserve"><tspan x="233" dy="0">below, &amp;mut count</tspan></text>
-    <text class="connection-label" x="593" y="725" xml:space="preserve"><tspan x="593" dy="0">done, count</tspan></text>
-    <text class="connection-label" x="953" y="725" xml:space="preserve"><tspan x="953" dy="0">abort, count</tspan></text>
+    <text class="connection-label code" x="593" y="894" xml:space="preserve"><tspan x="593" dy="0">result</tspan></text>
+    <text class="connection-label code" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">mut count, limit</tspan></text>
+    <text class="connection-label code" x="233" y="474" xml:space="preserve"><tspan x="233" dy="0">below</tspan></text>
+    <text class="connection-label code" x="593" y="474" xml:space="preserve"><tspan x="593" dy="0">done</tspan></text>
+    <text class="connection-label code" x="953" y="474" xml:space="preserve"><tspan x="953" dy="0">abort</tspan></text>
+    <text class="connection-label code" x="233" y="610" xml:space="preserve"><tspan x="233" dy="0">stepped</tspan></text>
+    <text class="connection-label code" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;count, &amp;limit</tspan></text>
+    <text class="connection-label code" x="233" y="517" xml:space="preserve"><tspan x="233" dy="0">below, &amp;mut count</tspan></text>
+    <text class="connection-label code" x="593" y="725" xml:space="preserve"><tspan x="593" dy="0">done, count</tspan></text>
+    <text class="connection-label code" x="953" y="725" xml:space="preserve"><tspan x="953" dy="0">abort, count</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 65 L 456 65"/>
     <g class="parameter-panel" transform="translate(576 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut count: u32</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut count: u32</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
     </g>
     <g class="node merge" transform="translate(580 876)">
       <title xml:space="preserve">the result merge</title>
@@ -76,7 +77,7 @@
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">abort_output</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">abort_output</tspan></text>
     </g>
     <g class="node select" transform="translate(220 278)">
       <title xml:space="preserve">Where is the count?</title>
@@ -115,7 +116,7 @@
     </g>
     <g class="node end" transform="translate(580 981)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Result&lt;u32, u32&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Result&lt;u32, u32&gt;</tspan></text>
     </g>
   </g>
 </svg>

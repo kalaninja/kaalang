@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="980" viewBox="0 0 704 980" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="730" height="980" viewBox="0 0 730 980" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for converged_selection_meets_a_branch</title>
   <desc id="kaalang-description">Nodes: Start: converged_selection_meets_a_branch with parameters left: bool; right: bool handing over left, right; Question: Right enabled? capturing right handing over b / right_no; Action: Provide the right value. capturing b handing over right_value; Action: Provide no right value. capturing right_no handing over right_value; Question: Left enabled? capturing left handing over a / left_no; Action: Work with the right value. capturing a, right_value handing over end; Action: Skip the work. capturing left_no, right_value handing over end; End: u8 capturing end; Merge: right_value; Merge: end. Connections: Start: converged_selection_meets_a_branch to Question: Right enabled?; Question: Right enabled? branch 1 to Action: Provide the right value.; Question: Right enabled? branch 2 to Action: Provide no right value.; Action: Provide the right value. to the right_value merge; Action: Provide no right value. to the right_value merge; Question: Left enabled? branch 1 to Action: Work with the right value.; Question: Left enabled? branch 2 to Action: Skip the work.; Action: Work with the right value. to the end merge; Action: Skip the work. to the end merge; the right_value merge to Question: Left enabled?; the end merge to End: u8.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -41,23 +42,23 @@
       M 172 454 L 172 530
       M 172 814 L 172 890
     "/>
-    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">right_value</tspan></text>
-    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">b</tspan></text>
-    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">right_no</tspan></text>
-    <text class="connection-label" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="185" y="620" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="325" y="584" xml:space="preserve"><tspan x="325" dy="0">left_no</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
-    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">a, right_value</tspan></text>
-    <text class="connection-label" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">left_no, right_value</tspan></text>
+    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">right_value</tspan></text>
+    <text class="connection-label code" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">b</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">right_no</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <text class="connection-label code" x="185" y="620" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label code" x="325" y="584" xml:space="preserve"><tspan x="325" dy="0">left_no</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
+    <text class="connection-label code" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label code" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">a, right_value</tspan></text>
+    <text class="connection-label code" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">left_no, right_value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">left: bool</tspan><tspan x="-104" dy="18">right: bool</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the right_value merge</title>
@@ -69,7 +70,7 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">converged_selection_meets_a_bran</tspan><tspan x="0" dy="18">ch</tspan></text>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">converged_selection_meets_a_</tspan><tspan x="0" dy="18">branch</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Right enabled?</title>
@@ -103,7 +104,7 @@
     </g>
     <g class="node end" transform="translate(172 919)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

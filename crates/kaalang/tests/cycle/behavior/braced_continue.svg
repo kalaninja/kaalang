@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -28,8 +29,8 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Count down.</title>
-    <rect class="cycle-boundary" x="32" y="127" width="400" height="422" rx="12"/>
-    <text class="cycle-caption" x="420" y="141" text-anchor="end" xml:space="preserve"><tspan x="420" dy="0">Count down.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="127" width="403" height="422" rx="12"/>
+    <text class="cycle-caption" x="423" y="141" text-anchor="end" xml:space="preserve"><tspan x="423" dy="0">Count down.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -44,22 +45,22 @@
     <path class="connection" d="
       M 220 514 L 60 514 L 60 162 L 220 162
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut remaining</tspan></text>
-    <text class="connection-label" x="233" y="324" xml:space="preserve"><tspan x="233" dy="0">again</tspan></text>
-    <text class="connection-label" x="373" y="288" xml:space="preserve"><tspan x="373" dy="0">done</tspan></text>
-    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;remaining</tspan></text>
-    <text class="connection-label" x="233" y="367" xml:space="preserve"><tspan x="233" dy="0">again, &amp;mut remaining</tspan></text>
-    <text class="connection-label" x="593" y="575" xml:space="preserve"><tspan x="593" dy="0">remaining</tspan></text>
+    <text class="connection-label code" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut remaining</tspan></text>
+    <text class="connection-label code" x="233" y="324" xml:space="preserve"><tspan x="233" dy="0">again</tspan></text>
+    <text class="connection-label code" x="373" y="288" xml:space="preserve"><tspan x="373" dy="0">done</tspan></text>
+    <text class="connection-label code" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">&amp;remaining</tspan></text>
+    <text class="connection-label code" x="233" y="367" xml:space="preserve"><tspan x="233" dy="0">again, &amp;mut remaining</tspan></text>
+    <text class="connection-label code" x="593" y="575" xml:space="preserve"><tspan x="593" dy="0">remaining</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 61 L 456 61"/>
     <g class="parameter-panel" transform="translate(576 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut remaining: usize</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut remaining: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(220 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">braced_continue</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">braced_continue</tspan></text>
     </g>
     <g class="node question" transform="translate(220 270)">
       <title xml:space="preserve">Is there another step?</title>
@@ -73,7 +74,7 @@
     </g>
     <g class="node end" transform="translate(580 615)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

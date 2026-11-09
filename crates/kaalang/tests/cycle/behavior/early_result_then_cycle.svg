@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="1260" viewBox="0 0 1140 1260" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1218" height="1260" viewBox="0 0 1218 1260" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for early_result_then_cycle</title>
   <desc id="kaalang-description">Cycles: Select an early result or continue. with inputs first and outputs early_result; Count to three. with inputs count_more, mut count and outputs end. Nodes: Start: early_result_then_cycle with parameters first: bool; mut count: usize handing over first, mut count; Question: Check for an early result? capturing first handing over produce_early / continue_counting described as branch 1: YES / branch 2: NO; Action: Continue to the counter. capturing continue_counting handing over early_result; Action: Produce the early result. capturing produce_early handing over early_result; Question: Was an early result selected? capturing &amp;early_result handing over finish_early / count_more; Action: Extract the early result. capturing finish_early, early_result handing over end; Question: Has the count reached three? capturing &amp;count handing over leave / iterate described as branch 1: YES / branch 2: NO; Action: Hand over the count. capturing leave, count handing over end; Action: Increment the count. capturing iterate, &amp;mut count; End: usize capturing end; Merge: early_result; Merge: end. Connections: Start: early_result_then_cycle to Question: Check for an early result?; Question: Check for an early result? branch 1 to Action: Produce the early result.; Question: Check for an early result? branch 2 to Action: Continue to the counter.; Action: Continue to the counter. to the early_result merge at the cycle result; Action: Produce the early result. to the early_result merge at the cycle result; Question: Was an early result selected? branch 1 to Action: Extract the early result.; Question: Was an early result selected? branch 2 to the entry of the cycle; Action: Extract the early result. to the end merge; Question: Has the count reached three? branch 1 to Action: Hand over the count.; Question: Has the count reached three? branch 2 to Action: Increment the count.; Action: Hand over the count. to the end merge; Action: Increment the count. to the iteration tail of the cycle; the early_result merge at the cycle result to Question: Was an early result selected?; the end merge to End: usize; the entry of the cycle to Question: Has the count reached three?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -28,13 +29,13 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Select an early result or continue.</title>
-    <rect class="cycle-boundary" x="32" y="135" width="696" height="354" rx="12"/>
-    <text class="cycle-caption" x="716" y="149" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Select an early result or continue.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="135" width="735" height="354" rx="12"/>
+    <text class="cycle-caption" x="755" y="149" text-anchor="end" xml:space="preserve"><tspan x="755" dy="0">Select an early result or continue.</tspan></text>
     </g>
     <g>
       <title xml:space="preserve">Count to three.</title>
-    <rect class="cycle-boundary" x="392" y="671" width="716" height="458" rx="12"/>
-    <text class="cycle-caption" x="1096" y="685" text-anchor="end" xml:space="preserve"><tspan x="1096" dy="0">Count to three.</tspan></text>
+    <rect class="cycle-boundary" x="431" y="671" width="755" height="458" rx="12"/>
+    <text class="cycle-caption" x="1174" y="685" text-anchor="end" xml:space="preserve"><tspan x="1174" dy="0">Count to three.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -42,44 +43,44 @@
     <path class="connection" d="
       M 200 94 L 200 170
       M 200 242 L 200 314
-      M 340 206 L 560 206 L 560 314
-      M 560 378 L 560 454 L 200 454
+      M 340 206 L 599 206 L 599 314
+      M 599 378 L 599 454 L 200 454
       M 200 378 L 200 454
       M 200 602 L 200 674
-      M 340 566 L 560 566 L 560 706
+      M 340 566 L 599 566 L 599 706
       M 200 738 L 200 1094
-      M 560 882 L 560 954
-      M 700 846 L 920 846 L 920 954
-      M 560 1018 L 560 1094 L 200 1094
-      M 920 1018 L 920 1094
+      M 599 882 L 599 954
+      M 739 846 L 998 846 L 998 954
+      M 599 1018 L 599 1094 L 200 1094
+      M 998 1018 L 998 1094
       M 200 454 L 200 530
       M 200 1094 L 200 1170
-      M 560 706 L 560 810
+      M 599 706 L 599 810
     "/>
     <path class="connection" d="
-      M 920 1094 L 1080 1094 L 1080 706 L 560 706
+      M 998 1094 L 1158 1094 L 1158 706 L 599 706
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="213" y="472" xml:space="preserve"><tspan x="213" dy="0">early_result</tspan></text>
-    <text class="connection-label" x="213" y="1112" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
-    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">first, mut count</tspan></text>
+    <text class="connection-label code" x="213" y="472" xml:space="preserve"><tspan x="213" dy="0">early_result</tspan></text>
+    <text class="connection-label code" x="213" y="1112" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
+    <text class="connection-label code" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">first, mut count</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="262" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="353" y="194" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
-    <text class="connection-label" x="213" y="620" xml:space="preserve"><tspan x="213" dy="0">finish_early</tspan></text>
-    <text class="connection-label" x="353" y="584" xml:space="preserve"><tspan x="353" dy="0">count_more</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="573" y="902" xml:space="preserve"><tspan x="573" dy="0">YES</tspan></text>
-    <text class="connection-label branch-label" style="font-size: 14px" x="713" y="834" xml:space="preserve"><tspan x="713" dy="0">NO</tspan></text>
-    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
-    <text class="connection-label" x="213" y="519" xml:space="preserve"><tspan x="213" dy="0">&amp;early_result</tspan></text>
-    <text class="connection-label" x="213" y="663" xml:space="preserve"><tspan x="213" dy="0">finish_early, early_result</tspan></text>
-    <text class="connection-label" x="573" y="799" xml:space="preserve"><tspan x="573" dy="0">&amp;count</tspan></text>
-    <text class="connection-label" x="573" y="943" xml:space="preserve"><tspan x="573" dy="0">leave, count</tspan></text>
-    <text class="connection-label" x="933" y="943" xml:space="preserve"><tspan x="933" dy="0">iterate, &amp;mut count</tspan></text>
+    <text class="connection-label code" x="213" y="620" xml:space="preserve"><tspan x="213" dy="0">finish_early</tspan></text>
+    <text class="connection-label code" x="353" y="584" xml:space="preserve"><tspan x="353" dy="0">count_more</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="612" y="902" xml:space="preserve"><tspan x="612" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="752" y="834" xml:space="preserve"><tspan x="752" dy="0">NO</tspan></text>
+    <text class="connection-label code" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">first</tspan></text>
+    <text class="connection-label code" x="213" y="519" xml:space="preserve"><tspan x="213" dy="0">&amp;early_result</tspan></text>
+    <text class="connection-label code" x="213" y="663" xml:space="preserve"><tspan x="213" dy="0">finish_early, early_result</tspan></text>
+    <text class="connection-label code" x="612" y="799" xml:space="preserve"><tspan x="612" dy="0">&amp;count</tspan></text>
+    <text class="connection-label code" x="612" y="943" xml:space="preserve"><tspan x="612" dy="0">leave, count</tspan></text>
+    <text class="connection-label code" x="1011" y="943" xml:space="preserve"><tspan x="1011" dy="0">iterate, &amp;mut count</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
     <g class="parameter-panel" transform="translate(556 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: bool</tspan><tspan x="-104" dy="18">mut count: usize</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: bool</tspan><tspan x="-104" dy="18">mut count: usize</tspan></text>
     </g>
     <g class="node merge" transform="translate(200 454)">
       <title xml:space="preserve">the early_result merge at the cycle result</title>
@@ -91,14 +92,14 @@
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">early_result_then_cycle</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">early_result_then_cycle</tspan></text>
     </g>
     <g class="node question" transform="translate(200 206)">
       <title xml:space="preserve">Check for an early result?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Check for an early result?</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 346)">
+    <g class="node action" transform="translate(599 346)">
       <title xml:space="preserve">Continue to the counter.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Continue to the counter.</tspan></text>
@@ -118,24 +119,24 @@
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Extract the early result.</tspan></text>
     </g>
-    <g class="node question" transform="translate(560 846)">
+    <g class="node question" transform="translate(599 846)">
       <title xml:space="preserve">Has the count reached three?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Has the count reached </tspan><tspan x="0" dy="18">three?</tspan></text>
     </g>
-    <g class="node action" transform="translate(560 986)">
+    <g class="node action" transform="translate(599 986)">
       <title xml:space="preserve">Hand over the count.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Hand over the count.</tspan></text>
     </g>
-    <g class="node action" transform="translate(920 986)">
+    <g class="node action" transform="translate(998 986)">
       <title xml:space="preserve">Increment the count.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Increment the count.</tspan></text>
     </g>
     <g class="node end" transform="translate(200 1199)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

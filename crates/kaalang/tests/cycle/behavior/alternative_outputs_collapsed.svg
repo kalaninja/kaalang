@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -36,16 +37,16 @@
       M 532 362 L 532 438 L 172 438
       M 172 438 L 172 514
     "/>
-    <text class="connection-label" x="185" y="456" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut items</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">found</tspan></text>
-    <text class="connection-label" x="545" y="287" xml:space="preserve"><tspan x="545" dy="0">exhausted</tspan></text>
+    <text class="connection-label code" x="185" y="456" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mut items</tspan></text>
+    <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">found</tspan></text>
+    <text class="connection-label code" x="545" y="287" xml:space="preserve"><tspan x="545" dy="0">exhausted</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut items: Vec&lt;String&gt;</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut items: Vec&lt;String&gt;</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 438)">
       <title xml:space="preserve">the result merge</title>
@@ -53,7 +54,7 @@
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">alternative_outputs</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">alternative_outputs</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 194)">
       <title xml:space="preserve">Find a nonempty item.</title>
@@ -73,7 +74,7 @@
     </g>
     <g class="node end" transform="translate(172 543)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;String&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;String&gt;</tspan></text>
     </g>
   </g>
 </svg>

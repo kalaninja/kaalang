@@ -12,7 +12,7 @@ use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
     LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Rows, Scene,
 };
-use crate::text::{RichText, block_metrics, joined, line_ink, text_width, wrap_literal, wrap_text};
+use crate::text::{RichText, block_metrics, joined, line_ink, text_width, wrap_text};
 
 /// A label beside a vertical run must fit before the next column's node,
 /// including clearance and its halo on both sides.
@@ -231,8 +231,10 @@ fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label>
 /// the halo, stays clear of the adjacent vertical run or node boundary. Nothing
 /// is drawn when it names no wire: wrapping an empty label yields a blank line.
 fn wire_label(owner: Vertex, names: &[String], at: Point, stack: Stack) -> Option<Label> {
-    let lines = (!names.is_empty())
-        .then(|| wrap_literal(&names.join(", "), LABEL_WIDTH, CONNECTION_LABEL_FONT))?;
+    let lines = (!names.is_empty()).then(|| {
+        let names = RichText::code(names.join(", "));
+        wrap_text(&names, LABEL_WIDTH, CONNECTION_LABEL_FONT)
+    })?;
     Some(place_label(owner, lines, LabelKind::Wire, at, stack))
 }
 

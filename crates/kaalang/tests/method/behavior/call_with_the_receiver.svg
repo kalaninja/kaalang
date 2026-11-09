@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -32,19 +33,19 @@
       M 172 94 L 172 170
       M 172 234 L 172 306
     "/>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">self, scale</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">&amp;self, scale</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">self, scale</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">&amp;self, scale</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">&amp;self</tspan><tspan x="-104" dy="18">scale: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">&amp;self</tspan><tspan x="-104" dy="18">scale: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">call_with_the_receiver</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">call_with_the_receiver</tspan></text>
     </g>
     <g class="node call" transform="translate(172 202)">
       <title xml:space="preserve">Compute the scaled area.</title>
@@ -54,7 +55,7 @@
     </g>
     <g class="node end" transform="translate(172 335)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

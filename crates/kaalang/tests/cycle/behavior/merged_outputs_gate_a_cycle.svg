@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -70,35 +71,35 @@
     <path class="connection" d="
       M 920 530 L 1080 530 L 1080 170 L 200 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="213" y="760" xml:space="preserve"><tspan x="213" dy="0">base</tspan></text>
-    <text class="connection-label" x="213" y="1408" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut first, mut second</tspan></text>
-    <text class="connection-label" x="213" y="332" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
-    <text class="connection-label" x="353" y="296" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="933" y="476" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="213" y="476" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
-    <text class="connection-label" x="353" y="440" xml:space="preserve"><tspan x="353" dy="0">odd</tspan></text>
-    <text class="connection-label" x="213" y="980" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
-    <text class="connection-label" x="353" y="944" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
-    <text class="connection-label" x="933" y="1124" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
-    <text class="connection-label" x="213" y="1124" xml:space="preserve"><tspan x="213" dy="0">large</tspan></text>
-    <text class="connection-label" x="353" y="1088" xml:space="preserve"><tspan x="353" dy="0">small</tspan></text>
-    <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;first</tspan></text>
-    <text class="connection-label" x="933" y="375" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut first</tspan></text>
-    <text class="connection-label" x="213" y="375" xml:space="preserve"><tspan x="213" dy="0">past, &amp;first</tspan></text>
-    <text class="connection-label" x="213" y="591" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
-    <text class="connection-label" x="573" y="591" xml:space="preserve"><tspan x="573" dy="0">odd</tspan></text>
-    <text class="connection-label" x="213" y="879" xml:space="preserve"><tspan x="213" dy="0">&amp;second</tspan></text>
-    <text class="connection-label" x="933" y="1023" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut second</tspan></text>
-    <text class="connection-label" x="213" y="1023" xml:space="preserve"><tspan x="213" dy="0">past, &amp;second</tspan></text>
-    <text class="connection-label" x="213" y="1239" xml:space="preserve"><tspan x="213" dy="0">large, base</tspan></text>
-    <text class="connection-label" x="573" y="1239" xml:space="preserve"><tspan x="573" dy="0">small, base</tspan></text>
+    <text class="connection-label code" x="213" y="760" xml:space="preserve"><tspan x="213" dy="0">base</tspan></text>
+    <text class="connection-label code" x="213" y="1408" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label code" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut first, mut second</tspan></text>
+    <text class="connection-label code" x="213" y="332" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
+    <text class="connection-label code" x="353" y="296" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
+    <text class="connection-label code" x="933" y="476" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label code" x="213" y="476" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
+    <text class="connection-label code" x="353" y="440" xml:space="preserve"><tspan x="353" dy="0">odd</tspan></text>
+    <text class="connection-label code" x="213" y="980" xml:space="preserve"><tspan x="213" dy="0">past</tspan></text>
+    <text class="connection-label code" x="353" y="944" xml:space="preserve"><tspan x="353" dy="0">again</tspan></text>
+    <text class="connection-label code" x="933" y="1124" xml:space="preserve"><tspan x="933" dy="0">stepped</tspan></text>
+    <text class="connection-label code" x="213" y="1124" xml:space="preserve"><tspan x="213" dy="0">large</tspan></text>
+    <text class="connection-label code" x="353" y="1088" xml:space="preserve"><tspan x="353" dy="0">small</tspan></text>
+    <text class="connection-label code" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">&amp;first</tspan></text>
+    <text class="connection-label code" x="933" y="375" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut first</tspan></text>
+    <text class="connection-label code" x="213" y="375" xml:space="preserve"><tspan x="213" dy="0">past, &amp;first</tspan></text>
+    <text class="connection-label code" x="213" y="591" xml:space="preserve"><tspan x="213" dy="0">even</tspan></text>
+    <text class="connection-label code" x="573" y="591" xml:space="preserve"><tspan x="573" dy="0">odd</tspan></text>
+    <text class="connection-label code" x="213" y="879" xml:space="preserve"><tspan x="213" dy="0">&amp;second</tspan></text>
+    <text class="connection-label code" x="933" y="1023" xml:space="preserve"><tspan x="933" dy="0">again, &amp;mut second</tspan></text>
+    <text class="connection-label code" x="213" y="1023" xml:space="preserve"><tspan x="213" dy="0">past, &amp;second</tspan></text>
+    <text class="connection-label code" x="213" y="1239" xml:space="preserve"><tspan x="213" dy="0">large, base</tspan></text>
+    <text class="connection-label code" x="573" y="1239" xml:space="preserve"><tspan x="573" dy="0">small, base</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
     <g class="parameter-panel" transform="translate(556 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut first: u32</tspan><tspan x="-104" dy="18">mut second: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut first: u32</tspan><tspan x="-104" dy="18">mut second: u32</tspan></text>
     </g>
     <g class="node merge" transform="translate(200 742)">
       <title xml:space="preserve">the base merge</title>
@@ -110,7 +111,7 @@
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">merged_outputs_gate_a_cycle</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">merged_outputs_gate_a_cycle</tspan></text>
     </g>
     <g class="node question" transform="translate(200 278)">
       <title xml:space="preserve">Past five?</title>
@@ -164,7 +165,7 @@
     </g>
     <g class="node end" transform="translate(200 1495)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1553" height="876" viewBox="0 0 1553 876" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for select_value</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value.. Transition to stage choose. Stage choose. Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Stage transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Stage transition: Return the selected value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1589" height="876" viewBox="0 0 1589 876" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for select_value</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value.. Transition to stage choose. Stage choose. Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Stage transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Stage transition: Return the selected value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 784 L 232 852 "/>
-<path d="M 617 176 L 617 212 "/>
-<path d="M 617 784 L 617 852 "/>
-<path d="M 1357 176 L 1357 212 "/>
-<path d="M 232 176 L 1357 176 "/>
-<path d="M 617 852 L 24 852 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 653 176 L 653 212 "/>
+<path d="M 653 784 L 653 852 "/>
+<path d="M 1393 176 L 1393 212 "/>
+<path d="M 232 176 L 1393 176 "/>
+<path d="M 653 852 L 24 852 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="792" viewBox="0 0 680 792" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for select_value</title>
@@ -30,6 +30,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -44,18 +45,18 @@
       M 172 103 L 172 188
       M 172 252 L 172 690
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">take_left, left, right</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">take_left, left, right</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">take_left: bool</tspan><tspan x="-104" dy="18">left: T</tspan><tspan x="-104" dy="18">right: T</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">take_left: bool</tspan><tspan x="-104" dy="18">left: T</tspan><tspan x="-104" dy="18">right: T</tspan></text>
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const select_value&lt;T: Copy&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">const select_value&lt;T: Copy&gt;</tspan></text>
     </g>
     <g class="node action" transform="translate(172 220)">
       <title xml:space="preserve">Begin selection.</title>
@@ -70,7 +71,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(445 180)"><svg xmlns="http://www.w3.org/2000/svg" width="704" height="636" viewBox="0 0 704 636" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(481 180)"><svg xmlns="http://www.w3.org/2000/svg" width="704" height="636" viewBox="0 0 704 636" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for select_value</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Stage transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Stage transition: Return the selected value..</desc>
   <defs>
@@ -92,6 +93,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -110,11 +112,11 @@
       M 532 382 L 532 458 L 172 458
       M 172 458 L 172 534
     "/>
-    <text class="connection-label" x="185" y="264" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="325" y="228" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">take_left</tspan></text>
-    <text class="connection-label" x="185" y="307" xml:space="preserve"><tspan x="185" dy="0">yes, left</tspan></text>
-    <text class="connection-label" x="545" y="307" xml:space="preserve"><tspan x="545" dy="0">no, right</tspan></text>
+    <text class="connection-label code" x="185" y="264" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="325" y="228" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">take_left</tspan></text>
+    <text class="connection-label code" x="185" y="307" xml:space="preserve"><tspan x="185" dy="0">yes, left</tspan></text>
+    <text class="connection-label code" x="545" y="307" xml:space="preserve"><tspan x="545" dy="0">no, right</tspan></text>
   </g>
   <g class="nodes">
     <g class="node merge" transform="translate(172 458)">
@@ -149,7 +151,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(1185 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(1221 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for select_value</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc>
   <defs>
@@ -171,6 +173,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -184,7 +187,7 @@
     <path class="connection" d="
       M 172 102 L 172 174
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -194,7 +197,7 @@
     </g>
     <g class="node end" transform="translate(172 203)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
     </g>
   </g>
 </svg>

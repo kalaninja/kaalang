@@ -25,7 +25,7 @@ use crate::{
     collapsed, collapsed_text,
     flow::captions::Captions,
     markup::{DOT_RADIUS, MARGIN},
-    text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_literal, wrap_text},
+    text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
 };
 
 mod action;
@@ -1020,7 +1020,13 @@ fn parameter_panel(parameters: &[String]) -> Option<ParameterPanel> {
     }
     let lines = parameters
         .iter()
-        .flat_map(|parameter| wrap_literal(parameter, PARAMETER_LABEL_WIDTH, LABEL_FONT))
+        .flat_map(|parameter| {
+            wrap_text(
+                &RichText::code(parameter),
+                PARAMETER_LABEL_WIDTH,
+                LABEL_FONT,
+            )
+        })
         .collect::<Vec<_>>();
     Some(ParameterPanel {
         parameters: parameters.to_vec(),

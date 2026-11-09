@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="834" height="785" viewBox="0 0 834 785" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for internal_stage_parameter_names</title><desc id="kaalang-description">The flow starts directly at stage first. Transitions return to the stage entry rail. Nodes: Start: internal_stage_parameter_names with parameters first: u32; __kaalang_wire_0: u32; r#__kaalang_wire_0_: u32 handing over __kaalang_wire_0, __kaalang_wire_0_. Stage first. Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Stage transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Stage transition: Keep the inputs.. Transition to stage next. Stage next. Nodes: Stage: Keep the inputs.; Action: Collect the values. capturing next, __kaalang_wire_0, __kaalang_wire_0_ handing over result; End: (u32, u32, u32) capturing result. Connections: Stage: Keep the inputs. to Action: Collect the values.; Action: Collect the values. to End: (u32, u32, u32).</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="864" height="788" viewBox="0 0 864 788" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for internal_stage_parameter_names</title><desc id="kaalang-description">The flow starts directly at stage first. Transitions return to the stage entry rail. Nodes: Start: internal_stage_parameter_names with parameters first: u32; __kaalang_wire_0: u32; r#__kaalang_wire_0_: u32 handing over __kaalang_wire_0, __kaalang_wire_0_. Stage first. Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Stage transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Stage transition: Keep the inputs.. Transition to stage next. Stage next. Nodes: Stage: Keep the inputs.; Action: Collect the values. capturing next, __kaalang_wire_0, __kaalang_wire_0_ handing over result; End: (u32, u32, u32) capturing result. Connections: Stage: Keep the inputs. to Action: Collect the values.; Action: Collect the values. to End: (u32, u32, u32).</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 127 L 232 176 "/>
-<path d="M 232 176 L 232 212 "/>
-<path d="M 232 693 L 232 761 "/>
-<path d="M 612 176 L 612 212 "/>
-<path d="M 232 176 L 612 176 "/>
-<path d="M 232 761 L 24 761 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 131 L 232 179 "/>
+<path d="M 232 179 L 232 215 "/>
+<path d="M 232 696 L 232 764 "/>
+<path d="M 612 179 L 612 215 "/>
+<path d="M 232 179 L 612 179 "/>
+<path d="M 232 764 L 24 764 L 24 179 L 232 179 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="178" viewBox="0 0 680 178" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="182" viewBox="0 0 680 182" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for internal_stage_parameter_names</title>
   <desc id="kaalang-part-0-description">Nodes: Start: internal_stage_parameter_names with parameters first: u32; __kaalang_wire_0: u32; r#__kaalang_wire_0_: u32 handing over __kaalang_wire_0, __kaalang_wire_0_.</desc>
   <defs>
@@ -30,6 +30,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -39,22 +40,22 @@
   <g class="connections">
     <path class="connection" d="
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">__kaalang_wire_0, </tspan><tspan x="185" dy="14">__kaalang_wire_0_</tspan></text>
+    <text class="connection-label code" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">__kaalang_wire_0, </tspan><tspan x="185" dy="14">__kaalang_wire_0_</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">first: u32</tspan><tspan x="-104" dy="18">__kaalang_wire_0: u32</tspan><tspan x="-104" dy="18">r#__kaalang_wire_0_: u32</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">first: u32</tspan><tspan x="-104" dy="18">__kaalang_wire_0: u32</tspan><tspan x="-104" dy="18">r#__kaalang_wire_0_: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">internal_stage_parameter_names</tspan></text>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">internal_stage_parameter_nam</tspan><tspan x="0" dy="18">es</tspan></text>
     </g>
   </g>
 </svg>
 </g>
-<g transform="translate(60 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="545" viewBox="0 0 344 545" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 183)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="545" viewBox="0 0 344 545" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for internal_stage_parameter_names</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Forward the first input.; Action: Forward. capturing first; Stage transition: Keep the inputs.. Connections: Stage: Forward the first input. to Action: Forward.; Action: Forward. to Stage transition: Keep the inputs..</desc>
   <defs>
@@ -76,6 +77,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -90,7 +92,7 @@
       M 172 102 L 172 174
       M 172 238 L 172 443
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -111,7 +113,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 180)"><svg xmlns="http://www.w3.org/2000/svg" width="370" height="407" viewBox="0 0 370 407" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(440 183)"><svg xmlns="http://www.w3.org/2000/svg" width="400" height="407" viewBox="0 0 400 407" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for internal_stage_parameter_names</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Keep the inputs.; Action: Collect the values. capturing next, __kaalang_wire_0, __kaalang_wire_0_ handing over result; End: (u32, u32, u32) capturing result. Connections: Stage: Keep the inputs. to Action: Collect the values.; Action: Collect the values. to End: (u32, u32, u32).</desc>
   <defs>
@@ -133,6 +135,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -147,8 +150,8 @@
       M 172 102 L 172 181
       M 172 245 L 172 317
     "/>
-    <text class="connection-label" x="185" y="306" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="156" xml:space="preserve"><tspan x="185" dy="0">next, __kaalang_wire_0, </tspan><tspan x="185" dy="14">__kaalang_wire_0_</tspan></text>
+    <text class="connection-label code" x="185" y="306" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="156" xml:space="preserve"><tspan x="185" dy="0">next, __kaalang_wire_0, </tspan><tspan x="185" dy="14">__kaalang_wire_0_</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -163,7 +166,7 @@
     </g>
     <g class="node end" transform="translate(172 346)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(u32, u32, u32)</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">(u32, u32, u32)</tspan></text>
     </g>
   </g>
 </svg>

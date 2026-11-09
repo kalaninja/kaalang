@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1246" viewBox="0 0 704 1246" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1254" viewBox="0 0 704 1254" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for question_after_one_entry_block</title>
   <desc id="kaalang-description">Nodes: Start: question_after_one_entry_block with parameters condition: bool handing over condition; Question: Choose the pair. capturing condition handing over yes / no; Action: Build the yes pair. capturing yes handing over left, right; Action: Build the no pair. capturing no handing over left, right; Action: Use the left value. capturing left handing over first; Action: Use the right value. capturing right handing over second; Question: Is the first value large? capturing first handing over large / small; Action: Combine a large first value with the second. capturing large, second handing over end; Action: Combine a small first value with the second. capturing small, second handing over end; End: u32 capturing end; Merge: left, right; Merge: end. Connections: Start: question_after_one_entry_block to Question: Choose the pair.; Question: Choose the pair. branch 1 to Action: Build the yes pair.; Question: Choose the pair. branch 2 to Action: Build the no pair.; Action: Build the yes pair. to the left and right merge; Action: Build the no pair. to the left and right merge; Action: Use the left value. to Action: Use the right value.; Action: Use the right value. to Question: Is the first value large?; Question: Is the first value large? branch 1 to Action: Combine a large first value with the second.; Question: Is the first value large? branch 2 to Action: Combine a small first value with the second.; Action: Combine a large first value with the second. to the end merge; Action: Combine a small first value with the second. to the end merge; the left and right merge to Action: Use the left value.; the end merge to End: u32.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,96 +30,96 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 234 L 172 306
-      M 312 198 L 532 198 L 532 306
-      M 172 370 L 172 446
-      M 532 370 L 532 446 L 172 446
-      M 172 586 L 172 658
-      M 172 722 L 172 794
-      M 172 866 L 172 938
-      M 312 830 L 532 830 L 532 938
-      M 172 1004 L 172 1080
-      M 532 1004 L 532 1080 L 172 1080
-      M 172 446 L 172 522
-      M 172 1080 L 172 1156
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 594 L 172 666
+      M 172 730 L 172 802
+      M 172 874 L 172 946
+      M 312 838 L 532 838 L 532 946
+      M 172 1012 L 172 1088
+      M 532 1012 L 532 1088 L 172 1088
+      M 172 454 L 172 530
+      M 172 1088 L 172 1164
     "/>
-    <text class="connection-label" x="185" y="464" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="185" y="1098" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="604" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="185" y="740" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
-    <text class="connection-label" x="185" y="884" xml:space="preserve"><tspan x="185" dy="0">large</tspan></text>
-    <text class="connection-label" x="325" y="848" xml:space="preserve"><tspan x="325" dy="0">small</tspan></text>
-    <text class="connection-label" x="185" y="511" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="185" y="647" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
-    <text class="connection-label" x="185" y="783" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="185" y="927" xml:space="preserve"><tspan x="185" dy="0">large, second</tspan></text>
-    <text class="connection-label" x="545" y="927" xml:space="preserve"><tspan x="545" dy="0">small, second</tspan></text>
+    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <text class="connection-label code" x="185" y="1106" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="748" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
+    <text class="connection-label code" x="185" y="892" xml:space="preserve"><tspan x="185" dy="0">large</tspan></text>
+    <text class="connection-label code" x="325" y="856" xml:space="preserve"><tspan x="325" dy="0">small</tspan></text>
+    <text class="connection-label code" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label code" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">right</tspan></text>
+    <text class="connection-label code" x="185" y="791" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="935" xml:space="preserve"><tspan x="185" dy="0">large, second</tspan></text>
+    <text class="connection-label code" x="545" y="935" xml:space="preserve"><tspan x="545" dy="0">small, second</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 446)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the left and right merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 1080)">
+    <g class="node merge" transform="translate(172 1088)">
       <title xml:space="preserve">the end merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">question_after_one_entry_block</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">question_after_one_entry_blo</tspan><tspan x="0" dy="18">ck</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 198)">
+    <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Choose the pair.</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Choose the pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 338)">
+    <g class="node action" transform="translate(172 346)">
       <title xml:space="preserve">Build the yes pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the yes pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 338)">
+    <g class="node action" transform="translate(532 346)">
       <title xml:space="preserve">Build the no pair.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the no pair.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 554)">
+    <g class="node action" transform="translate(172 562)">
       <title xml:space="preserve">Use the left value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the left value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 690)">
+    <g class="node action" transform="translate(172 698)">
       <title xml:space="preserve">Use the right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the right value.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 830)">
+    <g class="node question" transform="translate(172 838)">
       <title xml:space="preserve">Is the first value large?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the first value large?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 971)">
+    <g class="node action" transform="translate(172 979)">
       <title xml:space="preserve">Combine a large first value with the second.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Combine a large first value with </tspan><tspan x="-124" dy="18">the second.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 971)">
+    <g class="node action" transform="translate(532 979)">
       <title xml:space="preserve">Combine a small first value with the second.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Combine a small first value with </tspan><tspan x="-124" dy="18">the second.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1185)">
+    <g class="node end" transform="translate(172 1193)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

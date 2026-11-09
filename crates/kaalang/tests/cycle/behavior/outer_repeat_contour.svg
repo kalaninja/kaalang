@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -49,21 +50,21 @@
     <path class="connection" d="
       M 920 660 L 1080 660 L 1080 162 L 200 162
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="933" y="678" xml:space="preserve"><tspan x="933" dy="0">advanced</tspan></text>
-    <text class="connection-label" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mut mode</tspan></text>
-    <text class="connection-label" x="213" y="466" xml:space="preserve"><tspan x="213" dy="0">leave</tspan></text>
-    <text class="connection-label" x="573" y="466" xml:space="preserve"><tspan x="573" dy="0">middle</tspan></text>
-    <text class="connection-label" x="933" y="466" xml:space="preserve"><tspan x="933" dy="0">right</tspan></text>
-    <text class="connection-label" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
-    <text class="connection-label" x="573" y="509" xml:space="preserve"><tspan x="573" dy="0">middle, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="933" y="509" xml:space="preserve"><tspan x="933" dy="0">right, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="213" y="725" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="933" y="678" xml:space="preserve"><tspan x="933" dy="0">advanced</tspan></text>
+    <text class="connection-label code" x="213" y="108" xml:space="preserve"><tspan x="213" dy="0">mut mode</tspan></text>
+    <text class="connection-label code" x="213" y="466" xml:space="preserve"><tspan x="213" dy="0">leave</tspan></text>
+    <text class="connection-label code" x="573" y="466" xml:space="preserve"><tspan x="573" dy="0">middle</tspan></text>
+    <text class="connection-label code" x="933" y="466" xml:space="preserve"><tspan x="933" dy="0">right</tspan></text>
+    <text class="connection-label code" x="213" y="223" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="573" y="509" xml:space="preserve"><tspan x="573" dy="0">middle, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="933" y="509" xml:space="preserve"><tspan x="933" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="213" y="725" xml:space="preserve"><tspan x="213" dy="0">mode</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
     <g class="parameter-panel" transform="translate(556 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(920 660)">
       <title xml:space="preserve">the advanced merge at the iteration tail of the cycle</title>
@@ -71,7 +72,7 @@
     </g>
     <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">outer_repeat_contour</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">outer_repeat_contour</tspan></text>
     </g>
     <g class="node select" transform="translate(200 270)">
       <title xml:space="preserve">Which route?</title>
@@ -105,7 +106,7 @@
     </g>
     <g class="node end" transform="translate(200 765)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

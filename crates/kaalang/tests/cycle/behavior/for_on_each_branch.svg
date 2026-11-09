@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="706" height="1028" viewBox="0 0 706 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="710" height="1028" viewBox="0 0 710 1028" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for for_on_each_branch</title>
   <desc id="kaalang-description">Cycles: Add every value twice. with inputs double, values, mut total and outputs counted; Add every value once. with inputs single, values, mut total and outputs counted. Nodes: Start: for_on_each_branch with parameters values: &amp;[i64]; twice: bool handing over values, twice; Action: Start with a total of zero. capturing nothing handing over mut total; Question: Should every value count twice? capturing twice handing over double / single; For entry: Add every value twice. capturing double, values handing over value; Action: Add the value twice. capturing value, &amp;mut total; For end: Add every value twice. handing over counted; For entry: Add every value once. capturing single, values handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add every value once. handing over counted; End: i64 capturing total; Merge: counted. Connections: Start: for_on_each_branch to Action: Start with a total of zero.; Action: Start with a total of zero. to Question: Should every value count twice?; Question: Should every value count twice? branch 1 to For entry: Add every value twice.; Question: Should every value count twice? branch 2 to For entry: Add every value once.; For entry: Add every value twice. to Action: Add the value twice.; Action: Add the value twice. to For end: Add every value twice.; For end: Add every value twice. to the counted merge; For entry: Add every value once. to Action: Add the value.; Action: Add the value. to For end: Add every value once.; For end: Add every value once. to the counted merge; the counted merge to End: i64.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -43,26 +44,26 @@
       M 533 786 L 533 862 L 173 862
       M 173 862 L 173 938
     "/>
-    <text class="connection-label" x="186" y="880" xml:space="preserve"><tspan x="186" dy="0">counted</tspan></text>
-    <text class="connection-label" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">values, twice</tspan></text>
-    <text class="connection-label" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="186" y="396" xml:space="preserve"><tspan x="186" dy="0">double</tspan></text>
-    <text class="connection-label" x="326" y="360" xml:space="preserve"><tspan x="326" dy="0">single</tspan></text>
-    <text class="connection-label" x="186" y="532" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
-    <text class="connection-label" x="546" y="532" xml:space="preserve"><tspan x="546" dy="0">value</tspan></text>
-    <text class="connection-label" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">twice</tspan></text>
-    <text class="connection-label" x="186" y="439" xml:space="preserve"><tspan x="186" dy="0">double, values</tspan></text>
-    <text class="connection-label" x="186" y="575" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="546" y="439" xml:space="preserve"><tspan x="546" dy="0">single, values</tspan></text>
-    <text class="connection-label" x="546" y="575" xml:space="preserve"><tspan x="546" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="186" y="927" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
+    <text class="connection-label code" x="186" y="880" xml:space="preserve"><tspan x="186" dy="0">counted</tspan></text>
+    <text class="connection-label code" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">values, twice</tspan></text>
+    <text class="connection-label code" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="186" y="396" xml:space="preserve"><tspan x="186" dy="0">double</tspan></text>
+    <text class="connection-label code" x="326" y="360" xml:space="preserve"><tspan x="326" dy="0">single</tspan></text>
+    <text class="connection-label code" x="186" y="532" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label code" x="546" y="532" xml:space="preserve"><tspan x="546" dy="0">value</tspan></text>
+    <text class="connection-label code" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">twice</tspan></text>
+    <text class="connection-label code" x="186" y="439" xml:space="preserve"><tspan x="186" dy="0">double, values</tspan></text>
+    <text class="connection-label code" x="186" y="575" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="546" y="439" xml:space="preserve"><tspan x="546" dy="0">single, values</tspan></text>
+    <text class="connection-label code" x="546" y="575" xml:space="preserve"><tspan x="546" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="186" y="927" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 313 65 L 409 65"/>
     <g class="parameter-panel" transform="translate(529 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i64]</tspan><tspan x="-104" dy="18">twice: bool</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i64]</tspan><tspan x="-104" dy="18">twice: bool</tspan></text>
     </g>
     <g class="node merge" transform="translate(173 862)">
       <title xml:space="preserve">the counted merge</title>
@@ -70,7 +71,7 @@
     </g>
     <g class="node start" transform="translate(173 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_on_each_branch</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_on_each_branch</tspan></text>
     </g>
     <g class="node action" transform="translate(173 202)">
       <title xml:space="preserve">Start with a total of zero.</title>
@@ -114,7 +115,7 @@
     </g>
     <g class="node end" transform="translate(173 967)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">i64</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">i64</tspan></text>
     </g>
   </g>
 </svg>

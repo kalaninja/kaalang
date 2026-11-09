@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -72,28 +73,28 @@
     <path class="connection" d="
       M 640 1334 L 60 1334 L 60 162 L 280 162
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="653" y="1100" xml:space="preserve"><tspan x="653" dy="0">inner_result</tspan></text>
-    <text class="connection-label" x="1013" y="1460" xml:space="preserve"><tspan x="1013" dy="0">selected</tspan></text>
-    <text class="connection-label" x="1373" y="509" xml:space="preserve"><tspan x="1373" dy="0">seven</tspan></text>
-    <text class="connection-label" x="1733" y="509" xml:space="preserve"><tspan x="1733" dy="0">nine</tspan></text>
-    <text class="connection-label" x="653" y="931" xml:space="preserve"><tspan x="653" dy="0">leave</tspan></text>
-    <text class="connection-label" x="1013" y="931" xml:space="preserve"><tspan x="1013" dy="0">eleven</tspan></text>
-    <text class="connection-label" x="293" y="108" xml:space="preserve"><tspan x="293" dy="0">mut mode</tspan></text>
-    <text class="connection-label" x="293" y="466" xml:space="preserve"><tspan x="293" dy="0">enter</tspan></text>
-    <text class="connection-label" x="293" y="888" xml:space="preserve"><tspan x="293" dy="0">repeat</tspan></text>
-    <text class="connection-label" x="653" y="1248" xml:space="preserve"><tspan x="653" dy="0">repeat_outer</tspan></text>
-    <text class="connection-label" x="793" y="1212" xml:space="preserve"><tspan x="793" dy="0">finish_inner</tspan></text>
-    <text class="connection-label" x="293" y="223" xml:space="preserve"><tspan x="293" dy="0">mode</tspan></text>
-    <text class="connection-label" x="293" y="645" xml:space="preserve"><tspan x="293" dy="0">&amp;mode</tspan></text>
-    <text class="connection-label" x="293" y="931" xml:space="preserve"><tspan x="293" dy="0">repeat, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="653" y="1147" xml:space="preserve"><tspan x="653" dy="0">&amp;inner_result</tspan></text>
-    <text class="connection-label" x="1013" y="1291" xml:space="preserve"><tspan x="1013" dy="0">finish_inner, inner_result</tspan></text>
+    <text class="connection-label code" x="653" y="1100" xml:space="preserve"><tspan x="653" dy="0">inner_result</tspan></text>
+    <text class="connection-label code" x="1013" y="1460" xml:space="preserve"><tspan x="1013" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="1373" y="509" xml:space="preserve"><tspan x="1373" dy="0">seven</tspan></text>
+    <text class="connection-label code" x="1733" y="509" xml:space="preserve"><tspan x="1733" dy="0">nine</tspan></text>
+    <text class="connection-label code" x="653" y="931" xml:space="preserve"><tspan x="653" dy="0">leave</tspan></text>
+    <text class="connection-label code" x="1013" y="931" xml:space="preserve"><tspan x="1013" dy="0">eleven</tspan></text>
+    <text class="connection-label code" x="293" y="108" xml:space="preserve"><tspan x="293" dy="0">mut mode</tspan></text>
+    <text class="connection-label code" x="293" y="466" xml:space="preserve"><tspan x="293" dy="0">enter</tspan></text>
+    <text class="connection-label code" x="293" y="888" xml:space="preserve"><tspan x="293" dy="0">repeat</tspan></text>
+    <text class="connection-label code" x="653" y="1248" xml:space="preserve"><tspan x="653" dy="0">repeat_outer</tspan></text>
+    <text class="connection-label code" x="793" y="1212" xml:space="preserve"><tspan x="793" dy="0">finish_inner</tspan></text>
+    <text class="connection-label code" x="293" y="223" xml:space="preserve"><tspan x="293" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="293" y="645" xml:space="preserve"><tspan x="293" dy="0">&amp;mode</tspan></text>
+    <text class="connection-label code" x="293" y="931" xml:space="preserve"><tspan x="293" dy="0">repeat, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="653" y="1147" xml:space="preserve"><tspan x="653" dy="0">&amp;inner_result</tspan></text>
+    <text class="connection-label code" x="1013" y="1291" xml:space="preserve"><tspan x="1013" dy="0">finish_inner, inner_result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 420 61 L 516 61"/>
     <g class="parameter-panel" transform="translate(636 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(640 1082)">
       <title xml:space="preserve">the inner_result merge at the cycle result</title>
@@ -105,7 +106,7 @@
     </g>
     <g class="node start" transform="translate(280 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">end_below_nested_back_edges</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">end_below_nested_back_edges</tspan></text>
     </g>
     <g class="node select" transform="translate(280 270)">
       <title xml:space="preserve">Which outer route?</title>
@@ -184,7 +185,7 @@
     </g>
     <g class="node end" transform="translate(1000 1547)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

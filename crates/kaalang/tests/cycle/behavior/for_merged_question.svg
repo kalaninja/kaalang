@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -40,26 +41,26 @@
       M 173 850 L 173 922
       M 173 714 L 173 786
     "/>
-    <text class="connection-label" x="186" y="423" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
-    <text class="connection-label" x="186" y="108" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
-    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="186" y="524" xml:space="preserve"><tspan x="186" dy="0">even</tspan></text>
-    <text class="connection-label" x="326" y="488" xml:space="preserve"><tspan x="326" dy="0">_counted</tspan></text>
-    <text class="connection-label" x="186" y="660" xml:space="preserve"><tspan x="186" dy="0">_counted</tspan></text>
-    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
-    <text class="connection-label" x="186" y="567" xml:space="preserve"><tspan x="186" dy="0">even, value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="186" y="911" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
+    <text class="connection-label code" x="186" y="423" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label code" x="186" y="108" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label code" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="186" y="524" xml:space="preserve"><tspan x="186" dy="0">even</tspan></text>
+    <text class="connection-label code" x="326" y="488" xml:space="preserve"><tspan x="326" dy="0">_counted</tspan></text>
+    <text class="connection-label code" x="186" y="660" xml:space="preserve"><tspan x="186" dy="0">_counted</tspan></text>
+    <text class="connection-label code" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label code" x="186" y="567" xml:space="preserve"><tspan x="186" dy="0">even, value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="186" y="911" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 313 61 L 409 61"/>
     <g class="parameter-panel" transform="translate(529 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
     </g>
     <g class="node start" transform="translate(173 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_merged_question</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_merged_question</tspan></text>
     </g>
     <g class="node action" transform="translate(173 194)">
       <title xml:space="preserve">Start with a total of zero.</title>
@@ -88,7 +89,7 @@
     </g>
     <g class="node end" transform="translate(173 951)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

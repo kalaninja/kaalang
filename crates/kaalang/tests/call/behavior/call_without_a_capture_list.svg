@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -32,13 +33,13 @@
       M 172 90 L 172 162
       M 172 226 L 172 298
     "/>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">call_without_a_capture_list</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">call_without_a_capture_list</tspan></text>
     </g>
     <g class="node call" transform="translate(172 194)">
       <title xml:space="preserve">Start at the origin.</title>
@@ -48,7 +49,7 @@
     </g>
     <g class="node end" transform="translate(172 327)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(i32, i32)</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">(i32, i32)</tspan></text>
     </g>
   </g>
 </svg>

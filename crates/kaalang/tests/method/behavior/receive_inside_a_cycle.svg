@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -44,22 +45,22 @@
     <path class="connection" d="
       M 220 522 L 60 522 L 60 170 L 220 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">self, mut start</tspan></text>
+    <text class="connection-label code" x="233" y="112" xml:space="preserve"><tspan x="233" dy="0">self, mut start</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="233" y="334" xml:space="preserve"><tspan x="233" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="373" y="266" xml:space="preserve"><tspan x="373" dy="0">NO</tspan></text>
-    <text class="connection-label" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;start, &amp;self</tspan></text>
-    <text class="connection-label" x="233" y="375" xml:space="preserve"><tspan x="233" dy="0">climb, &amp;mut start</tspan></text>
-    <text class="connection-label" x="593" y="583" xml:space="preserve"><tspan x="593" dy="0">start</tspan></text>
+    <text class="connection-label code" x="233" y="231" xml:space="preserve"><tspan x="233" dy="0">&amp;start, &amp;self</tspan></text>
+    <text class="connection-label code" x="233" y="375" xml:space="preserve"><tspan x="233" dy="0">climb, &amp;mut start</tspan></text>
+    <text class="connection-label code" x="593" y="583" xml:space="preserve"><tspan x="593" dy="0">start</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 65 L 456 65"/>
     <g class="parameter-panel" transform="translate(576 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">&amp;self</tspan><tspan x="-104" dy="18">mut start: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">&amp;self</tspan><tspan x="-104" dy="18">mut start: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">receive_inside_a_cycle</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">receive_inside_a_cycle</tspan></text>
     </g>
     <g class="node question" transform="translate(220 278)">
       <title xml:space="preserve">Is the rung below the top?</title>
@@ -73,7 +74,7 @@
     </g>
     <g class="node end" transform="translate(580 623)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

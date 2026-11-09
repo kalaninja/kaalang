@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1076" viewBox="0 0 680 1076" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1083" viewBox="0 0 680 1083" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for result_shapes</title>
   <desc id="kaalang-description">Nodes: Start: result_shapes with parameters value: usize handing over value; Cycle: Produce a named unit result. capturing nothing handing over ready; Cycle: Produce a mutable scalar result. capturing value handing over mut adjusted; Action: Adjust the mutable cycle result. capturing ready, &amp;mut adjusted; Cycle: Declare a singleton output, which does not destructure. capturing value handing over single; Cycle: Hand over a tuple-valued output whole. capturing single handing over pair; Action: Destructure the pair after the cycle. capturing pair handing over left, right; End: (usize, usize, usize, usize) capturing adjusted, single, left, right. Connections: Start: result_shapes to Cycle: Produce a named unit result.; Cycle: Produce a named unit result. to Cycle: Produce a mutable scalar result.; Cycle: Produce a mutable scalar result. to Action: Adjust the mutable cycle result.; Action: Adjust the mutable cycle result. to Cycle: Declare a singleton output, which does not destructure.; Cycle: Declare a singleton output, which does not destructure. to Cycle: Hand over a tuple-valued output whole.; Cycle: Hand over a tuple-valued output whole. to Action: Destructure the pair after the cycle.; Action: Destructure the pair after the cycle. to End: (usize, usize, usize, usize).</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -35,29 +36,29 @@
       M 172 500 L 172 572
       M 172 638 L 172 710
       M 172 776 L 172 848
-      M 172 914 L 172 986
+      M 172 914 L 172 993
     "/>
-    <text class="connection-label" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">single</tspan></text>
-    <text class="connection-label" x="185" y="837" xml:space="preserve"><tspan x="185" dy="0">pair</tspan></text>
-    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
-    <text class="connection-label" x="185" y="382" xml:space="preserve"><tspan x="185" dy="0">mut adjusted</tspan></text>
-    <text class="connection-label" x="185" y="932" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">ready, &amp;mut adjusted</tspan></text>
-    <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="975" xml:space="preserve"><tspan x="185" dy="0">adjusted, single, left, right</tspan></text>
+    <text class="connection-label code" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">single</tspan></text>
+    <text class="connection-label code" x="185" y="837" xml:space="preserve"><tspan x="185" dy="0">pair</tspan></text>
+    <text class="connection-label code" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
+    <text class="connection-label code" x="185" y="382" xml:space="preserve"><tspan x="185" dy="0">mut adjusted</tspan></text>
+    <text class="connection-label code" x="185" y="932" xml:space="preserve"><tspan x="185" dy="0">left, right</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">ready, &amp;mut adjusted</tspan></text>
+    <text class="connection-label code" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="968" xml:space="preserve"><tspan x="185" dy="0">adjusted, single, left, </tspan><tspan x="185" dy="14">right</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: usize</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">result_shapes</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">result_shapes</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 194)">
       <title xml:space="preserve">Produce a named unit result.</title>
@@ -93,9 +94,9 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Destructure the pair after the </tspan><tspan x="-124" dy="18">cycle.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1015)">
+    <g class="node end" transform="translate(172 1022)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(usize, usize, usize, usize)</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">(usize, usize, usize, usize)</tspan></text>
     </g>
   </g>
 </svg>

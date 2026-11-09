@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="346" height="796" viewBox="0 0 346 796" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="346" height="804" viewBox="0 0 346 804" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for statements_without_semicolons</title>
   <desc id="kaalang-description">Cycles: Knock three times. with inputs mut text and outputs (). Nodes: Start: statements_without_semicolons; Action: Start with an empty text. capturing nothing handing over mut text; For entry: Knock three times. capturing nothing; Action: Knock once. capturing &amp;mut text; For end: Knock three times.; End: String capturing text. Connections: Start: statements_without_semicolons to Action: Start with an empty text.; Action: Start with an empty text. to For entry: Knock three times.; For entry: Knock three times. to Action: Knock once.; Action: Knock once. to For end: Knock three times.; For end: Knock three times. to End: String.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -31,46 +32,46 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 173 90 L 173 162
-      M 173 226 L 173 298
-      M 173 362 L 173 434
-      M 173 498 L 173 570
-      M 173 634 L 173 706
+      M 173 98 L 173 170
+      M 173 234 L 173 306
+      M 173 370 L 173 442
+      M 173 506 L 173 578
+      M 173 642 L 173 714
     "/>
-    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut text</tspan></text>
-    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="423" xml:space="preserve"><tspan x="186" dy="0">&amp;mut text</tspan></text>
-    <text class="connection-label" x="186" y="695" xml:space="preserve"><tspan x="186" dy="0">text</tspan></text>
+    <text class="connection-label code" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut text</tspan></text>
+    <text class="connection-label code" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="431" xml:space="preserve"><tspan x="186" dy="0">&amp;mut text</tspan></text>
+    <text class="connection-label code" x="186" y="703" xml:space="preserve"><tspan x="186" dy="0">text</tspan></text>
   </g>
   <g class="nodes">
-    <g class="node start" transform="translate(173 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">statements_without_semicolons</tspan></text>
+    <g class="node start" transform="translate(173 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">statements_without_semicolon</tspan><tspan x="0" dy="18">s</tspan></text>
     </g>
-    <g class="node action" transform="translate(173 194)">
+    <g class="node action" transform="translate(173 202)">
       <title xml:space="preserve">Start with an empty text.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with an empty text.</tspan></text>
     </g>
-    <g class="node for-entry" transform="translate(173 330)">
+    <g class="node for-entry" transform="translate(173 338)">
       <title xml:space="preserve">Knock three times.</title>
       <polygon class="node-shape" points="-124,-32 124,-32 140,-16 140,32 -140,32 -140,-16"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Knock three times.</tspan></text>
     </g>
-    <g class="node action" transform="translate(173 466)">
+    <g class="node action" transform="translate(173 474)">
       <title xml:space="preserve">Knock once.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Knock once.</tspan></text>
     </g>
-    <g class="node for-end" transform="translate(173 602)">
+    <g class="node for-end" transform="translate(173 610)">
       <title xml:space="preserve">Knock three times.</title>
       <polygon class="node-shape" points="-140,-32 140,-32 140,16 124,32 -124,32 -140,16"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Knock three times.</tspan></text>
     </g>
-    <g class="node end" transform="translate(173 735)">
+    <g class="node end" transform="translate(173 743)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
     </g>
   </g>
 </svg>

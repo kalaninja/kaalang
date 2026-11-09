@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1188" height="626" viewBox="0 0 1188 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for forbid_unused_mut</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: forbid_unused_mut with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut counter; Action: Begin counting. capturing nothing; Stage transition: Count to the limit.. Connections: Start: forbid_unused_mut to Action: Initialize the counter.; Action: Initialize the counter. to Action: Begin counting.; Action: Begin counting. to Stage transition: Count to the limit.. Transition to stage count. Stage count. Nodes: Stage: Count to the limit.; Cycle: Increment until the limit. capturing mut counter, limit; Stage transition: Return the count.. Connections: Stage: Count to the limit. to Cycle: Increment until the limit.; Cycle: Increment until the limit. to Stage transition: Return the count.. Transition to stage finish. Stage finish. Nodes: Stage: Return the count.; End: usize capturing counter. Connections: Stage: Return the count. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1199" height="626" viewBox="0 0 1199 626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for forbid_unused_mut</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: forbid_unused_mut with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut counter; Action: Begin counting. capturing nothing; Stage transition: Count to the limit.. Connections: Start: forbid_unused_mut to Action: Initialize the counter.; Action: Initialize the counter. to Action: Begin counting.; Action: Begin counting. to Stage transition: Count to the limit.. Transition to stage count. Stage count. Nodes: Stage: Count to the limit.; Cycle: Increment until the limit. capturing mut counter, limit; Stage transition: Return the count.. Connections: Stage: Count to the limit. to Cycle: Increment until the limit.; Cycle: Increment until the limit. to Stage transition: Return the count.. Transition to stage finish. Stage finish. Nodes: Stage: Return the count.; End: usize capturing counter. Connections: Stage: Return the count. to End: usize.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 534 L 232 602 "/>
 <path d="M 612 150 L 612 186 "/>
 <path d="M 612 534 L 612 602 "/>
-<path d="M 992 150 L 992 186 "/>
-<path d="M 232 150 L 992 150 "/>
+<path d="M 1003 150 L 1003 186 "/>
+<path d="M 232 150 L 1003 150 "/>
 <path d="M 612 602 L 24 602 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="542" viewBox="0 0 680 542" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
@@ -30,6 +30,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -45,20 +46,20 @@
       M 172 226 L 172 298
       M 172 362 L 172 440
     "/>
-    <text class="connection-label" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">limit</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut counter</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="108" xml:space="preserve"><tspan x="185" dy="0">limit</tspan></text>
+    <text class="connection-label code" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">mut counter</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">forbid_unused_mut</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">forbid_unused_mut</tspan></text>
     </g>
     <g class="node action" transform="translate(172 194)">
       <title xml:space="preserve">Initialize the counter.</title>
@@ -78,7 +79,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="412" viewBox="0 0 344 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="355" height="412" viewBox="0 0 355 412" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for forbid_unused_mut</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Count to the limit.; Cycle: Increment until the limit. capturing mut counter, limit; Stage transition: Return the count.. Connections: Stage: Count to the limit. to Cycle: Increment until the limit.; Cycle: Increment until the limit. to Stage transition: Return the count..</desc>
   <defs>
@@ -100,6 +101,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -114,7 +116,7 @@
       M 172 102 L 172 174
       M 172 238 L 172 310
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">mut counter, limit</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">mut counter, limit</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -136,7 +138,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(820 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(831 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for forbid_unused_mut</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return the count.; End: usize capturing counter. Connections: Stage: Return the count. to End: usize.</desc>
   <defs>
@@ -158,6 +160,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -171,7 +174,7 @@
     <path class="connection" d="
       M 172 102 L 172 174
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">counter</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">counter</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -181,7 +184,7 @@
     </g>
     <g class="node end" transform="translate(172 203)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

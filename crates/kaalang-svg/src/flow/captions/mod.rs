@@ -148,13 +148,13 @@ fn derive_with_parameters(
 
     for node in &topology.nodes {
         let label = match node.id {
-            NodeId::Start => RichText::literal(start),
-            NodeId::Block(_) if node.kind == NodeKind::End => RichText::literal(return_type),
+            NodeId::Start => RichText::code(start),
+            NodeId::Block(_) if node.kind == NodeKind::End => RichText::code(return_type),
             // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
                 None if node.kind == NodeKind::Call => {
-                    RichText::literal(model.analysis.flow.blocks[block].callee())
+                    RichText::code(model.analysis.flow.blocks[block].callee())
                 }
                 None => RichText::default(),
             },

@@ -35,6 +35,7 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .cycle-caption .md-math { color: #166534; }
@@ -76,27 +77,27 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       M 172 1184 L 172 1256
       M 172 1340 L 172 1412
     "/>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">crossing</tspan></text>
-    <text class="connection-label" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">overlapping</tspan></text>
-    <text class="connection-label" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">noncanonical</tspan></text>
-    <text class="connection-label" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">enclosing</tspan></text>
-    <text class="connection-label" x="185" y="835" xml:space="preserve"><tspan x="185" dy="0">indented</tspan></text>
-    <text class="connection-label" x="185" y="971" xml:space="preserve"><tspan x="185" dy="0">colors</tspan></text>
-    <text class="connection-label" x="185" y="1107" xml:space="preserve"><tspan x="185" dy="0">carriage_returns</tspan></text>
-    <text class="connection-label" x="185" y="1245" xml:space="preserve"><tspan x="185" dy="0">empty_tags</tspan></text>
-    <text class="connection-label" x="185" y="1358" xml:space="preserve"><tspan x="185" dy="0">tested</tspan></text>
-    <text class="connection-label" x="185" y="1401" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">crossing</tspan></text>
+    <text class="connection-label code" x="185" y="425" xml:space="preserve"><tspan x="185" dy="0">overlapping</tspan></text>
+    <text class="connection-label code" x="185" y="561" xml:space="preserve"><tspan x="185" dy="0">noncanonical</tspan></text>
+    <text class="connection-label code" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">enclosing</tspan></text>
+    <text class="connection-label code" x="185" y="835" xml:space="preserve"><tspan x="185" dy="0">indented</tspan></text>
+    <text class="connection-label code" x="185" y="971" xml:space="preserve"><tspan x="185" dy="0">colors</tspan></text>
+    <text class="connection-label code" x="185" y="1107" xml:space="preserve"><tspan x="185" dy="0">carriage_returns</tspan></text>
+    <text class="connection-label code" x="185" y="1245" xml:space="preserve"><tspan x="185" dy="0">empty_tags</tspan></text>
+    <text class="connection-label code" x="185" y="1358" xml:space="preserve"><tspan x="185" dy="0">tested</tspan></text>
+    <text class="connection-label code" x="185" y="1401" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">render_markup_fallbacks</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">render_markup_fallbacks</tspan></text>
     </g>
     <g class="node action" transform="translate(172 194)">
       <title xml:space="preserve">&lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside</title>
@@ -155,7 +156,7 @@ One&#13;paragraph keeps its style.</title>
     </g>
     <g class="node end" transform="translate(172 1441)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>
   </g>
 </svg>

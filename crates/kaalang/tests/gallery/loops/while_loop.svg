@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="824" viewBox="0 0 800 824" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="824" viewBox="0 0 840 824" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for while_loop</title>
   <desc id="kaalang-description">Cycles: Reduce the pair to its greatest common divisor. with inputs mut b, mut a and outputs divisor. Nodes: Start: while_loop with parameters mut a: u64; mut b: u64 handing over mut a, mut b; Question: Is the second number zero? capturing b handing over done / again described as branch 1: YES / branch 2: NO; Action: 🟰 Use the first number as the greatest common divisor. capturing done, a handing over divisor; Action: ➗ Divide the first number by the second; keep the remainder. capturing again, a, b handing over remainder; Action: Replace the pair with the second number and the remainder. capturing remainder, &amp;mut a, &amp;mut b; End: u64 capturing divisor. Connections: Start: while_loop to the entry of the cycle; Question: Is the second number zero? branch 1 to Action: 🟰 Use the first number as the greatest common divisor.; Question: Is the second number zero? branch 2 to Action: ➗ Divide the first number by the second; keep the remainder.; Action: 🟰 Use the first number as the greatest common divisor. to End: u64; Action: ➗ Divide the first number by the second; keep the remainder. to Action: Replace the pair with the second number and the remainder.; Action: Replace the pair with the second number and the remainder. to the iteration tail of the cycle; the entry of the cycle to Question: Is the second number zero?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -28,8 +29,8 @@
   <g class="cycle-regions">
     <g>
       <title xml:space="preserve">Reduce the pair to its greatest common divisor.</title>
-    <rect class="cycle-boundary" x="32" y="135" width="736" height="562" rx="12"/>
-    <text class="cycle-caption" x="756" y="149" text-anchor="end" xml:space="preserve"><tspan x="756" dy="0">Reduce the pair to its greatest common divisor.</tspan></text>
+    <rect class="cycle-boundary" x="32" y="135" width="776" height="562" rx="12"/>
+    <text class="cycle-caption" x="796" y="149" text-anchor="end" xml:space="preserve"><tspan x="796" dy="0">Reduce the pair to its greatest common divisor.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -44,28 +45,28 @@
       M 200 170 L 200 242
     "/>
     <path class="connection" d="
-      M 560 662 L 740 662 L 740 170 L 200 170
+      M 560 662 L 780 662 L 780 170 L 200 170
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut a, mut b</tspan></text>
+    <text class="connection-label code" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">mut a, mut b</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="334" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="353" y="266" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
-    <text class="connection-label" x="213" y="470" xml:space="preserve"><tspan x="213" dy="0">divisor</tspan></text>
-    <text class="connection-label" x="573" y="470" xml:space="preserve"><tspan x="573" dy="0">remainder</tspan></text>
-    <text class="connection-label" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">b</tspan></text>
-    <text class="connection-label" x="213" y="375" xml:space="preserve"><tspan x="213" dy="0">done, a</tspan></text>
-    <text class="connection-label" x="573" y="375" xml:space="preserve"><tspan x="573" dy="0">again, a, b</tspan></text>
-    <text class="connection-label" x="573" y="513" xml:space="preserve"><tspan x="573" dy="0">remainder, &amp;mut a, &amp;mut b</tspan></text>
-    <text class="connection-label" x="213" y="723" xml:space="preserve"><tspan x="213" dy="0">divisor</tspan></text>
+    <text class="connection-label code" x="213" y="470" xml:space="preserve"><tspan x="213" dy="0">divisor</tspan></text>
+    <text class="connection-label code" x="573" y="470" xml:space="preserve"><tspan x="573" dy="0">remainder</tspan></text>
+    <text class="connection-label code" x="213" y="231" xml:space="preserve"><tspan x="213" dy="0">b</tspan></text>
+    <text class="connection-label code" x="213" y="375" xml:space="preserve"><tspan x="213" dy="0">done, a</tspan></text>
+    <text class="connection-label code" x="573" y="375" xml:space="preserve"><tspan x="573" dy="0">again, a, b</tspan></text>
+    <text class="connection-label code" x="573" y="513" xml:space="preserve"><tspan x="573" dy="0">remainder, &amp;mut a, &amp;mut b</tspan></text>
+    <text class="connection-label code" x="213" y="723" xml:space="preserve"><tspan x="213" dy="0">divisor</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
     <g class="parameter-panel" transform="translate(556 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut a: u64</tspan><tspan x="-104" dy="18">mut b: u64</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">mut a: u64</tspan><tspan x="-104" dy="18">mut b: u64</tspan></text>
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">while_loop</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">while_loop</tspan></text>
     </g>
     <g class="node question" transform="translate(200 278)">
       <title xml:space="preserve">Is the second number zero?</title>
@@ -89,7 +90,7 @@
     </g>
     <g class="node end" transform="translate(200 763)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
     </g>
   </g>
 </svg>

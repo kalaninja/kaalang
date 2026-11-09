@@ -32,6 +32,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -46,11 +47,11 @@
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">local_signal_in_stage_cycle</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">local_signal_in_stage_cycle</tspan></text>
     </g>
   </g>
 </svg>
@@ -77,6 +78,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -98,10 +100,10 @@
       M 200 378 L 200 450
       M 200 514 L 200 586
     "/>
-    <text class="connection-label" x="213" y="301" xml:space="preserve"><tspan x="213" dy="0">finish</tspan></text>
-    <text class="connection-label" x="213" y="396" xml:space="preserve"><tspan x="213" dy="0">local</tspan></text>
-    <text class="connection-label" x="213" y="163" xml:space="preserve"><tspan x="213" dy="0">go</tspan></text>
-    <text class="connection-label" x="213" y="439" xml:space="preserve"><tspan x="213" dy="0">local</tspan></text>
+    <text class="connection-label code" x="213" y="301" xml:space="preserve"><tspan x="213" dy="0">finish</tspan></text>
+    <text class="connection-label code" x="213" y="396" xml:space="preserve"><tspan x="213" dy="0">local</tspan></text>
+    <text class="connection-label code" x="213" y="163" xml:space="preserve"><tspan x="213" dy="0">go</tspan></text>
+    <text class="connection-label code" x="213" y="439" xml:space="preserve"><tspan x="213" dy="0">local</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(200 67)">
@@ -154,6 +156,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -168,7 +171,7 @@
       M 172 102 L 172 174
       M 172 238 L 172 586
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">next</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">next</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -211,6 +214,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -224,7 +228,7 @@
     <path class="connection" d="
       M 172 102 L 172 174
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -234,7 +238,7 @@
     </g>
     <g class="node end" transform="translate(172 203)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

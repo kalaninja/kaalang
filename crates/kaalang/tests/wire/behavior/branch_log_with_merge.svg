@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -37,20 +38,20 @@
       M 172 594 L 172 666
       M 172 454 L 172 530
     "/>
-    <text class="connection-label" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
-    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, value</tspan></text>
-    <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, &amp;value</tspan></text>
-    <text class="connection-label" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">ready, value</tspan></text>
+    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">ready</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, value</tspan></text>
+    <text class="connection-label code" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, &amp;value</tspan></text>
+    <text class="connection-label code" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">ready, value</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">value: String</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">value: String</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the ready merge</title>
@@ -58,7 +59,7 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">branch_log_with_merge</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">branch_log_with_merge</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Log the value?</title>
@@ -82,7 +83,7 @@
     </g>
     <g class="node end" transform="translate(172 695)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

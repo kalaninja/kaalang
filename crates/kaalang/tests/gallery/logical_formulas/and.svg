@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .cycle-caption .md-math { color: #166534; }
@@ -62,24 +63,24 @@
       M 532 512 L 532 620
       M 172 762 L 172 838
     "/>
-    <text class="connection-label" x="545" y="530" xml:space="preserve"><tspan x="545" dy="0">false_result</tspan></text>
-    <text class="connection-label" x="185" y="780" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
+    <text class="connection-label code" x="545" y="530" xml:space="preserve"><tspan x="545" dy="0">false_result</tspan></text>
+    <text class="connection-label code" x="185" y="780" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="280" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="212" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="424" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="356" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="185" y="568" xml:space="preserve"><tspan x="185" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="325" y="500" xml:space="preserve"><tspan x="325" dy="0">NO</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
-    <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">check_b, b</tspan></text>
-    <text class="connection-label" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">check_c, c</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label code" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">check_b, b</tspan></text>
+    <text class="connection-label code" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">check_c, c</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
     </g>
     <g class="node merge" transform="translate(532 512)">
       <title xml:space="preserve">the false_result merge</title>
@@ -91,7 +92,7 @@
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">and</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">and</tspan></text>
     </g>
     <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Is condition a true?</title>
@@ -120,7 +121,7 @@
     </g>
     <g class="node end" transform="translate(172 867)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bool</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">bool</tspan></text>
     </g>
   </g>
 </svg>

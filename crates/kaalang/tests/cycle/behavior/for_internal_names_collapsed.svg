@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -33,20 +34,20 @@
       M 172 343 L 172 450
       M 172 514 L 172 586
     "/>
-    <text class="connection-label" x="185" y="575" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0_</tspan></text>
-    <text class="connection-label" x="185" y="139" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="185" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="185" dy="14">__kaalang_items</tspan></text>
-    <text class="connection-label" x="185" y="248" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="411" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="185" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="185" dy="14">__kaalang_items</tspan></text>
+    <text class="connection-label code" x="185" y="575" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0_</tspan></text>
+    <text class="connection-label code" x="185" y="139" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="185" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="185" dy="14">__kaalang_items</tspan></text>
+    <text class="connection-label code" x="185" y="248" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="411" xml:space="preserve"><tspan x="185" dy="0">__kaalang_unnamed_done_0, </tspan><tspan x="185" dy="14">__kaalang_unnamed_item_0, </tspan><tspan x="185" dy="14">__kaalang_items</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 92 L 408 92"/>
     <g class="parameter-panel" transform="translate(528 92)">
       <rect class="node-shape" x="-120" y="-60" width="240" height="120"/>
-      <text class="label" x="-104" y="-30" xml:space="preserve"><tspan x="-104" dy="0">__kaalang_unnamed_done_0: </tspan><tspan x="-104" dy="18">u32</tspan><tspan x="-104" dy="18">__kaalang_unnamed_item_0: </tspan><tspan x="-104" dy="18">u32</tspan><tspan x="-104" dy="18">__kaalang_items: u32</tspan></text>
+      <text class="label code" x="-104" y="-30" xml:space="preserve"><tspan x="-104" dy="0">__kaalang_unnamed_done_0</tspan><tspan x="-104" dy="18">: u32</tspan><tspan x="-104" dy="18">__kaalang_unnamed_item_0</tspan><tspan x="-104" dy="18">: u32</tspan><tspan x="-104" dy="18">__kaalang_items: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(172 92)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_internal_names</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_internal_names</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 301)">
       <title xml:space="preserve">Complete one iteration without naming its item or output.</title>
@@ -61,7 +62,7 @@
     </g>
     <g class="node end" transform="translate(172 615)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

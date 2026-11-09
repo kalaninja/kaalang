@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="346" height="938" viewBox="0 0 346 938" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="350" height="938" viewBox="0 0 350 938" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for for_temporary_values</title>
   <desc id="kaalang-description">Cycles: Add values borrowed from a temporary owner. with inputs mut total and outputs (). Nodes: Start: for_temporary_values; Action: Start with a total of zero. capturing nothing handing over mut total; For entry: Add values borrowed from a temporary owner. capturing nothing handing over value; Action: Add the value. capturing value, &amp;mut total; For end: Add values borrowed from a temporary owner.; Action: Finish after releasing the temporary owner. capturing nothing; End: u32 capturing total. Connections: Start: for_temporary_values to Action: Start with a total of zero.; Action: Start with a total of zero. to For entry: Add values borrowed from a temporary owner.; For entry: Add values borrowed from a temporary owner. to Action: Add the value.; Action: Add the value. to For end: Add values borrowed from a temporary owner.; For end: Add values borrowed from a temporary owner. to Action: Finish after releasing the temporary owner.; Action: Finish after releasing the temporary owner. to End: u32.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -38,18 +39,18 @@
       M 173 638 L 173 710
       M 173 776 L 173 848
     "/>
-    <text class="connection-label" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="186" y="382" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
-    <text class="connection-label" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="425" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="186" y="699" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="837" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
+    <text class="connection-label code" x="186" y="244" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="186" y="382" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label code" x="186" y="151" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="287" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="425" xml:space="preserve"><tspan x="186" dy="0">value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="186" y="699" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="837" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(173 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_temporary_values</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_temporary_values</tspan></text>
     </g>
     <g class="node action" transform="translate(173 194)">
       <title xml:space="preserve">Start with a total of zero.</title>
@@ -78,7 +79,7 @@
     </g>
     <g class="node end" transform="translate(173 877)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

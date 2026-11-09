@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -54,22 +55,22 @@
     <path class="connection" d="
       M 220 660 L 60 660 L 60 162 L 220 162
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="953" y="678" xml:space="preserve"><tspan x="953" dy="0">selected</tspan></text>
-    <text class="connection-label" x="233" y="678" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
-    <text class="connection-label" x="953" y="509" xml:space="preserve"><tspan x="953" dy="0">seven</tspan></text>
-    <text class="connection-label" x="1313" y="509" xml:space="preserve"><tspan x="1313" dy="0">nine</tspan></text>
-    <text class="connection-label" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
-    <text class="connection-label" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
-    <text class="connection-label" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
-    <text class="connection-label" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
-    <text class="connection-label" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
-    <text class="connection-label" x="593" y="509" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="953" y="678" xml:space="preserve"><tspan x="953" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="233" y="678" xml:space="preserve"><tspan x="233" dy="0">advanced</tspan></text>
+    <text class="connection-label code" x="953" y="509" xml:space="preserve"><tspan x="953" dy="0">seven</tspan></text>
+    <text class="connection-label code" x="1313" y="509" xml:space="preserve"><tspan x="1313" dy="0">nine</tspan></text>
+    <text class="connection-label code" x="233" y="108" xml:space="preserve"><tspan x="233" dy="0">mut mode</tspan></text>
+    <text class="connection-label code" x="233" y="466" xml:space="preserve"><tspan x="233" dy="0">left</tspan></text>
+    <text class="connection-label code" x="593" y="466" xml:space="preserve"><tspan x="593" dy="0">right</tspan></text>
+    <text class="connection-label code" x="233" y="223" xml:space="preserve"><tspan x="233" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="233" y="509" xml:space="preserve"><tspan x="233" dy="0">left, &amp;mut mode</tspan></text>
+    <text class="connection-label code" x="593" y="509" xml:space="preserve"><tspan x="593" dy="0">right, &amp;mut mode</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 360 61 L 456 61"/>
     <g class="parameter-panel" transform="translate(576 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut mode: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(940 660)">
       <title xml:space="preserve">the selected merge at the cycle result</title>
@@ -81,7 +82,7 @@
     </g>
     <g class="node start" transform="translate(220 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">terminal_cases_after_repeats</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">terminal_cases_after_repeats</tspan></text>
     </g>
     <g class="node select" transform="translate(220 270)">
       <title xml:space="preserve">Which route?</title>
@@ -130,7 +131,7 @@
     </g>
     <g class="node end" transform="translate(940 765)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

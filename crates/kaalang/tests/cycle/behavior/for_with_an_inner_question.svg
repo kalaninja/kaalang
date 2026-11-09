@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -40,27 +41,27 @@
       M 173 862 L 173 934
       M 173 724 L 173 796
     "/>
-    <text class="connection-label" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">values, limit</tspan></text>
-    <text class="connection-label" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="186" y="390" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
-    <text class="connection-label" x="186" y="534" xml:space="preserve"><tspan x="186" dy="0">below</tspan></text>
-    <text class="connection-label" x="326" y="498" xml:space="preserve"><tspan x="326" dy="0">_full</tspan></text>
-    <text class="connection-label" x="186" y="670" xml:space="preserve"><tspan x="186" dy="0">_full</tspan></text>
-    <text class="connection-label" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
-    <text class="connection-label" x="186" y="433" xml:space="preserve"><tspan x="186" dy="0">&amp;total, limit</tspan></text>
-    <text class="connection-label" x="186" y="577" xml:space="preserve"><tspan x="186" dy="0">below, value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="186" y="923" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
+    <text class="connection-label code" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">values, limit</tspan></text>
+    <text class="connection-label code" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="186" y="390" xml:space="preserve"><tspan x="186" dy="0">value</tspan></text>
+    <text class="connection-label code" x="186" y="534" xml:space="preserve"><tspan x="186" dy="0">below</tspan></text>
+    <text class="connection-label code" x="326" y="498" xml:space="preserve"><tspan x="326" dy="0">_full</tspan></text>
+    <text class="connection-label code" x="186" y="670" xml:space="preserve"><tspan x="186" dy="0">_full</tspan></text>
+    <text class="connection-label code" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">values</tspan></text>
+    <text class="connection-label code" x="186" y="433" xml:space="preserve"><tspan x="186" dy="0">&amp;total, limit</tspan></text>
+    <text class="connection-label code" x="186" y="577" xml:space="preserve"><tspan x="186" dy="0">below, value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="186" y="923" xml:space="preserve"><tspan x="186" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 313 65 L 409 65"/>
     <g class="parameter-panel" transform="translate(529 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan><tspan x="-104" dy="18">limit: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(173 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_with_an_inner_question</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_with_an_inner_question</tspan></text>
     </g>
     <g class="node action" transform="translate(173 202)">
       <title xml:space="preserve">Start with a total of zero.</title>
@@ -89,7 +90,7 @@
     </g>
     <g class="node end" transform="translate(173 963)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

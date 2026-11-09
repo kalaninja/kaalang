@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="708" height="756" viewBox="0 0 708 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="730" height="756" viewBox="0 0 730 756" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for capture_from_a_branch</title>
   <desc id="kaalang-description">Nodes: Start: capture_from_a_branch with parameters condition: bool; dropped: Rc&lt;Cell&lt;bool&gt;&gt; handing over condition, dropped; Action: Create a root return guard. capturing &amp;dropped handing over guard; Question: Is the short answer enough? capturing condition handing over end / more; Action: Finish the longer branch. capturing more, guard, dropped handing over result; Action: Finish the short branch. capturing end, guard, dropped handing over result; End: Rc&lt;Cell&lt;bool&gt;&gt; capturing result; Merge: result. Connections: Start: capture_from_a_branch to Action: Create a root return guard.; Action: Create a root return guard. to Question: Is the short answer enough?; Question: Is the short answer enough? branch 1 to Action: Finish the short branch.; Question: Is the short answer enough? branch 2 to Action: Finish the longer branch.; Action: Finish the longer branch. to the result merge; Action: Finish the short branch. to the result merge; the result merge to End: Rc&lt;Cell&lt;bool&gt;&gt;.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -37,21 +38,21 @@
       M 172 514 L 172 590
       M 172 590 L 172 666
     "/>
-    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, dropped</tspan></text>
-    <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">guard</tspan></text>
-    <text class="connection-label" x="185" y="396" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="325" y="360" xml:space="preserve"><tspan x="325" dy="0">more</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">&amp;dropped</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="545" y="439" xml:space="preserve"><tspan x="545" dy="0">more, guard, dropped</tspan></text>
-    <text class="connection-label" x="185" y="439" xml:space="preserve"><tspan x="185" dy="0">end, guard, dropped</tspan></text>
+    <text class="connection-label code" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, dropped</tspan></text>
+    <text class="connection-label code" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">guard</tspan></text>
+    <text class="connection-label code" x="185" y="396" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="325" y="360" xml:space="preserve"><tspan x="325" dy="0">more</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">&amp;dropped</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="545" y="439" xml:space="preserve"><tspan x="545" dy="0">more, guard, dropped</tspan></text>
+    <text class="connection-label code" x="185" y="439" xml:space="preserve"><tspan x="185" dy="0">end, guard, dropped</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">dropped: Rc&lt;Cell&lt;bool&gt;&gt;</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">dropped: Rc&lt;Cell&lt;bool&gt;&gt;</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 590)">
       <title xml:space="preserve">the result merge</title>
@@ -59,7 +60,7 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">capture_from_a_branch</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">capture_from_a_branch</tspan></text>
     </g>
     <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Create a root return guard.</title>
@@ -83,7 +84,7 @@
     </g>
     <g class="node end" transform="translate(172 695)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Rc&lt;Cell&lt;bool&gt;&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Rc&lt;Cell&lt;bool&gt;&gt;</tspan></text>
     </g>
   </g>
 </svg>

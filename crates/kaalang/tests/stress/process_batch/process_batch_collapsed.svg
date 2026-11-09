@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -38,31 +39,31 @@
       M 172 965 L 172 1037
       M 172 1101 L 172 1173
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">self, jobs, policy</tspan></text>
-    <text class="connection-label" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">started</tspan></text>
-    <text class="connection-label" x="185" y="408" xml:space="preserve"><tspan x="185" dy="0">mut pending, mut report</tspan></text>
-    <text class="connection-label" x="185" y="571" xml:space="preserve"><tspan x="185" dy="0">reason</tspan></text>
-    <text class="connection-label" x="185" y="709" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="845" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue</tspan></text>
-    <text class="connection-label" x="185" y="983" xml:space="preserve"><tspan x="185" dy="0">flushed</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">jobs</tspan></text>
-    <text class="connection-label" x="185" y="444" xml:space="preserve"><tspan x="185" dy="0">started, policy, mut report, </tspan><tspan x="185" dy="14">mut pending, self</tspan></text>
-    <text class="connection-label" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">reason, mut report</tspan></text>
-    <text class="connection-label" x="185" y="752" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="888" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue, self</tspan></text>
-    <text class="connection-label" x="185" y="1026" xml:space="preserve"><tspan x="185" dy="0">flushed, &amp;mut self</tspan></text>
-    <text class="connection-label" x="185" y="1162" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">self, jobs, policy</tspan></text>
+    <text class="connection-label code" x="185" y="270" xml:space="preserve"><tspan x="185" dy="0">started</tspan></text>
+    <text class="connection-label code" x="185" y="408" xml:space="preserve"><tspan x="185" dy="0">mut pending, mut report</tspan></text>
+    <text class="connection-label code" x="185" y="571" xml:space="preserve"><tspan x="185" dy="0">reason</tspan></text>
+    <text class="connection-label code" x="185" y="709" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="845" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue</tspan></text>
+    <text class="connection-label code" x="185" y="983" xml:space="preserve"><tspan x="185" dy="0">flushed</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label code" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">jobs</tspan></text>
+    <text class="connection-label code" x="185" y="444" xml:space="preserve"><tspan x="185" dy="0">started, policy, mut </tspan><tspan x="185" dy="14">report, mut pending, self</tspan></text>
+    <text class="connection-label code" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">reason, mut report</tspan></text>
+    <text class="connection-label code" x="185" y="752" xml:space="preserve"><tspan x="185" dy="0">&amp;mut self</tspan></text>
+    <text class="connection-label code" x="185" y="888" xml:space="preserve"><tspan x="185" dy="0">mut audit_queue, self</tspan></text>
+    <text class="connection-label code" x="185" y="1026" xml:space="preserve"><tspan x="185" dy="0">flushed, &amp;mut self</tspan></text>
+    <text class="connection-label code" x="185" y="1162" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">&amp;mut self</tspan><tspan x="-104" dy="18">jobs: Vec&lt;Job&gt;</tspan><tspan x="-104" dy="18">policy: Policy</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">&amp;mut self</tspan><tspan x="-104" dy="18">jobs: Vec&lt;Job&gt;</tspan><tspan x="-104" dy="18">policy: Policy</tspan></text>
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">process_batch</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">process_batch</tspan></text>
     </g>
     <g class="node action" transform="translate(172 220)">
       <title xml:space="preserve">Open the batch.</title>
@@ -103,7 +104,7 @@
     </g>
     <g class="node end" transform="translate(172 1202)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Report</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Report</tspan></text>
     </g>
   </g>
 </svg>

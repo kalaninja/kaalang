@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -58,30 +59,30 @@
     <path class="connection" d="
       M 968 1002 L 1128 1002 L 1128 298 L 248 298
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="261" y="108" xml:space="preserve"><tspan x="261" dy="0">limit</tspan></text>
-    <text class="connection-label" x="261" y="244" xml:space="preserve"><tspan x="261" dy="0">mut outer</tspan></text>
-    <text class="connection-label" x="261" y="452" xml:space="preserve"><tspan x="261" dy="0">mut inner</tspan></text>
+    <text class="connection-label code" x="261" y="108" xml:space="preserve"><tspan x="261" dy="0">limit</tspan></text>
+    <text class="connection-label code" x="261" y="244" xml:space="preserve"><tspan x="261" dy="0">mut outer</tspan></text>
+    <text class="connection-label code" x="261" y="452" xml:space="preserve"><tspan x="261" dy="0">mut inner</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="261" y="670" xml:space="preserve"><tspan x="261" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="401" y="602" xml:space="preserve"><tspan x="401" dy="0">NO</tspan></text>
-    <text class="connection-label" x="621" y="812" xml:space="preserve"><tspan x="621" dy="0">done</tspan></text>
-    <text class="connection-label" x="761" y="776" xml:space="preserve"><tspan x="761" dy="0">again</tspan></text>
-    <text class="connection-label" x="261" y="151" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
-    <text class="connection-label" x="261" y="359" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
-    <text class="connection-label" x="261" y="567" xml:space="preserve"><tspan x="261" dy="0">&amp;inner, &amp;outer</tspan></text>
-    <text class="connection-label" x="261" y="711" xml:space="preserve"><tspan x="261" dy="0">iterate_1, &amp;mut inner</tspan></text>
-    <text class="connection-label" x="621" y="711" xml:space="preserve"><tspan x="621" dy="0">leave_1, &amp;outer, &amp;limit</tspan></text>
-    <text class="connection-label" x="981" y="855" xml:space="preserve"><tspan x="981" dy="0">again, &amp;mut outer</tspan></text>
-    <text class="connection-label" x="621" y="1063" xml:space="preserve"><tspan x="621" dy="0">outer</tspan></text>
+    <text class="connection-label code" x="621" y="812" xml:space="preserve"><tspan x="621" dy="0">done</tspan></text>
+    <text class="connection-label code" x="761" y="776" xml:space="preserve"><tspan x="761" dy="0">again</tspan></text>
+    <text class="connection-label code" x="261" y="151" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label code" x="261" y="359" xml:space="preserve"><tspan x="261" dy="0">()</tspan></text>
+    <text class="connection-label code" x="261" y="567" xml:space="preserve"><tspan x="261" dy="0">&amp;inner, &amp;outer</tspan></text>
+    <text class="connection-label code" x="261" y="711" xml:space="preserve"><tspan x="261" dy="0">iterate_1, &amp;mut inner</tspan></text>
+    <text class="connection-label code" x="621" y="711" xml:space="preserve"><tspan x="621" dy="0">leave_1, &amp;outer, &amp;limit</tspan></text>
+    <text class="connection-label code" x="981" y="855" xml:space="preserve"><tspan x="981" dy="0">again, &amp;mut outer</tspan></text>
+    <text class="connection-label code" x="621" y="1063" xml:space="preserve"><tspan x="621" dy="0">outer</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 388 61 L 484 61"/>
     <g class="parameter-panel" transform="translate(604 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">limit: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(248 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_cycles</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_cycles</tspan></text>
     </g>
     <g class="node action" transform="translate(248 194)">
       <title xml:space="preserve">Initialize the outer counter.</title>
@@ -115,7 +116,7 @@
     </g>
     <g class="node end" transform="translate(608 1103)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

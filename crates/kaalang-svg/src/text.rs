@@ -49,6 +49,19 @@ const TEXT_EM_PARTS: i32 = 5;
 const SUPERSCRIPT_ASCENT_PERCENT: i32 = 90;
 const SUBSCRIPT_DESCENT_PERCENT: i32 = 30;
 
+/// The style of Rust source.
+const CODE: Style = Style {
+    bold: false,
+    italic: false,
+    strikethrough: false,
+    underline: false,
+    highlight: false,
+    code: true,
+    quote: false,
+    script: None,
+    color: None,
+};
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)] // A span combines independent CSS effects.
 pub(crate) struct Style {
@@ -295,6 +308,20 @@ impl RichText {
         result.push(text, style);
         result.finish();
         result
+    }
+
+    /// Rust source: a name, a type, or a path, measured and set in code.
+    pub(crate) fn code(text: impl AsRef<str>) -> Self {
+        Self::styled(text, CODE)
+    }
+
+    /// Whether the text is Rust source and nothing else.
+    pub(crate) fn is_code(&self) -> bool {
+        !self.spans.is_empty()
+            && self
+                .spans
+                .iter()
+                .all(|span| span.formula.is_none() && span.style == CODE)
     }
 
     pub(crate) fn markdown(text: &str) -> Self {
@@ -1034,10 +1061,6 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
     lines
 }
 
-pub(crate) fn wrap_literal(text: &str, budget: i32, font_size: i32) -> Vec<RichText> {
-    wrap_text(&RichText::literal(text), budget, font_size)
-}
-
 fn line(clusters: &[Cluster]) -> RichText {
     let mut line = RichText::default();
     for cluster in clusters {
@@ -1099,10 +1122,13 @@ pub(crate) fn block_metrics(
 #[cfg(test)]
 mod tests {
     use super::{
-        Color, Dim, RichText, Script, Style, joined, line_ink, svg_dimension, text_width,
-        wrap_literal, wrap_text,
+        Color, Dim, RichText, Script, Style, joined, line_ink, svg_dimension, text_width, wrap_text,
     };
     use crate::{flow::layout::NODE_LABEL_WIDTH, text::LABEL_FONT};
+
+    fn wrap_literal(text: &str, budget: i32, font_size: i32) -> Vec<RichText> {
+        wrap_text(&RichText::literal(text), budget, font_size)
+    }
 
     #[test]
     fn indices_do_not_reinterpret_code_escapes_entities_or_literal_fallbacks() {

@@ -28,6 +28,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -50,17 +51,17 @@
       M 532 514 L 532 590 L 172 590
       M 172 590 L 172 666
     "/>
-    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mode</tspan></text>
-    <text class="connection-label" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
-    <text class="connection-label" x="905" y="437" xml:space="preserve"><tspan x="905" dy="0">stay</tspan></text>
+    <text class="connection-label code" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">mode</tspan></text>
+    <text class="connection-label code" x="185" y="437" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="545" y="437" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label code" x="905" y="437" xml:space="preserve"><tspan x="905" dy="0">stay</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
     <g class="parameter-panel" transform="translate(528 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mode: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 590)">
       <title xml:space="preserve">the shared merge</title>
@@ -68,7 +69,7 @@
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_partial_merge</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">prepared_partial_merge</tspan></text>
     </g>
     <g class="node select" transform="translate(172 198)">
       <title xml:space="preserve">Prepare an owner or stay here.</title>
@@ -136,6 +137,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -149,7 +151,7 @@
     <path class="connection" d="
       M 172 102 L 172 174
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">shared</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -159,7 +161,7 @@
     </g>
     <g class="node end" transform="translate(172 203)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">String</tspan></text>
     </g>
   </g>
 </svg>

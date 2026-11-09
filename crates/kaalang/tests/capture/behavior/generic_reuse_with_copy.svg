@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="524" viewBox="0 0 680 524" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="532" viewBox="0 0 680 532" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for generic_reuse_with_copy</title>
   <desc id="kaalang-description">Nodes: Start: generic_reuse_with_copy&lt;T: Copy&gt; with parameters value: T handing over value; Action: Take the value. capturing value handing over first; Action: Take the value again. capturing value handing over second; End: (T, T) capturing first, second. Connections: Start: generic_reuse_with_copy&lt;T: Copy&gt; to Action: Take the value.; Action: Take the value. to Action: Take the value again.; Action: Take the value again. to End: (T, T).</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,39 +30,39 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 90 L 172 162
-      M 172 226 L 172 298
-      M 172 362 L 172 434
+      M 172 98 L 172 170
+      M 172 234 L 172 306
+      M 172 370 L 172 442
     "/>
-    <text class="connection-label" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="244" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="185" y="380" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
-    <text class="connection-label" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="185" y="423" xml:space="preserve"><tspan x="185" dy="0">first, second</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">first, second</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: T</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: T</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">generic_reuse_with_copy&lt;T: Copy&gt;</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">generic_reuse_with_copy&lt;T: </tspan><tspan x="0" dy="18">Copy&gt;</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 194)">
+    <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Take the value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 330)">
+    <g class="node action" transform="translate(172 338)">
       <title xml:space="preserve">Take the value again.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the value again.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 463)">
+    <g class="node end" transform="translate(172 471)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(T, T)</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">(T, T)</tspan></text>
     </g>
   </g>
 </svg>

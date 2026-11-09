@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -32,19 +33,19 @@
       M 172 103 L 172 188
       M 172 254 L 172 326
     "/>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
-    <text class="connection-label" x="185" y="272" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
-    <text class="connection-label" x="185" y="315" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">a, b, c</tspan></text>
+    <text class="connection-label code" x="185" y="272" xml:space="preserve"><tspan x="185" dy="0">stop</tspan></text>
+    <text class="connection-label code" x="185" y="315" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">a: bool</tspan><tspan x="-104" dy="18">b: bool</tspan><tspan x="-104" dy="18">c: bool</tspan></text>
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_exit_routes</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_exit_routes</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 221)">
       <title xml:space="preserve">Leave from any nested question.</title>
@@ -54,7 +55,7 @@
     </g>
     <g class="node end" transform="translate(172 355)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>
   </g>
 </svg>

@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,7 +30,7 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 94 L 172 170
+      M 172 98 L 172 170
       M 172 242 L 172 314
       M 312 206 L 532 206 L 532 314
       M 172 380 L 172 456
@@ -37,30 +38,30 @@
       M 172 596 L 172 668
       M 172 456 L 172 532
     "/>
-    <text class="connection-label" x="185" y="657" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">condition, cell</tspan></text>
-    <text class="connection-label" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
-    <text class="connection-label" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
-    <text class="connection-label" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">_yes_guard, ready</tspan></text>
-    <text class="connection-label" x="545" y="398" xml:space="preserve"><tspan x="545" dy="0">_no_guard, ready</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
-    <text class="connection-label" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, cell</tspan></text>
-    <text class="connection-label" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no, cell</tspan></text>
-    <text class="connection-label" x="185" y="521" xml:space="preserve"><tspan x="185" dy="0">ready, cell</tspan></text>
+    <text class="connection-label code" x="185" y="657" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">condition, cell</tspan></text>
+    <text class="connection-label code" x="185" y="260" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="325" y="224" xml:space="preserve"><tspan x="325" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="398" xml:space="preserve"><tspan x="185" dy="0">_yes_guard, ready</tspan></text>
+    <text class="connection-label code" x="545" y="398" xml:space="preserve"><tspan x="545" dy="0">_no_guard, ready</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">yes, cell</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">no, cell</tspan></text>
+    <text class="connection-label code" x="185" y="521" xml:space="preserve"><tspan x="185" dy="0">ready, cell</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">cell: &amp;RefCell&lt;usize&gt;</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">cell: &amp;RefCell&lt;usize&gt;</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 456)">
       <title xml:space="preserve">the ready merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">branch_guard_drops_at_a_merge</tspan></text>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">branch_guard_drops_at_a_merg</tspan><tspan x="0" dy="18">e</tspan></text>
     </g>
     <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Measure the cell?</title>
@@ -84,7 +85,7 @@
     </g>
     <g class="node end" transform="translate(172 697)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

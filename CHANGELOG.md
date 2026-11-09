@@ -49,6 +49,9 @@
 
 - Flow diagrams draw cycle nodes and cycle boundaries with the same stroke width
   as every other outline and line.
+- Flow diagrams set Rust source in a monospace font, as type diagrams do: the
+  flow's name and return type, an undescribed call's path, wire labels, and the
+  parameter panel.
 
 ### Fixed
 

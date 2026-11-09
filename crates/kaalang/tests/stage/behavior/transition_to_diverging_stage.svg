@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="788" height="665" viewBox="0 0 788 665" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for transition_to_diverging_stage</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: transition_to_diverging_stage with parameters go: (). Stage go. Nodes: Stage: Enter the repeating stage.; Action: Select the repeating stage. capturing go; Stage transition: Repeat forever.. Connections: Stage: Enter the repeating stage. to Action: Select the repeating stage.; Action: Select the repeating stage. to Stage transition: Repeat forever.. Transition to stage repeat. Stage repeat. Cycles: Stay in this stage. with inputs repeat and outputs (). Nodes: Stage: Repeat forever.. Connections: Stage: Repeat forever. to the entry of the cycle; the entry of the cycle to the iteration tail of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="788" height="673" viewBox="0 0 788 673" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for transition_to_diverging_stage</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: transition_to_diverging_stage with parameters go: (). Stage go. Nodes: Stage: Enter the repeating stage.; Action: Select the repeating stage. capturing go; Stage transition: Repeat forever.. Connections: Stage: Enter the repeating stage. to Action: Select the repeating stage.; Action: Select the repeating stage. to Stage transition: Repeat forever.. Transition to stage repeat. Stage repeat. Cycles: Stay in this stage. with inputs repeat and outputs (). Nodes: Stage: Repeat forever.. Connections: Stage: Repeat forever. to the entry of the cycle; the entry of the cycle to the iteration tail of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 114 L 232 150 "/>
-<path d="M 232 150 L 232 186 "/>
-<path d="M 232 573 L 232 641 "/>
-<path d="M 612 150 L 612 186 "/>
-<path d="M 232 150 L 612 150 "/>
-<path d="M 232 641 L 24 641 L 24 150 L 232 150 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 122 L 232 158 "/>
+<path d="M 232 158 L 232 194 "/>
+<path d="M 232 581 L 232 649 "/>
+<path d="M 612 158 L 612 194 "/>
+<path d="M 232 158 L 612 158 "/>
+<path d="M 232 649 L 24 649 L 24 158 L 232 158 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="122" viewBox="0 0 680 122" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="130" viewBox="0 0 680 130" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for transition_to_diverging_stage</title>
   <desc id="kaalang-part-0-description">Nodes: Start: transition_to_diverging_stage with parameters go: ().</desc>
   <defs>
@@ -30,6 +30,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -41,19 +42,19 @@
     "/>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 61 L 408 61"/>
-    <g class="parameter-panel" transform="translate(528 61)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 61)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">transition_to_diverging_stage</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">transition_to_diverging_stag</tspan><tspan x="0" dy="18">e</tspan></text>
     </g>
   </g>
 </svg>
 </g>
-<g transform="translate(60 154)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="451" viewBox="0 0 344 451" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="451" viewBox="0 0 344 451" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for transition_to_diverging_stage</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Enter the repeating stage.; Action: Select the repeating stage. capturing go; Stage transition: Repeat forever.. Connections: Stage: Enter the repeating stage. to Action: Select the repeating stage.; Action: Select the repeating stage. to Stage transition: Repeat forever..</desc>
   <defs>
@@ -75,6 +76,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -89,7 +91,7 @@
       M 172 102 L 172 174
       M 172 238 L 172 349
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">go</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">go</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -110,7 +112,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 154)"><svg xmlns="http://www.w3.org/2000/svg" width="324" height="313" viewBox="0 0 324 313" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(440 162)"><svg xmlns="http://www.w3.org/2000/svg" width="324" height="313" viewBox="0 0 324 313" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for transition_to_diverging_stage</title>
   <desc id="kaalang-part-2-description">Cycles: Stay in this stage. with inputs repeat and outputs (). Nodes: Stage: Repeat forever.. Connections: Stage: Repeat forever. to the entry of the cycle; the entry of the cycle to the iteration tail of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -132,6 +134,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }

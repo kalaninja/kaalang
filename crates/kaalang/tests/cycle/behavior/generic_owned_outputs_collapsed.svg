@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="630" viewBox="0 0 704 630" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="637" viewBox="0 0 704 637" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for generic_owned_outputs</title>
   <desc id="kaalang-description">Nodes: Start: const generic_owned_outputs&lt;T&gt; with parameters value: T; mut remaining: usize; take_left: bool handing over value, mut remaining, take_left; Cycle: Count down, then pick a side. capturing mut remaining, take_left, value handing over left / right; Action: Keep the left value. capturing left handing over chosen; Action: Keep the right value. capturing right handing over chosen; End: T capturing chosen; Merge: chosen. Connections: Start: const generic_owned_outputs&lt;T&gt; to Cycle: Count down, then pick a side.; Cycle: Count down, then pick a side. output left to Action: Keep the left value.; Cycle: Count down, then pick a side. output right to Action: Keep the right value.; Action: Keep the left value. to the chosen merge; Action: Keep the right value. to the chosen merge; the chosen merge to End: T.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,51 +30,51 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 103 L 172 188
-      M 172 252 L 172 324
-      M 312 220 L 532 220 L 532 324
-      M 172 388 L 172 464
-      M 532 388 L 532 464 L 172 464
-      M 172 464 L 172 540
+      M 172 107 L 172 195
+      M 172 259 L 172 331
+      M 312 227 L 532 227 L 532 331
+      M 172 395 L 172 471
+      M 532 395 L 532 471 L 172 471
+      M 172 471 L 172 547
     "/>
-    <text class="connection-label" x="185" y="482" xml:space="preserve"><tspan x="185" dy="0">chosen</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">value, mut remaining, take_left</tspan></text>
-    <text class="connection-label" x="185" y="313" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
-    <text class="connection-label" x="545" y="313" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
+    <text class="connection-label code" x="185" y="489" xml:space="preserve"><tspan x="185" dy="0">chosen</tspan></text>
+    <text class="connection-label code" x="185" y="170" xml:space="preserve"><tspan x="185" dy="0">value, mut remaining, </tspan><tspan x="185" dy="14">take_left</tspan></text>
+    <text class="connection-label code" x="185" y="320" xml:space="preserve"><tspan x="185" dy="0">left</tspan></text>
+    <text class="connection-label code" x="545" y="320" xml:space="preserve"><tspan x="545" dy="0">right</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">value: T</tspan><tspan x="-104" dy="18">mut remaining: usize</tspan><tspan x="-104" dy="18">take_left: bool</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">value: T</tspan><tspan x="-104" dy="18">mut remaining: usize</tspan><tspan x="-104" dy="18">take_left: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 464)">
+    <g class="node merge" transform="translate(172 471)">
       <title xml:space="preserve">the chosen merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">const generic_owned_outputs&lt;T&gt;</tspan></text>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">const </tspan><tspan x="0" dy="18">generic_owned_outputs&lt;T&gt;</tspan></text>
     </g>
-    <g class="node cycle" transform="translate(172 220)">
+    <g class="node cycle" transform="translate(172 227)">
       <title xml:space="preserve">Count down, then pick a side.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64" rx="8"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Count down, then pick a side.</tspan></text>
       <text class="loop-marker" x="122" y="7" aria-hidden="true">↻</text>
     </g>
-    <g class="node action" transform="translate(172 356)">
+    <g class="node action" transform="translate(172 363)">
       <title xml:space="preserve">Keep the left value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the left value.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 356)">
+    <g class="node action" transform="translate(532 363)">
       <title xml:space="preserve">Keep the right value.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Keep the right value.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 569)">
+    <g class="node end" transform="translate(172 576)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">T</tspan></text>
     </g>
   </g>
 </svg>

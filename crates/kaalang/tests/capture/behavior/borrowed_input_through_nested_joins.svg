@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -42,23 +43,23 @@
       M 172 616 L 172 692
       M 172 832 L 172 908
     "/>
-    <text class="connection-label" x="185" y="634" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
-    <text class="connection-label" x="185" y="850" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
-    <text class="connection-label" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
-    <text class="connection-label" x="545" y="465" xml:space="preserve"><tspan x="545" dy="0">skip</tspan></text>
-    <text class="connection-label" x="185" y="1033" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">outer, inner, text</tspan></text>
-    <text class="connection-label" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
-    <text class="connection-label" x="185" y="422" xml:space="preserve"><tspan x="185" dy="0">borrow</tspan></text>
-    <text class="connection-label" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">outer</tspan></text>
-    <text class="connection-label" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">nested, inner</tspan></text>
-    <text class="connection-label" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">borrow, &amp;text</tspan></text>
+    <text class="connection-label code" x="185" y="634" xml:space="preserve"><tspan x="185" dy="0">partial</tspan></text>
+    <text class="connection-label code" x="185" y="850" xml:space="preserve"><tspan x="185" dy="0">view</tspan></text>
+    <text class="connection-label code" x="905" y="321" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label code" x="545" y="465" xml:space="preserve"><tspan x="545" dy="0">skip</tspan></text>
+    <text class="connection-label code" x="185" y="1033" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="125" xml:space="preserve"><tspan x="185" dy="0">outer, inner, text</tspan></text>
+    <text class="connection-label code" x="185" y="278" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
+    <text class="connection-label code" x="185" y="422" xml:space="preserve"><tspan x="185" dy="0">borrow</tspan></text>
+    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">outer</tspan></text>
+    <text class="connection-label code" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">nested, inner</tspan></text>
+    <text class="connection-label code" x="185" y="465" xml:space="preserve"><tspan x="185" dy="0">borrow, &amp;text</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 74 L 408 74"/>
     <g class="parameter-panel" transform="translate(528 74)">
       <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan><tspan x="-104" dy="18">text: String</tspan></text>
+      <text class="label code" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan><tspan x="-104" dy="18">text: String</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 616)">
       <title xml:space="preserve">the partial merge</title>
@@ -70,7 +71,7 @@
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">borrowed_input_through_nested_jo</tspan><tspan x="0" dy="18">ins</tspan></text>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">borrowed_input_through_neste</tspan><tspan x="0" dy="18">d_joins</tspan></text>
     </g>
     <g class="node question" transform="translate(172 224)">
       <title xml:space="preserve">Use the nested branch?</title>
@@ -109,7 +110,7 @@
     </g>
     <g class="node end" transform="translate(172 1073)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

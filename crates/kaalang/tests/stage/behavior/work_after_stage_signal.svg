@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="808" height="788" viewBox="0 0 808 788" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for work_after_stage_signal</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: work_after_stage_signal with parameters go: (); events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events. Stage go. Nodes: Stage: Prepare the result.; Action: Create the outgoing signal. capturing go; Action: Run the remaining work. capturing events; Stage transition: Return the result.. Connections: Stage: Prepare the result. to Action: Create the outgoing signal.; Action: Create the outgoing signal. to Action: Run the remaining work.; Action: Run the remaining work. to Stage transition: Return the result.. Transition to stage finish. Stage finish. Nodes: Stage: Return the result.; End: u8 capturing finish. Connections: Stage: Return the result. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="808" height="806" viewBox="0 0 808 806" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for work_after_stage_signal</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: work_after_stage_signal with parameters go: (); events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events. Stage go. Nodes: Stage: Prepare the result.; Action: Create the outgoing signal. capturing go; Action: Run the remaining work. capturing events; Stage transition: Return the result.. Connections: Stage: Prepare the result. to Action: Create the outgoing signal.; Action: Create the outgoing signal. to Action: Run the remaining work.; Action: Run the remaining work. to Stage transition: Return the result.. Transition to stage finish. Stage finish. Nodes: Stage: Return the result.; End: u8 capturing finish. Connections: Stage: Return the result. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 232 127 L 232 176 "/>
-<path d="M 232 176 L 232 212 "/>
-<path d="M 232 696 L 232 764 "/>
-<path d="M 612 176 L 612 212 "/>
-<path d="M 232 176 L 612 176 "/>
-<path d="M 232 764 L 24 764 L 24 176 L 232 176 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 232 136 L 232 194 "/>
+<path d="M 232 194 L 232 230 "/>
+<path d="M 232 714 L 232 782 "/>
+<path d="M 612 194 L 612 230 "/>
+<path d="M 232 194 L 612 194 "/>
+<path d="M 232 782 L 24 782 L 24 194 L 232 194 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="164" viewBox="0 0 680 164" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="173" viewBox="0 0 680 173" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for work_after_stage_signal</title>
   <desc id="kaalang-part-0-description">Nodes: Start: work_after_stage_signal with parameters go: (); events: &amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt; handing over events.</desc>
   <defs>
@@ -30,6 +30,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -39,22 +40,22 @@
   <g class="connections">
     <path class="connection" d="
     "/>
-    <text class="connection-label" x="185" y="121" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
+    <text class="connection-label code" x="185" y="130" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 74 L 408 74"/>
-    <g class="parameter-panel" transform="translate(528 74)">
-      <rect class="node-shape" x="-120" y="-42" width="240" height="84"/>
-      <text class="label" x="-104" y="-12" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan><tspan x="-104" dy="18">events: </tspan><tspan x="-104" dy="18">&amp;RefCell&lt;Vec&lt;&amp;&apos;static str&gt;&gt;</tspan></text>
+    <path class="parameter-link" d="M 312 83 L 408 83"/>
+    <g class="parameter-panel" transform="translate(528 83)">
+      <rect class="node-shape" x="-120" y="-51" width="240" height="102"/>
+      <text class="label code" x="-104" y="-21" xml:space="preserve"><tspan x="-104" dy="0">go: ()</tspan><tspan x="-104" dy="18">events: </tspan><tspan x="-104" dy="18">&amp;RefCell&lt;Vec&lt;&amp;&apos;static </tspan><tspan x="-104" dy="18">str&gt;&gt;</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 74)">
+    <g class="node start" transform="translate(172 83)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">work_after_stage_signal</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">work_after_stage_signal</tspan></text>
     </g>
   </g>
 </svg>
 </g>
-<g transform="translate(60 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 198)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="548" viewBox="0 0 344 548" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for work_after_stage_signal</title>
   <desc id="kaalang-part-1-description">Nodes: Stage: Prepare the result.; Action: Create the outgoing signal. capturing go; Action: Run the remaining work. capturing events; Stage transition: Return the result.. Connections: Stage: Prepare the result. to Action: Create the outgoing signal.; Action: Create the outgoing signal. to Action: Run the remaining work.; Action: Run the remaining work. to Stage transition: Return the result..</desc>
   <defs>
@@ -76,6 +77,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -91,8 +93,8 @@
       M 172 238 L 172 310
       M 172 374 L 172 446
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">go</tspan></text>
-    <text class="connection-label" x="185" y="299" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">go</tspan></text>
+    <text class="connection-label code" x="185" y="299" xml:space="preserve"><tspan x="185" dy="0">events</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -118,7 +120,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(440 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(440 198)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for work_after_stage_signal</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return the result.; End: u8 capturing finish. Connections: Stage: Return the result. to End: u8.</desc>
   <defs>
@@ -140,6 +142,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
@@ -153,7 +156,7 @@
     <path class="connection" d="
       M 172 102 L 172 174
     "/>
-    <text class="connection-label" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
+    <text class="connection-label code" x="185" y="163" xml:space="preserve"><tspan x="185" dy="0">finish</tspan></text>
   </g>
   <g class="nodes">
     <g class="node stage-entry" transform="translate(172 67)">
@@ -163,7 +166,7 @@
     </g>
     <g class="node end" transform="translate(172 203)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

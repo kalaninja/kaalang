@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="672" viewBox="0 0 680 672" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="679" viewBox="0 0 680 679" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for local_mutability_of_outputs</title>
   <desc id="kaalang-description">Nodes: Start: local_mutability_of_outputs with parameters input: String; number: u32 handing over input, number; Action: Produce immutable wires. capturing input, number handing over text, count; Action: Change the owned text and a local copy of the count. capturing mut text, mut count handing over mut changed, incremented; Action: Return both counts and the changed text. capturing changed, incremented, count handing over mut end; End: (String, u32, u32) capturing end. Connections: Start: local_mutability_of_outputs to Action: Produce immutable wires.; Action: Produce immutable wires. to Action: Change the owned text and a local copy of the count.; Action: Change the owned text and a local copy of the count. to Action: Return both counts and the changed text.; Action: Return both counts and the changed text. to End: (String, u32, u32).</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -31,26 +32,26 @@
     <path class="connection" d="
       M 172 94 L 172 170
       M 172 234 L 172 306
-      M 172 372 L 172 444
-      M 172 510 L 172 582
+      M 172 372 L 172 451
+      M 172 517 L 172 589
     "/>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">input, number</tspan></text>
-    <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">text, count</tspan></text>
-    <text class="connection-label" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">mut changed, incremented</tspan></text>
-    <text class="connection-label" x="185" y="528" xml:space="preserve"><tspan x="185" dy="0">mut end</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">mut text, mut count</tspan></text>
-    <text class="connection-label" x="185" y="433" xml:space="preserve"><tspan x="185" dy="0">changed, incremented, count</tspan></text>
-    <text class="connection-label" x="185" y="571" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">input, number</tspan></text>
+    <text class="connection-label code" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">text, count</tspan></text>
+    <text class="connection-label code" x="185" y="390" xml:space="preserve"><tspan x="185" dy="0">mut changed, incremented</tspan></text>
+    <text class="connection-label code" x="185" y="535" xml:space="preserve"><tspan x="185" dy="0">mut end</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">mut text, mut count</tspan></text>
+    <text class="connection-label code" x="185" y="426" xml:space="preserve"><tspan x="185" dy="0">changed, incremented, </tspan><tspan x="185" dy="14">count</tspan></text>
+    <text class="connection-label code" x="185" y="578" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">input: String</tspan><tspan x="-104" dy="18">number: u32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">input: String</tspan><tspan x="-104" dy="18">number: u32</tspan></text>
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">local_mutability_of_outputs</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">local_mutability_of_outputs</tspan></text>
     </g>
     <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Produce immutable wires.</title>
@@ -62,14 +63,14 @@
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Change the owned text and a local </tspan><tspan x="-124" dy="18">copy of the count.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 477)">
+    <g class="node action" transform="translate(172 484)">
       <title xml:space="preserve">Return both counts and the changed text.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Return both counts and the </tspan><tspan x="-124" dy="18">changed text.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 611)">
+    <g class="node end" transform="translate(172 618)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">(String, u32, u32)</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">(String, u32, u32)</tspan></text>
     </g>
   </g>
 </svg>

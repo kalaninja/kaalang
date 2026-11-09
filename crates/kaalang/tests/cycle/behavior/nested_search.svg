@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -68,34 +69,34 @@
     <path class="connection" d="
       M 1280 1544 L 1480 1544 L 1480 306 L 200 306
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="213" y="1562" xml:space="preserve"><tspan x="213" dy="0">outcome</tspan></text>
-    <text class="connection-label" x="933" y="1202" xml:space="preserve"><tspan x="933" dy="0">found</tspan></text>
-    <text class="connection-label" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">rows, target</tspan></text>
-    <text class="connection-label" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">mut row</tspan></text>
+    <text class="connection-label code" x="213" y="1562" xml:space="preserve"><tspan x="213" dy="0">outcome</tspan></text>
+    <text class="connection-label code" x="933" y="1202" xml:space="preserve"><tspan x="933" dy="0">found</tspan></text>
+    <text class="connection-label code" x="213" y="112" xml:space="preserve"><tspan x="213" dy="0">rows, target</tspan></text>
+    <text class="connection-label code" x="213" y="252" xml:space="preserve"><tspan x="213" dy="0">mut row</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="213" y="470" xml:space="preserve"><tspan x="213" dy="0">All rows have been </tspan><tspan x="213" dy="18">searched.</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="353" y="402" xml:space="preserve"><tspan x="353" dy="0">Search this row.</tspan></text>
-    <text class="connection-label" x="573" y="623" xml:space="preserve"><tspan x="573" dy="0">mut column</tspan></text>
+    <text class="connection-label code" x="573" y="623" xml:space="preserve"><tspan x="573" dy="0">mut column</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="573" y="841" xml:space="preserve"><tspan x="573" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="713" y="773" xml:space="preserve"><tspan x="713" dy="0">NO</tspan></text>
-    <text class="connection-label" x="573" y="990" xml:space="preserve"><tspan x="573" dy="0">different</tspan></text>
-    <text class="connection-label" x="713" y="954" xml:space="preserve"><tspan x="713" dy="0">equal</tspan></text>
-    <text class="connection-label" x="933" y="1350" xml:space="preserve"><tspan x="933" dy="0">done</tspan></text>
-    <text class="connection-label" x="1073" y="1314" xml:space="preserve"><tspan x="1073" dy="0">again</tspan></text>
-    <text class="connection-label" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
-    <text class="connection-label" x="213" y="367" xml:space="preserve"><tspan x="213" dy="0">&amp;row, &amp;rows</tspan></text>
-    <text class="connection-label" x="573" y="738" xml:space="preserve"><tspan x="573" dy="0">&amp;column, &amp;row, &amp;rows</tspan></text>
-    <text class="connection-label" x="573" y="875" xml:space="preserve"><tspan x="573" dy="0">iterate_2, &amp;rows, &amp;row, </tspan><tspan x="573" dy="14">&amp;column, &amp;target</tspan></text>
-    <text class="connection-label" x="573" y="1033" xml:space="preserve"><tspan x="573" dy="0">different, &amp;mut column</tspan></text>
-    <text class="connection-label" x="933" y="1033" xml:space="preserve"><tspan x="933" dy="0">equal, &amp;row, &amp;column</tspan></text>
-    <text class="connection-label" x="933" y="1249" xml:space="preserve"><tspan x="933" dy="0">&amp;found</tspan></text>
-    <text class="connection-label" x="933" y="1393" xml:space="preserve"><tspan x="933" dy="0">done, found</tspan></text>
-    <text class="connection-label" x="1293" y="1393" xml:space="preserve"><tspan x="1293" dy="0">again, &amp;mut row</tspan></text>
+    <text class="connection-label code" x="573" y="990" xml:space="preserve"><tspan x="573" dy="0">different</tspan></text>
+    <text class="connection-label code" x="713" y="954" xml:space="preserve"><tspan x="713" dy="0">equal</tspan></text>
+    <text class="connection-label code" x="933" y="1350" xml:space="preserve"><tspan x="933" dy="0">done</tspan></text>
+    <text class="connection-label code" x="1073" y="1314" xml:space="preserve"><tspan x="1073" dy="0">again</tspan></text>
+    <text class="connection-label code" x="213" y="159" xml:space="preserve"><tspan x="213" dy="0">()</tspan></text>
+    <text class="connection-label code" x="213" y="367" xml:space="preserve"><tspan x="213" dy="0">&amp;row, &amp;rows</tspan></text>
+    <text class="connection-label code" x="573" y="738" xml:space="preserve"><tspan x="573" dy="0">&amp;column, &amp;row, &amp;rows</tspan></text>
+    <text class="connection-label code" x="573" y="875" xml:space="preserve"><tspan x="573" dy="0">iterate_2, &amp;rows, &amp;row, </tspan><tspan x="573" dy="14">&amp;column, &amp;target</tspan></text>
+    <text class="connection-label code" x="573" y="1033" xml:space="preserve"><tspan x="573" dy="0">different, &amp;mut column</tspan></text>
+    <text class="connection-label code" x="933" y="1033" xml:space="preserve"><tspan x="933" dy="0">equal, &amp;row, &amp;column</tspan></text>
+    <text class="connection-label code" x="933" y="1249" xml:space="preserve"><tspan x="933" dy="0">&amp;found</tspan></text>
+    <text class="connection-label code" x="933" y="1393" xml:space="preserve"><tspan x="933" dy="0">done, found</tspan></text>
+    <text class="connection-label code" x="1293" y="1393" xml:space="preserve"><tspan x="1293" dy="0">again, &amp;mut row</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 65 L 436 65"/>
     <g class="parameter-panel" transform="translate(556 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">rows: &amp;[&amp;[i32]]</tspan><tspan x="-104" dy="18">target: i32</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">rows: &amp;[&amp;[i32]]</tspan><tspan x="-104" dy="18">target: i32</tspan></text>
     </g>
     <g class="node merge" transform="translate(200 1544)">
       <title xml:space="preserve">the outcome merge at the cycle result</title>
@@ -107,7 +108,7 @@
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_search</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_search</tspan></text>
     </g>
     <g class="node action" transform="translate(200 202)">
       <title xml:space="preserve">Start at the first row.</title>
@@ -171,7 +172,7 @@
     </g>
     <g class="node end" transform="translate(200 1649)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;(usize, usize)&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;(usize, usize)&gt;</tspan></text>
     </g>
   </g>
 </svg>

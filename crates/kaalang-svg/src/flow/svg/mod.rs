@@ -11,10 +11,11 @@ use crate::{
     },
     markup::{
         BASE_STYLE, FONT_WEIGHT_BOLD, FONT_WEIGHT_MEDIUM, FONT_WEIGHT_REGULAR,
-        FONT_WEIGHT_SEMIBOLD, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker, escape,
-        markdown_styles, needs_composed_lines, write_composed_lines, write_lines, write_title,
+        FONT_WEIGHT_SEMIBOLD, MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker,
+        escape, markdown_styles, needs_composed_lines, write_composed_lines, write_lines,
+        write_title,
     },
-    text::{LABEL_FONT, LINE_HEIGHT, block_metrics},
+    text::{LABEL_FONT, LINE_HEIGHT, RichText, block_metrics},
 };
 
 mod action;
@@ -42,8 +43,8 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str, part: Option<usize>) -> 
         scene
             .nodes
             .iter()
-            .flat_map(|node| &node.lines)
-            .chain(scene.labels.iter().flat_map(|label| &label.lines))
+            .flat_map(|node| markup(&node.lines))
+            .chain(scene.labels.iter().flat_map(|label| markup(&label.lines)))
             .chain(
                 scene
                     .cycle_regions
@@ -116,6 +117,7 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str, part: Option<usize>) -> 
       .start .label, .question .label, .select .label, .case .label, .end .label {{ font-weight: {FONT_WEIGHT_SEMIBOLD}; }}
       .action .label, .call .label, .cycle .label {{ font-weight: {FONT_WEIGHT_MEDIUM}; text-anchor: start; }}
       .parameter-panel .label {{ font-weight: {FONT_WEIGHT_REGULAR}; text-anchor: start; }}
+      .code {{ font-family: {MONOSPACE}; }}
       .cycle-boundary {{ fill: #f0fdf433; stroke: #15803d; stroke-width: {STROKE_WIDTH}; stroke-dasharray: {CYCLE_DASH_LENGTH} {CYCLE_DASH_GAP}; }}
       .cycle-caption {{ fill: #166534; font-size: {CYCLE_CAPTION_FONT}px; font-weight: {FONT_WEIGHT_SEMIBOLD}; paint-order: stroke; stroke: #ffffff; stroke-width: {CYCLE_CAPTION_HALO}px; }}
 {cycle_math}{markdown_styles}{stage_styles}{cap_styles}    </style>
@@ -184,11 +186,14 @@ fn write_connection(svg: &mut String, connection: &Connection) {
 
 fn write_connection_label(svg: &mut String, label: &Label) {
     let Point { x, y } = label.at;
-    let class = match label.kind {
-        LabelKind::Wire => "connection-label",
-        LabelKind::Branch => "connection-label branch-label",
+    let source = source(&label.lines);
+    let lines = source.as_deref().unwrap_or(&label.lines);
+    let class = match (label.kind, source.is_some()) {
+        (LabelKind::Wire, false) => "connection-label",
+        (LabelKind::Wire, true) => "connection-label code",
+        (LabelKind::Branch, _) => "connection-label branch-label",
     };
-    if needs_composed_lines(&label.lines) {
+    if needs_composed_lines(lines) {
         let style = matches!(label.kind, LabelKind::Branch)
             .then(|| format!("font-size: {}px", label.kind.font_size()));
         write_composed_lines(
@@ -196,7 +201,7 @@ fn write_connection_label(svg: &mut String, label: &Label) {
             "    ",
             class,
             style.as_deref(),
-            &label.lines,
+            lines,
             x,
             y,
             label.kind.font_size(),
@@ -212,7 +217,7 @@ fn write_connection_label(svg: &mut String, label: &Label) {
     emit_inline!(svg, " x=\"{x}\" y=\"{y}\" xml:space=\"preserve\">");
     write_lines(
         svg,
-        &label.lines,
+        lines,
         x,
         label.kind.font_size(),
         label.kind.line_height(),
@@ -370,11 +375,16 @@ fn write_parameter_panel(svg: &mut String, start: &Node, parameters: &ParameterP
     );
     let first_y = NODE_LABEL_PADDING_Y - parameters.lines.len() as i32 * LINE_HEIGHT / 2;
     let x = NODE_LABEL_PADDING_X - parameters.width / 2;
+    let source = source(&parameters.lines);
+    let (class, lines) = match &source {
+        Some(lines) => ("label code", lines.as_slice()),
+        None => ("label", parameters.lines.as_slice()),
+    };
     emit_inline!(
         svg,
-        "      <text class=\"label\" x=\"{x}\" y=\"{first_y}\" xml:space=\"preserve\">"
+        "      <text class=\"{class}\" x=\"{x}\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
-    write_lines(svg, &parameters.lines, x, LABEL_FONT, LINE_HEIGHT);
+    write_lines(svg, lines, x, LABEL_FONT, LINE_HEIGHT);
     svg.push_str("    </g>\n");
 }
 
@@ -542,13 +552,18 @@ fn write_start_label(svg: &mut String, node: &Node) {
 fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32, anchor: TextAnchor) {
     let metrics = block_metrics(&node.lines, LABEL_FONT, LINE_HEIGHT);
     let first_y = center_y - metrics.height / 2 + metrics.baselines[0];
-    if needs_composed_lines(&node.lines) {
+    let source = source(&node.lines);
+    let (class, lines) = match &source {
+        Some(lines) => ("label code", lines.as_slice()),
+        None => ("label", node.lines.as_slice()),
+    };
+    if needs_composed_lines(lines) {
         write_composed_lines(
             svg,
             "      ",
-            "label",
+            class,
             None,
-            &node.lines,
+            lines,
             x,
             first_y,
             LABEL_FONT,
@@ -559,9 +574,29 @@ fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32, anchor: Tex
     }
     emit_inline!(
         svg,
-        "      <text class=\"label\" y=\"{first_y}\" xml:space=\"preserve\">"
+        "      <text class=\"{class}\" y=\"{first_y}\" xml:space=\"preserve\">"
     );
-    write_lines(svg, &node.lines, x, LABEL_FONT, LINE_HEIGHT);
+    write_lines(svg, lines, x, LABEL_FONT, LINE_HEIGHT);
+}
+
+/// Rust source as plain lines, for a `code` element whose rule sets it in
+/// code, or `None` for text that keeps its Markdown spans.
+fn source(lines: &[RichText]) -> Option<Vec<RichText>> {
+    lines.iter().all(RichText::is_code).then(|| {
+        lines
+            .iter()
+            .map(|line| RichText::literal(line.as_ref()))
+            .collect()
+    })
+}
+
+/// The lines whose Markdown spans are written: all but Rust source.
+fn markup(lines: &[RichText]) -> &[RichText] {
+    if lines.iter().all(RichText::is_code) {
+        &[]
+    } else {
+        lines
+    }
 }
 
 const fn node_class(kind: NodeKind) -> &'static str {

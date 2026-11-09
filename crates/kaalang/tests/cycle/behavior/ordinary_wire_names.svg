@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,7 +30,7 @@
     <g>
       <title xml:space="preserve">Use completion-like names inside a cycle.</title>
     <rect class="cycle-boundary" x="32" y="263" width="336" height="270" rx="12"/>
-    <text class="cycle-caption" x="356" y="277" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Use </tspan><tspan x="356" dy="14">completion-like …</tspan></text>
+    <text class="cycle-caption" x="356" y="277" text-anchor="end" xml:space="preserve"><tspan x="356" dy="0">Use </tspan><tspan x="356" dy="14">completion-like…</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -40,22 +41,22 @@
       M 200 498 L 200 570
       M 200 634 L 200 706
     "/>
-    <text class="connection-label" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">input</tspan></text>
-    <text class="connection-label" x="213" y="287" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
-    <text class="connection-label" x="213" y="423" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label" x="213" y="695" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
-    <text class="connection-label" x="213" y="516" xml:space="preserve"><tspan x="213" dy="0">out</tspan></text>
-    <text class="connection-label" x="213" y="559" xml:space="preserve"><tspan x="213" dy="0">out</tspan></text>
+    <text class="connection-label code" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">input</tspan></text>
+    <text class="connection-label code" x="213" y="287" xml:space="preserve"><tspan x="213" dy="0">end</tspan></text>
+    <text class="connection-label code" x="213" y="423" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label code" x="213" y="695" xml:space="preserve"><tspan x="213" dy="0">result</tspan></text>
+    <text class="connection-label code" x="213" y="516" xml:space="preserve"><tspan x="213" dy="0">out</tspan></text>
+    <text class="connection-label code" x="213" y="559" xml:space="preserve"><tspan x="213" dy="0">out</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 340 61 L 436 61"/>
     <g class="parameter-panel" transform="translate(556 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">input: usize</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">input: usize</tspan></text>
     </g>
     <g class="node start" transform="translate(200 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">ordinary_wire_names</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">ordinary_wire_names</tspan></text>
     </g>
     <g class="node action" transform="translate(200 194)">
       <title xml:space="preserve">Produce an end wire.</title>
@@ -79,7 +80,7 @@
     </g>
     <g class="node end" transform="translate(200 735)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">usize</tspan></text>
     </g>
   </g>
 </svg>

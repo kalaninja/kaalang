@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -43,18 +44,18 @@
       M 172 596 L 172 672
       M 172 814 L 172 890
     "/>
-    <text class="connection-label" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
-    <text class="connection-label" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">case</tspan></text>
-    <text class="connection-label" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
-    <text class="connection-label" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">done</tspan></text>
+    <text class="connection-label code" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">case</tspan></text>
+    <text class="connection-label code" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label code" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">done</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">case: u8</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">case: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 596)">
       <title xml:space="preserve">the selected merge</title>
@@ -66,7 +67,7 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">convergence_before_a_terminal_ca</tspan><tspan x="0" dy="18">se</tspan></text>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">convergence_before_a_termina</tspan><tspan x="0" dy="18">l_case</tspan></text>
     </g>
     <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Choose whether to continue.</title>
@@ -110,7 +111,7 @@
     </g>
     <g class="node end" transform="translate(172 919)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

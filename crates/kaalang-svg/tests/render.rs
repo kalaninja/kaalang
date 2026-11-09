@@ -608,7 +608,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
             let svg = render_source_with_options(&source, "example", COLLAPSED).unwrap();
             assert_eq!(
                 svg.lines()
-                    .filter(|line| line.contains(r#"class="connection-label""#))
+                    .filter(|line| line.contains(r#"class="connection-label code""#))
                     .filter(|line| line.contains("mut first"))
                     .count(),
                 expected,

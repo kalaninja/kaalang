@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -37,22 +38,22 @@
       M 173 508 L 173 580
       M 173 644 L 173 716
     "/>
-    <text class="connection-label" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">items, dropped</tspan></text>
-    <text class="connection-label" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut seen</tspan></text>
-    <text class="connection-label" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
-    <text class="connection-label" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">items</tspan></text>
-    <text class="connection-label" x="186" y="431" xml:space="preserve"><tspan x="186" dy="0">dropped, &amp;mut seen</tspan></text>
-    <text class="connection-label" x="186" y="705" xml:space="preserve"><tspan x="186" dy="0">seen</tspan></text>
+    <text class="connection-label code" x="186" y="112" xml:space="preserve"><tspan x="186" dy="0">items, dropped</tspan></text>
+    <text class="connection-label code" x="186" y="252" xml:space="preserve"><tspan x="186" dy="0">mut seen</tspan></text>
+    <text class="connection-label code" x="186" y="159" xml:space="preserve"><tspan x="186" dy="0">()</tspan></text>
+    <text class="connection-label code" x="186" y="295" xml:space="preserve"><tspan x="186" dy="0">items</tspan></text>
+    <text class="connection-label code" x="186" y="431" xml:space="preserve"><tspan x="186" dy="0">dropped, &amp;mut seen</tspan></text>
+    <text class="connection-label code" x="186" y="705" xml:space="preserve"><tspan x="186" dy="0">seen</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 313 65 L 409 65"/>
     <g class="parameter-panel" transform="translate(529 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">items: Vec&lt;Item&lt;&apos;_&gt;&gt;</tspan><tspan x="-104" dy="18">dropped: &amp;Cell&lt;usize&gt;</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">items: Vec&lt;Item&lt;&apos;_&gt;&gt;</tspan><tspan x="-104" dy="18">dropped: &amp;Cell&lt;usize&gt;</tspan></text>
     </g>
     <g class="node start" transform="translate(173 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_wildcard_drops_each_item</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_wildcard_drops_each_item</tspan></text>
     </g>
     <g class="node action" transform="translate(173 202)">
       <title xml:space="preserve">Start with no observations.</title>
@@ -76,7 +77,7 @@
     </g>
     <g class="node end" transform="translate(173 745)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Vec&lt;usize&gt;</tspan></text>
     </g>
   </g>
 </svg>

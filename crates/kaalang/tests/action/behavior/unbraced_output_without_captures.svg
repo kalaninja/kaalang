@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -34,17 +35,17 @@
       M 172 370 L 172 442
       M 172 506 L 172 578
     "/>
-    <text class="connection-label" x="185" y="567" xml:space="preserve"><tspan x="185" dy="0">sum</tspan></text>
-    <text class="connection-label" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">start</tspan></text>
-    <text class="connection-label" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">step</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
-    <text class="connection-label" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">start, step</tspan></text>
+    <text class="connection-label code" x="185" y="567" xml:space="preserve"><tspan x="185" dy="0">sum</tspan></text>
+    <text class="connection-label code" x="185" y="252" xml:space="preserve"><tspan x="185" dy="0">start</tspan></text>
+    <text class="connection-label code" x="185" y="388" xml:space="preserve"><tspan x="185" dy="0">step</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="431" xml:space="preserve"><tspan x="185" dy="0">start, step</tspan></text>
   </g>
   <g class="nodes">
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">unbraced_output_without_capture</tspan><tspan x="0" dy="18">s</tspan></text>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">unbraced_output_without_capt</tspan><tspan x="0" dy="18">ures</tspan></text>
     </g>
     <g class="node action" transform="translate(172 202)">
       <title xml:space="preserve">Start from forty.</title>
@@ -63,7 +64,7 @@
     </g>
     <g class="node end" transform="translate(172 607)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>

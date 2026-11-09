@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -38,8 +39,8 @@
     </g>
     <g>
       <title xml:space="preserve">Repeat level 2.</title>
-    <rect class="cycle-boundary" x="432" y="559" width="418" height="286" rx="12"/>
-    <text class="cycle-caption" x="838" y="573" text-anchor="end" xml:space="preserve"><tspan x="838" dy="0">Repeat level 2.</tspan></text>
+    <rect class="cycle-boundary" x="432" y="559" width="426" height="286" rx="12"/>
+    <text class="cycle-caption" x="846" y="573" text-anchor="end" xml:space="preserve"><tspan x="846" dy="0">Repeat level 2.</tspan></text>
     </g>
   </g>
   <g class="connections">
@@ -65,27 +66,27 @@
     <path class="connection" d="
       M 260 917 L 60 917 L 60 162 L 260 162
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="273" y="108" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
-    <text class="connection-label" x="273" y="324" xml:space="preserve"><tspan x="273" dy="0">stay_0</tspan></text>
-    <text class="connection-label" x="413" y="288" xml:space="preserve"><tspan x="413" dy="0">leave_0</tspan></text>
-    <text class="connection-label" x="273" y="540" xml:space="preserve"><tspan x="273" dy="0">leave_1</tspan></text>
-    <text class="connection-label" x="413" y="504" xml:space="preserve"><tspan x="413" dy="0">stay_1</tspan></text>
-    <text class="connection-label" x="633" y="756" xml:space="preserve"><tspan x="633" dy="0">stay_2</tspan></text>
-    <text class="connection-label" x="773" y="720" xml:space="preserve"><tspan x="773" dy="0">leave_2</tspan></text>
-    <text class="connection-label" x="273" y="223" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
-    <text class="connection-label" x="273" y="439" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
-    <text class="connection-label" x="633" y="655" xml:space="preserve"><tspan x="633" dy="0">flag</tspan></text>
-    <text class="connection-label" x="1353" y="978" xml:space="preserve"><tspan x="1353" dy="0">()</tspan></text>
+    <text class="connection-label code" x="273" y="108" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label code" x="273" y="324" xml:space="preserve"><tspan x="273" dy="0">stay_0</tspan></text>
+    <text class="connection-label code" x="413" y="288" xml:space="preserve"><tspan x="413" dy="0">leave_0</tspan></text>
+    <text class="connection-label code" x="273" y="540" xml:space="preserve"><tspan x="273" dy="0">leave_1</tspan></text>
+    <text class="connection-label code" x="413" y="504" xml:space="preserve"><tspan x="413" dy="0">stay_1</tspan></text>
+    <text class="connection-label code" x="633" y="756" xml:space="preserve"><tspan x="633" dy="0">stay_2</tspan></text>
+    <text class="connection-label code" x="773" y="720" xml:space="preserve"><tspan x="773" dy="0">leave_2</tspan></text>
+    <text class="connection-label code" x="273" y="223" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label code" x="273" y="439" xml:space="preserve"><tspan x="273" dy="0">flag</tspan></text>
+    <text class="connection-label code" x="633" y="655" xml:space="preserve"><tspan x="633" dy="0">flag</tspan></text>
+    <text class="connection-label code" x="1353" y="978" xml:space="preserve"><tspan x="1353" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 400 61 L 496 61"/>
     <g class="parameter-panel" transform="translate(616 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">flag: bool</tspan></text>
     </g>
     <g class="node start" transform="translate(260 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_alternating_returns</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">nested_alternating_returns</tspan></text>
     </g>
     <g class="node question" transform="translate(260 270)">
       <title xml:space="preserve">Leave level 0?</title>
@@ -104,7 +105,7 @@
     </g>
     <g class="node end" transform="translate(1340 1018)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>
   </g>
 </svg>

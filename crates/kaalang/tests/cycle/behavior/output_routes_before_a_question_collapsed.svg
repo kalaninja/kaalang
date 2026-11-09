@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
     </style>
@@ -29,7 +30,7 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 94 L 172 170
+      M 172 98 L 172 170
       M 172 234 L 172 306
       M 312 202 L 532 202 L 532 306
       M 532 378 L 532 450
@@ -41,21 +42,21 @@
       M 172 590 L 172 666
       M 172 806 L 172 882
     "/>
-    <text class="connection-label" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">score</tspan></text>
-    <text class="connection-label" x="185" y="824" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
-    <text class="connection-label" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">tiny</tspan></text>
-    <text class="connection-label" x="545" y="439" xml:space="preserve"><tspan x="545" dy="0">even</tspan></text>
-    <text class="connection-label" x="905" y="439" xml:space="preserve"><tspan x="905" dy="0">odd</tspan></text>
-    <text class="connection-label" x="185" y="112" xml:space="preserve"><tspan x="185" dy="0">value, flag</tspan></text>
-    <text class="connection-label" x="325" y="220" xml:space="preserve"><tspan x="325" dy="0">larger</tspan></text>
-    <text class="connection-label" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
-    <text class="connection-label" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">larger, flag</tspan></text>
+    <text class="connection-label code" x="185" y="608" xml:space="preserve"><tspan x="185" dy="0">score</tspan></text>
+    <text class="connection-label code" x="185" y="824" xml:space="preserve"><tspan x="185" dy="0">result</tspan></text>
+    <text class="connection-label code" x="185" y="295" xml:space="preserve"><tspan x="185" dy="0">tiny</tspan></text>
+    <text class="connection-label code" x="545" y="439" xml:space="preserve"><tspan x="545" dy="0">even</tspan></text>
+    <text class="connection-label code" x="905" y="439" xml:space="preserve"><tspan x="905" dy="0">odd</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">value, flag</tspan></text>
+    <text class="connection-label code" x="325" y="220" xml:space="preserve"><tspan x="325" dy="0">larger</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="545" y="295" xml:space="preserve"><tspan x="545" dy="0">larger, flag</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 65 L 408 65"/>
     <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
-      <text class="label" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: u8</tspan></text>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">value: u8</tspan><tspan x="-104" dy="18">flag: u8</tspan></text>
     </g>
     <g class="node merge" transform="translate(172 590)">
       <title xml:space="preserve">the score merge</title>
@@ -66,8 +67,8 @@
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
     <g class="node start" transform="translate(172 65)">
-      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">output_routes_before_a_question</tspan></text>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <text class="label code" y="-3" xml:space="preserve"><tspan x="0" dy="0">output_routes_before_a_quest</tspan><tspan x="0" dy="18">ion</tspan></text>
     </g>
     <g class="node cycle" transform="translate(172 202)">
       <title xml:space="preserve">Sort the value.</title>
@@ -102,7 +103,7 @@
     </g>
     <g class="node end" transform="translate(172 911)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
     </g>
   </g>
 </svg>

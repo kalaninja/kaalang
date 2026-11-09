@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -58,33 +59,33 @@
     <path class="connection" d="
       M 240 1722 L 60 1722 L 60 300 L 240 300
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="613" y="1740" xml:space="preserve"><tspan x="613" dy="0">sorted</tspan></text>
-    <text class="connection-label" x="253" y="919" xml:space="preserve"><tspan x="253" dy="0">left, right</tspan></text>
-    <text class="connection-label" x="253" y="108" xml:space="preserve"><tspan x="253" dy="0">mut values</tspan></text>
-    <text class="connection-label" x="253" y="246" xml:space="preserve"><tspan x="253" dy="0">mut unsorted</tspan></text>
+    <text class="connection-label code" x="613" y="1740" xml:space="preserve"><tspan x="613" dy="0">sorted</tspan></text>
+    <text class="connection-label code" x="253" y="919" xml:space="preserve"><tspan x="253" dy="0">left, right</tspan></text>
+    <text class="connection-label code" x="253" y="108" xml:space="preserve"><tspan x="253" dy="0">mut values</tspan></text>
+    <text class="connection-label code" x="253" y="246" xml:space="preserve"><tspan x="253" dy="0">mut unsorted</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="253" y="464" xml:space="preserve"><tspan x="253" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="393" y="396" xml:space="preserve"><tspan x="393" dy="0">NO</tspan></text>
-    <text class="connection-label" x="253" y="600" xml:space="preserve"><tspan x="253" dy="0">mut last_swap</tspan></text>
-    <text class="connection-label" x="253" y="738" xml:space="preserve"><tspan x="253" dy="0">index</tspan></text>
+    <text class="connection-label code" x="253" y="600" xml:space="preserve"><tspan x="253" dy="0">mut last_swap</tspan></text>
+    <text class="connection-label code" x="253" y="738" xml:space="preserve"><tspan x="253" dy="0">index</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="253" y="1022" xml:space="preserve"><tspan x="253" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="393" y="954" xml:space="preserve"><tspan x="393" dy="0">NO</tspan></text>
-    <text class="connection-label" x="253" y="1165" xml:space="preserve"><tspan x="253" dy="0">_ordered</tspan></text>
-    <text class="connection-label" x="253" y="1375" xml:space="preserve"><tspan x="253" dy="0">compared</tspan></text>
+    <text class="connection-label code" x="253" y="1165" xml:space="preserve"><tspan x="253" dy="0">_ordered</tspan></text>
+    <text class="connection-label code" x="253" y="1375" xml:space="preserve"><tspan x="253" dy="0">compared</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="253" y="1521" xml:space="preserve"><tspan x="253" dy="0">YES</tspan></text>
     <text class="connection-label branch-label" style="font-size: 14px" x="393" y="1453" xml:space="preserve"><tspan x="393" dy="0">NO</tspan></text>
-    <text class="connection-label" x="253" y="151" xml:space="preserve"><tspan x="253" dy="0">&amp;values</tspan></text>
-    <text class="connection-label" x="253" y="361" xml:space="preserve"><tspan x="253" dy="0">unsorted</tspan></text>
-    <text class="connection-label" x="253" y="643" xml:space="preserve"><tspan x="253" dy="0">pass, unsorted</tspan></text>
-    <text class="connection-label" x="253" y="781" xml:space="preserve"><tspan x="253" dy="0">index, &amp;values</tspan></text>
-    <text class="connection-label" x="253" y="1056" xml:space="preserve"><tspan x="253" dy="0">greater, &amp;mut values, index, </tspan><tspan x="253" dy="14">&amp;mut last_swap</tspan></text>
-    <text class="connection-label" x="253" y="1418" xml:space="preserve"><tspan x="253" dy="0">compared, last_swap</tspan></text>
-    <text class="connection-label" x="253" y="1555" xml:space="preserve"><tspan x="253" dy="0">shrink, last_swap, &amp;mut </tspan><tspan x="253" dy="14">unsorted</tspan></text>
+    <text class="connection-label code" x="253" y="151" xml:space="preserve"><tspan x="253" dy="0">&amp;values</tspan></text>
+    <text class="connection-label code" x="253" y="361" xml:space="preserve"><tspan x="253" dy="0">unsorted</tspan></text>
+    <text class="connection-label code" x="253" y="643" xml:space="preserve"><tspan x="253" dy="0">pass, unsorted</tspan></text>
+    <text class="connection-label code" x="253" y="781" xml:space="preserve"><tspan x="253" dy="0">index, &amp;values</tspan></text>
+    <text class="connection-label code" x="253" y="1056" xml:space="preserve"><tspan x="253" dy="0">greater, &amp;mut values, </tspan><tspan x="253" dy="14">index, &amp;mut last_swap</tspan></text>
+    <text class="connection-label code" x="253" y="1418" xml:space="preserve"><tspan x="253" dy="0">compared, last_swap</tspan></text>
+    <text class="connection-label code" x="253" y="1555" xml:space="preserve"><tspan x="253" dy="0">shrink, last_swap, &amp;mut </tspan><tspan x="253" dy="14">unsorted</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 380 61 L 476 61"/>
     <g class="parameter-panel" transform="translate(596 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: &amp;mut [i32]</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">mut values: &amp;mut [i32]</tspan></text>
     </g>
     <g class="node merge" transform="translate(600 1722)">
       <title xml:space="preserve">the sorted merge at the cycle result</title>
@@ -92,7 +93,7 @@
     </g>
     <g class="node start" transform="translate(240 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">bubble_sort</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">bubble_sort</tspan></text>
     </g>
     <g class="node action" transform="translate(240 195)">
       <title xml:space="preserve">📏 Start with the whole list to sort.</title>
@@ -146,7 +147,7 @@
     </g>
     <g class="node end" transform="translate(600 1827)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>
   </g>
 </svg>

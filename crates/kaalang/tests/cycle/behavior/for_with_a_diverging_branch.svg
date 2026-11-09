@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="790" height="1224" viewBox="0 0 790 1224" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="825" height="1224" viewBox="0 0 825 1224" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for for_with_a_diverging_branch</title>
   <desc id="kaalang-description">Cycles: Add the values, spinning forever on a zero. with inputs values, mut total and outputs (); Spin forever. with inputs zero and outputs (). Nodes: Start: for_with_a_diverging_branch with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; For entry: Add the values, spinning forever on a zero. capturing values handing over value; Question: Is the value zero? capturing value handing over zero / nonzero; Action: Add the value. capturing nonzero, value, &amp;mut total; Action: Wait. capturing nothing handing over waited; For end: Add the values, spinning forever on a zero.; End: u32 capturing total. Connections: Start: for_with_a_diverging_branch to Action: Start with a total of zero.; Action: Start with a total of zero. to For entry: Add the values, spinning forever on a zero.; For entry: Add the values, spinning forever on a zero. to Question: Is the value zero?; Question: Is the value zero? branch 1 to the entry of the cycle; Question: Is the value zero? branch 2 to Action: Add the value.; Action: Add the value. to For end: Add the values, spinning forever on a zero.; Action: Wait. to the iteration tail of the cycle; For end: Add the values, spinning forever on a zero. to End: u32; the entry of the cycle to Action: Wait.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
@@ -20,6 +20,7 @@
       .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
       .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
       .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
@@ -50,27 +51,27 @@
     <path class="connection" d="
       M 221 852 L 61 852 L 61 612 L 221 612
     " marker-end="url(#back-edge-arrow)"/>
-    <text class="connection-label" x="234" y="425" xml:space="preserve"><tspan x="234" dy="0">value</tspan></text>
-    <text class="connection-label" x="234" y="108" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
-    <text class="connection-label" x="234" y="244" xml:space="preserve"><tspan x="234" dy="0">mut total</tspan></text>
-    <text class="connection-label" x="234" y="526" xml:space="preserve"><tspan x="234" dy="0">zero</tspan></text>
-    <text class="connection-label" x="374" y="490" xml:space="preserve"><tspan x="374" dy="0">nonzero</tspan></text>
-    <text class="connection-label" x="234" y="798" xml:space="preserve"><tspan x="234" dy="0">waited</tspan></text>
-    <text class="connection-label" x="234" y="151" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
-    <text class="connection-label" x="234" y="287" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
-    <text class="connection-label" x="594" y="569" xml:space="preserve"><tspan x="594" dy="0">nonzero, value, &amp;mut total</tspan></text>
-    <text class="connection-label" x="234" y="705" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
-    <text class="connection-label" x="234" y="1123" xml:space="preserve"><tspan x="234" dy="0">total</tspan></text>
+    <text class="connection-label code" x="234" y="425" xml:space="preserve"><tspan x="234" dy="0">value</tspan></text>
+    <text class="connection-label code" x="234" y="108" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
+    <text class="connection-label code" x="234" y="244" xml:space="preserve"><tspan x="234" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="234" y="526" xml:space="preserve"><tspan x="234" dy="0">zero</tspan></text>
+    <text class="connection-label code" x="374" y="490" xml:space="preserve"><tspan x="374" dy="0">nonzero</tspan></text>
+    <text class="connection-label code" x="234" y="798" xml:space="preserve"><tspan x="234" dy="0">waited</tspan></text>
+    <text class="connection-label code" x="234" y="151" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
+    <text class="connection-label code" x="234" y="287" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
+    <text class="connection-label code" x="594" y="569" xml:space="preserve"><tspan x="594" dy="0">nonzero, value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="234" y="705" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
+    <text class="connection-label code" x="234" y="1123" xml:space="preserve"><tspan x="234" dy="0">total</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 361 61 L 457 61"/>
     <g class="parameter-panel" transform="translate(577 61)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
-      <text class="label" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
     </g>
     <g class="node start" transform="translate(221 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">for_with_a_diverging_branch</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">for_with_a_diverging_branch</tspan></text>
     </g>
     <g class="node action" transform="translate(221 194)">
       <title xml:space="preserve">Start with a total of zero.</title>
@@ -104,7 +105,7 @@
     </g>
     <g class="node end" transform="translate(221 1163)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>
   </g>
 </svg>
