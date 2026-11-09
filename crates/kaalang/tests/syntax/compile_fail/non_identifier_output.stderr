@@ -1,5 +1,0 @@
-error: kaalang block outputs must use simple identifiers
- --> tests/syntax/compile_fail/non_identifier_output.rs:6:9
-  |
-6 |     let Some(output) = |value| { Some(value) };
-  |         ^^^^^^^^^^^^

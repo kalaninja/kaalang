@@ -128,11 +128,13 @@ generated cycle shape. Run it before committing a change to `construct/`, to
 those answers rest on. Nothing else runs it, and it is the only check that
 reaches the nested cycle shapes in bulk.
 
-Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
-flow it declares, with that flow's diagram beside it. The diagrams redraw
-themselves during `cargo test`, so a renderer or model change arrives as a diff
-over them. `just rust svg` redraws them and shows that diff. Read it before
-committing: nothing else checks that the new diagrams still make sense.
+Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
+feature. Each holds one flow per file, named for the flow it declares, with that
+flow's diagram beside it, and its `compile_fail/` holds the programs the feature
+rejects. The diagrams redraw themselves during `cargo test`, so a renderer or
+model change arrives as a diff over them. `just rust svg` redraws them and shows
+that diff. Read it before committing: nothing else checks that the new diagrams
+still make sense.
 
 Gallery examples may group related flows in one source file and share a test.
 Each flow still gets its own `<flow>.svg` beside that file.

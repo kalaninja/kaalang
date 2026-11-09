@@ -1,5 +1,0 @@
-error: a kaalang block body must capture `input` before using it
- --> tests/syntax/compile_fail/uncaptured_initializer.rs:6:15
-  |
-6 |     let end = input;
-  |               ^^^^^

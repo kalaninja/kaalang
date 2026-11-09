@@ -290,11 +290,11 @@ fn cycles_and_stage_boundaries_match_complete_histories() {
 fn independent_nested_for_cycles_match_complete_histories() {
     for (source, name) in [
         (
-            include_str!("../../../kaalang/tests/cycle/behavior/for_independent_ranges.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/for_independent_ranges.rs"),
             "for_independent_ranges",
         ),
         (
-            include_str!("../../../kaalang/tests/cycle/behavior/for_inside_loop_inside_for.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/for_inside_loop_inside_for.rs"),
             "for_inside_loop_inside_for",
         ),
     ] {

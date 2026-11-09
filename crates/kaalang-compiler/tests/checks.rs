@@ -47,7 +47,7 @@ fn the_public_checks_reject_broken_placement_and_references() {
 #[test]
 fn the_public_geometry_check_rejects_a_crossed_corridor() {
     let model = fixture(
-        include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
+        include_str!("../../kaalang/tests/flow/wire/blocked_terminal_crossing.rs"),
         "blocked_terminal_crossing",
     );
     let checks = ArrangementChecks::new(&model.analysis.flow, &model.topology);

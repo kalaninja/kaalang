@@ -387,9 +387,7 @@ mod tests {
                         };
                     }
                 "#,
-            include_str!(
-                "../../../../kaalang/tests/stage/behavior/transition_to_diverging_stage.rs"
-            ),
+            include_str!("../../../../kaalang/tests/flow/stage/transition_to_diverging_stage.rs"),
         ] {
             for collapsed in [false, true] {
                 let (model, parameters) = compacted(source, collapsed);
@@ -434,7 +432,7 @@ mod tests {
 
     #[test]
     fn stage_rail_clears_multiline_start_handovers() {
-        let source = include_str!("../../../../kaalang/tests/stage/behavior/sum_inputs.rs");
+        let source = include_str!("../../../../kaalang/tests/flow/stage/sum_inputs.rs");
         let (model, parameters) = compacted(source, false);
         let diagram = layout_staged(&model, "sum_inputs", &parameters, "u32").unwrap();
         let (preparation, placement) = &diagram.parts[0];
@@ -453,13 +451,11 @@ mod tests {
         for (name, source) in [
             (
                 "prepared_two_line_capture",
-                include_str!(
-                    "../../../../kaalang/tests/stage/behavior/prepared_two_line_capture.rs"
-                ),
+                include_str!("../../../../kaalang/tests/flow/stage/prepared_two_line_capture.rs"),
             ),
             (
                 "prepared_cycle",
-                include_str!("../../../../kaalang/tests/stage/behavior/prepared_cycle.rs"),
+                include_str!("../../../../kaalang/tests/flow/stage/prepared_cycle.rs"),
             ),
         ] {
             let file = syn::parse_file(source).unwrap();

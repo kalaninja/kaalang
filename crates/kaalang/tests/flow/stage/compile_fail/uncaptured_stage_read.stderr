@@ -1,0 +1,5 @@
+error: a kaalang block body must capture `go` before using it
+ --> tests/flow/stage/compile_fail/uncaptured_stage_read.rs:8:25
+  |
+8 |         let answer = || go + 1;
+  |                         ^^

@@ -36,8 +36,8 @@ tests, commit messages, and pull request content.
   `cargo-kaalang` binary.
 - `crates/kaalang/` exports the public macro and owns its test suite. Behavior
   tests are executable examples; compile-fail tests document rejected forms. The
-  `.svg` beside each `behavior/<flow>.rs` is drawn by `cargo test -p kaalang`
-  and reviewed in the diff; never edit one by hand.
+  `.svg` beside each `flow/<feature>/<flow>.rs` is drawn by
+  `cargo test -p kaalang` and reviewed in the diff; never edit one by hand.
 
 Do not restate the language contract in this guide or the root README. This
 guide links the relevant RFC instead. The README is an overview of the language:

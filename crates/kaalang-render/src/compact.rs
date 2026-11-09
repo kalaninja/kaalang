@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn a_stage_with_a_cycle_compacts_both_transition_routes() {
-        let function = fixture!("stage/behavior", "stage_cycle_alternative_outputs");
+        let function = fixture!("flow/stage", "stage_cycle_alternative_outputs");
         let mut model = kaalang_compiler::build(&function).unwrap();
         let stage = &mut model.stages[0];
         assert!(!stage.topology.cycles.is_empty());
@@ -392,7 +392,7 @@ mod tests {
     #[test]
     fn an_outer_tail_cannot_join_a_column_inside_a_nested_frame() {
         let mut model =
-            kaalang_compiler::build(&fixture!("cycle/behavior", "nested_side_returns")).unwrap();
+            kaalang_compiler::build(&fixture!("flow/cycle", "nested_side_returns")).unwrap();
         compact_arrangement(&mut model);
         let tail = Vertex::Junction(model.topology.cycles[0].tail);
         let column = model.arrangement.column[&tail];
@@ -415,8 +415,8 @@ mod tests {
     #[test]
     fn a_completion_stands_beside_the_cycle_it_leaves() {
         for function in [
-            fixture!("cycle/behavior", "nested_side_returns"),
-            fixture!("cycle/behavior", "collect_steps"),
+            fixture!("flow/cycle", "nested_side_returns"),
+            fixture!("flow/cycle", "collect_steps"),
         ] {
             let name = &function.sig.ident;
             let mut model = kaalang_compiler::build(&function).unwrap();
@@ -454,7 +454,7 @@ mod tests {
 
     #[test]
     fn a_branch_that_stepped_sideways_below_its_brancher_departs_straight() {
-        let function = fixture!("wire/behavior", "early_branch_rejoins_below_a_side_branch");
+        let function = fixture!("flow/wire", "early_branch_rejoins_below_a_side_branch");
         let mut model = kaalang_compiler::build(&function).unwrap();
         let stepping = steps_below(&model.topology, &model.arrangement).collect::<Vec<_>>();
         assert!(
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn junction_arrivals_keep_their_rank_through_compaction() {
-        let function = fixture!("wire/behavior", "two_merges_reach_one_consumer");
+        let function = fixture!("flow/wire", "two_merges_reach_one_consumer");
         let mut model = kaalang_compiler::build(&function).unwrap();
         compact_arrangement(&mut model);
         ArrangementVerifier::new(&model.analysis.flow, &model.topology)

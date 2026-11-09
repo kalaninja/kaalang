@@ -117,7 +117,8 @@ pub(crate) fn open_body(flow: &Flow, header: usize) -> Error {
 #[cfg(test)]
 mod tests {
     fn repeating_case_at(output: &str) {
-        let source = include_str!("../../../kaalang/tests/cycle/compile_fail/enclosed_repeat.rs");
+        let source =
+            include_str!("../../../kaalang/tests/flow/cycle/compile_fail/enclosed_repeat.rs");
         let source = source.replace("(first, advance, last)", output);
         crate::build(&crate::tests::fixture(&source, "invalid"))
             .expect("adjacent exits leave the return an outer contour");
@@ -166,7 +167,7 @@ mod tests {
 
     #[test]
     fn a_converged_selection_does_not_split_cycle_exit_routes() {
-        let fixture = include_str!("../../../kaalang/tests/cycle/behavior/multiple_exits.rs");
+        let fixture = include_str!("../../../kaalang/tests/flow/cycle/multiple_exits.rs");
         let source = fixture.replace(
             "    let result = loop {",
             r#"    let result = loop {
@@ -193,7 +194,7 @@ mod tests {
 
     #[test]
     fn a_partial_merge_before_cycle_entry_does_not_split_its_exit_routes() {
-        let source = include_str!("../../../kaalang/tests/cycle/behavior/conditional_entry.rs")
+        let source = include_str!("../../../kaalang/tests/flow/cycle/conditional_entry.rs")
             .replace(
                 "#[kaa::question(\"Run the counter?\")]\n    let (run, skip) = |enabled| enabled;",
                 r#"#[kaa::choice("Run the counter?")]

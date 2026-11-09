@@ -504,9 +504,9 @@ pub fn staged_shapes() -> Vec<String> {
             "",
             "#[kaa::cycle(\"Read or repeat.\")] let current = |first| loop { #[kaa::question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[kaa::action(\"Use the entry.\")] let current = |ready, first| first; };",
         ),
-        include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
+        include_str!("../../kaalang/tests/flow/stage/stage_cycle_alternative_outputs.rs")
             .to_owned(),
-        include_str!("../../kaalang/tests/stage/behavior/nested_stage_alternative_outputs.rs")
+        include_str!("../../kaalang/tests/flow/stage/nested_stage_alternative_outputs.rs")
             .to_owned(),
     ]
 }

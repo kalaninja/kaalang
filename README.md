@@ -156,10 +156,10 @@ such as `r#"<color name="red">…</color>"#`. Formatting changes only the diagra
 the generated Rust is the same. A marker without its pair stays literal, and a
 backslash before a marker keeps it literal: `\\*` in an ordinary string, `\*` in
 a raw one. Diagrams show
-[the text effects](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markdown.svg),
-[formulas](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_formulas.svg),
+[the text effects](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/syntax/render_markdown.svg),
+[formulas](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/syntax/render_formulas.svg),
 and
-[literal fallbacks](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/syntax/behavior/render_markup_fallbacks.svg).
+[literal fallbacks](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/syntax/render_markup_fallbacks.svg).
 
 ## Block kinds
 
@@ -292,16 +292,16 @@ that stage's signal as one of its declared outputs, and the stage that holds
 
 This empty state machine only follows `First → Second → Finish`. With stages:
 
-[![State machine with stages](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/stage/behavior/state_machine.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine.svg)
+[![State machine with stages](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/flow/stage/state_machine.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine.rs)
 
 Without stages, the diagram shows the cycle and the choice that selects the
 current state:
 
-[![State machine with an explicit dispatcher](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.svg)
+[![State machine with an explicit dispatcher](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/flow/stage/state_machine_without_stages.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine_without_stages.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/stage/behavior/state_machine_without_stages.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine_without_stages.rs)
 
 After each state update, control returns to the choice. Selecting `Finish`
 leaves the cycle and reaches the return. Both versions follow the same path.

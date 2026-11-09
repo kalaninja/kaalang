@@ -1,6 +1,0 @@
-error: only stage declarations may follow the first kaalang stage
-  --> tests/stage/compile_fail/interleaved_root_statement.rs:9:5
-   |
- 9 | /     #[kaa::action("Too late.")]
-10 | |     || ();
-   | |__________^

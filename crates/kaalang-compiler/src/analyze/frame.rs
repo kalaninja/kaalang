@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn a_cycle_with_several_outputs_splits_what_each_side_sees() {
         let model = crate::build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the fixture is valid");
@@ -200,7 +200,7 @@ mod tests {
     #[test]
     fn body_routes_differ_only_at_their_cycle() {
         let model = crate::build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/cycle/behavior/output_routes_after_a_merge.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/output_routes_after_a_merge.rs"),
             "output_routes_after_a_merge",
         ))
         .expect("the fixture is valid");

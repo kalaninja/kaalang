@@ -654,7 +654,7 @@ mod tests {
     #[test]
     fn a_cycle_with_several_outputs_owns_the_merge_after_it() {
         let model = build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the fixture is valid");

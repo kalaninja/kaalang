@@ -1,0 +1,5 @@
+error: a kaalang choice must declare exactly one output for each case
+ --> tests/flow/choice/compile_fail/choice_case_output_mismatch.rs:8:9
+  |
+8 |     let (negative, zero, positive) = |input| {
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^

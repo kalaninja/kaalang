@@ -1,0 +1,5 @@
+error: a kaalang choice requires at least two `#[kaa::case("description")]` attributes
+ --> tests/flow/choice/compile_fail/choice_case_count.rs:5:5
+  |
+5 |     #[kaa::choice("What is the sign of the input?")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

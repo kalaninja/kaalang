@@ -111,7 +111,7 @@ fn a_fully_diverging_collapsed_cycle_has_no_normal_exit() {
 #[test]
 fn a_collapsed_cycle_omits_its_internal_choice_connections() {
     let function = crate::tests::fixture(
-        include_str!("../../../kaalang/tests/cycle/behavior/diverging_middle_branch.rs"),
+        include_str!("../../../kaalang/tests/flow/cycle/diverging_middle_branch.rs"),
         "diverging_middle_branch",
     );
     let topology = crate::build_with_options(&function, true)
@@ -384,7 +384,7 @@ fn every_node_and_exit_has_one_identity() {
 #[test]
 fn a_merge_written_above_a_question_reaches_it_first() {
     let model = fixture(
-        include_str!("../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"),
+        include_str!("../../../kaalang/tests/flow/wire/a_branch_captures_a_merged_value.rs"),
         "a_branch_captures_a_merged_value",
     );
     let topology = &model.topology;
@@ -433,7 +433,7 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
     "#,
     );
     let only_end = fixture(
-        include_str!("../../../kaalang/tests/question/behavior/run_question.rs"),
+        include_str!("../../../kaalang/tests/flow/question/run_question.rs"),
         "run_question",
     )
     .topology;
@@ -479,7 +479,7 @@ fn a_merged_wire_leaves_each_branch_exit_once() {
 #[test]
 fn an_unmerged_branch_output_leaves_its_exit_once() {
     let topology = fixture(
-        include_str!("../../../kaalang/tests/wire/behavior/branch_output_captured_twice.rs"),
+        include_str!("../../../kaalang/tests/flow/wire/branch_output_captured_twice.rs"),
         "branch_output_captured_twice",
     )
     .topology;
@@ -504,7 +504,7 @@ fn an_unmerged_branch_output_leaves_its_exit_once() {
 #[test]
 fn a_branch_local_block_reaches_the_merge_it_precedes() {
     let model = fixture(
-        include_str!("../../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
+        include_str!("../../../kaalang/tests/flow/wire/local_work_before_a_wire_merge.rs"),
         "local_work_before_a_wire_merge",
     );
     // `selected` and `noted` arrive from the same two exits, so they share one

@@ -36,7 +36,7 @@ fn preserves_the_authored_function_signature() {
 #[test]
 fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
     let function = fixture(
-        include_str!("../../../kaalang/tests/stage/behavior/prepared_initial_selection.rs"),
+        include_str!("../../../kaalang/tests/flow/stage/prepared_initial_selection.rs"),
         "prepared_initial_selection",
     );
     let lowered = expand(function).expect("the flow expands");
@@ -47,9 +47,7 @@ fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
 #[test]
 fn a_nested_early_return_needs_no_join_dispatch() {
     let function = fixture(
-        include_str!(
-            "../../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-        ),
+        include_str!("../../../kaalang/tests/flow/wire/nested_branch_passes_a_question_join.rs"),
         "nested_branch_passes_a_question_join",
     );
     let function = expand(function).expect("the flow expands");
@@ -229,17 +227,17 @@ fn emits_every_body_once_across_two_joins_and_a_nested_question() {
 fn nested_partial_joins_emit_each_body_once_without_routing_values() {
     for (source, name) in [
         (
-            include_str!("../../../kaalang/tests/wire/behavior/const_partial_merge.rs"),
+            include_str!("../../../kaalang/tests/flow/wire/const_partial_merge.rs"),
             "const_partial_merge",
         ),
         (
             include_str!(
-                "../../../kaalang/tests/capture/behavior/const_borrowed_input_partial_merge.rs"
+                "../../../kaalang/tests/flow/capture/const_borrowed_input_partial_merge.rs"
             ),
             "const_borrowed_input_partial_merge",
         ),
         (
-            include_str!("../../../kaalang/tests/wire/behavior/nested_partial_merges.rs"),
+            include_str!("../../../kaalang/tests/flow/wire/nested_partial_merges.rs"),
             "nested_partial_merges",
         ),
     ] {

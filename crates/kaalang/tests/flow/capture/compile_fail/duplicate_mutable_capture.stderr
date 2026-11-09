@@ -1,0 +1,5 @@
+error: duplicate kaalang block input
+ --> tests/flow/capture/compile_fail/duplicate_mutable_capture.rs:6:32
+  |
+6 |     let end = |mut value, &mut r#value| { *value };
+  |                                ^^^^^^^

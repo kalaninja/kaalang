@@ -65,7 +65,7 @@ macro_rules! fixture {
 
 #[test]
 fn a_shifted_cycle_entry_is_rejected_even_when_its_routes_still_meet() {
-    let mut scene = drawn(fixture!("cycle/behavior", "merged_exit"));
+    let mut scene = drawn(fixture!("flow/cycle", "merged_exit"));
     let entry = scene.topology.cycles[0].entry;
     let gaps = vertical_gaps(&scene);
     let y = scene
@@ -91,7 +91,7 @@ fn a_shifted_cycle_entry_is_rejected_even_when_its_routes_still_meet() {
 
 #[test]
 fn a_tail_shifted_off_its_column_is_rejected() {
-    let mut scene = drawn(fixture!("cycle/behavior", "reversed_empty_cycle"));
+    let mut scene = drawn(fixture!("flow/cycle", "reversed_empty_cycle"));
     let tail = scene.topology.cycles[0].tail;
     for edge in &mut scene.connections {
         if edge.source == Source::Junction(tail) {
@@ -118,7 +118,7 @@ fn a_tail_shifted_off_its_column_is_rejected() {
 
 #[test]
 fn shared_wire_labels_stay_at_the_receiving_node() {
-    let fixture = fixture!("cycle/behavior", "conditional_entry");
+    let fixture = fixture!("flow/cycle", "conditional_entry");
     for repetitions in [1, 40] {
         let run = "run".repeat(repetitions);
         let skip = "skip".repeat(repetitions);
@@ -144,7 +144,7 @@ fn shared_wire_labels_stay_at_the_receiving_node() {
 
 #[test]
 fn cycle_entry_labels_use_the_same_padding_when_shared() {
-    let fixture = fixture!("cycle/behavior", "conditional_nested_cycle");
+    let fixture = fixture!("flow/cycle", "conditional_nested_cycle");
     for name in ["flag".to_owned(), "a_long_input_wire_name".repeat(8)] {
         let source = fixture.0.replace("flag", &name);
         let scene = drawn((&source, fixture.1));
@@ -180,7 +180,7 @@ fn cycle_entry_labels_use_the_same_padding_when_shared() {
 
 #[test]
 fn a_cycle_boundary_does_not_overlap_its_interface_rails() {
-    let mut scene = drawn(fixture!("cycle/behavior", "count_to"));
+    let mut scene = drawn(fixture!("flow/cycle", "count_to"));
     let entry = scene.topology.cycle_boundaries[0].entry;
     let entry = scene
         .connections
@@ -265,9 +265,9 @@ fn long_cycle_captions_wrap_or_shorten_without_changing_geometry() {
 #[test]
 fn all_cases_of_a_choice_share_a_row() {
     for fixture in [
-        fixture!("cycle/behavior", "diverging_middle_branch"),
-        fixture!("cycle/behavior", "terminal_cases_after_repeats"),
-        fixture!("cycle/behavior", "outer_repeat_contour"),
+        fixture!("flow/cycle", "diverging_middle_branch"),
+        fixture!("flow/cycle", "terminal_cases_after_repeats"),
+        fixture!("flow/cycle", "outer_repeat_contour"),
     ] {
         let mut scene = drawn(fixture);
         scene
@@ -293,7 +293,7 @@ fn all_cases_of_a_choice_share_a_row() {
 
 #[test]
 fn a_merge_side_route_cannot_join_above_its_marker() {
-    let mut scene = drawn(fixture!("wire/behavior", "two_merges_reach_one_consumer"));
+    let mut scene = drawn(fixture!("flow/wire", "two_merges_reach_one_consumer"));
     let incoming = scene
         .connections
         .iter_mut()
@@ -408,24 +408,24 @@ fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement
 
 /// Routing fixtures covering branches, merges, roots, joins, and call captions.
 const FIXTURES: [(&str, &str); 18] = [
-    fixture!("wire/behavior", "blocked_terminal_crossing"),
-    fixture!("wire/behavior", "closure_before_a_branch"),
-    fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
-    fixture!("wire/behavior", "question_after_a_partial_merge"),
-    fixture!("wire/behavior", "question_after_one_entry_block"),
-    fixture!("wire/behavior", "shared_setup"),
+    fixture!("flow/wire", "blocked_terminal_crossing"),
+    fixture!("flow/wire", "closure_before_a_branch"),
+    fixture!("flow/wire", "effect_before_a_nested_terminal_branch"),
+    fixture!("flow/wire", "question_after_a_partial_merge"),
+    fixture!("flow/wire", "question_after_one_entry_block"),
+    fixture!("flow/wire", "shared_setup"),
     (SHARED_INPUTS, "shared_inputs"),
-    fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
-    fixture!("wire/behavior", "independent_questions"),
-    fixture!("wire/behavior", "independent_entry_blocks"),
-    fixture!("wire/behavior", "local_work_before_a_wire_merge"),
-    fixture!("wire/behavior", "nested_convergence"),
-    fixture!("wire/behavior", "staged_convergence"),
-    fixture!("wire/behavior", "blocks_without_shared_wires"),
-    fixture!("choice/behavior", "run_choice"),
-    fixture!("wire/behavior", "two_convergence_groups"),
-    fixture!("wire/behavior", "two_merges_reach_one_consumer"),
-    fixture!("call/behavior", "call_inside_a_branch"),
+    fixture!("flow/wire", "a_branch_captures_a_merged_value"),
+    fixture!("flow/wire", "independent_questions"),
+    fixture!("flow/wire", "independent_entry_blocks"),
+    fixture!("flow/wire", "local_work_before_a_wire_merge"),
+    fixture!("flow/wire", "nested_convergence"),
+    fixture!("flow/wire", "staged_convergence"),
+    fixture!("flow/wire", "blocks_without_shared_wires"),
+    fixture!("flow/choice", "run_choice"),
+    fixture!("flow/wire", "two_convergence_groups"),
+    fixture!("flow/wire", "two_merges_reach_one_consumer"),
+    fixture!("flow/call", "call_inside_a_branch"),
 ];
 
 const SHARED_INPUTS: &str = r#"
@@ -456,7 +456,7 @@ const SHARED_INPUTS: &str = r#"
 /// so nothing of the late half may sit at or left of the early half.
 #[test]
 fn disjoint_convergence_groups_take_disjoint_footprints() {
-    let scene = drawn(fixture!("wire/behavior", "two_convergence_groups"));
+    let scene = drawn(fixture!("flow/wire", "two_convergence_groups"));
     let x = |id| scene.node(id).x;
     let early = [
         NodeId::Case {
@@ -511,7 +511,7 @@ fn independent_producers_and_their_consumers_form_one_sequence() {
 
 #[test]
 fn a_branch_effect_reaches_the_merge_before_common_work() {
-    let scene = drawn(fixture!("wire/behavior", "effect_then_common"));
+    let scene = drawn(fixture!("flow/wire", "effect_then_common"));
     let topology = &scene.topology;
     let captions = &scene.captions;
     let effect = ExitId::of(NodeId::Block(2));
@@ -562,7 +562,7 @@ fn assert_main_sequence(scene: &Scene, blocks: &[usize]) {
 
 #[test]
 fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
-    let scene = drawn(fixture!("wire/behavior", "shared_setup"));
+    let scene = drawn(fixture!("flow/wire", "shared_setup"));
     let setup = scene.node(NodeId::Block(0));
     let question = scene.node(NodeId::Block(1));
     assert_eq!(setup.x, scene.node(NodeId::Start).x);
@@ -633,7 +633,7 @@ fn long_wire_labels_clear_a_tall_neighbor() {
 
 #[test]
 fn long_labels_enlarge_only_their_adjacent_row_gaps() {
-    let (source, flow) = fixture!("question/behavior", "run_question");
+    let (source, flow) = fixture!("flow/question", "run_question");
     let source = source
         .replace(
             "The condition is false.",
@@ -658,7 +658,7 @@ fn long_labels_enlarge_only_their_adjacent_row_gaps() {
 
 #[test]
 fn a_right_question_branch_description_replaces_its_output_above_the_connection() {
-    let (source, flow) = fixture!("question/behavior", "run_question");
+    let (source, flow) = fixture!("flow/question", "run_question");
     let source = source
         .replace(r#"#[kaa::no("The condition is false.")]"#, "#[kaa::no]")
         .replace(
@@ -702,7 +702,7 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
 
 #[test]
 fn math_branch_descriptions_clear_their_nodes_and_connections() {
-    let (source, flow) = fixture!("question/behavior", "run_question");
+    let (source, flow) = fixture!("flow/question", "run_question");
     let math = r#"r"$$\frac{\frac{1}{2}}{\frac{3}{4}}$$""#;
     let source = source
         .replace("Take the yes branch?", "$x^2$ or $y^2$?")
@@ -758,7 +758,7 @@ fn the_same_flow_renders_to_the_same_bytes() {
 
 #[test]
 fn separate_roots_and_their_consumer_share_the_main_column() {
-    let scene = drawn(fixture!("wire/behavior", "blocks_without_shared_wires"));
+    let scene = drawn(fixture!("flow/wire", "blocks_without_shared_wires"));
     assert_main_sequence(&scene, &[0, 1]);
     let end = scene.node(end_node(&scene));
     assert_eq!(end.x, scene.node(NodeId::Start).x);
@@ -951,7 +951,7 @@ fn capsule_captions_fit_the_curved_outline() {
 
 #[test]
 fn continuation_starts_below_the_completed_nested_cycle() {
-    let scene = drawn(fixture!("cycle/behavior", "nested_search"));
+    let scene = drawn(fixture!("flow/cycle", "nested_search"));
     let (inner, region) = scene
         .topology
         .cycle_boundaries
@@ -990,7 +990,7 @@ fn continuation_starts_below_the_completed_nested_cycle() {
 
 #[test]
 fn enclosing_back_edges_leave_a_lane_beside_nested_boundaries() {
-    let mut close = drawn(fixture!("cycle/behavior", "nested_exit_convergence"));
+    let mut close = drawn(fixture!("flow/cycle", "nested_exit_convergence"));
     let x = close.cycle_regions[1].right + LANE - 1;
     let back = close.back_edge_index(0).unwrap();
     for point in &mut close.connections[back].points[1..3] {
@@ -1022,7 +1022,7 @@ fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
 
 #[test]
 fn a_cycle_that_only_repeats_draws_its_described_boundary() {
-    let scene = drawn(fixture!("cycle/behavior", "empty_cycle"));
+    let scene = drawn(fixture!("flow/cycle", "empty_cycle"));
     let [region] = scene.cycle_regions.as_slice() else {
         panic!("the expanded cycle has one boundary");
     };
@@ -1040,7 +1040,7 @@ fn a_cycle_that_only_repeats_draws_its_described_boundary() {
 
 #[test]
 fn a_side_back_edge_clears_a_wrapped_branch_description() {
-    let (source, flow) = fixture!("cycle/behavior", "empty_trailing_cycle");
+    let (source, flow) = fixture!("flow/cycle", "empty_trailing_cycle");
     let description = "Restart the entire outer iteration after the inner cycle finishes.";
     let source = source.replace(
         "#[kaa::no(\"NO\")]",
@@ -1067,7 +1067,7 @@ fn an_exit_between_repeating_cases_is_rejected_before_layout() {
     // Collapsed, because the expanded flow must still be checked before its
     // cycles fold into nodes that would hide the conflict.
     let error = crate::render_source_with_options(
-        include_str!("../../../../kaalang/tests/cycle/compile_fail/enclosed_exit.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/compile_fail/enclosed_exit.rs"),
         "invalid",
         crate::RenderOptions {
             collapse_cycles: true,
@@ -1085,7 +1085,7 @@ fn an_exit_between_repeating_cases_is_rejected_before_layout() {
 /// Pulling a back edge over its body is rejected by the final geometry check.
 #[test]
 fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
-    let fixture = fixture!("cycle/behavior", "trailing_inner_cycle");
+    let fixture = fixture!("flow/cycle", "trailing_inner_cycle");
     let scene = drawn(fixture);
     for index in 0..scene.topology.cycles.len() {
         let mut pulled = drawn(fixture);
@@ -1108,7 +1108,7 @@ fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
 
 #[test]
 fn a_disconnected_junction_is_caught_by_the_geometry_gates() {
-    let mut scene = drawn(fixture!("cycle/behavior", "empty_cycle"));
+    let mut scene = drawn(fixture!("flow/cycle", "empty_cycle"));
     let entry = scene.topology.cycles[0].entry;
     let incoming = scene
         .connections
@@ -1133,7 +1133,7 @@ fn a_disconnected_junction_is_caught_by_the_geometry_gates() {
 
 #[test]
 fn a_misplaced_end_is_caught_by_the_geometry_check() {
-    let fixture = fixture!("cycle/behavior", "end_below_nested_back_edges");
+    let fixture = fixture!("flow/cycle", "end_below_nested_back_edges");
     let scene = drawn(fixture);
     let end = end_node(&scene);
     let reach = scene.height;
@@ -1193,7 +1193,7 @@ fn named_node<'a>(scene: &'a Scene, description: &str) -> &'a Node {
 /// A long label beside an iteration back edge remains clear after boundary placement.
 #[test]
 fn a_label_reaching_into_a_back_edge_gap_remains_clear() {
-    let (source, flow) = fixture!("cycle/behavior", "collect_steps");
+    let (source, flow) = fixture!("flow/cycle", "collect_steps");
     let source = source
         .replace("let step =", "let wwwwwwwwwwwwwwwwwwwwwwww =")
         .replace(", step|", ", wwwwwwwwwwwwwwwwwwwwwwww|")
@@ -1277,7 +1277,7 @@ fn rail(scene: &Scene, index: usize) -> i32 {
 /// moving only one would close the lane between them.
 #[test]
 fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
-    let (source, flow) = fixture!("cycle/behavior", "nested_exit_convergence");
+    let (source, flow) = fixture!("flow/cycle", "nested_exit_convergence");
     let source = source
         .replace("Count down to zero.", "Count to completion.")
         .replace(
@@ -1298,7 +1298,7 @@ fn a_label_past_a_nested_back_edge_moves_the_chain_outside_it() {
 
 #[test]
 fn translating_the_drawing_preserves_its_back_edge_contours() {
-    let mut scene = drawn(fixture!("cycle/behavior", "nested_exit_convergence"));
+    let mut scene = drawn(fixture!("flow/cycle", "nested_exit_convergence"));
     for node in &mut scene.nodes {
         node.x -= 2000;
     }
@@ -1316,7 +1316,7 @@ fn translating_the_drawing_preserves_its_back_edge_contours() {
 
 #[test]
 fn clearing_one_label_can_take_more_than_one_lane() {
-    let mut scene = drawn(fixture!("cycle/behavior", "empty_cycle"));
+    let mut scene = drawn(fixture!("flow/cycle", "empty_cycle"));
     let back = scene.back_edge(0).unwrap();
     let climb = back
         .points
@@ -1390,7 +1390,7 @@ fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
 #[test]
 fn a_sole_tail_arrival_keeps_its_recorded_far_contour() {
     let scene = drawn_with(
-        fixture!("cycle/behavior", "reversed_empty_cycle"),
+        fixture!("flow/cycle", "reversed_empty_cycle"),
         |arrangement| {
             assert_eq!(arrangement.contours[0].side, Side::Right);
             arrangement.contours[0].column = arrangement.column.values().max().unwrap() + 2;
@@ -1582,7 +1582,7 @@ fn a_back_edge_keeps_its_recorded_contour() {
 
 #[test]
 fn a_back_edge_clears_its_drawn_entry_and_tail() {
-    let scene = drawn(fixture!("cycle/behavior", "reversed_empty_cycle"));
+    let scene = drawn(fixture!("flow/cycle", "reversed_empty_cycle"));
     for first in [false, true] {
         let mut moved = scene.clone();
         let index = moved.back_edge_index(0).unwrap();

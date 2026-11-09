@@ -1,0 +1,5 @@
+error: a staged kaalang flow may declare at most one structural `return`
+ --> tests/flow/stage/compile_fail/multiple_stage_returns.rs:5:5
+  |
+5 |     #[kaa::stage("Finish.")]
+  |     ^

@@ -1,5 +1,0 @@
-error: this kaalang block runs while the branches of the question `Enable the left input.` are still separate; give it an input from one branch, or merge those branches above it
-  --> tests/wire/compile_fail/conjunction_effect.rs:12:5
-   |
-12 |     #[kaa::question("Enable the right input.")]
-   |     ^

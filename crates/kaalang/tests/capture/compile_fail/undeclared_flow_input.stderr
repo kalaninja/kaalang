@@ -1,5 +1,0 @@
-error: a kaalang block body must capture `input` before using it
- --> tests/capture/compile_fail/undeclared_flow_input.rs:6:30
-  |
-6 |     let output = |trigger| { input };
-  |                              ^^^^^

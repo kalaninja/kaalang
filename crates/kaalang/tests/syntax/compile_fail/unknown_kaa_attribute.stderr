@@ -1,5 +1,0 @@
-error: `kaa::actoin` is not a kaalang attribute
- --> tests/syntax/compile_fail/unknown_kaa_attribute.rs:5:5
-  |
-5 |     #[kaa::actoin("Double the value.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

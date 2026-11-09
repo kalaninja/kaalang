@@ -349,16 +349,16 @@ mod tests {
     #[test]
     fn cycle_examples_have_one_verified_body_per_authored_block() {
         for function in [
-            fixture!("cycle/behavior", "count_to"),
+            fixture!("flow/cycle", "count_to"),
             fixture(
                 include_str!("../../kaalang/tests/gallery/binary_search/mod.rs"),
                 "binary_search",
             ),
-            fixture!("cycle/behavior", "nested_search"),
-            fixture!("cycle/behavior", "empty_cycle"),
-            fixture!("cycle/behavior", "repeat_until_done"),
-            fixture!("cycle/behavior", "nested_cycles"),
-            fixture!("cycle/behavior", "nested_unconditional_cycles"),
+            fixture!("flow/cycle", "nested_search"),
+            fixture!("flow/cycle", "empty_cycle"),
+            fixture!("flow/cycle", "repeat_until_done"),
+            fixture!("flow/cycle", "nested_cycles"),
+            fixture!("flow/cycle", "nested_unconditional_cycles"),
         ] {
             let name = &function.sig.ident;
             let model = build(&function).unwrap_or_else(|error| panic!("{name}: {error}"));
@@ -421,7 +421,7 @@ mod tests {
                 if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
-        let model = build(&fixture!("cycle/behavior", "repeat_until_done"))
+        let model = build(&fixture!("flow/cycle", "repeat_until_done"))
             .expect("the cycle may either repeat or finish");
         assert_eq!(
             model
@@ -636,7 +636,7 @@ mod tests {
     /// branches have merged, so both bodies are still emitted once.
     #[test]
     fn successive_questions_share_every_body() {
-        let function = fixture!("wire/behavior", "independent_questions");
+        let function = fixture!("flow/wire", "independent_questions");
         let model = build(&function).expect("the merged value precedes the second question");
         assert_eq!(model.analysis.executions.len(), 4);
         assert!(matches!(
@@ -929,13 +929,13 @@ mod tests {
     #[test]
     fn a_partial_continuation_may_feed_a_wider_merge() {
         build(&fixture!(
-            "wire/behavior",
+            "flow/wire",
             "nested_branch_passes_a_question_join"
         ))
         .expect("all result producers meet at one valid merge");
 
         let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
+            "../../kaalang/tests/flow/wire/compile_fail/nested_branch_passes_a_case_join.rs"
         )
         .replace("let (join, skip)", "let (skip, join)");
         build(&fixture(&source, "invalid"))
@@ -945,7 +945,7 @@ mod tests {
     #[test]
     fn a_shared_continuation_may_have_two_independent_entries() {
         assert_groups(
-            &fixture!("wire/behavior", "independent_entry_blocks"),
+            &fixture!("flow/wire", "independent_entry_blocks"),
             &[group(0, &[0, 1], &[3, 4, 5])],
         );
     }
@@ -1013,7 +1013,7 @@ mod tests {
     #[test]
     fn nested_questions_each_own_a_group_over_the_shared_consumer() {
         assert_groups(
-            &fixture!("wire/behavior", "nested_convergence"),
+            &fixture!("flow/wire", "nested_convergence"),
             &[group(0, &[0, 1], &[5, 6]), group(1, &[0, 1], &[5, 6])],
         );
     }
@@ -1021,7 +1021,7 @@ mod tests {
     #[test]
     fn branches_of_unequal_depth_have_one_shared_entry() {
         assert_groups(
-            &fixture!("wire/behavior", "uneven_depth"),
+            &fixture!("flow/wire", "uneven_depth"),
             &[group(0, &[0, 1], &[4, 5])],
         );
     }
@@ -1031,7 +1031,7 @@ mod tests {
     #[test]
     fn nested_questions_may_share_one_result_merge() {
         assert_groups(
-            &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
+            &fixture!("flow/wire", "effect_before_a_nested_terminal_branch"),
             &[group(1, &[0, 1], &[6, 7]), group(2, &[0, 1], &[7])],
         );
     }
@@ -1066,7 +1066,7 @@ mod tests {
     #[test]
     fn a_shared_block_preceded_by_another_is_not_an_entry() {
         assert_groups(
-            &fixture!("wire/behavior", "staged_convergence"),
+            &fixture!("flow/wire", "staged_convergence"),
             &[group(0, &[0, 1], &[3, 4])],
         );
     }
@@ -1074,7 +1074,7 @@ mod tests {
     #[test]
     fn alternative_producers_captured_by_return_form_a_group() {
         assert_groups(
-            &fixture!("question/behavior", "run_question"),
+            &fixture!("flow/question", "run_question"),
             &[group(0, &[0, 1], &[3])],
         );
     }
@@ -1082,7 +1082,7 @@ mod tests {
     #[test]
     fn a_terminal_case_stays_outside_the_group_it_follows() {
         assert_groups(
-            &fixture!("wire/behavior", "convergence_before_a_terminal_case"),
+            &fixture!("flow/wire", "convergence_before_a_terminal_case"),
             &[group(0, &[0, 1], &[4]), group(0, &[0, 1, 2], &[5])],
         );
     }
@@ -1146,7 +1146,7 @@ mod tests {
     #[test]
     fn a_body_selection_converges_only_inside_its_cycle() {
         let model =
-            build(&fixture!("cycle/behavior", "alternative_outputs")).expect("the flow is valid");
+            build(&fixture!("flow/cycle", "alternative_outputs")).expect("the flow is valid");
         let end = model.analysis.flow.blocks[0]
             .cycle_end
             .expect("the flow opens with its cycle");
@@ -1166,7 +1166,7 @@ mod tests {
     #[test]
     fn a_question_of_a_wider_group_may_follow_a_partial_merge() {
         assert_groups(
-            &fixture!("wire/behavior", "question_after_a_partial_merge"),
+            &fixture!("flow/wire", "question_after_a_partial_merge"),
             &[
                 group(0, &[0, 1], &[3]),
                 group(0, &[0, 1, 2], &[5, 6, 7, 8]),
@@ -1180,7 +1180,7 @@ mod tests {
     #[test]
     fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
         assert_groups(
-            &fixture!("wire/behavior", "question_after_one_entry_block"),
+            &fixture!("flow/wire", "question_after_one_entry_block"),
             &[
                 group(0, &[0, 1], &[3, 4, 5, 6, 7, 8]),
                 group(5, &[0, 1], &[8]),
@@ -1194,7 +1194,7 @@ mod tests {
     #[test]
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         assert_groups(
-            &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
+            &fixture!("flow/wire", "a_branch_captures_a_merged_value"),
             &[group(0, &[0, 1], &[4, 5, 6]), group(3, &[0, 1], &[6])],
         );
     }

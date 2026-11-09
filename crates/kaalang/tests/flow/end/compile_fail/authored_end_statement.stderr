@@ -1,0 +1,5 @@
+error: a kaalang flow has no end statement; use a structural `return` to finish it
+ --> tests/flow/end/compile_fail/authored_end_statement.rs:5:5
+  |
+5 |     #[kaa::end]
+  |     ^

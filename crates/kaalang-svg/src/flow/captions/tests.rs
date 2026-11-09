@@ -284,7 +284,7 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
 #[test]
 fn a_branch_local_block_before_a_merge_invents_no_label() {
     let (_, captions) = fixture(
-        include_str!("../../../../kaalang/tests/wire/behavior/local_work_before_a_wire_merge.rs"),
+        include_str!("../../../../kaalang/tests/flow/wire/local_work_before_a_wire_merge.rs"),
         "local_work_before_a_wire_merge",
     );
     let note = NodeId::Block(3);
@@ -297,7 +297,7 @@ fn a_branch_local_block_before_a_merge_invents_no_label() {
 #[test]
 fn mutable_alternatives_keep_the_same_label_across_block_kinds_and_the_merge() {
     let source =
-        include_str!("../../../../kaalang/tests/capture/behavior/mutate_merged_branch_outputs.rs");
+        include_str!("../../../../kaalang/tests/flow/capture/mutate_merged_branch_outputs.rs");
     let (_, captions) = fixture(source, "mutate_merged_branch_outputs");
     for exit in [
         ExitId {
@@ -317,7 +317,7 @@ fn mutable_alternatives_keep_the_same_label_across_block_kinds_and_the_merge() {
 
 #[test]
 fn a_question_branch_description_replaces_its_output_label() {
-    let source = include_str!("../../../../kaalang/tests/question/behavior/run_question.rs")
+    let source = include_str!("../../../../kaalang/tests/flow/question/run_question.rs")
         .replace(r#"#[kaa::no("The condition is false.")]"#, "#[kaa::no]")
         .replace("The condition is true.", "Go ahead.");
     let (_, captions) = fixture(&source, "run_question");

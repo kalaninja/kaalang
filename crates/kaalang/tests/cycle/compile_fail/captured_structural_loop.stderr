@@ -1,5 +1,0 @@
-error: a `loop` in a kaalang flow is a cycle and needs `#[kaa::cycle("description")]`
- --> tests/cycle/compile_fail/captured_structural_loop.rs:5:12
-  |
-5 |     |flag| loop {};
-  |            ^^^^^^^

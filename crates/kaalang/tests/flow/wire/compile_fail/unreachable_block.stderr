@@ -1,0 +1,5 @@
+error: this kaalang block is unreachable
+  --> tests/flow/wire/compile_fail/unreachable_block.rs:17:5
+   |
+17 |     #[kaa::action("Combine two markers no execution provides together.")]
+   |     ^

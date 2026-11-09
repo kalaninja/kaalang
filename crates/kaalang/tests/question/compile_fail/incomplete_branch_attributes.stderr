@@ -1,5 +1,0 @@
-error: a kaalang question must declare exactly one `#[kaa::yes]` and one `#[kaa::no]` attribute, or neither
- --> tests/question/compile_fail/incomplete_branch_attributes.rs:5:5
-  |
-5 |     #[kaa::question("Choose a branch.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

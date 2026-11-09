@@ -1,0 +1,5 @@
+error: this kaalang execution reaches the end of the flow without `return`
+ --> tests/flow/end/compile_fail/result_does_not_finish_the_flow.rs:4:4
+  |
+4 | fn invalid() {
+  |    ^^^^^^^

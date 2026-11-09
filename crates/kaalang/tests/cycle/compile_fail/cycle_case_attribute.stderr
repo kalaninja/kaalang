@@ -1,5 +1,0 @@
-error: `#[kaa::case]` is not valid on this kind of kaalang block
- --> tests/cycle/compile_fail/cycle_case_attribute.rs:6:5
-  |
-6 |     #[kaa::case("Unsupported.")]
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

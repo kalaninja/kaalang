@@ -40,7 +40,7 @@ pub fn accepted() -> Vec<(String, String, &'static str)> {
         )))
         .chain(std::iter::once((
             "staged flow with a cycle".to_owned(),
-            include_str!("../../kaalang/tests/stage/behavior/digital_root.rs").to_owned(),
+            include_str!("../../kaalang/tests/flow/stage/digital_root.rs").to_owned(),
             "digital_root",
         )))
         .collect()
