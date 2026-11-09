@@ -45,8 +45,8 @@
 - `kaalang-compiler` reads type declarations: `type_items` collects them,
   datatypes and plain types alike, with their paths within the file,
   `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,
-  fields, variants, and relationships, and `expand_type` expands it for the
-  macro.
+  its `Field`s and `Variant`s with their `Annotation`s, and its `Relationship`s,
+  and `expand_type` expands it for the macro.
 
 ### Changed
 

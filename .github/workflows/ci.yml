@@ -51,7 +51,7 @@ jobs:
       - uses: extractions/setup-just@v3
       - run: just rust clippy
       - run: just rust test
-      # The behavior diagrams redraw themselves during the tests above.
+      # The fixture diagrams redraw themselves during the tests above.
       - run: git add -A && git diff --cached --exit-code
 
   # Linux containers do not run on these runners, so they install the same

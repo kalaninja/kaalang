@@ -2,7 +2,7 @@
 
 This is an implementation map. The language and algorithm contracts live in
 [the RFCs](rfcs/), including [stages](rfcs/0006-stages.md),
-[language refinements](rfcs/0007-language-refinements.md), and
+[language refinements](rfcs/0007-language-refinements.md),
 [cycle forms](rfcs/0008-cycle-forms.md), and [types](rfcs/0009-types.md).
 
 ## Crate boundaries

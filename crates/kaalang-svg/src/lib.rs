@@ -78,7 +78,7 @@ pub enum RenderError {
     TypeNotFound(String),
     /// More than one type has the requested path.
     AmbiguousType(String),
-    /// The selected type's annotations are not valid.
+    /// A card's type has annotations that are not valid.
     InvalidType {
         name: String,
         /// The 1-based source line and column where the error starts.
