@@ -141,9 +141,11 @@ Type fixtures live in `crates/kaalang/tests/datatype/`, one directory per case,
 named for the case, so that the directory listing is the list of cases. Each
 declares only the types its case needs and a test of their behavior. A fixture
 without flows draws a diagram into its directory for every type its `mod.rs`
-declares, datatype or plain type, named after the type in snake case. A type's
-incoming types there are those in the same file that refer to it by its bare
-name.
+declares, datatype or plain type, named after the type in snake case. The first
+type it declares is the case's subject, and its diagram is named after the
+directory instead, as `many_incoming_types/many_incoming_types.svg`, so that the
+diagram to look at first is obvious. A type's incoming types there are those in
+the same file that refer to it by its bare name.
 
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated

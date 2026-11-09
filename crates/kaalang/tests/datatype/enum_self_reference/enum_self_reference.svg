@@ -34,7 +34,7 @@
       <rect class="card-outline" x="32" y="56" width="397" height="492"/>
       <text class="type-name" y="88" xml:space="preserve"><tspan x="46" dy="0">Query</tspan></text>
       <text class="type-kind" text-anchor="end" y="88" xml:space="preserve"><tspan x="415" dy="0">enum · repr(Rust)</tspan></text>
-      <text class="description" y="111" xml:space="preserve"><tspan x="46" dy="0">A query that selects sections.</tspan></text>
+      <text class="description" y="111" xml:space="preserve"><tspan x="46" dy="0">A query that selects sections by their headings.</tspan></text>
       <text class="variant-name" y="149" xml:space="preserve"><tspan x="46" dy="0">Both</tspan></text>
       <text class="description" y="149" xml:space="preserve"><tspan x="92" dy="0">Sections both queries select.</tspan></text>
       <text class="field-name" y="181" xml:space="preserve"><tspan x="46" dy="0">0</tspan></text>

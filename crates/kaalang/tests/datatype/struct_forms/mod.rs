@@ -2,13 +2,6 @@
 
 use kaalang::kaa;
 
-#[kaa("A key in the member directory.")]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct MemberId(u32);
-
-#[kaa("A marker that a member has left the directory.")]
-struct Departed;
-
 #[kaa("A member of the directory.")]
 struct Member {
     #[kaa::value("The member's key.")]
@@ -20,6 +13,13 @@ struct Member {
     #[kaa::refer(Departed, "Set once the member leaves.")]
     departed: Option<Departed>,
 }
+
+#[kaa("A key in the member directory.")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct MemberId(u32);
+
+#[kaa("A marker that a member has left the directory.")]
+struct Departed;
 
 #[test]
 fn named_tuple_and_unit_structs_keep_their_forms() {

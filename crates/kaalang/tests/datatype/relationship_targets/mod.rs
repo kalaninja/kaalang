@@ -2,15 +2,15 @@
 
 use kaalang::kaa;
 
-#[kaa("A key in the member directory.")]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct MemberId(u32);
-
 #[kaa("A member that can appear in several roles.")]
 struct Member {
     #[kaa::value("The member's display name.")]
     name: String,
 }
+
+#[kaa("A key in the member directory.")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct MemberId(u32);
 
 #[kaa("A member that may be unknown.")]
 #[kaa::refer(Member, "The member, when known.")]

@@ -1,0 +1,408 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4719" height="514" viewBox="0 0 4719 514" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for User</title>
+  <desc id="kaalang-description">Type User with incoming types Session, Post, Comment, Follow (2 relationships), Message (2 relationships), Group (2 relationships), Invitation (2 relationships), Notification, Complaint, Standing, AuditEntry, Subscription, Draft, Reaction, Mention, Moderator.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Session</title>
+      <rect class="card-shape" x="32" y="32" width="256" height="178"/>
+      <path class="card-rules" d="M 32 102 L 288 102 M 32 158 L 288 158"/>
+      <rect class="card-outline" x="32" y="32" width="256" height="178"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="46" dy="0">Session</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="274" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A signed-in browser.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="46" dy="0">user</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="114" dy="0">The signed-in user.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="274" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="46" dy="0">expires</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="46" dy="0">u64</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="114" dy="0">When the session </tspan><tspan x="114" dy="18">ends, in seconds.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Post</title>
+      <rect class="card-shape" x="320" y="32" width="214" height="174"/>
+      <path class="card-rules" d="M 320 102 L 534 102 M 320 158 L 534 158"/>
+      <rect class="card-outline" x="320" y="32" width="214" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="334" dy="0">Post</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="520" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="334" dy="0">A post in a thread.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="334" dy="0">author</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="334" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="394" dy="0">The author.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="520" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="334" dy="0">text</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="334" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="394" dy="0">The post text.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Comment</title>
+      <rect class="card-shape" x="566" y="32" width="259" height="174"/>
+      <path class="card-rules" d="M 566 102 L 825 102 M 566 158 L 825 158"/>
+      <rect class="card-outline" x="566" y="32" width="259" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="580" dy="0">Comment</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="811" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="580" dy="0">A reply to a post.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="580" dy="0">author</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="580" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="640" dy="0">The author.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="811" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="580" dy="0">text</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="580" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="640" dy="0">The reply text.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Follow</title>
+      <rect class="card-shape" x="857" y="32" width="233" height="182"/>
+      <path class="card-rules" d="M 857 102 L 1090 102 M 857 158 L 1090 158"/>
+      <rect class="card-outline" x="857" y="32" width="233" height="182"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="871" dy="0">Follow</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1076" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="871" dy="0">One user following another.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="871" dy="0">follower</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="871" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="946" dy="0">Who follows.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1076" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="871" dy="0">followed</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="871" dy="0">UserId</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="946" dy="0">Who is followed.</tspan></text>
+      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="1076" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Message</title>
+      <rect class="card-shape" x="1122" y="32" width="250" height="230"/>
+      <path class="card-rules" d="M 1122 102 L 1372 102 M 1122 158 L 1372 158 M 1122 214 L 1372 214"/>
+      <rect class="card-outline" x="1122" y="32" width="250" height="230"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="1136" dy="0">Message</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1358" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="1136" dy="0">A private message.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="1136" dy="0">sender</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="1136" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="1218" dy="0">The sender.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1358" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="1136" dy="0">recipient</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="1136" dy="0">UserId</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="1218" dy="0">The recipient.</tspan></text>
+      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="1358" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="235" xml:space="preserve"><tspan x="1136" dy="0">text</tspan></text>
+      <text class="field-type" y="251" xml:space="preserve"><tspan x="1136" dy="0">String</tspan></text>
+      <text class="description" y="237" xml:space="preserve"><tspan x="1218" dy="0">The message text.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Group</title>
+      <rect class="card-shape" x="1404" y="32" width="285" height="200"/>
+      <path class="card-rules" d="M 1404 102 L 1689 102 M 1404 158 L 1689 158"/>
+      <rect class="card-outline" x="1404" y="32" width="285" height="200"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="1418" dy="0">Group</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1675" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="1418" dy="0">A group of users.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="1418" dy="0">owner</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="1418" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="1515" dy="0">The owner.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1675" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="1418" dy="0">members</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="1418" dy="0">Vec&lt;UserId&gt;</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="1515" dy="0">The members, owner </tspan><tspan x="1515" dy="18">included.</tspan></text>
+      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="1675" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Invitation</title>
+      <rect class="card-shape" x="1721" y="32" width="262" height="182"/>
+      <path class="card-rules" d="M 1721 102 L 1983 102 M 1721 158 L 1983 158"/>
+      <rect class="card-outline" x="1721" y="32" width="262" height="182"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="1735" dy="0">Invitation</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1969" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="1735" dy="0">An invitation to a group.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="1735" dy="0">inviter</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="1735" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="1803" dy="0">Who invites.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1969" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="1735" dy="0">invitee</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="1735" dy="0">UserId</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="1803" dy="0">Who is invited.</tspan></text>
+      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="1969" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Notification</title>
+      <rect class="card-shape" x="2015" y="32" width="285" height="174"/>
+      <path class="card-rules" d="M 2015 102 L 2300 102 M 2015 158 L 2300 158"/>
+      <rect class="card-outline" x="2015" y="32" width="285" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="2029" dy="0">Notification</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="2286" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="2029" dy="0">A notice shown to one user.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="2029" dy="0">recipient</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="2029" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="2111" dy="0">Who sees it.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="2286" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="2029" dy="0">text</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="2029" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="2111" dy="0">What happened.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Complaint</title>
+      <rect class="card-shape" x="2332" y="32" width="264" height="174"/>
+      <path class="card-rules" d="M 2332 102 L 2596 102 M 2332 158 L 2596 158"/>
+      <rect class="card-outline" x="2332" y="32" width="264" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="2346" dy="0">Complaint</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="2582" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="2346" dy="0">A complaint about content.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="2346" dy="0">reporter</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="2346" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="2421" dy="0">Who complains.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="2582" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="2346" dy="0">reason</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="2346" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="2421" dy="0">Why.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Standing</title>
+      <rect class="card-shape" x="2628" y="32" width="309" height="260"/>
+      <path class="card-rules" d="M 2628 102 L 2937 102 M 2628 136 L 2937 136 M 2644 188 L 2937 188 M 2644 244 L 2937 244"/>
+      <rect class="card-outline" x="2628" y="32" width="309" height="260"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="2642" dy="0">Standing</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="2923" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="2642" dy="0">Whether a user may post.</tspan></text>
+      <text class="variant-name" y="125" xml:space="preserve"><tspan x="2642" dy="0">Good</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="2688" dy="0">The user may post.</tspan></text>
+      <text class="variant-name" y="159" xml:space="preserve"><tspan x="2642" dy="0">Banned</tspan></text>
+      <text class="description" y="159" xml:space="preserve"><tspan x="2706" dy="0">A moderator stopped the user </tspan><tspan x="2706" dy="18">from posting.</tspan></text>
+      <text class="field-name" y="209" xml:space="preserve"><tspan x="2658" dy="0">by</tspan></text>
+      <text class="field-type" y="225" xml:space="preserve"><tspan x="2658" dy="0">UserId</tspan></text>
+      <text class="description" y="211" xml:space="preserve"><tspan x="2718" dy="0">The moderator.</tspan></text>
+      <text class="target" text-anchor="end" y="233" xml:space="preserve"><tspan x="2923" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="265" xml:space="preserve"><tspan x="2658" dy="0">until</tspan></text>
+      <text class="field-type" y="281" xml:space="preserve"><tspan x="2658" dy="0">u64</tspan></text>
+      <text class="description" y="267" xml:space="preserve"><tspan x="2718" dy="0">Until when, in seconds.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">AuditEntry</title>
+      <rect class="card-shape" x="2969" y="32" width="275" height="174"/>
+      <path class="card-rules" d="M 2969 102 L 3244 102 M 2969 158 L 3244 158"/>
+      <rect class="card-outline" x="2969" y="32" width="275" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="2983" dy="0">AuditEntry</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="3230" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="2983" dy="0">One change recorded for review.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="2983" dy="0">actor</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="2983" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="3043" dy="0">Who made the change.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="3230" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="2983" dy="0">change</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="2983" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="3043" dy="0">What changed.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Subscription</title>
+      <rect class="card-shape" x="3276" y="32" width="290" height="174"/>
+      <path class="card-rules" d="M 3276 102 L 3566 102 M 3276 158 L 3566 158"/>
+      <rect class="card-outline" x="3276" y="32" width="290" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="3290" dy="0">Subscription</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="3552" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="3290" dy="0">A user&apos;s subscription to a thread.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="3290" dy="0">subscriber</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="3290" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="3380" dy="0">The subscriber.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="3552" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="3290" dy="0">thread</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="3290" dy="0">u32</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="3380" dy="0">The thread&apos;s number.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Draft</title>
+      <rect class="card-shape" x="3598" y="32" width="225" height="174"/>
+      <path class="card-rules" d="M 3598 102 L 3823 102 M 3598 158 L 3823 158"/>
+      <rect class="card-outline" x="3598" y="32" width="225" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="3612" dy="0">Draft</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="3809" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="3612" dy="0">An unpublished post.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="3612" dy="0">author</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="3612" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="3672" dy="0">The author.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="3809" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="3612" dy="0">text</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="3612" dy="0">String</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="3672" dy="0">The text so far.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Reaction</title>
+      <rect class="card-shape" x="3855" y="32" width="252" height="174"/>
+      <path class="card-rules" d="M 3855 102 L 4107 102 M 3855 158 L 4107 158"/>
+      <rect class="card-outline" x="3855" y="32" width="252" height="174"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="3869" dy="0">Reaction</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="4093" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="3869" dy="0">An emoji left on a post.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="3869" dy="0">user</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="3869" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="3929" dy="0">Who reacted.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="4093" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="3869" dy="0">emoji</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="3869" dy="0">char</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="3929" dy="0">The emoji.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Mention</title>
+      <rect class="card-shape" x="4139" y="32" width="270" height="178"/>
+      <path class="card-rules" d="M 4139 102 L 4409 102 M 4139 158 L 4409 158"/>
+      <rect class="card-outline" x="4139" y="32" width="270" height="178"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="4153" dy="0">Mention</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="4395" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="4153" dy="0">A user named in a post.</tspan></text>
+      <text class="field-name" y="123" xml:space="preserve"><tspan x="4153" dy="0">mentioned</tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="4153" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="4235" dy="0">Who is named.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="4395" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+      <text class="field-name" y="179" xml:space="preserve"><tspan x="4153" dy="0">offset</tspan></text>
+      <text class="field-type" y="195" xml:space="preserve"><tspan x="4153" dy="0">usize</tspan></text>
+      <text class="description" y="181" xml:space="preserve"><tspan x="4235" dy="0">Where the name </tspan><tspan x="4235" dy="18">starts in the text.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Moderator</title>
+      <rect class="card-shape" x="4441" y="32" width="218" height="126"/>
+      <path class="card-rules" d="M 4441 102 L 4659 102"/>
+      <rect class="card-outline" x="4441" y="32" width="218" height="126"/>
+      <text class="type-name" y="64" xml:space="preserve"><tspan x="4455" dy="0">Moderator</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="4645" dy="0">type alias</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="4455" dy="0">A user&apos;s moderator rights.</tspan></text>
+      <text class="field-type" y="123" xml:space="preserve"><tspan x="4455" dy="0">UserId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="4515" dy="0">The moderator.</tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="4645" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">User</title>
+      <rect class="card-shape" x="32" y="340" width="4655" height="142"/>
+      <path class="card-rules" d="M 32 410 L 4687 410 M 2332 410 L 2332 482"/>
+      <rect class="card-outline" x="32" y="340" width="4655" height="142"/>
+      <text class="type-name" y="372" xml:space="preserve"><tspan x="46" dy="0">User</tspan></text>
+      <text class="type-kind" text-anchor="end" y="372" xml:space="preserve"><tspan x="4673" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="395" xml:space="preserve"><tspan x="46" dy="0">A person with an account on the forum.</tspan></text>
+      <text class="field-name" y="431" xml:space="preserve"><tspan x="46" dy="0">id</tspan></text>
+      <text class="field-type" y="447" xml:space="preserve"><tspan x="46" dy="0">UserId</tspan></text>
+      <text class="description" y="471" xml:space="preserve"><tspan x="46" dy="0">The user&apos;s key.</tspan></text>
+      <text class="field-name" y="431" xml:space="preserve"><tspan x="2346" dy="0">name</tspan></text>
+      <text class="field-type" y="447" xml:space="preserve"><tspan x="2346" dy="0">String</tspan></text>
+      <text class="description" y="471" xml:space="preserve"><tspan x="2346" dy="0">The name shown on posts.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Session → User</title>
+      <path class="relationship" d="M 288 142 L 302 142 L 302 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="288" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Post → User</title>
+      <path class="relationship" d="M 534 142 L 548 142 L 548 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="534" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Comment → User</title>
+      <path class="relationship" d="M 825 142 L 839 142 L 839 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="825" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Follow → User</title>
+      <path class="relationship" d="M 1090 142 L 1104 142 L 1104 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1090" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Follow → User</title>
+      <path class="relationship" d="M 1090 198 L 1104 198 L 1104 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1090" cy="198" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Message → User</title>
+      <path class="relationship" d="M 1372 142 L 1386 142 L 1386 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1372" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Message → User</title>
+      <path class="relationship" d="M 1372 198 L 1386 198 L 1386 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1372" cy="198" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Group → User</title>
+      <path class="relationship" d="M 1689 142 L 1703 142 L 1703 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1689" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Group → User</title>
+      <path class="relationship" d="M 1689 216 L 1703 216 L 1703 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1689" cy="216" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Invitation → User</title>
+      <path class="relationship" d="M 1983 142 L 1997 142 L 1997 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1983" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Invitation → User</title>
+      <path class="relationship" d="M 1983 198 L 1997 198 L 1997 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1983" cy="198" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Notification → User</title>
+      <path class="relationship" d="M 2300 142 L 2314 142 L 2314 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="2300" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Complaint → User</title>
+      <path class="relationship" d="M 2596 142 L 2610 142 L 2610 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="2596" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Standing → User</title>
+      <path class="relationship" d="M 2937 228 L 2951 228 L 2951 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="2937" cy="228" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">AuditEntry → User</title>
+      <path class="relationship" d="M 3244 142 L 3258 142 L 3258 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="3244" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Subscription → User</title>
+      <path class="relationship" d="M 3566 142 L 3580 142 L 3580 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="3566" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Draft → User</title>
+      <path class="relationship" d="M 3823 142 L 3837 142 L 3837 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="3823" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Reaction → User</title>
+      <path class="relationship" d="M 4107 142 L 4121 142 L 4121 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="4107" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Mention → User</title>
+      <path class="relationship" d="M 4409 142 L 4423 142 L 4423 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="4409" cy="142" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Moderator → User</title>
+      <path class="relationship" d="M 4659 142 L 4673 142 L 4673 340" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="4659" cy="142" r="4"/>
+    </g>
+  </g>
+</svg>

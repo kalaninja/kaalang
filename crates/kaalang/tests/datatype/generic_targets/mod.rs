@@ -2,18 +2,18 @@
 
 use kaalang::kaa;
 
-#[kaa("A payload of raw bytes.")]
-struct Payload {
-    #[kaa::value("The payload bytes.")]
-    bytes: Vec<u8>,
-}
-
 #[kaa("An attachment with a configurable payload.")]
 struct Attachment<T> {
     #[kaa::value("The boxed attachment payload.")]
     payload: Box<T>,
     #[kaa::value("A digest of the payload.")]
     digest: [u8; 4096],
+}
+
+#[kaa("A payload of raw bytes.")]
+struct Payload {
+    #[kaa::value("The payload bytes.")]
+    bytes: Vec<u8>,
 }
 
 // `Payload` in the field type is storage, not a relationship: only

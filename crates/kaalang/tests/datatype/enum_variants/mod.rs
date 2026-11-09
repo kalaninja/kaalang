@@ -2,12 +2,6 @@
 
 use kaalang::kaa;
 
-#[kaa("A member who may approve a change.")]
-struct Member {
-    #[kaa::value("The member's display name.")]
-    name: String,
-}
-
 #[kaa("Who may approve a change.")]
 enum Approval<'a> {
     #[kaa::case("Anyone may approve.")]
@@ -23,6 +17,12 @@ enum Approval<'a> {
         #[kaa::refer(Member, "The members who may vote.")]
         voters: Vec<&'a Member>,
     },
+}
+
+#[kaa("A member who may approve a change.")]
+struct Member {
+    #[kaa::value("The member's display name.")]
+    name: String,
 }
 
 #[test]

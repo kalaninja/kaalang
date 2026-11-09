@@ -2,6 +2,9 @@
 
 use kaalang::kaa;
 
+#[kaa("The description retained for an earlier revision.")]
+type RevisionDetails = Details;
+
 #[kaa("A description owned by an entry.")]
 #[derive(Clone, Debug, PartialEq)]
 struct Details {
@@ -11,9 +14,6 @@ struct Details {
 
 #[kaa("The description for the current revision.")]
 type CurrentDetails = Details;
-
-#[kaa("The description retained for an earlier revision.")]
-type RevisionDetails = Details;
 
 #[kaa("An ordered sequence of earlier descriptions.")]
 #[kaa::refer(RevisionDetails, "Earlier descriptions in revision order.")]

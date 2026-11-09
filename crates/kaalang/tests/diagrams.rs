@@ -50,7 +50,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
             // A file without flows draws its types, and a `mod.rs` that
             // only lists the fixtures beside it draws nothing.
             if names.is_empty() {
-                for (name, svg) in type_diagrams(&source, fixture) {
+                for (name, svg) in type_diagrams(&source, fixture, module) {
                     draw(&mut current, directory.join(format!("{name}.svg")), &svg);
                     drawn += 1;
                 }
@@ -139,11 +139,11 @@ fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
     current.push(diagram);
 }
 
-/// One diagram for every type of a fixture without flows, named
-/// after the type. A type's incoming types are those in the same file whose
-/// `refer` names it bare, a convention that stands in for the resolver of
-/// `cargo kaalang`.
-fn type_diagrams(source: &str, fixture: &Path) -> Vec<(String, String)> {
+/// One diagram for every type of a fixture without flows, named after the
+/// type, except the first: the subject of the `case` is named after it. A
+/// type's incoming types are those in the same file whose `refer` names it
+/// bare, a convention that stands in for the resolver of `cargo kaalang`.
+fn type_diagrams(source: &str, fixture: &Path, case: &str) -> Vec<(String, String)> {
     let fixture = fixture.display();
     let file = syn::parse_file(source).unwrap_or_else(|error| panic!("{fixture}: {error}"));
     // Each type with the targets of its relationships, in source order.
@@ -167,7 +167,8 @@ fn type_diagrams(source: &str, fixture: &Path) -> Vec<(String, String)> {
         .collect();
     types
         .iter()
-        .map(|(focus, _)| {
+        .enumerate()
+        .map(|(index, (focus, _))| {
             let name = last_segment(focus);
             let drawn: Vec<(&str, Vec<usize>)> = types
                 .iter()
@@ -189,7 +190,12 @@ fn type_diagrams(source: &str, fixture: &Path) -> Vec<(String, String)> {
                 .expect("the focus is among the file's types");
             let svg = kaalang_svg::render_type(card(source, own), &incoming)
                 .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
-            (snake_case(name), svg)
+            let file = if index == 0 {
+                case.to_owned()
+            } else {
+                snake_case(name)
+            };
+            (file, svg)
         })
         .collect()
 }
