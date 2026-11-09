@@ -183,6 +183,11 @@ impl Text {
         }
     }
 
+    /// Wraps a text a tile may lack; an absent text has no lines.
+    fn wrap_optional(self, text: Option<&RichText>, budget: i32) -> Vec<RichText> {
+        text.map_or_else(Vec::new, |text| self.wrap(text, budget))
+    }
+
     fn height(self, lines: &[RichText]) -> i32 {
         block_metrics(lines, self.font(), self.line_height()).height
     }
@@ -448,10 +453,6 @@ const fn offset(point: Point, origin: Point) -> Point {
     }
 }
 
-fn lanes(count: usize) -> i32 {
-    i32::try_from(count).unwrap_or(i32::MAX / LANE)
-}
-
 /// A card's text parsed and measured once, for both of its builds.
 struct SizedCard {
     name: RichText,
@@ -534,17 +535,12 @@ impl SizedTile {
 
     fn wrap(&self, width: i32) -> WrappedTile {
         let budget = width - 2 * TILE_PADDING_X;
-        let wrap = |text: Text, value: &Option<RichText>| {
-            value
-                .as_ref()
-                .map_or_else(Vec::new, |value| text.wrap(value, budget))
-        };
         WrappedTile {
             width,
-            label: wrap(Text::Field, &self.label),
+            label: Text::Field.wrap_optional(self.label.as_ref(), budget),
             ty: Text::Type.wrap(&self.ty, budget),
-            description: wrap(Text::Description, &self.description),
-            target: wrap(Text::Target, &self.target),
+            description: Text::Description.wrap_optional(self.description.as_ref(), budget),
+            target: Text::Target.wrap_optional(self.target.as_ref(), budget),
             drawn: self.drawn,
         }
     }
@@ -844,7 +840,7 @@ impl Built {
     /// its edge, with a divider between each two.
     fn row(&mut self, tiles: &[SizedTile], top: i32) -> i32 {
         let natural: i32 = tiles.iter().map(|tile| tile.width).sum();
-        let count = lanes(tiles.len());
+        let count = i32::try_from(tiles.len()).expect("a row has fewer tiles than i32::MAX");
         let extra = (self.width - natural).max(0);
         let tiles: Vec<WrappedTile> = (0..)
             .zip(tiles)
@@ -930,15 +926,13 @@ impl Built {
         let column = left + code + COLUMN_GAP;
         let end = self.width - TILE_PADDING_X;
         let budget = end - column;
-        let wrap = |text: Text, value: &Option<RichText>, budget: i32| {
-            value
-                .as_ref()
-                .map_or_else(Vec::new, |value| text.wrap(value, budget))
-        };
         let y = top + TILE_PADDING_Y;
         let mut code_bottom = y;
         for (text, lines) in [
-            (Text::Field, wrap(Text::Field, &tile.label, code)),
+            (
+                Text::Field,
+                Text::Field.wrap_optional(tile.label.as_ref(), code),
+            ),
             (Text::Type, Text::Type.wrap(&tile.ty, code)),
         ] {
             if !lines.is_empty() {
@@ -948,12 +942,12 @@ impl Built {
             }
         }
         let mut text_bottom = y;
-        let description = wrap(Text::Description, &tile.description, budget);
+        let description = Text::Description.wrap_optional(tile.description.as_ref(), budget);
         if !description.is_empty() {
             text_bottom += Text::Description.height(&description);
             self.text(Text::Description, column, y, description);
         }
-        let target = wrap(Text::Target, &tile.target, budget);
+        let target = Text::Target.wrap_optional(tile.target.as_ref(), budget);
         if !target.is_empty() {
             if text_bottom > y {
                 text_bottom += TILE_GAP;
