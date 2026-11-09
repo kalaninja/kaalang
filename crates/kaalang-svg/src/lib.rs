@@ -2,7 +2,7 @@
 //!
 //! It serves `cargo kaalang`, and its API may change in any minor release.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, num::NonZeroUsize};
 
 use proc_macro2::Span;
 use syn::File;
@@ -33,6 +33,14 @@ mod text;
 pub struct RenderOptions {
     /// Replace every validated cycle region with one described cycle node.
     pub collapse_cycles: bool,
+}
+
+/// Presentation options for one rendered type diagram.
+#[derive(Clone, Copy, Default)]
+pub struct TypeOptions {
+    /// How many incoming cards a row holds. Without it, a row holds as many
+    /// as fit a Full HD screen, or the focus when it is wider.
+    pub columns: Option<NonZeroUsize>,
 }
 
 /// An error produced while selecting, validating, or rendering a kaalang flow
@@ -210,8 +218,11 @@ pub struct TypeCard<'a> {
     pub relationships: &'a [usize],
 }
 
-/// Renders a type diagram: the focus card under one row of incoming cards, in
-/// the given order, with a line for each relationship they draw into the focus.
+/// Renders a type diagram: the focus card under the incoming cards, in the
+/// given order, with a line for each relationship they draw into the focus.
+/// Each group of incoming cards starts a new row and wraps into further rows
+/// after `options.columns` cards, or where it would grow wider than a screen,
+/// or than the focus when it is wider.
 ///
 /// # Errors
 ///
@@ -225,8 +236,12 @@ pub struct TypeCard<'a> {
 /// # Panics
 ///
 /// Panics when a card draws a relationship index its type does not have.
-pub fn render_type(focus: TypeCard<'_>, incoming: &[TypeCard<'_>]) -> Result<String, RenderError> {
-    datatype::render(focus, incoming)
+pub fn render_type(
+    focus: TypeCard<'_>,
+    incoming: &[&[TypeCard<'_>]],
+    options: TypeOptions,
+) -> Result<String, RenderError> {
+    datatype::render(focus, incoming, options.columns)
 }
 
 /// Lists the path within a UTF-8 Rust source file of every struct, enum, union,
@@ -329,18 +344,21 @@ mod tests {
         };
 
         assert_eq!(
-            render_type(card("Missing"), &[]),
+            render_type(card("Missing"), &[], TypeOptions::default()),
             Err(RenderError::TypeNotFound("Missing".into()))
         );
         assert_eq!(
-            render_type(card("Twin"), &[]),
+            render_type(card("Twin"), &[], TypeOptions::default()),
             Err(RenderError::AmbiguousType("Twin".into()))
         );
         assert!(matches!(
-            render_type(card("model::Empty"), &[]),
+            render_type(card("model::Empty"), &[], TypeOptions::default()),
             Err(RenderError::InvalidType { name, line: 3, .. }) if name == "model::Empty"
         ));
-        assert!(render_type(card("Plain"), &[]).is_ok_and(|svg| svg.contains("id")));
+        assert!(
+            render_type(card("Plain"), &[], TypeOptions::default())
+                .is_ok_and(|svg| svg.contains("id"))
+        );
     }
 
     #[test]
@@ -371,6 +389,7 @@ mod tests {
                     relationships: &[],
                 },
                 &[],
+                TypeOptions::default(),
             ),
             Err(RenderError::InvalidLabelCharacter {
                 character: '\u{1}',
@@ -393,6 +412,7 @@ mod tests {
                     relationships: &[],
                 },
                 &[],
+                TypeOptions::default(),
             )
             .unwrap()
         };

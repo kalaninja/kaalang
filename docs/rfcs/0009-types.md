@@ -294,9 +294,15 @@ its library and binaries come first as one group, then its tests, examples, and
 benches; each group is ordered by target name, and targets of the same name by
 the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file
 that several crates include through `mod` gives one card, at its first position.
-Field and variant order is never changed to improve routing. The same source and
-rendering settings produce the same arrangement; hash-map iteration or compiler
-field order must not determine card order.
+
+The incoming cards stand in rows above the focus, read from left to right and
+then from top to bottom. Each package's library and binaries, its tests, its
+examples, and its benches start a new row. A row holds as many cards as fit a
+Full HD screen, or the focus when the focus is wider, unless the command sets
+the number (§6); the cards of one column share its width. Field and variant
+order is never changed to improve routing. The same source and rendering
+settings produce the same arrangement; hash-map iteration or compiler field
+order must not determine card order.
 
 Lines point from the source component toward the focus card, and bend only at
 right angles. Routes avoid text, and run inside a card only along its grooves.
@@ -340,7 +346,7 @@ The command selects a flow or a focus type by its Rust path:
 
 ```text
 cargo kaalang diagram [-p <package>] --flow <item> [--collapse-cycles] [-o <path>]
-cargo kaalang diagram [-p <package>] --type <item> [-o <path>]
+cargo kaalang diagram [-p <package>] --type <item> [--columns <n>] [-o <path>]
 ```
 
 The item is the declaration's Rust path from its crate root: `model::Member`, or
@@ -351,13 +357,15 @@ from. Each target of a package (its library, binaries, tests, examples, and
 benches) is a separate crate; a path declared in more than one of them cannot be
 selected, unless they all include the one file that declares it. Exactly one of
 `--flow` and `--type` is given. `--collapse-cycles` applies to flows and is
-rejected with `--type`. Without `-o`, the command writes `./<name>.svg` from the
-last path segment, or `./<name>_collapsed.svg` with `--collapse-cycles`. A
-`--flow` path that names no `#[kaa]` function, or a `--type` path that names no
-struct, enum, union, or type alias, is a failure; one that matches several
-without `-p` is a failure that lists them with their packages. With `--type`,
-the command resolves every relationship in the workspace to find the incoming
-types, and one whose target is not a type of the workspace is a failure too.
+rejected with `--type`; `--columns`, how many incoming cards a row holds,
+applies to types and is rejected with `--flow`. Without `-o`, the command writes
+`./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
+`--collapse-cycles`. A `--flow` path that names no `#[kaa]` function, or a
+`--type` path that names no struct, enum, union, or type alias, is a failure;
+one that matches several without `-p` is a failure that lists them with their
+packages. With `--type`, the command resolves every relationship in the
+workspace to find the incoming types, and one whose target is not a type of the
+workspace is a failure too.
 
 The command reads each crate from its root through its `mod` declarations, as
 Rust does, and resolves a `refer` target by Rust's path rules from the module
@@ -403,28 +411,29 @@ assume that an attribute invocation can discover it alone.
 
 Acceptance scenarios:
 
-| Scenario                                               | Required result                                                    |
-| ------------------------------------------------------ | ------------------------------------------------------------------ |
-| Named, tuple, and unit structs; enums; unions; aliases | Preserve the Rust declaration form.                                |
-| Bare `#[kaa]` on a type                                | Draw the card without a description line.                          |
-| Unequal enum variant field counts                      | Draw each variant's own product.                                   |
-| `case` on a unit variant                               | Draw the description beside the variant's name.                    |
-| `value` and an unannotated field                       | Show values without inferring relationships.                       |
-| `refer(Member)` on `MemberId`                          | Keep `Member` as the target.                                       |
-| Aliases sharing a right-hand side                      | Keep their authored names and descriptions.                        |
-| Declaration-level `refer` on `History`                 | Associate it with the alias, without inventing a field.            |
-| `refer(Attachment)` on `Attachment<Payload>`           | Create exactly one relationship to `Attachment`.                   |
-| `refer(T)` inside `Attachment<T>`                      | Reject the type parameter as a target.                             |
-| A field referring to the focus itself                  | Route the line around the card; draw no second card.               |
-| Multiple fields referring to the focus                 | Draw the incoming type once and retain the separate relationships. |
-| An unannotated container or a large array              | Keep one field tile, with no element expansion.                    |
-| Focus view                                             | Draw incoming types above it and omit target cards below.          |
-| The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                      |
-| The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                          |
-| Incoming types from two crates                         | Order the focus type's crate first, then its package, then others. |
-| A focus type without `#[kaa]`                          | Draw its Rust structure without descriptions.                      |
-| `refer` to a plain type of the workspace               | Draw the relationship as to any other type.                        |
-| `refer` to `String`, a trait, or a module              | Fail naming the relationship and its target.                       |
+| Scenario                                               | Required result                                                        |
+| ------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Named, tuple, and unit structs; enums; unions; aliases | Preserve the Rust declaration form.                                    |
+| Bare `#[kaa]` on a type                                | Draw the card without a description line.                              |
+| Unequal enum variant field counts                      | Draw each variant's own product.                                       |
+| `case` on a unit variant                               | Draw the description beside the variant's name.                        |
+| `value` and an unannotated field                       | Show values without inferring relationships.                           |
+| `refer(Member)` on `MemberId`                          | Keep `Member` as the target.                                           |
+| Aliases sharing a right-hand side                      | Keep their authored names and descriptions.                            |
+| Declaration-level `refer` on `History`                 | Associate it with the alias, without inventing a field.                |
+| `refer(Attachment)` on `Attachment<Payload>`           | Create exactly one relationship to `Attachment`.                       |
+| `refer(T)` inside `Attachment<T>`                      | Reject the type parameter as a target.                                 |
+| A field referring to the focus itself                  | Route the line around the card; draw no second card.                   |
+| Multiple fields referring to the focus                 | Draw the incoming type once and retain the separate relationships.     |
+| An unannotated container or a large array              | Keep one field tile, with no element expansion.                        |
+| Focus view                                             | Draw incoming types above it and omit target cards below.              |
+| The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                          |
+| The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                              |
+| Incoming types from two crates                         | Order the focus type's crate first, then its package, then others.     |
+| More incoming types than fit one row                   | Wrap them into rows in source order, each target group from a new one. |
+| A focus type without `#[kaa]`                          | Draw its Rust structure without descriptions.                          |
+| `refer` to a plain type of the workspace               | Draw the relationship as to any other type.                            |
+| `refer` to `String`, a trait, or a module              | Fail naming the relationship and its target.                           |
 
 ## 8. Compatibility and exclusions
 
@@ -440,14 +449,3 @@ attribute emits the declaration unchanged, removing only its `value`, `refer`,
 and `case` annotations; derives, representation attributes, and conditional
 compilation pass through. Cards show no traits, methods, or behavior, and
 whole-domain diagrams are outside this RFC's scope.
-
-## 9. Open questions
-
-Before implementation, resolve:
-
-- **Large incoming sets.** Routing, grouping, and placement when incoming cards
-  no longer fit comfortably in one row, while keeping source order and
-  deterministic results.
-
-This draft establishes the annotation and visual direction without selecting a
-new compiler architecture or promising an implementation schedule.

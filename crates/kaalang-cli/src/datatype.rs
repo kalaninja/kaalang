@@ -4,7 +4,7 @@
 use std::{collections::BTreeSet, fmt::Write as _, path::PathBuf};
 
 use kaalang_compiler::TypeDeclaration;
-use kaalang_svg::{RenderError, TypeCard};
+use kaalang_svg::{RenderError, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::{
@@ -22,7 +22,11 @@ pub(super) struct Drawn {
 /// `package` when given. A file that cannot be read or parsed, or a type whose
 /// annotations do not parse, is skipped and listed, as an error when the type
 /// is not found and as a warning when it is.
-pub(super) fn draw(path: &str, package: Option<&str>) -> Result<Drawn, String> {
+pub(super) fn draw(
+    path: &str,
+    package: Option<&str>,
+    options: TypeOptions,
+) -> Result<Drawn, String> {
     let path = path.strip_prefix("crate::").unwrap_or(path);
     let crates = workspace::crates(None, None)?;
     if let Some(package) = package
@@ -43,7 +47,7 @@ pub(super) fn draw(path: &str, package: Option<&str>) -> Result<Drawn, String> {
     let drawn = relationships(&crates, &declarations, focus)?;
     workspace::warn_skipped(path, &skipped);
     warn("warning: these types could not be read:", &unreadable);
-    render(&crates, focus, &drawn)
+    render(&crates, focus, &drawn, options)
 }
 
 /// Each crate's type declarations, parsed with their annotations, and the
@@ -127,11 +131,13 @@ fn relationships(
 }
 
 /// Renders the focus under its incoming types in diagram order, one card for a
-/// file that several crates include.
+/// file that several crates include. Each package's library and binaries, its
+/// tests, its examples, and its benches start a new row.
 fn render(
     crates: &[Crate],
     focus: TypeRef,
     drawn: &[(TypeRef, Vec<usize>)],
+    options: TypeOptions,
 ) -> Result<Drawn, String> {
     let mut own: &[usize] = &[];
     let mut incoming: Vec<(TypeRef, &[usize])> = Vec::new();
@@ -173,10 +179,22 @@ fn render(
                 .zip(incoming_cards.iter().copied()),
         )
     };
-    let svg = kaalang_svg::render_type(focus_card, &incoming_cards).map_err(|error| {
+    let mut groups: Vec<&[TypeCard]> = Vec::new();
+    let mut start = 0;
+    for end in 1..=incoming.len() {
+        let group = |index: usize| {
+            let krate = &crates[incoming[index].0.krate];
+            (&krate.package, krate.group)
+        };
+        if end == incoming.len() || group(end) != group(start) {
+            groups.push(&incoming_cards[start..end]);
+            start = end;
+        }
+    }
+    let svg = kaalang_svg::render_type(focus_card, &groups, options).map_err(|error| {
         // The renderer names no file, so find the card it rejects.
         let culprit = cards()
-            .find(|(_, card)| kaalang_svg::render_type(*card, &[]).is_err())
+            .find(|(_, card)| kaalang_svg::render_type(*card, &[], options).is_err())
             .map_or(focus, |(source, _)| source);
         format!("{}: {error}", file(culprit).display())
     })?;

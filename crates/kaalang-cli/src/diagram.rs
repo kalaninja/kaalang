@@ -1,5 +1,6 @@
 use std::{
     fs,
+    num::NonZeroUsize,
     path::{Path, PathBuf},
 };
 
@@ -28,6 +29,9 @@ pub(super) struct Diagram {
     /// Draw each cycle as one described node
     #[arg(long, conflicts_with = "type")]
     collapse_cycles: bool,
+    /// Incoming types to a row [default: as many as fit a Full HD screen]
+    #[arg(long, conflicts_with = "flow")]
+    columns: Option<NonZeroUsize>,
 }
 
 impl Diagram {
@@ -39,7 +43,10 @@ impl Diagram {
                 (flow, svg, vec![file])
             }
             (None, Some(ty)) => {
-                let drawn = datatype::draw(ty, self.package.as_deref())?;
+                let options = kaalang_svg::TypeOptions {
+                    columns: self.columns,
+                };
+                let drawn = datatype::draw(ty, self.package.as_deref(), options)?;
                 (ty, drawn.svg, drawn.files)
             }
             (None, None) => unreachable!("clap requires --flow or --type"),
@@ -136,6 +143,21 @@ mod tests {
         assert!(
             Cli::try_parse_from("cargo-kaalang diagram --type Member".split_whitespace()).is_ok()
         );
+    }
+
+    #[test]
+    fn takes_a_positive_column_count_with_a_type_only() {
+        for line in [
+            "cargo-kaalang diagram --type Member --columns 0",
+            "cargo-kaalang diagram --flow decide --columns 2",
+        ] {
+            assert!(
+                Cli::try_parse_from(line.split_whitespace()).is_err(),
+                "{line}"
+            );
+        }
+        let line = "cargo-kaalang diagram --type Member --columns 3";
+        assert!(Cli::try_parse_from(line.split_whitespace()).is_ok());
     }
 
     #[test]

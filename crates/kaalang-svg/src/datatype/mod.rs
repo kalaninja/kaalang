@@ -1,6 +1,8 @@
 //! Renders a type diagram: read each card's type, lay out the cards
 //! and their routes, and serialize the scene.
 
+use std::num::NonZeroUsize;
+
 use kaalang_compiler::{Annotation, Field, TypeForm};
 use proc_macro2::{Span, TokenStream, TokenTree};
 use syn::{Item, Meta, ext::IdentExt, spanned::Spanned};
@@ -15,11 +17,16 @@ mod svg;
 
 pub(crate) fn render(
     focus: TypeCard<'_>,
-    incoming: &[TypeCard<'_>],
+    incoming: &[&[TypeCard<'_>]],
+    columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
-    let incoming = incoming.iter().map(read).collect::<Result<Vec<_>, _>>()?;
+    let groups = incoming
+        .iter()
+        .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
+        .collect::<Result<Vec<_>, _>>()?;
+    let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
     let focus = read(&focus)?;
-    Ok(svg::serialize(&layout::layout(&incoming, &focus)))
+    Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
 }
 
 /// What one card shows, in source order. Descriptions stay authored

@@ -13,6 +13,8 @@
 //! port on its right side. All of them join one trunk there, which climbs and
 //! arrives at the focus's top edge right of every incoming line.
 
+use std::num::NonZeroUsize;
+
 use kaalang_compiler::geometry::Point;
 
 use super::{Card, Structure, Tile};
@@ -54,6 +56,9 @@ const CHANNEL_INSET: i32 = 14;
 /// middle.
 const GROOVE: i32 = 2 * LANE;
 const CARD_GAP: i32 = 32;
+/// The widest the incoming cards run before they wrap into another row: a
+/// Full HD screen less the margins around the page, unless the focus is wider.
+const ROW_WIDTH: i32 = 1800;
 /// How far a variant's tiles sit in from its name in a listed card.
 const VARIANT_INDENT: i32 = 16;
 /// Between a listed tile's name and type and its description.
@@ -194,26 +199,29 @@ pub(super) struct Route {
     pub(super) points: Vec<Point>,
 }
 
-pub(super) fn layout(incoming: &[Card], focus: &Card) -> TypeScene {
+/// Lays out the focus under its incoming cards, in groups that each start a
+/// new row, with `columns` cards to a row when given.
+pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUsize>) -> TypeScene {
+    let sized = SizedCard::new(focus);
+    let natural = sized.width();
     let Row {
         mut cards,
         mut routes,
         bottom: row_bottom,
         right,
-    } = row(incoming);
+    } = row(groups, columns, ROW_WIDTH.max(natural));
+    let incoming = cards.len();
     let mut ports = Vec::new();
     let rightmost_drop = routes
         .iter()
         .map(|route| route.points.last().expect("a route starts at its tile").x)
         .max();
 
-    let sized = SizedCard::new(focus);
-    let natural = sized.width();
     let own = sized
         .tiles()
         .iter()
         .any(|tile| tile.drawn && tile.target.is_some());
-    let top = if incoming.is_empty() {
+    let top = if incoming == 0 {
         MARGIN + if own { CHANNEL_INSET + LANE } else { 0 }
     } else {
         row_bottom + CORRIDOR
@@ -248,7 +256,7 @@ pub(super) fn layout(incoming: &[Card], focus: &Card) -> TypeScene {
     }
     for anchor in &built.anchors {
         routes.push(Route {
-            card: incoming.len(),
+            card: incoming,
             points: around.route(anchor, anchor.bus.map(|index| built.buses[index])),
         });
     }
@@ -274,8 +282,8 @@ pub(super) fn layout(incoming: &[Card], focus: &Card) -> TypeScene {
     }
 }
 
-/// The incoming cards side by side, each route stopped on its card's trunk,
-/// where it turns down toward the focus.
+/// The incoming cards in rows, each route stopped on its card's trunk, where
+/// it turns down toward the focus.
 struct Row {
     cards: Vec<CardShape>,
     routes: Vec<Route>,
@@ -283,20 +291,58 @@ struct Row {
     right: i32,
 }
 
-fn row(incoming: &[Card]) -> Row {
+/// Sets the incoming cards side by side in source order, each group from a new
+/// row, wrapping into further rows after `columns` cards, or else into rows no
+/// wider than `limit`. The cards of a
+/// column share its width, and each trunk drops through the gap right of its
+/// column in a lane of its own, the lower its row the nearer the column, so
+/// that no line from a lower card crosses one from above.
+fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
+    let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
+    let lengths: Vec<usize> = groups.iter().map(|group| group.len()).collect();
+    let sized: Vec<SizedCard> = incoming.iter().map(|card| SizedCard::new(card)).collect();
+    let natural: Vec<i32> = sized.iter().map(SizedCard::list_width).collect();
+    let widest = lengths.iter().copied().max().unwrap_or(0);
+    let grid = match columns {
+        Some(columns) => Grid::new(&lengths, &natural, columns.get()),
+        None => (1..=widest)
+            .rev()
+            .map(|columns| Grid::new(&lengths, &natural, columns))
+            .find(|grid| grid.width() <= limit)
+            .unwrap_or_else(|| Grid::new(&lengths, &natural, 1)),
+    };
+    let built: Vec<Built> = sized
+        .iter()
+        .zip(&grid.cells)
+        .map(|(card, &(_, column))| card.build_list(grid.widths[column]))
+        .collect();
+    let rows = grid.cells.last().map_or(0, |&(line, _)| line + 1);
+    let mut tops = vec![MARGIN];
+    for line in 0..rows {
+        let height = built
+            .iter()
+            .zip(&grid.cells)
+            .filter(|(_, cell)| cell.0 == line)
+            .map(|(card, _)| card.height)
+            .max()
+            .unwrap_or(0);
+        tops.push(tops[line] + height + CARD_GAP);
+    }
+
     let mut row = Row {
         cards: Vec::with_capacity(incoming.len() + 1),
         routes: Vec::new(),
         bottom: MARGIN,
         right: MARGIN,
     };
-    let mut x = MARGIN;
-    for (index, card) in incoming.iter().enumerate() {
-        let sized = SizedCard::new(card);
-        let width = sized.list_width();
-        let built = sized.build_list(width);
-        let origin = Point { x, y: MARGIN };
-        let trunk = x + width + CHANNEL_INSET;
+    for (index, (card, built)) in incoming.iter().zip(built).enumerate() {
+        let (line, column) = grid.cells[index];
+        let width = grid.widths[column];
+        let origin = Point {
+            x: grid.lefts[column],
+            y: tops[line],
+        };
+        let trunk = origin.x + width + CHANNEL_INSET + lanes(grid.below(index)) * LANE;
         for anchor in &built.anchors {
             let at = offset(anchor.at, origin);
             row.routes.push(Route {
@@ -305,11 +351,76 @@ fn row(incoming: &[Card]) -> Row {
             });
         }
         row.bottom = row.bottom.max(origin.y + built.height);
-        row.right = row.right.max(x + width);
+        row.right = row.right.max(origin.x + width);
         row.cards.push(built.shape(card, origin, width, false));
-        x += width + CARD_GAP;
     }
     row
+}
+
+/// Where each incoming card goes: each group from a new row, and within it
+/// the `index`th card in column `index % columns`.
+struct Grid {
+    /// Each card's row and column.
+    cells: Vec<(usize, usize)>,
+    /// Each column's width, its widest card's.
+    widths: Vec<i32>,
+    lefts: Vec<i32>,
+}
+
+impl Grid {
+    fn new(sizes: &[usize], natural: &[i32], columns: usize) -> Self {
+        let mut cells = Vec::with_capacity(natural.len());
+        let mut first = 0;
+        for &size in sizes {
+            cells.extend((0..size).map(|index| (first + index / columns, index % columns)));
+            first += size.div_ceil(columns);
+        }
+        let used = cells
+            .iter()
+            .map(|&(_, column)| column + 1)
+            .max()
+            .unwrap_or(1);
+        let mut widths = vec![0; used];
+        for (&(_, column), width) in cells.iter().zip(natural) {
+            widths[column] = widths[column].max(*width);
+        }
+        let mut grid = Self {
+            cells,
+            widths,
+            lefts: Vec::with_capacity(used),
+        };
+        let mut x = MARGIN;
+        for column in 0..used {
+            grid.lefts.push(x);
+            x += grid.widths[column] + grid.gutter(column) + CARD_GAP - CHANNEL_INSET;
+        }
+        grid
+    }
+
+    /// How many cards of the same column sit in rows below the `index`th.
+    fn below(&self, index: usize) -> usize {
+        let (line, column) = self.cells[index];
+        self.cells
+            .iter()
+            .filter(|&&(other, other_column)| other_column == column && other > line)
+            .count()
+    }
+
+    /// From a column's right side to its farthest trunk.
+    fn gutter(&self, column: usize) -> i32 {
+        let cards = self
+            .cells
+            .iter()
+            .filter(|&&(_, other)| other == column)
+            .count();
+        CHANNEL_INSET + lanes(cards.saturating_sub(1)) * LANE
+    }
+
+    /// From the left margin to the last column's farthest trunk.
+    fn width(&self) -> i32 {
+        let last = self.widths.len() - 1;
+        self.lefts[last] + self.widths[last] + self.gutter(last) - MARGIN
+    }
 }
 
 /// Where the focus's lines to itself run: down to a bus and along it, or
@@ -945,10 +1056,15 @@ impl Built {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::geometry::{Point, bundle_meetings, compatible, enters};
+    use std::num::NonZeroUsize;
 
-    use super::{TypeScene, layout};
-    use crate::datatype::{Card, Structure, Tile, VariantTile};
+    use kaalang_compiler::geometry::{Point, bundle_meetings, compatible, enters, overlaps};
+
+    use super::{ROW_WIDTH, TypeScene, layout};
+    use crate::{
+        datatype::{Card, Structure, Tile, VariantTile},
+        markup::MARGIN,
+    };
 
     /// Whether `point` lies in `bounds`, edges included.
     fn holds((left, top, right, bottom): (i32, i32, i32, i32), point: Point) -> bool {
@@ -1037,19 +1153,125 @@ mod tests {
             Structure::Stack(own().into()),
         ]
         .into_iter()
-        .map(|structure| layout(&incoming, &card("Member", structure)))
+        .map(|structure| layout(&[&incoming], &card("Member", structure), None))
         .collect()
     }
 
     #[test]
     fn routes_neither_cross_nor_enter_any_card() {
         for scene in scenes() {
+            assert_eq!(scene.routes.len(), 9);
             routes_neither_cross_nor_enter(&scene);
         }
     }
 
+    /// Twelve incoming cards with two lines each, too wide for one row.
+    fn wide_scene() -> TypeScene {
+        let incoming: Vec<Card> = (0..12)
+            .map(|index| {
+                card(
+                    &format!("Source{index}"),
+                    Structure::Row(vec![
+                        tile("first", Some("Member"), true),
+                        tile("second", Some("Member"), true),
+                    ]),
+                )
+            })
+            .collect();
+        let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
+        layout(&[&incoming], &focus, None)
+    }
+
+    #[test]
+    fn incoming_cards_wrap_into_rows_in_source_order() {
+        let scene = wide_scene();
+        let incoming = &scene.cards[..12];
+        assert!(incoming.iter().any(|card| card.y > incoming[0].y));
+        // Row by row, and from left to right within a row.
+        assert!(
+            incoming
+                .windows(2)
+                .all(|pair| (pair[0].y, pair[0].x) < (pair[1].y, pair[1].x))
+        );
+        let bounds =
+            |card: &super::CardShape| (card.x, card.y, card.x + card.width, card.y + card.height);
+        for (index, card) in scene.cards.iter().enumerate() {
+            assert!(card.x + card.width <= MARGIN + ROW_WIDTH || index == 12);
+            for other in &scene.cards[index + 1..] {
+                assert!(!overlaps(bounds(card), bounds(other)));
+            }
+        }
+        assert_eq!(scene.routes.len(), 24);
+        routes_neither_cross_nor_enter(&scene);
+        routes_avoid_every_text(&scene);
+        routes_leave_their_own_cards(&scene);
+    }
+
+    /// The rows the first `count` cards of `scene` take.
+    fn rows(scene: &TypeScene, count: usize) -> usize {
+        let mut tops: Vec<i32> = scene.cards[..count].iter().map(|card| card.y).collect();
+        tops.dedup();
+        tops.len()
+    }
+
+    #[test]
+    fn each_group_of_incoming_cards_starts_a_row() {
+        let source = |name: &str| card(name, Structure::Row(vec![tile("m", Some("Member"), true)]));
+        let (first, second) = ([source("Library")], [source("Test"), source("Example")]);
+        let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
+        let scene = layout(&[&first, &second], &focus, None);
+        assert_eq!(rows(&scene, 3), 2);
+        // The second group is a row of its own, aligned to the same columns.
+        assert_eq!(scene.cards[0].x, scene.cards[1].x);
+        assert_eq!(scene.cards[1].y, scene.cards[2].y);
+        routes_neither_cross_nor_enter(&scene);
+    }
+
+    #[test]
+    fn a_focus_wider_than_a_screen_makes_room_for_more_columns() {
+        let incoming: Vec<Card> = (0..12)
+            .map(|index| {
+                card(
+                    &format!("Source{index}"),
+                    Structure::Row(vec![tile("m", Some("Member"), true)]),
+                )
+            })
+            .collect();
+        let focus = |fields: usize| {
+            let tiles = (0..fields)
+                .map(|index| tile(&format!("field{index}"), None, false))
+                .collect();
+            card("Member", Structure::Row(tiles))
+        };
+        let narrow = layout(&[&incoming], &focus(1), None);
+        let wide = layout(&[&incoming], &focus(14), None);
+        assert!(wide.cards[12].width > 1800);
+        assert!(rows(&wide, 12) < rows(&narrow, 12));
+        routes_neither_cross_nor_enter(&wide);
+    }
+
+    #[test]
+    fn a_row_holds_the_given_number_of_cards() {
+        let incoming: Vec<Card> = (0..7)
+            .map(|index| {
+                card(
+                    &format!("Source{index}"),
+                    Structure::Row(vec![tile("m", Some("Member"), true)]),
+                )
+            })
+            .collect();
+        let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
+        let scene = layout(&[&incoming], &focus, NonZeroUsize::new(3));
+        assert_eq!(rows(&scene, 7), 3);
+        assert!(
+            scene.cards[..3]
+                .iter()
+                .all(|card| card.y == scene.cards[0].y)
+        );
+        routes_neither_cross_nor_enter(&scene);
+    }
+
     fn routes_neither_cross_nor_enter(scene: &TypeScene) {
-        assert_eq!(scene.routes.len(), 9);
         for (index, route) in scene.routes.iter().enumerate() {
             for other in &scene.routes[index + 1..] {
                 // Lines that end together share a bus and meet where they join it.

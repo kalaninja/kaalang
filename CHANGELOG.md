@@ -28,7 +28,9 @@
   Rust path from its crate root, under every datatype of the workspace that
   refers to it. It resolves each `refer` target by Rust's path rules and fails
   on a target that is not a type of the workspace. See
-  [RFC 0009](docs/rfcs/0009-types.md).
+  [RFC 0009](docs/rfcs/0009-types.md). The incoming types stand in rows as wide
+  as a Full HD screen, each target group from a new row, and `--columns` sets
+  how many a row holds.
 - `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
   optional description. Fields take `kaa::value` or `kaa::refer` annotations,
   enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.
@@ -36,9 +38,10 @@
   without `#[kaa]`, may be a target too and has a diagram. See
   [RFC 0009](docs/rfcs/0009-types.md).
 - `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for the
-  focus and one for each incoming type: the focus card under a row of incoming
-  cards, with a line for each relationship they draw into it. `type_names` lists
-  a file's types.
+  focus and one for each incoming type, in groups that each start a row, with
+  `TypeOptions` for the number of cards a row holds: the focus card under the
+  incoming cards, with a line for each relationship they draw into it.
+  `type_names` lists a file's types.
 - `kaalang-compiler` reads type declarations: `type_items` collects them,
   datatypes and plain types alike, with their paths within the file,
   `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,

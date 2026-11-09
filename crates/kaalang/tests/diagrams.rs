@@ -188,8 +188,12 @@ fn type_diagrams(source: &str, fixture: &Path, case: &str) -> Vec<(String, Strin
                 .iter()
                 .find(|(path, _)| path == focus)
                 .expect("the focus is among the file's types");
-            let svg = kaalang_svg::render_type(card(source, own), &incoming)
-                .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
+            let svg = kaalang_svg::render_type(
+                card(source, own),
+                &[&incoming],
+                kaalang_svg::TypeOptions::default(),
+            )
+            .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
             let file = if index == 0 {
                 case.to_owned()
             } else {

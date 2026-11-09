@@ -108,7 +108,7 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 - **label**, **parameter panel**: text on a node or connection, and the panel
   beside start listing the flow's Rust parameters.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
-  align to.
+  align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body
   stays inside and its interface sits on the edge. An expanded for cycle has its
   caps instead.

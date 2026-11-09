@@ -382,6 +382,17 @@ fn an_unknown_package_fails() {
     );
 }
 
+/// The top of each card in `svg`, in drawing order.
+fn tops(svg: &str) -> Vec<&str> {
+    svg.match_indices(r#"<rect class="card-shape" x=""#)
+        .map(|(at, _)| {
+            let rest = &svg[at..];
+            let y = &rest[rest.find(" y=\"").expect("a card has a top") + 4..];
+            &y[..y.find('"').expect("the top is quoted")]
+        })
+        .collect()
+}
+
 /// The positions in `svg` of each of `names`, which must all occur.
 fn positions(svg: &str, names: &[&str]) -> Vec<usize> {
     names
@@ -460,6 +471,11 @@ fn incoming_types_follow_crate_order() {
         ],
     );
     assert!(found.is_sorted(), "{found:?}");
+    // The library and binary share a row; the tests and the other package each
+    // start one.
+    let tops = tops(&svg);
+    assert_eq!(tops[0], tops[1], "{tops:?}");
+    assert!(tops[1] != tops[2] && tops[2] != tops[3], "{tops:?}");
 }
 
 #[test]
@@ -536,4 +552,22 @@ fn the_type_option_does_not_find_a_flow() {
     assert!(!failed.status.success());
     let stderr = String::from_utf8_lossy(&failed.stderr);
     assert!(stderr.contains("type `route` was not found"), "{stderr}");
+}
+
+#[test]
+fn the_column_option_sets_how_many_incoming_types_a_row_holds() {
+    let refer = |name: &str| {
+        format!("#[kaa]\nstruct {name} {{\n    #[kaa::refer(Member, \"m\")]\n    m: u8,\n}}\n")
+    };
+    let source: String = ["First", "Second", "Third"]
+        .iter()
+        .map(|name| refer(name))
+        .collect();
+    let directory = package("cli-type-columns", &format!("pub struct Member;\n{source}"));
+    let rendered = run(&directory, "diagram --type Member --columns 1");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    // Three incoming cards and the focus, each on its own row.
+    let tops: std::collections::BTreeSet<&str> = tops(&svg).into_iter().collect();
+    assert_eq!(tops.len(), 4, "{tops:?}");
 }
