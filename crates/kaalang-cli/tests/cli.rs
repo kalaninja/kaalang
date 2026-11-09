@@ -345,6 +345,20 @@ fn the_package_option_selects_one_of_two_packages() {
 }
 
 #[test]
+fn a_flow_in_a_file_that_two_crates_include_is_found_once() {
+    let directory = package("cli-flow-shared-file", "pub mod shared;\n");
+    write(&directory, "src/main.rs", "mod shared;\nfn main() {}\n");
+    write(
+        &directory,
+        "src/shared.rs",
+        &SOURCE.replace("fn route", "pub fn route"),
+    );
+    let rendered = run(&directory, "diagram --flow shared::route");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("route.svg").is_file());
+}
+
+#[test]
 fn a_path_in_two_crates_of_one_package_cannot_be_selected() {
     let directory = package("cli-two-crates", SOURCE);
     write(&directory, "tests/route.rs", SOURCE);

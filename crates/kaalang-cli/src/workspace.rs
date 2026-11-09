@@ -194,6 +194,8 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
     let path = path.strip_prefix("crate::").unwrap_or(path);
     let crates = crates(Some(path), package)?;
     let mut matches = Vec::new();
+    // A file that several crates include through `mod` declares a flow once.
+    let mut seen = BTreeSet::new();
     for (index, krate) in crates.iter().enumerate() {
         // A file's flows are listed from its own module, with their inline
         // modules.
@@ -210,6 +212,9 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
             }
             for path_in_file in kaalang_svg::flow_names(source).expect("the source parsed") {
                 if path.strip_prefix(&module.path) == Some(path_in_file.as_str()) {
+                    if !seen.insert((module.file.canonical.clone(), path_in_file.clone())) {
+                        continue;
+                    }
                     let found = Found {
                         file: module.file.path.clone(),
                         source: source.clone(),
