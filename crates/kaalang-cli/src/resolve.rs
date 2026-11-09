@@ -132,14 +132,7 @@ impl<'a> Resolver<'a> {
             // library of that name is what the path most likely means.
             Some(Def::Unknown(reason)) => self.library(krate, name).unwrap_or(Def::Unknown(reason)),
             Some(found) => found,
-            None => self.library(krate, name).unwrap_or_else(|| {
-                // shortcut: a name an item macro declares is not seen, so a module with one cannot tell it from the prelude; upgrade by expanding the macro.
-                if self.crates[krate].modules[module].scope.opaque {
-                    Def::Unknown("an item macro in its module may declare it")
-                } else {
-                    Def::Outside
-                }
-            }),
+            None => self.library(krate, name).unwrap_or(Def::Outside),
         }
     }
 
@@ -224,6 +217,12 @@ impl<'a> Resolver<'a> {
                 // imports no type.
                 Def::Outside | Def::Type(_) | Def::NotAType(_) => {}
             }
+        }
+        // shortcut: a name an item macro declares is not seen, so a module with one cannot tell it from the prelude; upgrade by expanding the macro.
+        if unknown.is_none() && scope.opaque {
+            unknown = Some(Def::Unknown(
+                "its module may declare it through an item macro or a file that was not read",
+            ));
         }
         unknown
     }
@@ -406,6 +405,18 @@ mod tests {
                 "{target}"
             );
         }
+    }
+
+    #[test]
+    fn a_glob_into_a_module_with_an_item_macro_leaves_an_unknown_name_unknown() {
+        let crates = [library(
+            "app",
+            "mod generated { declare_types!(Member); } use self::generated::*;",
+        )];
+        assert!(matches!(
+            resolve(&crates, "", "Member"),
+            Resolution::Unknown(_)
+        ));
     }
 
     #[test]
