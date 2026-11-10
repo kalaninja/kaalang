@@ -12,7 +12,7 @@ use std::{
     rc::Rc,
 };
 
-use cargo_metadata::{CargoOpt, MetadataCommand, Target};
+use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
 use kaalang_compiler::{Declarations, FlowPath, Place, Question};
 use kaalang_svg::RenderError;
 use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
@@ -51,6 +51,7 @@ pub(super) struct TargetOptions {
 /// One crate: a package's target with the modules read from its root.
 pub(super) struct Crate {
     pub(super) package: String,
+    pub(super) package_id: String,
     /// The name its code and other crates use for it.
     pub(super) name: String,
     /// The target as errors list it: `` lib `app` ``.
@@ -61,9 +62,8 @@ pub(super) struct Crate {
     /// Whether other crates may use it by its name.
     pub(super) library: bool,
     pub(super) root: PathBuf,
-    /// The package's renamed dependencies: the name the code uses, and the
-    /// package it names.
-    pub(super) renames: Vec<(String, String)>,
+    /// Dependency names and resolved package IDs available to this target.
+    pub(super) dependencies: Vec<(String, String)>,
     /// The modules in the order they were read; the first is the root.
     pub(super) modules: Vec<Module>,
     /// The struct, enum, union, and alias declarations in source order.
@@ -180,20 +180,13 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
 
     let mut crates = Vec::new();
     for package in packages {
-        let features: Vec<String> = metadata
+        let resolved = metadata
             .resolve
             .as_ref()
-            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id))
+            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id));
+        let features: Vec<String> = resolved
             .map(|node| node.features.iter().map(ToString::to_string).collect())
             .unwrap_or_default();
-        let renames: Vec<(String, String)> = package
-            .dependencies
-            .iter()
-            .filter_map(|dependency| {
-                let rename = dependency.rename.as_ref()?;
-                Some((rename.replace('-', "_"), dependency.name.clone()))
-            })
-            .collect();
         // Cargo builds no target whose required features are off.
         for target in package.targets.iter().filter(|target| {
             !target.is_custom_build()
@@ -232,12 +225,23 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
             };
             crates.push(Crate {
                 package: package.name.to_string(),
+                package_id: package.id.to_string(),
                 name: target.name.replace('-', "_"),
                 target: target_label(target),
                 group,
                 library: group == 0 && !target.is_bin(),
                 root: target.src_path.clone().into_std_path_buf(),
-                renames: renames.clone(),
+                dependencies: resolved
+                    .into_iter()
+                    .flat_map(|node| &node.deps)
+                    .filter(|dependency| {
+                        dependency.dep_kinds.iter().any(|kind| {
+                            kind.kind == DependencyKind::Normal
+                                || kind.kind == DependencyKind::Development && group != 0
+                        })
+                    })
+                    .map(|dependency| (dependency.name.clone(), dependency.pkg.to_string()))
+                    .collect(),
                 modules: walk.modules,
                 types: walk.types,
                 skipped: walk.skipped,
@@ -953,12 +957,13 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
     );
     Crate {
         package: package.to_owned(),
+        package_id: package.to_owned(),
         name: package.replace('-', "_"),
         target: format!("lib `{package}`"),
         group: 0,
         library: true,
         root: PathBuf::from(format!("/{package}/src/lib.rs")),
-        renames: Vec::new(),
+        dependencies: Vec::new(),
         modules: walk.modules,
         types: walk.types,
         skipped: walk.skipped,

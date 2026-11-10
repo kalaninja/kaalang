@@ -401,6 +401,14 @@ fn a_kept_default_method_of_a_trait_from_another_crate_is_selected() {
             ),
         ],
     );
+    write(
+        &directory,
+        "app/Cargo.toml",
+        &format!(
+            "{}[dependencies]\nmodel = {{ path = \"../model\" }}\n",
+            manifest("app")
+        ),
+    );
     for path in ["<Report as model::Approve>::approve", "Report::approve"] {
         let rendered = run_with(&directory, &["diagram", "--flow", path]);
         assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
@@ -427,6 +435,14 @@ fn an_ambiguous_flow_is_listed_under_the_package_its_path_is_resolved_from() {
                 ),
             ),
         ],
+    );
+    write(
+        &directory,
+        "app/Cargo.toml",
+        &format!(
+            "{}[dependencies]\nmodel = {{ path = \"../model\" }}\n",
+            manifest("app")
+        ),
     );
     let failed = run(&directory, "diagram --flow Report::approve");
     assert!(!failed.status.success());
@@ -1097,6 +1113,42 @@ fn a_renamed_dependency_names_its_package_in_a_target() {
 }
 
 #[test]
+fn libraries_with_the_same_name_resolve_through_the_actual_dependency() {
+    let directory = workspace(
+        "cli-library-name-collision",
+        &[
+            ("first", "pub struct Member { pub first_field: u8 }"),
+            ("second", "pub struct Member { pub second_field: u8 }"),
+            (
+                "app",
+                "#[kaa] pub struct Incoming { #[kaa::refer(model::Member, \"The member.\")] pub key: u8 }",
+            ),
+        ],
+    );
+    for package in ["first", "second"] {
+        write(
+            &directory,
+            &format!("{package}/Cargo.toml"),
+            &format!("{}[lib]\nname = \"model\"\n", manifest(package)),
+        );
+    }
+    write(
+        &directory,
+        "app/Cargo.toml",
+        &format!(
+            "{}[dependencies]\nsecond = {{ path = \"../second\" }}\n",
+            manifest("app")
+        ),
+    );
+    let rendered = run(&directory, "diagram -p app --type model::Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    assert!(svg.contains("second_field"), "{svg}");
+    assert!(!svg.contains("first_field"), "{svg}");
+    assert!(svg.contains("app::Incoming"), "{svg}");
+}
+
+#[test]
 fn a_plain_type_may_be_the_focus() {
     let directory = package(
         "cli-plain-type",
@@ -1130,6 +1182,14 @@ fn incoming_types_follow_crate_order() {
                 "#[kaa]\nstruct FromAlpha {\n    #[kaa::refer(app::Member, \"m\")]\n    m: u8,\n}\n",
             ),
         ],
+    );
+    write(
+        &directory,
+        "alpha/Cargo.toml",
+        &format!(
+            "{}[dependencies]\napp = {{ path = \"../app\" }}\n",
+            manifest("alpha")
+        ),
     );
     let refer = |name: &str| {
         format!(

@@ -62,17 +62,23 @@ impl<'a> Resolver<'a> {
         let externs = crates
             .iter()
             .map(|krate| {
-                let mut names: Vec<(String, usize)> = libraries
-                    .iter()
-                    .map(|(index, library)| (library.name.clone(), *index))
-                    .collect();
-                for (rename, package) in &krate.renames {
+                let mut names = Vec::new();
+                for (name, package) in &krate.dependencies {
                     if let Some((index, _)) = libraries
                         .iter()
-                        .find(|(_, library)| library.package == *package)
+                        .find(|(_, library)| library.package_id == *package)
                     {
-                        names.push((rename.clone(), *index));
+                        names.push((name.clone(), *index));
                     }
+                }
+                // A package's other targets can name its own library.
+                if !krate.library {
+                    names.extend(
+                        libraries
+                            .iter()
+                            .filter(|(_, library)| library.package_id == krate.package_id)
+                            .map(|(index, library)| (library.name.clone(), *index)),
+                    );
                 }
                 names
             })
@@ -488,10 +494,13 @@ mod tests {
 
     #[test]
     fn workspace_libraries_resolve_by_crate_name() {
-        let crates = [
+        let mut crates = [
             library("app", ""),
             library("model-types", "pub mod people { pub struct Member; }"),
         ];
+        crates[0]
+            .dependencies
+            .push(("model_types".into(), "model-types".into()));
         assert_eq!(
             resolve(&crates, "", "model_types::people::Member"),
             named(&crates, 1, "people::Member")
@@ -504,11 +513,14 @@ mod tests {
 
     #[test]
     fn globs_do_not_hide_a_workspace_library() {
-        let crates = [
+        let mut crates = [
             // One glob leaves the workspace and one cannot be followed.
             library("app", "use std::collections::*;\nuse self::generated::*;"),
             library("model-types", "pub struct Member;"),
         ];
+        crates[0]
+            .dependencies
+            .push(("model_types".into(), "model-types".into()));
         assert_eq!(
             resolve(&crates, "", "model_types::Member"),
             named(&crates, 1, "Member")
@@ -517,10 +529,13 @@ mod tests {
 
     #[test]
     fn an_extern_crate_binds_a_workspace_library_under_its_rename() {
-        let crates = [
+        let mut crates = [
             library("app", "extern crate model_types as mt;"),
             library("model-types", "pub mod people { pub struct Member; }"),
         ];
+        crates[0]
+            .dependencies
+            .push(("model_types".into(), "model-types".into()));
         assert_eq!(
             resolve(&crates, "", "mt::people::Member"),
             named(&crates, 1, "people::Member")
@@ -530,7 +545,7 @@ mod tests {
     #[test]
     fn a_renamed_dependency_resolves_to_its_library() {
         let mut app = library("app", "");
-        app.renames
+        app.dependencies
             .push(("people".to_owned(), "model-types".to_owned()));
         let crates = [app, library("model-types", "pub struct Member;")];
         assert_eq!(
@@ -631,10 +646,13 @@ mod tests {
 
     #[test]
     fn a_function_is_found_through_a_library_of_its_name() {
-        let crates = [
+        let mut crates = [
             library("checkout", "pub fn checkout() {}"),
             library("app", "pub use checkout::checkout;"),
         ];
+        crates[1]
+            .dependencies
+            .push(("checkout".into(), "checkout".into()));
         assert!(names_a_function(&crates, "checkout", ""));
     }
 
