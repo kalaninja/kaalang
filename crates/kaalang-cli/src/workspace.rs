@@ -61,6 +61,10 @@ pub(super) struct Crate {
     pub(super) group: u8,
     /// Whether other crates may use it by its name.
     pub(super) library: bool,
+    /// Read for the host during cross-compilation.
+    pub(super) host: bool,
+    /// An additional host reading of a library, reached through dependencies only.
+    pub(super) dependency_only: bool,
     pub(super) root: PathBuf,
     /// Dependency names and resolved package IDs available to this target.
     pub(super) dependencies: Vec<(String, String)>,
@@ -149,6 +153,8 @@ pub(super) struct TypeEntry {
     pub(super) path: String,
     /// The path within its file, as `kaalang_compiler::type_items` lists it.
     pub(super) in_file: String,
+    /// The identifier's source position, unchanged by conditional attributes.
+    pub(super) position: proc_macro2::LineColumn,
     pub(super) item: Item,
 }
 
@@ -157,7 +163,7 @@ pub(super) struct TypeEntry {
 /// the target `options` name.
 pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<Vec<Crate>, String> {
     let printed = rustc_cfg(options.target.as_deref(), true)?;
-    let metadata = metadata(package, options)?;
+    let metadata = metadata(package, options, options.target.as_deref())?;
     let mut packages = metadata.workspace_packages();
     if let Some(package) = package
         && !packages.iter().any(|member| *member.name == package)
@@ -173,32 +179,46 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
             .iter()
             .any(|package| package.targets.iter().any(Target::is_proc_macro))
     {
-        Some(rustc_cfg(None, false)?)
+        Some((
+            rustc_cfg(None, false)?,
+            self::metadata(package, options, None)?,
+        ))
     } else {
         None
     };
 
+    let host_dependencies = host
+        .as_ref()
+        .map_or_else(BTreeSet::new, |(_, metadata)| host_dependencies(metadata));
     let mut crates = Vec::new();
     for package in packages {
-        let resolved = metadata
-            .resolve
-            .as_ref()
-            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id));
-        let features: Vec<String> = resolved
-            .map(|node| node.features.iter().map(ToString::to_string).collect())
-            .unwrap_or_default();
-        // Cargo builds no target whose required features are off.
-        for target in package.targets.iter().filter(|target| {
-            !target.is_custom_build()
-                && target
-                    .required_features
-                    .iter()
-                    .all(|required| required.contains('/') || features.contains(required))
+        let targets = package
+            .targets
+            .iter()
+            .filter(|target| !target.is_custom_build());
+        for (target, dependency_only) in targets.flat_map(|target| {
+            let also_host = (target.is_lib() || target.is_rlib() || target.is_dylib())
+                && host_dependencies.contains(&package.id);
+            iter::once((target, false)).chain(also_host.then_some((target, true)))
         }) {
-            let printed = match &host {
-                Some(host) if target.is_proc_macro() => host,
-                _ => &printed,
+            let for_host = host.is_some() && (target.is_proc_macro() || dependency_only);
+            let (printed, metadata) = if for_host {
+                let (printed, metadata) = host.as_ref().expect("the host was read");
+                (printed, metadata)
+            } else {
+                (&printed, &metadata)
             };
+            let resolved = metadata
+                .resolve
+                .as_ref()
+                .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id));
+            // Cargo builds no target whose required features are off.
+            if !required_features(&target.required_features, package, resolved, metadata) {
+                continue;
+            }
+            let features: Vec<String> = resolved
+                .map(|node| node.features.iter().map(ToString::to_string).collect())
+                .unwrap_or_default();
             let cfg = cfg_set(target, printed, &features)?;
             let mut walk = Walk {
                 cfg: &cfg,
@@ -214,15 +234,7 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 String::new(),
                 None,
             );
-            let group = if target.is_test() {
-                1
-            } else if target.is_example() {
-                2
-            } else if target.is_bench() {
-                3
-            } else {
-                0
-            };
+            let group = target_group(target);
             crates.push(Crate {
                 package: package.name.to_string(),
                 package_id: package.id.to_string(),
@@ -230,6 +242,8 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 target: target_label(target),
                 group,
                 library: group == 0 && !target.is_bin(),
+                host: for_host,
+                dependency_only,
                 root: target.src_path.clone().into_std_path_buf(),
                 dependencies: resolved
                     .into_iter()
@@ -250,6 +264,82 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
         }
     }
     Ok(crates)
+}
+
+/// Libraries a procedural macro reaches through normal dependencies run on the host too.
+fn host_dependencies(metadata: &cargo_metadata::Metadata) -> BTreeSet<cargo_metadata::PackageId> {
+    let mut pending: Vec<_> = metadata
+        .workspace_packages()
+        .into_iter()
+        .filter(|package| package.targets.iter().any(Target::is_proc_macro))
+        .map(|package| package.id.clone())
+        .collect();
+    let mut found = BTreeSet::new();
+    while let Some(package) = pending.pop() {
+        if !found.insert(package.clone()) {
+            continue;
+        }
+        if let Some(node) = metadata
+            .resolve
+            .as_ref()
+            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package))
+        {
+            pending.extend(
+                node.deps
+                    .iter()
+                    .filter(|dependency| {
+                        dependency
+                            .dep_kinds
+                            .iter()
+                            .any(|kind| kind.kind == DependencyKind::Normal)
+                    })
+                    .map(|dependency| dependency.pkg.clone()),
+            );
+        }
+    }
+    found
+}
+
+/// Whether every local or dependency-qualified requirement is enabled.
+fn required_features(
+    required: &[String],
+    package: &cargo_metadata::Package,
+    resolved: Option<&cargo_metadata::Node>,
+    metadata: &cargo_metadata::Metadata,
+) -> bool {
+    let Some(node) = resolved else {
+        return required.is_empty();
+    };
+    required.iter().all(|required| {
+        let Some((name, feature)) = required.split_once('/') else {
+            return node.features.iter().any(|enabled| enabled == required);
+        };
+        node.deps.iter().any(|edge| {
+            let dependency = &metadata[&edge.pkg];
+            let named = package.dependencies.iter().any(|declared| {
+                declared.rename.as_ref().unwrap_or(&declared.name) == name
+                    && dependency.name == declared.name
+                    && declared.rename.as_ref().map_or_else(
+                        || {
+                            dependency.targets.iter().any(|target| {
+                                (target.is_lib()
+                                    || target.is_rlib()
+                                    || target.is_dylib()
+                                    || target.is_proc_macro())
+                                    && target.name.replace('-', "_") == edge.name
+                            })
+                        },
+                        |rename| rename.replace('-', "_") == edge.name,
+                    )
+            });
+            named
+                && metadata
+                    .resolve
+                    .as_ref()
+                    .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == edge.pkg))
+                    .is_some_and(|node| node.features.iter().any(|enabled| *enabled == feature))
+        })
+    })
 }
 
 /// The cfg set cargo builds `target` with: what rustc `printed` for its
@@ -279,15 +369,16 @@ fn cfg_set(
         .map_err(|error| format!("could not read the cfg rustc printed: {error}"))
 }
 
-/// The workspace as `cargo metadata` describes it, with each package's features
-/// resolved as cargo resolves them for the target `options` name. As with
+/// The workspace as `cargo metadata` describes it for `target`, or the host,
+/// with the features `options` select. As with
 /// `cargo build -p`, a feature without a package is `package`'s.
 fn metadata(
     package: Option<&str>,
     options: &TargetOptions,
+    target: Option<&str>,
 ) -> Result<cargo_metadata::Metadata, String> {
-    let triple = match &options.target {
-        Some(triple) => triple.clone(),
+    let triple = match target {
+        Some(triple) => triple.to_owned(),
         None => host()?,
     };
     let mut command = MetadataCommand::new();
@@ -389,7 +480,9 @@ pub(super) fn find(
 ) -> Result<Found, String> {
     let crates = crates(package, options)?;
     let resolver = Resolver::new(&crates);
-    let selected = |krate: &Crate| package.is_none_or(|package| krate.package == package);
+    let selected = |krate: &Crate| {
+        !krate.dependency_only && package.is_none_or(|package| krate.package == package)
+    };
     // Each crate's files, by their own modules, with their declarations.
     let files: Vec<Vec<(usize, Declarations)>> = crates
         .iter()
@@ -415,7 +508,11 @@ pub(super) fn find(
         let listed: Vec<((usize, usize), &Declarations)> = crates
             .iter()
             .enumerate()
-            .filter(|(source, other)| *source == index || other.library)
+            .filter(|(source, other)| {
+                *source == index
+                    || other.library
+                        && (other.host == krate.host || other.host && !other.dependency_only)
+            })
             .flat_map(|(source, _)| {
                 files[source]
                     .iter()
@@ -504,10 +601,7 @@ fn answer(
                     if (found, declared) == (source, inside) && name.unraw() == value
             )
         }
-        Question::Type(path) => matches!(
-            resolver.find(krate, 0, path),
-            Def::Type(_) | Def::Outside | Def::Unknown(_)
-        ),
+        Question::Type(path) => resolver.is_type(krate, 0, path),
         Question::Types {
             query,
             at,
@@ -694,6 +788,7 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Pa
                     module,
                     path: format!("{}{ident}", outer.path),
                     in_file: format!("{}{ident}", outer.in_file),
+                    position: ident.span().start(),
                     item: item.clone(),
                 });
                 (name(ident), Declared::Type(walk.types.len() - 1), vis)
@@ -895,6 +990,19 @@ fn path_value(meta: &Meta) -> Option<String> {
     }
 }
 
+/// The target's diagram group: library/binaries, tests, examples, then benches.
+fn target_group(target: &Target) -> u8 {
+    if target.is_test() {
+        1
+    } else if target.is_example() {
+        2
+    } else if target.is_bench() {
+        3
+    } else {
+        0
+    }
+}
+
 /// Names a crate by its target, as `` lib `app` `` or `` test `cli` ``.
 fn target_label(target: &Target) -> String {
     let kinds: Vec<String> = target.kind.iter().map(ToString::to_string).collect();
@@ -939,6 +1047,8 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         target: format!("lib `{package}`"),
         group: 0,
         library: true,
+        host: false,
+        dependency_only: false,
         root: PathBuf::from(format!("/{package}/src/lib.rs")),
         dependencies: Vec::new(),
         modules: walk.modules,

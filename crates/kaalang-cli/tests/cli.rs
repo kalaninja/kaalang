@@ -1,4 +1,5 @@
 use std::{
+    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
     process::{Command, Output},
@@ -538,6 +539,55 @@ fn a_method_of_an_impl_for_any_type_is_selected_through_a_type_only() {
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     not_found(&directory, "diagram --flow Approve::approve");
     not_found(&directory, "diagram --flow nested::approve");
+    not_found(&directory, "diagram --flow Missing::approve");
+    for path in [
+        "<nested>::approve",
+        "<Approve>::approve",
+        "<Missing as Review>::approve",
+        "<&Missing as Review>::approve",
+        "<crate::Missing as Review>::approve",
+        "<&crate::Missing as Review>::approve",
+        "<&nested as Review>::approve",
+    ] {
+        let failed = run_with(&directory, &["diagram", "--flow", path]);
+        assert!(!failed.status.success(), "{path}");
+        let stderr = String::from_utf8_lossy(&failed.stderr);
+        assert!(stderr.contains("was not found"), "{path}: {stderr}");
+    }
+}
+
+#[test]
+fn trait_object_arguments_select_the_matching_flow() {
+    let variants = [
+        ("&dyn Fn() -> u8", "No input."),
+        ("&dyn Fn(u8) -> u8", "Byte input."),
+        ("&dyn Fn(u16) -> u8", "Word input."),
+        ("&dyn Fn(u8) -> u16", "Word output."),
+        ("&dyn Iterator<Item = u8>", "Byte item."),
+        ("&dyn Iterator<Item = u16>", "Word item."),
+    ];
+    let mut source = "type Byte = u8;\ntrait Run { fn run(&self) -> u8; }\n".to_owned();
+    for (ty, description) in variants {
+        writeln!(
+            source,
+            "impl Run for {ty} {{ {} }}",
+            method("run", "&self", description),
+        )
+        .unwrap();
+    }
+    let directory = package("cli-trait-object-arguments", &source);
+    for (ty, description) in variants.into_iter().chain([
+        ("&dyn Fn(Byte) -> u8", "Byte input."),
+        ("&dyn Iterator<Item = Byte>", "Byte item."),
+    ]) {
+        let path = format!("<{ty} as Run>::run");
+        let rendered = run_with(&directory, &["diagram", "--flow", &path]);
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join("run.svg")).unwrap();
+        for (_, label) in variants {
+            assert_eq!(svg.contains(label), label == description, "{path}: {label}");
+        }
+    }
 }
 
 #[test]
@@ -1014,6 +1064,56 @@ fn a_target_whose_required_features_are_off_is_not_read() {
 }
 
 #[test]
+fn dependency_features_gate_targets_by_their_manifest_names() {
+    for (dependency, library) in [
+        ("model-types", "model_types"),
+        ("model-types", "model_core"),
+        ("renamed-model", "model_core"),
+    ] {
+        let directory = workspace(
+            &format!("cli-target-required-{dependency}-{library}"),
+            &[("model-types", ""), ("app", "")],
+        );
+        write(
+            &directory,
+            "model-types/Cargo.toml",
+            &format!(
+                "{}\n[lib]\nname = \"{library}\"\n\n[features]\nextra = []\n",
+                manifest("model-types")
+            ),
+        );
+        let dependencies = if dependency == "model-types" {
+            "[dependencies]\nmodel-types = { path = \"../model-types\" }\n"
+        } else {
+            "[dependencies]\nrenamed-model = { package = \"model-types\", path = \"../model-types\" }\n"
+        };
+        write(
+            &directory,
+            "app/Cargo.toml",
+            &format!(
+                "{}\n{dependencies}\n[features]\nenabled = [\"{dependency}/extra\"]\n\n[[bin]]\nname = \"extra\"\npath = \"src/main.rs\"\nrequired-features = [\"{dependency}/extra\"]\n",
+                manifest("app")
+            ),
+        );
+        write(
+            &directory,
+            "app/src/main.rs",
+            "pub struct OnlyWithExtra;\nfn main() {}\n",
+        );
+        not_found(&directory, "diagram -p app --type OnlyWithExtra");
+        let rendered = run(
+            &directory,
+            "diagram -p app --type OnlyWithExtra --features enabled",
+        );
+        assert!(
+            rendered.status.success(),
+            "{dependency}: {:?}",
+            rendered.stderr
+        );
+    }
+}
+
+#[test]
 fn cfg_test_holds_in_test_targets_only() {
     let directory = package("cli-target-test", "#[cfg(test)]\npub struct InLibrary;\n");
     write(
@@ -1045,6 +1145,71 @@ fn a_procedural_macro_is_read_for_the_host() {
         "diagram --type OnHost --target wasm32-unknown-unknown",
     );
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
+}
+
+#[test]
+fn a_procedural_macros_dependencies_are_read_for_the_host() {
+    let os = std::env::consts::OS;
+    let directory = workspace(
+        "cli-host-dependencies",
+        &[
+            ("macros", "use bridge::Member;\n"),
+            ("bridge", "pub use model::Member;\n"),
+            (
+                "model",
+                &format!(
+                    "pub struct Member {{\n\
+                     #[cfg(target_os = \"{os}\")] pub host_field: u8,\n\
+                     #[cfg(not(target_os = \"{os}\"))] pub target_field: u8,\n\
+                     }}\nimpl Member {{\n\
+                     #[cfg(target_os = \"{os}\")] {}\n\
+                     #[cfg(not(target_os = \"{os}\"))] {}\n}}\n",
+                    method("route", "self", "Host method."),
+                    method("route", "self", "Target method."),
+                ),
+            ),
+        ],
+    );
+    write(
+        &directory,
+        "macros/Cargo.toml",
+        &format!(
+            "{}[lib]\nproc-macro = true\n\n[target.'cfg(target_os = \"{os}\")'.dependencies]\nbridge = {{ path = \"../bridge\" }}\n",
+            manifest("macros")
+        ),
+    );
+    write(
+        &directory,
+        "bridge/Cargo.toml",
+        &format!(
+            "{}[target.'cfg(target_os = \"{os}\")'.dependencies]\nmodel = {{ path = \"../model\" }}\n",
+            manifest("bridge")
+        ),
+    );
+    for (package, present, absent) in [
+        ("macros", "host_field", "target_field"),
+        ("model", "target_field", "host_field"),
+    ] {
+        let svg = drawn(
+            &directory,
+            &format!("--type Member -p {package}"),
+            "wasm32-unknown-unknown",
+        );
+        assert!(svg.contains(present), "{package}: {svg}");
+        assert!(!svg.contains(absent), "{package}: {svg}");
+    }
+    for (package, present, absent) in [
+        ("macros", "Host method.", "Target method."),
+        ("model", "Target method.", "Host method."),
+    ] {
+        let svg = drawn(
+            &directory,
+            &format!("--flow Member::route -p {package}"),
+            "wasm32-unknown-unknown",
+        );
+        assert!(svg.contains(present), "{package}: {svg}");
+        assert!(!svg.contains(absent), "{package}: {svg}");
+    }
 }
 
 #[test]
@@ -1112,7 +1277,7 @@ fn a_file_two_crates_read_under_their_own_cfgs_draws_the_focus_lines_of_its_crat
     write(
         &directory,
         "src/model.rs",
-        "#[kaa]\npub struct Node {\n    #[cfg(test)]\n    #[kaa::refer(Node, \"p\")]\n    p: u8,\n}\n",
+        "#[cfg_attr(test, derive(Clone))]\n#[kaa]\npub struct Node {\n    #[cfg(test)]\n    #[kaa::refer(Node, \"p\")]\n    p: u8,\n}\n",
     );
     write(
         &directory,
@@ -1123,6 +1288,53 @@ fn a_file_two_crates_read_under_their_own_cfgs_draws_the_focus_lines_of_its_crat
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Node.svg")).unwrap();
     assert_eq!(svg.matches("class=\"relationship\"").count(), 0, "{svg}");
+}
+
+#[test]
+fn distinct_conditional_types_in_a_shared_file_are_ambiguous() {
+    let directory = package("cli-shared-file-conditional-types", "pub mod model;\n");
+    write(
+        &directory,
+        "src/model.rs",
+        "#[cfg(not(test))]\npub struct Member { production: u8 }\n#[cfg(test)]\npub struct Member { testing: u8 }\n",
+    );
+    write(
+        &directory,
+        "tests/it.rs",
+        "#[path = \"../src/model.rs\"]\nmod model;\n",
+    );
+    let rendered = run(&directory, "diagram --type model::Member");
+    assert!(!rendered.status.success());
+    let stderr = String::from_utf8_lossy(&rendered.stderr);
+    assert!(
+        stderr.contains("multiple types have the path `model::Member`"),
+        "{stderr}"
+    );
+    assert!(
+        stderr.contains("lib `cli_shared_file_conditional_types`"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("test `it`"), "{stderr}");
+    assert!(!directory.join("Member.svg").exists());
+}
+
+#[test]
+fn a_conditional_type_does_not_take_another_declarations_method() {
+    let directory = package("cli-shared-file-conditional-method", "pub mod model;\n");
+    write(
+        &directory,
+        "src/model.rs",
+        &format!(
+            "#[cfg(not(test))]\npub struct Member;\n#[cfg(test)]\npub struct Member;\n#[cfg(not(test))]\nimpl Member {{\n{}}}\n",
+            method("route", "self", "The production member.")
+        ),
+    );
+    write(
+        &directory,
+        "tests/it.rs",
+        "#[path = \"../src/model.rs\"]\nmod model;\nuse model::Member as Testing;\n",
+    );
+    not_found(&directory, "diagram --flow Testing::route");
 }
 
 #[test]

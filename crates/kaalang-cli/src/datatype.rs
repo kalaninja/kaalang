@@ -228,7 +228,9 @@ fn focus(
     let target = syn::parse_str::<syn::Path>(path).ok();
     let mut found: Vec<TypeRef> = Vec::new();
     for krate in order(crates, usize::MAX) {
-        if package.is_some_and(|package| crates[krate].package != package) {
+        if crates[krate].dependency_only
+            || package.is_some_and(|package| crates[krate].package != package)
+        {
             continue;
         }
         if let Some(Def::Type(declared)) = target
@@ -289,7 +291,7 @@ pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
     let place = |found: TypeRef| {
         let krate = &crates[found.krate];
         let entry = &krate.types[found.id];
-        (&krate.modules[entry.module].file.canonical, &entry.in_file)
+        (&krate.modules[entry.module].file.canonical, entry.position)
     };
     place(left) == place(right)
 }

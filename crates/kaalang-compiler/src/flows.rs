@@ -314,9 +314,7 @@ pub fn select<X: Copy>(
                         found.push(position);
                     }
                 });
-                // Only a type has methods, and an `impl` for any type would
-                // otherwise take a module's or a trait's path.
-                if found.is_empty() && names(Question::Type(&prefix)) {
+                if found.is_empty() {
                     let self_ty = Type::Path(TypePath {
                         attrs: Vec::new(),
                         qself: None,
@@ -347,6 +345,10 @@ fn methods<X: Copy>(
     files: &[(X, &Declarations)],
     names: &mut dyn FnMut(Question<'_, X>) -> bool,
 ) -> Vec<(usize, usize)> {
+    // A blanket impl must not turn a module or a missing name into a type.
+    if !query_type(self_ty, names) {
+        return Vec::new();
+    }
     let mut blocks = Vec::new();
     for (position, (file, declarations)) in files.iter().enumerate() {
         for (index, block) in declarations.impls.iter().enumerate() {
@@ -422,6 +424,27 @@ fn methods<X: Copy>(
         }
     }
     found
+}
+
+/// Checks named types through structural wrappers. Generic arguments may be
+/// constants, so their paths cannot be checked as types without type checking.
+fn query_type<X: Copy>(ty: &Type, names: &mut dyn FnMut(Question<'_, X>) -> bool) -> bool {
+    match bare(ty) {
+        Type::Path(path) if path.qself.is_none() => names(Question::Type(&path.path)),
+        Type::Reference(ty) => query_type(&ty.elem, names),
+        Type::Ptr(ty) => query_type(&ty.elem, names),
+        Type::Slice(ty) => query_type(&ty.elem, names),
+        Type::Array(ty) => query_type(&ty.elem, names),
+        Type::Tuple(ty) => ty.elems.iter().all(|ty| query_type(ty, names)),
+        Type::FnPtr(ty) => {
+            ty.inputs.iter().all(|input| query_type(&input.ty, names))
+                && match &ty.output {
+                    ReturnType::Default => true,
+                    ReturnType::Type(_, ty) => query_type(ty, names),
+                }
+        }
+        _ => true,
+    }
 }
 
 fn for_each_flow<'a, X: Copy>(
@@ -506,13 +529,7 @@ pub fn types_match(
                     .iter()
                     .zip(&written.inputs)
                     .all(|(query, written)| types_match(&query.ty, &written.ty, generics, same))
-                && match (&query.output, &written.output) {
-                    (ReturnType::Default, ReturnType::Default) => true,
-                    (ReturnType::Type(_, query), ReturnType::Type(_, written)) => {
-                        types_match(query, written, generics, same)
-                    }
-                    _ => false,
-                }
+                && outputs_match(&query.output, &written.output, generics, same)
         }
         (Type::TraitObject(query), Type::TraitObject(written)) => {
             let traits = |bounds: &syn::punctuated::Punctuated<TypeParamBound, _>| {
@@ -560,6 +577,24 @@ fn constants_match(query: &Expr, written: &Expr, generics: &Generics) -> bool {
     parameter || matches!(query, Expr::Infer(_)) || self::written(query) == self::written(written)
 }
 
+fn outputs_match(
+    query: &ReturnType,
+    written: &ReturnType,
+    generics: &Generics,
+    same: &mut dyn FnMut(&Path, &Path) -> bool,
+) -> bool {
+    let unit: Type = syn::parse_quote!(());
+    let query = match query {
+        ReturnType::Default => &unit,
+        ReturnType::Type(_, ty) => ty,
+    };
+    let written = match written {
+        ReturnType::Default => &unit,
+        ReturnType::Type(_, ty) => ty,
+    };
+    types_match(query, written, generics, same)
+}
+
 /// Whether two paths name one item, by `same`, with matching generic arguments
 /// on their last segments.
 fn paths_match(
@@ -568,28 +603,56 @@ fn paths_match(
     generics: &Generics,
     same: &mut dyn FnMut(&Path, &Path) -> bool,
 ) -> bool {
-    let arguments = |path: &Path| match path.segments.last().map(|segment| &segment.arguments) {
-        Some(PathArguments::AngleBracketed(arguments)) => arguments
-            .args
-            .iter()
-            .filter(|argument| {
-                matches!(
-                    argument,
-                    GenericArgument::Type(_) | GenericArgument::Const(_)
-                )
-            })
-            .cloned()
-            .collect(),
-        _ => Vec::new(),
-    };
     if !same(query, written) {
         return false;
     }
-    let written_arguments = arguments(written);
-    arguments(query)
-        .iter()
-        .zip(&written_arguments)
-        .all(|(query, written)| match (query, written) {
+    match (
+        query.segments.last().map(|segment| &segment.arguments),
+        written.segments.last().map(|segment| &segment.arguments),
+    ) {
+        (
+            Some(PathArguments::AngleBracketed(query)),
+            Some(PathArguments::AngleBracketed(written)),
+        ) => arguments_match(query, written, generics, same),
+        (
+            Some(PathArguments::Parenthesized(query)),
+            Some(PathArguments::Parenthesized(written)),
+        ) => {
+            query.inputs.len() == written.inputs.len()
+                && query
+                    .inputs
+                    .iter()
+                    .zip(&written.inputs)
+                    .all(|(query, written)| types_match(&query.ty, &written.ty, generics, same))
+                && outputs_match(&query.output, &written.output, generics, same)
+        }
+        (None | Some(PathArguments::None), _) | (_, None | Some(PathArguments::None)) => true,
+        _ => false,
+    }
+}
+
+fn arguments_match(
+    query: &syn::AngleBracketedGenericArguments,
+    written: &syn::AngleBracketedGenericArguments,
+    generics: &Generics,
+    same: &mut dyn FnMut(&Path, &Path) -> bool,
+) -> bool {
+    let mut positional = written.args.iter().filter(|argument| {
+        matches!(
+            argument,
+            GenericArgument::Type(_) | GenericArgument::Const(_)
+        )
+    });
+    query.args.iter().all(|query| {
+        let written = match query {
+            GenericArgument::Lifetime(_) => return true,
+            GenericArgument::Type(_) | GenericArgument::Const(_) => positional.next(),
+            GenericArgument::AssocType(query) => written.args.iter().find(|argument| {
+                matches!(argument, GenericArgument::AssocType(written) if named(&query.ident, &written.ident))
+            }),
+            _ => return written.args.iter().any(|argument| self::written(query) == self::written(argument)),
+        };
+        written.is_none_or(|written| match (query, written) {
             (GenericArgument::Type(query), GenericArgument::Type(written)) => {
                 types_match(query, written, generics, same)
             }
@@ -600,8 +663,14 @@ fn paths_match(
             (GenericArgument::Const(_), GenericArgument::Type(Type::Path(written))) => {
                 parameter(written, generics)
             }
+            (GenericArgument::AssocType(query), GenericArgument::AssocType(written)) => {
+                query.generics.as_ref().zip(written.generics.as_ref()).is_none_or(|(query, written)| {
+                    arguments_match(query, written, generics, same)
+                }) && types_match(&query.ty, &written.ty, generics, same)
+            }
             _ => false,
         })
+    })
 }
 
 #[cfg(test)]
@@ -712,6 +781,42 @@ mod tests {
     }
 
     #[test]
+    fn qualified_paths_check_named_types_before_matching_a_blanket_impl() {
+        let file = syn::parse_file("impl<T> Review for T { #[kaa] fn approve() {} }").unwrap();
+        let declarations = declarations(&file.items);
+        for (ty, expected) in [
+            ("Report", 1),
+            ("&Report", 1),
+            ("fn(Report) -> Report", 1),
+            ("Array<SIZE>", 1),
+            ("_", 1),
+            ("NotAType", 0),
+            ("(NotAType)", 0),
+            ("&NotAType", 0),
+            ("*const NotAType", 0),
+            ("[NotAType]", 0),
+            ("[NotAType; 2]", 0),
+            ("(Report, NotAType)", 0),
+            ("fn(NotAType)", 0),
+            ("fn() -> NotAType", 0),
+        ] {
+            let path = FlowPath::parse(&format!("<{ty} as Review>::approve")).unwrap();
+            let found = select(
+                &path,
+                &[((), &declarations)],
+                &mut |question| match question {
+                    Question::Type(path) => path.segments.last().is_some_and(|segment| {
+                        matches!(segment.ident.to_string().as_str(), "Report" | "Array")
+                    }),
+                    Question::Types { .. } => true,
+                    _ => false,
+                },
+            );
+            assert_eq!(found.len(), expected, "{ty}");
+        }
+    }
+
+    #[test]
     fn a_method_two_traits_provide_is_ambiguous_without_an_inherent_one() {
         let source = "
             struct Report;
@@ -793,6 +898,48 @@ mod tests {
             selected(source, "<extern \"Rust\" fn() as Run>::run"),
             ["<fn() as Run>::run"]
         );
+    }
+
+    #[test]
+    fn trait_arguments_select_distinct_impls() {
+        let source = "
+            trait Run { fn run(); }
+            impl Run for &dyn Fn() -> u8 { #[kaa] fn run() {} }
+            impl Run for &dyn Fn(u8) { #[kaa] fn run() {} }
+            impl Run for &dyn Fn(u8) -> u8 { #[kaa] fn run() {} }
+            impl Run for &dyn Fn(u16) -> u8 { #[kaa] fn run() {} }
+            impl Run for &dyn Fn(u8) -> u16 { #[kaa] fn run() {} }
+            impl Run for &dyn Iterator<Item = u8> { #[kaa] fn run() {} }
+            impl Run for &dyn Iterator<Item = u16> { #[kaa] fn run() {} }
+        ";
+        let file = syn::parse_file(source).unwrap();
+        for flow in declarations(&file.items).flows {
+            assert_eq!(selected(source, &flow.path), [flow.path]);
+        }
+        assert_eq!(
+            selected(source, "<&dyn Fn(u8) -> () as Run>::run"),
+            ["<&dyn Fn(u8) as Run>::run"],
+        );
+        assert_eq!(
+            selected(source, "<&dyn Iterator<Item = _> as Run>::run").len(),
+            2,
+        );
+    }
+
+    #[test]
+    fn associated_type_bindings_match_by_name_and_keep_omitted_arguments() {
+        let source = "
+            impl Run for &dyn Pair<Left = u8, Right = u16> { #[kaa] fn run() {} }
+        ";
+        for ty in [
+            "&dyn Pair<Right = u16, Left = u8>",
+            "&dyn Pair<Right = u16>",
+            "&dyn Pair",
+        ] {
+            let path = format!("<{ty} as Run>::run");
+            assert_eq!(selected(source, &path).len(), 1, "{path}");
+        }
+        assert!(selected(source, "<&dyn Pair<Right = u8> as Run>::run").is_empty());
     }
 
     #[test]

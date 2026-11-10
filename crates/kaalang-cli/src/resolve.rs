@@ -71,7 +71,8 @@ impl<'a> Resolver<'a> {
                 for (name, package) in &krate.dependencies {
                     if let Some((index, _)) = libraries
                         .iter()
-                        .find(|(_, library)| library.package_id == *package)
+                        .filter(|(_, library)| library.package_id == *package)
+                        .min_by_key(|(_, library)| library.host != krate.host)
                     {
                         names.push((name.clone(), *index));
                     }
@@ -81,7 +82,9 @@ impl<'a> Resolver<'a> {
                     names.extend(
                         libraries
                             .iter()
-                            .filter(|(_, library)| library.package_id == krate.package_id)
+                            .filter(|(_, library)| {
+                                library.package_id == krate.package_id && library.host == krate.host
+                            })
                             .map(|(index, library)| (library.name.clone(), *index)),
                     );
                 }
@@ -96,7 +99,7 @@ impl<'a> Resolver<'a> {
                     .types
                     .iter()
                     .map(|entry| {
-                        let key = (&krate.modules[entry.module].file.canonical, &entry.in_file);
+                        let key = (&krate.modules[entry.module].file.canonical, entry.position);
                         let next = declared.len();
                         *declared.entry(key).or_insert(next)
                     })
@@ -127,6 +130,74 @@ impl<'a> Resolver<'a> {
     /// What `path`, as written in `module` of crate `krate`, names.
     pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, false)
+    }
+
+    /// A query has not been checked by rustc: a bare missing name cannot use
+    /// the fallback for external types unless its scope could provide it.
+    pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> bool {
+        match self.find(krate, module, path) {
+            Def::Type(_) | Def::Unknown(_) => true,
+            Def::Outside => {
+                let Some(first) = path.segments.first() else {
+                    return false;
+                };
+                let name = first.ident.unraw().to_string();
+                let external = matches!(name.as_str(), "std" | "core" | "alloc")
+                    || self.crates[krate]
+                        .dependencies
+                        .iter()
+                        .any(|(dependency, _)| dependency == &name);
+                if path.segments.len() > 1 && external {
+                    return true;
+                }
+                if path.leading_colon.is_some() {
+                    return false;
+                }
+                let builtin = path.segments.len() == 1
+                    && matches!(
+                        name.as_str(),
+                        "bool"
+                            | "char"
+                            | "str"
+                            | "f16"
+                            | "f32"
+                            | "f64"
+                            | "f128"
+                            | "i8"
+                            | "i16"
+                            | "i32"
+                            | "i64"
+                            | "i128"
+                            | "isize"
+                            | "u8"
+                            | "u16"
+                            | "u32"
+                            | "u64"
+                            | "u128"
+                            | "usize"
+                            | "Box"
+                            | "String"
+                            | "Vec"
+                            | "Option"
+                            | "Result"
+                    );
+                builtin
+                    || self
+                        .member(krate, module, &name, false, &mut Vec::new())
+                        .is_some()
+                    || self.crates[krate].modules[module]
+                        .scope
+                        .globs
+                        .iter()
+                        .any(|glob| {
+                            matches!(
+                                self.path(krate, module, &glob.0, false, &mut Vec::new()),
+                                Def::Outside
+                            )
+                        })
+            }
+            _ => false,
+        }
     }
 
     /// What `path` names among functions, constants, and statics: its last
@@ -626,6 +697,57 @@ mod tests {
             .position(|entry| entry.path == path)
             .expect("the type exists");
         Resolution::Type(TypeRef { krate, id })
+    }
+
+    #[test]
+    fn query_types_reject_missing_names_but_keep_external_sources() {
+        let mut krate = library(
+            "app",
+            "struct Report;
+             mod nested {}
+             trait Review {}
+             const SIZE: usize = 2;
+             use external::Report as Imported;
+             mod local { pub use external::Report; }
+             mod glob { use external::*; }
+             mod generated { generate!(); }",
+        );
+        krate
+            .dependencies
+            .push(("external".into(), "external-package".into()));
+        let crates = [krate];
+        let resolver = Resolver::new(&crates);
+        for (path, expected) in [
+            ("Report", true),
+            ("Imported", true),
+            ("local::Report", true),
+            ("external::Report", true),
+            ("::external::Report", true),
+            ("std::collections::HashMap", true),
+            ("generated::Report", true),
+            ("u8", true),
+            ("Vec<u8>", true),
+            ("Box<Report>", true),
+            ("Missing", false),
+            ("crate::Missing", false),
+            ("unknown::Report", false),
+            ("nested", false),
+            ("Review", false),
+            ("SIZE", false),
+            ("::Imported", false),
+        ] {
+            assert_eq!(
+                resolver.is_type(0, 0, &syn::parse_str(path).unwrap()),
+                expected,
+                "{path}"
+            );
+        }
+        let glob = crates[0]
+            .modules
+            .iter()
+            .position(|module| module.path == "glob::")
+            .unwrap();
+        assert!(resolver.is_type(0, glob, &syn::parse_quote!(ImportedByGlob)));
     }
 
     #[test]
