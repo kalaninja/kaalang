@@ -259,6 +259,9 @@ pub enum Question<'a, X> {
     /// Whether two paths name one item. A path without a place is written in
     /// the flow path, from its root.
     Same(Option<Place<'a, X>>, &'a Path, Place<'a, X>, &'a Path),
+    /// Whether a path written in the flow path, from its root, names a type,
+    /// or may name one the source cannot tell.
+    Type(&'a Path),
 }
 
 /// Selects the flows `path` names among the files' declarations, as the
@@ -303,7 +306,9 @@ pub fn select<X: Copy>(
                         found.push(position);
                     }
                 });
-                if found.is_empty() {
+                // Only a type has methods, and an `impl` for any type would
+                // otherwise take a module's or a trait's path.
+                if found.is_empty() && names(Question::Type(&prefix)) {
                     let self_ty = Type::Path(TypePath {
                         attrs: Vec::new(),
                         qself: None,
@@ -606,6 +611,7 @@ mod tests {
                     path.leading_colon.is_none() && written == declared
                 }
                 Question::Same(_, left, _, right) => last(left) == last(right),
+                Question::Type(_) => true,
             },
         )
         .into_iter()

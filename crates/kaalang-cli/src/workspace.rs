@@ -500,6 +500,10 @@ fn answer(
                     if (found, declared) == (source, inside) && name.unraw() == value
             )
         }
+        Question::Type(path) => matches!(
+            resolver.find(krate, 0, path),
+            Def::Type(_) | Def::Outside | Def::Unknown(_)
+        ),
         Question::Same(left, left_path, right, right_path) => {
             let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
             let (left_crate, left_module) = left.map_or((krate, 0), module);

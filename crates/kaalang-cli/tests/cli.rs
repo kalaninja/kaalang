@@ -408,6 +408,50 @@ fn a_kept_default_method_of_a_trait_from_another_crate_is_selected() {
 }
 
 #[test]
+fn an_ambiguous_flow_is_listed_under_the_package_its_path_is_resolved_from() {
+    let directory = workspace(
+        "cli-ambiguous-elsewhere",
+        &[
+            (
+                "app",
+                &format!(
+                    "pub struct Report;\npub trait Review {{ fn approve(&self) -> u8; }}\nimpl model::Approve for Report {{}}\nimpl Review for Report {{ {} }}\n",
+                    method("approve", "&self", "Reviewed.")
+                ),
+            ),
+            (
+                "model",
+                &format!(
+                    "pub trait Approve {{ {} }}\n",
+                    method("approve", "&self", "Default.")
+                ),
+            ),
+        ],
+    );
+    let failed = run(&directory, "diagram --flow Report::approve");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(stderr.contains("app: lib `app`"), "{stderr}");
+    assert!(!stderr.contains("model: lib"), "{stderr}");
+    assert!(!stderr.contains("-p <PACKAGE>"), "{stderr}");
+}
+
+#[test]
+fn a_method_of_an_impl_for_any_type_is_selected_through_a_type_only() {
+    let directory = package(
+        "cli-blanket-impl",
+        &format!(
+            "pub struct Report;\npub mod nested {{}}\npub trait Approve {{ fn approve(&self) -> u8; }}\npub trait Review {{ fn approve(&self) -> u8; }}\nimpl<T> Review for T {{ {} }}\n",
+            method("approve", "&self", "Any.")
+        ),
+    );
+    let rendered = run(&directory, "diagram --flow Report::approve");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    not_found(&directory, "diagram --flow Approve::approve");
+    not_found(&directory, "diagram --flow nested::approve");
+}
+
+#[test]
 fn a_qualified_path_selects_the_method_of_a_reference_type() {
     let directory = package(
         "cli-reference-type",
