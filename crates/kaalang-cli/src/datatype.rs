@@ -8,7 +8,7 @@ use kaalang_svg::{RenderError, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::{
-    resolve::{Resolution, Resolver, TypeRef},
+    resolve::{Def, Resolution, Resolver, TypeRef},
     workspace::{self, Crate},
 };
 
@@ -28,14 +28,7 @@ pub(super) fn draw(
     options: TypeOptions,
 ) -> Result<Drawn, String> {
     let path = path.strip_prefix("crate::").unwrap_or(path);
-    let crates = workspace::crates(None, None)?;
-    if let Some(package) = package
-        && !crates.iter().any(|krate| krate.package == package)
-    {
-        return Err(format!(
-            "package `{package}` is not a member of this workspace"
-        ));
-    }
+    let crates = workspace::crates(package)?;
     let (declarations, unreadable) = declarations(&crates);
     let skipped = workspace::skipped(&crates);
     let focus = focus(&crates, path, package, &skipped).map_err(|mut message| {
@@ -280,23 +273,36 @@ fn cfgs(crates: &[Crate], found: TypeRef) -> Vec<String> {
         .collect()
 }
 
-/// The one type at `path`, from `package` when given, the first in crate order
-/// when several crates include its file: each of its declarations there, in
-/// source order.
+/// The one type that `path` resolves to from a crate root, from `package` when
+/// given, the first in crate order when several crates include its file: each
+/// of its declarations there, in source order.
 fn focus(
     crates: &[Crate],
     path: &str,
     package: Option<&str>,
     skipped: &BTreeSet<String>,
 ) -> Result<Vec<TypeRef>, String> {
+    let resolver = Resolver::new(crates);
+    let target = syn::parse_str::<syn::Path>(path).ok();
     let mut found: Vec<Vec<TypeRef>> = Vec::new();
     for krate in order(crates, usize::MAX) {
         if package.is_some_and(|package| crates[krate].package != package) {
             continue;
         }
-        for (id, entry) in crates[krate].types.iter().enumerate() {
-            let candidate = TypeRef { krate, id };
-            if entry.path != path {
+        let Some(Def::Type(declared)) = target
+            .as_ref()
+            .map(|target| resolver.find(krate, 0, target))
+        else {
+            continue;
+        };
+        let types = &crates[declared.krate].types;
+        for (id, entry) in types.iter().enumerate() {
+            let candidate = TypeRef {
+                krate: declared.krate,
+                id,
+            };
+            // Exclusive `cfg`s may declare the path again.
+            if entry.path != types[declared.id].path {
                 continue;
             }
             match found
@@ -321,12 +327,12 @@ fn focus(
         }
         [one] => Ok(one.clone()),
         many => {
-            let listed: Vec<(&Crate, &std::path::Path)> = many
+            let listed: Vec<(&Crate, String)> = many
                 .iter()
                 .map(|declarations| {
                     let krate = &crates[declarations[0].krate];
                     let module = &krate.modules[krate.types[declarations[0].id].module];
-                    (krate, module.file.path.as_path())
+                    (krate, module.file.path.display().to_string())
                 })
                 .collect();
             Err(workspace::ambiguous(
@@ -362,7 +368,7 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
 /// include, or one crate reads twice, declares it in each reading, and
 /// exclusive `cfg`s may declare its path more than once in a crate, in one
 /// file or in several.
-fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
+pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
     let path = |found: TypeRef| &crates[found.krate].types[found.id].path;
     place(crates, left).0 == place(crates, right).0
         || (left.krate == right.krate && path(left) == path(right))

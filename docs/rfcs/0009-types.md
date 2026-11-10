@@ -367,46 +367,66 @@ cargo kaalang diagram [-p <package>] --flow <item> [--collapse-cycles] [-o <path
 cargo kaalang diagram [-p <package>] --type <item> [--columns <n>] [-o <path>]
 ```
 
-The item is the declaration's Rust path from its crate root: `model::Member`, or
-`review::Report::approve` for a method. The command runs inside a cargo
-workspace and searches every member crate, for the item and for incoming types.
-When the path exists in several packages, `-p` names the package to take it
-from. Each target of a package (its library, binaries, tests, examples, and
-benches) is a separate crate; a path declared in more than one of them cannot be
-selected, unless they all include the one file that declares it. Exactly one of
-`--flow` and `--type` is given. `--collapse-cycles` applies to flows and is
-rejected with `--type`; `--columns`, how many incoming cards a row holds,
-applies to types and is rejected with `--flow`. Without `-o`, the command writes
-`./<name>.svg` from the last path segment, or `./<name>_collapsed.svg` with
-`--collapse-cycles`. A `--flow` path that names no `#[kaa]` function, or a
-`--type` path that names no struct, enum, union, or type alias, is a failure;
-one that matches several without `-p` is a failure that lists them with their
-packages. With `--type`, the command resolves every relationship in the
-workspace to find the incoming types, and one whose target is not a type of the
-workspace is a failure too.
+The item is a Rust path from the crate root, which the command resolves as the
+compiler resolves a path in an expression: `model::Member`, `review::route`, or
+a re-export of either. A method is named through its type or its trait, wherever
+the crate declares the `impl` block:
+
+| Path                                     | Selects                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Report::approve` or `<Report>::approve` | The inherent method, or, when there is none of that name, the method of the one trait that provides it. |
+| `<Report as Approve>::approve`           | `Approve`'s method as `Report` implements it, or the trait's default method when the `impl` keeps it.   |
+| `Approve::approve`                       | The trait's default method.                                                                             |
+| `<&Report as Approve>::approve`          | The method of a type that is not a path, which only the qualified form names.                           |
+
+Matching a type against an `impl` block ignores lifetimes, and the block's type
+parameters, `_`, and omitted generic arguments match any type:
+`<Vec<u8> as Approve>::approve` matches `impl<T> Approve for Vec<T>`. A type or
+trait the workspace does not declare is compared by its last segment, since the
+source alone cannot resolve it.
+
+The command runs inside a cargo workspace and searches every member crate, for
+the item and for incoming types. When the path exists in several packages, `-p`
+names the package to take it from. Each target of a package (its library,
+binaries, tests, examples, and benches) is a separate crate; a path that
+resolves in more than one of them cannot be selected, unless they all reach one
+declaration in a file they share. Exactly one of `--flow` and `--type` is given.
+`--collapse-cycles` applies to flows and is rejected with `--type`; `--columns`,
+how many incoming cards a row holds, applies to types and is rejected with
+`--flow`. Without `-o`, the command writes `./<name>.svg` from the last path
+segment, or `./<name>_collapsed.svg` with `--collapse-cycles`. A `--flow` path
+that names no `#[kaa]` function, or a `--type` path that names no struct, enum,
+union, or type alias, is a failure; one that matches several without `-p` is a
+failure that lists them with their packages. As the compiler rejects an
+ambiguous path, a method path that matches several flows of one crate, such as
+`Report::approve` when two traits provide `approve`, is a failure that lists
+them. With `--type`, the command resolves every relationship in the workspace to
+find the incoming types, and one whose target is not a type of the workspace is
+a failure too.
 
 The command reads each crate from its root through its `mod` declarations, as
-Rust does, and resolves a `refer` target by Rust's path rules from the module
-that declares the field: `crate`, `self`, and `super`, declared items, `use`
-imports with renames, groups, and globs, and the workspace's libraries by their
-crate names, renamed dependencies included. It reads the source as written, so
-an item under `cfg` counts. A target the source alone cannot resolve, such as a
-name an item macro may declare, draws no line and is reported as a warning. The
-command creates or replaces the output only after the selected declaration and,
-for a type, its incoming types are validated and the diagram rendered. On
-success it prints the output path; on failure it writes a diagnostic to stderr
-and exits with a nonzero status.
+Rust does, and resolves by Rust's path rules the item from the crate root and a
+`refer` target from the module that declares the field: `crate`, `self`, and
+`super`, declared items, `use` imports with renames, groups, and globs, and the
+workspace's libraries by their crate names, renamed dependencies included. It
+reads the source as written, so an item under `cfg` counts. A target the source
+alone cannot resolve, such as a name an item macro may declare, draws no line
+and is reported as a warning. The command creates or replaces the output only
+after the selected declaration and, for a type, its incoming types are validated
+and the diagram rendered. On success it prints the output path; on failure it
+writes a diagnostic to stderr and exits with a nonzero status.
 
 This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
 of §4 under which the renderer selects one function by its unqualified name and
 does not descend into inline modules, §5, which selects a flow by source file
 and name, and the part of §6 under which the renderer does not search an entire
 crate or resolve external modules. The renderer instead selects a flow by its
-path within the file: the enclosing inline modules, then the function's name. A
-method's path starts with the last segment of its `impl` block's self type, and
-a trait's default method starts with the trait's name. Conditional compilation
-and macro-expanded source remain outside the renderer's scope: declarations
-under `cfg` are read as written.
+path within the file, which takes the command's forms and resolves nothing: a
+free function by the inline modules that enclose it, then its name, and a method
+through its type or trait, each compared by its last segment, as in
+`<&Report as Approve>::approve`. Conditional compilation and macro-expanded
+source remain outside the renderer's scope: declarations under `cfg` are read as
+written.
 
 ## 7. Validation and acceptance scenarios
 
@@ -447,6 +467,12 @@ Acceptance scenarios:
 | Focus view                                             | Draw incoming types above it and omit target cards below.              |
 | The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                          |
 | The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                              |
+| A re-exported item path                                | Select the declaration it resolves to.                                 |
+| A method whose `impl` block is in another module       | Select it through its type's path.                                     |
+| `Report::approve` with inherent and trait methods      | Select the inherent method.                                            |
+| `Report::approve` provided by two traits only          | Fail listing both.                                                     |
+| `<Report as Approve>::approve` on an `impl` without it | Select the trait's default method.                                     |
+| `<&Report as Approve>::approve`                        | Select the method of the `impl` for `&Report`.                         |
 | Incoming types from two crates                         | Order the focus type's crate first, then its package, then others.     |
 | More incoming types than fit one row                   | Wrap them into rows in source order, each target group from a new one. |
 | A focus type without `#[kaa]`                          | Draw its Rust structure without descriptions.                          |

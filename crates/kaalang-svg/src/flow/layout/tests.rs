@@ -372,8 +372,8 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
 /// which one it made and why it conforms.
 fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement)) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
-    let selected =
-        crate::flow::select_flow(&file.items, flow).expect("the fixture declares the flow");
+    let selected = crate::flow::select_flow(&file.items, crate::flow::Selection::Path(flow))
+        .expect("the fixture declares the flow");
     let function = &selected.function;
     let mut model = kaalang_compiler::build(function).expect("the fixture is a valid flow");
     kaalang_render::compact_arrangement(&mut model);

@@ -5,16 +5,19 @@
 ### Breaking
 
 - `cargo kaalang diagram` selects a flow by its Rust path from the crate root,
-  as `--flow review::Report::approve`, instead of a source file and a bare name.
-  It searches every crate of the cargo workspace, and `-p` names the package
-  when the path exists in several. The default output is named after the last
-  path segment. See [RFC 0009](docs/rfcs/0009-types.md).
+  resolved as the compiler resolves it, as `--flow review::Report::approve` or
+  `--flow '<&Report as Approve>::approve'`, instead of a source file and a bare
+  name. It searches every crate of the cargo workspace, and `-p` names the
+  package when the path exists in several. The default output is named after the
+  last path segment. See [RFC 0009](docs/rfcs/0009-types.md).
 - `kaalang-svg`'s `render_source` and `render_source_with_options` select a flow
-  by its path within the file, and `flow_names` lists those paths, including
-  flows in inline modules. A method's path starts with its type or trait.
+  by its path within the file, in the command's forms without resolving them,
+  and `flow_names` lists those paths, including flows in inline modules. A
+  method's path goes through its type or trait, and a trait's method in an
+  `impl` block takes the qualified form, as `<Report as Approve>::approve`.
 - `kaalang-compiler`'s `flows` returns each flow as a `FlowItem`, with its path
-  within the file and whether a trait declares it, and descends into inline
-  modules.
+  within the file, its inline modules, what declares it, and whether a trait
+  declares it, and descends into inline modules.
 - `kaalang-compiler`'s `is_flow_attribute` is renamed `is_kaalang_attribute`.
 - `kaalang-svg`'s `RenderError` gains `TypeNotFound` and `InvalidType`.
 - The attribute is `#[kaa]`, or `#[kaalang::kaa]` through the crate path,
@@ -24,10 +27,10 @@
 
 ### Added
 
-- `cargo kaalang diagram --type <path>` draws a type diagram: the type at that
-  Rust path from its crate root, under every datatype of the workspace that
-  refers to it. It resolves each `refer` target by Rust's path rules and fails
-  on a target that is not a type of the workspace. See
+- `cargo kaalang diagram --type <path>` draws a type diagram: the type that Rust
+  path resolves to from its crate root, under every datatype of the workspace
+  that refers to it. It resolves each `refer` target by Rust's path rules and
+  fails on a target that is not a type of the workspace. See
   [RFC 0009](docs/rfcs/0009-types.md). The incoming types stand in rows as wide
   as a Full HD screen, each target group from a new row, and `--columns` sets
   how many a row holds. A type declared more than once under exclusive `cfg`s is
@@ -39,6 +42,9 @@
   the declaring type, under the field's `cfg`. A plain type, without `#[kaa]`,
   may be a target too and has a diagram. See
   [RFC 0009](docs/rfcs/0009-types.md).
+- `kaalang-svg`'s `render_flow` renders a flow by its position among those
+  `flow_names` lists, and `kaalang-compiler`'s `declarations`, `FlowPath`, and
+  `select` find the flows a path selects as the compiler resolves it.
 - `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for each
   declaration of the focus and one for each incoming type, in groups that each
   start a row, with `TypeOptions` for the number of cards a row holds: the focus

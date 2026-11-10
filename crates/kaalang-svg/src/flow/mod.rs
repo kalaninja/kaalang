@@ -3,7 +3,7 @@
 
 use std::rc::Rc;
 
-use kaalang_compiler::FlowItem;
+use kaalang_compiler::{FlowItem, FlowPath};
 use syn::{Item, Meta, ReturnType, Signature, spanned::Spanned};
 
 use crate::{
@@ -15,14 +15,24 @@ mod captions;
 pub(crate) mod layout;
 mod svg;
 
+/// How the caller selects a flow of the file.
+#[derive(Clone, Copy)]
+pub(crate) enum Selection<'a> {
+    /// By its path within the file.
+    Path(&'a str),
+    /// By its position among the file's flows.
+    Position(usize),
+}
+
 pub(crate) fn render(
     source: &str,
-    flow_path: &str,
+    selection: Selection,
     options: RenderOptions,
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let parser_source = parser_source(source, &file);
-    let flow = select_flow(&file.items, flow_path)?;
+    let flow = select_flow(&file.items, selection)?;
+    let flow_path = flow.path.as_str();
     let function = &flow.function;
     let mut model = kaalang_compiler::build_with_options(function, options.collapse_cycles)
         .map_err(|error| invalid_flow(flow_path, &error))?;
@@ -63,15 +73,27 @@ pub(crate) fn render(
     ))
 }
 
-fn select_flow(items: &[Item], flow_path: &str) -> Result<FlowItem, RenderError> {
-    let mut matches = kaalang_compiler::flows(items)
-        .into_iter()
-        .filter(|flow| flow.path == flow_path);
-    let Some(flow) = matches.next() else {
-        return Err(RenderError::FlowNotFound(flow_path.to_owned()));
+fn select_flow(items: &[Item], selection: Selection) -> Result<FlowItem, RenderError> {
+    let declarations = kaalang_compiler::declarations(items);
+    let (position, selected_path) = match selection {
+        Selection::Path(flow_path) => {
+            let selected = FlowPath::parse(flow_path)
+                .map(|path| declarations.select(&path))
+                .unwrap_or_default();
+            match selected.as_slice() {
+                [] => return Err(RenderError::FlowNotFound(flow_path.to_owned())),
+                [position] => (*position, Some(flow_path)),
+                _ => return Err(RenderError::AmbiguousFlow(flow_path.to_owned())),
+            }
+        }
+        Selection::Position(position) => (position, None),
     };
-    if matches.next().is_some() {
-        return Err(RenderError::AmbiguousFlow(flow_path.to_owned()));
+    let Some(mut flow) = declarations.flows.into_iter().nth(position) else {
+        return Err(RenderError::FlowNotFound(position.to_string()));
+    };
+    // Errors name the flow as the caller selected it.
+    if let Some(path) = selected_path {
+        path.clone_into(&mut flow.path);
     }
     if let Some(attribute) = flow
         .function
@@ -85,7 +107,7 @@ fn select_flow(items: &[Item], flow_path: &str) -> Result<FlowItem, RenderError>
         })
     {
         return Err(invalid_flow(
-            flow_path,
+            &flow.path,
             &syn::Error::new_spanned(attribute, "#[kaa] on a function does not accept arguments"),
         ));
     }

@@ -85,12 +85,24 @@ fn write(directory: &Path, path: &str, contents: &str) {
 /// Runs the binary from `directory` with a command line of plain words, with
 /// color off so assertions see plain text.
 fn run(directory: &Path, line: &str) -> Output {
+    run_with(directory, &line.split_whitespace().collect::<Vec<_>>())
+}
+
+/// Runs the binary from `directory` with these arguments, with color off.
+fn run_with(directory: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
         .current_dir(directory)
         .env("NO_COLOR", "1")
-        .args(line.split_whitespace())
+        .args(arguments)
         .output()
         .expect("the binary runs")
+}
+
+/// A method flow that names `step` in its one action, which reads `receiver`.
+fn method(name: &str, receiver: &str, step: &str) -> String {
+    format!(
+        "#[kaa]\nfn {name}({receiver}) -> u8 {{\n    #[kaa::action(\"{step}\")]\n    let response = |{receiver}| 1;\n\n    |response| return response;\n}}\n"
+    )
 }
 
 #[test]
@@ -246,13 +258,139 @@ fn an_inline_module_path_in_a_module_file_is_relative_to_its_directory() {
 }
 
 #[test]
-fn modules_off_the_path_are_not_read() {
-    let directory = package("cli-off-path", &format!("mod broken;\n{SOURCE}"));
-    write(&directory, "src/broken.rs", "fn (");
-    let rendered = run(&directory, "diagram --flow route");
+fn a_re_exported_item_is_selected_through_its_re_export() {
+    let directory = package(
+        "cli-re-export",
+        &format!(
+            "mod review {{\n{}}}\npub use review::route;\nmod model {{ #[kaa] pub struct Member; }}\npub use model::Member;\n",
+            SOURCE.replace("fn route", "pub fn route")
+        ),
+    );
+    for (line, file) in [
+        ("diagram --flow route", "route.svg"),
+        ("diagram --type Member", "Member.svg"),
+    ] {
+        let rendered = run(&directory, line);
+        assert!(rendered.status.success(), "{line}: {:?}", rendered.stderr);
+        assert!(directory.join(file).is_file(), "{line}");
+    }
+}
+
+#[test]
+fn a_method_is_selected_through_its_types_path_wherever_its_impl_is() {
+    let directory = package(
+        "cli-impl-elsewhere",
+        &format!(
+            "mod model {{ pub struct Report; }}\nmod review {{ impl crate::model::Report {{ {} }} }}\n",
+            method("approve", "&self", "Approve.")
+        ),
+    );
+    let rendered = run(&directory, "diagram --flow model::Report::approve");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
-    let stderr = String::from_utf8_lossy(&rendered.stderr);
-    assert!(!stderr.contains("broken.rs"), "{stderr}");
+    // rustc would find no `Report` on these paths.
+    for wrong in [
+        "review::Report::approve",
+        "Report::approve",
+        "serde::Report::approve",
+    ] {
+        let failed = run(&directory, &format!("diagram --flow {wrong}"));
+        assert!(!failed.status.success(), "{wrong}");
+    }
+}
+
+#[test]
+fn an_inherent_method_is_selected_over_a_trait_method() {
+    let directory = package(
+        "cli-inherent-first",
+        &format!(
+            "struct Report;\ntrait Approve {{ fn approve(&self) -> u8; }}\nimpl Approve for Report {{ {} }}\nimpl Report {{ {} }}\n",
+            method("approve", "&self", "From the trait."),
+            method("approve", "&self", "Inherent."),
+        ),
+    );
+    let rendered = run(&directory, "diagram --flow Report::approve");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("approve.svg")).unwrap();
+    assert!(svg.contains("Inherent."), "{svg}");
+}
+
+#[test]
+fn a_method_two_traits_provide_fails_listing_both() {
+    let directory = package(
+        "cli-two-traits",
+        &format!(
+            "struct Report;\ntrait Approve {{ fn approve(&self) -> u8; }}\ntrait Review {{ fn approve(&self) -> u8; }}\nimpl Approve for Report {{ {} }}\nimpl Review for Report {{ {} }}\n",
+            method("approve", "&self", "Approve."),
+            method("approve", "&self", "Review."),
+        ),
+    );
+    let failed = run(&directory, "diagram --flow Report::approve");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    for listed in [
+        "<Report as Approve>::approve",
+        "<Report as Review>::approve",
+    ] {
+        assert!(stderr.contains(listed), "{stderr}");
+    }
+}
+
+#[test]
+fn a_qualified_path_selects_a_kept_default_method() {
+    let directory = package(
+        "cli-kept-default",
+        &format!(
+            "struct Report;\ntrait Approve {{ {} }}\nimpl Approve for Report {{}}\n",
+            method("approve", "&self", "Default.")
+        ),
+    );
+    let rendered = run_with(
+        &directory,
+        &["diagram", "--flow", "<Report as Approve>::approve"],
+    );
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("approve.svg").is_file());
+}
+
+#[test]
+fn a_kept_default_method_of_a_trait_from_another_crate_is_selected() {
+    let directory = workspace(
+        "cli-default-elsewhere",
+        &[
+            (
+                "app",
+                "pub struct Report;\nimpl model::Approve for Report {}\n",
+            ),
+            (
+                "model",
+                &format!(
+                    "pub trait Approve {{ {} }}\n",
+                    method("approve", "&self", "Default.")
+                ),
+            ),
+        ],
+    );
+    for path in ["<Report as model::Approve>::approve", "Report::approve"] {
+        let rendered = run_with(&directory, &["diagram", "--flow", path]);
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+    }
+}
+
+#[test]
+fn a_qualified_path_selects_the_method_of_a_reference_type() {
+    let directory = package(
+        "cli-reference-type",
+        &format!(
+            "struct Report;\ntrait Approve {{ fn approve(self) -> u8; }}\nimpl Approve for &Report {{ {} }}\n",
+            method("approve", "self", "Borrowed.")
+        ),
+    );
+    let rendered = run_with(
+        &directory,
+        &["diagram", "--flow", "<&Report as Approve>::approve"],
+    );
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("approve.svg").is_file());
 }
 
 #[test]

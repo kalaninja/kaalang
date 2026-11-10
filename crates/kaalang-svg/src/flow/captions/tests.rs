@@ -43,7 +43,8 @@ fn internal_looking_names_keep_their_for_cycle_labels() {
 /// start and end, which no test here reads.
 fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
     let file = crate::parse_file(source).expect("the fixture parses");
-    let flow = crate::flow::select_flow(&file.items, flow).expect("the fixture declares its flow");
+    let flow = crate::flow::select_flow(&file.items, crate::flow::Selection::Path(flow))
+        .expect("the fixture declares its flow");
     let model = kaalang_compiler::build(&flow.function).expect("the fixture is valid");
     let captions = derive(&model, "example", "u8");
     (model, captions)

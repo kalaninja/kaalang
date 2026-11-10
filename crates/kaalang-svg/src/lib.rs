@@ -179,12 +179,28 @@ pub fn render_source_with_options(
     flow_path: &str,
     options: RenderOptions,
 ) -> Result<String, RenderError> {
-    flow::render(source, flow_path, options)
+    flow::render(source, flow::Selection::Path(flow_path), options)
+}
+
+/// Renders the flow at `position` among those [`flow_names`] lists, for a
+/// caller that selected it by its own rules.
+///
+/// # Errors
+///
+/// Returns the same errors as [`render_source`], with the flow named by its
+/// path within the file.
+pub fn render_flow(
+    source: &str,
+    position: usize,
+    options: RenderOptions,
+) -> Result<String, RenderError> {
+    flow::render(source, flow::Selection::Position(position), options)
 }
 
 /// Lists the path within a UTF-8 Rust source file of every `#[kaa]`
 /// function, free or associated, in source order and with duplicates: `route`,
-/// `review::route` inside an inline module, or `Report::approve`.
+/// `review::route` inside an inline module, `Report::approve`,
+/// `<Report as Approve>::approve`, or `Approve::approve`.
 ///
 /// # Errors
 ///

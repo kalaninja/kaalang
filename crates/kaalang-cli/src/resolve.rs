@@ -30,12 +30,19 @@ pub(super) enum Resolution {
     Unknown(&'static str),
 }
 
-/// What a path resolves to on the way to its last segment.
-enum Def {
+/// What a path resolves to.
+pub(super) enum Def {
     Type(TypeRef),
     Module(usize, usize),
+    /// A trait: its crate, its module, and its name.
+    Trait(usize, usize, String),
+    /// A function, constant, or static: its crate, its module, its name, and
+    /// what it is.
+    Value(usize, usize, String, &'static str),
     NotAType(&'static str),
     Outside,
+    /// A module the walk read in full does not declare the name.
+    Missing,
     Unknown(&'static str),
 }
 
@@ -75,6 +82,20 @@ impl<'a> Resolver<'a> {
 
     /// Resolves `path` as written in `module` of crate `krate`.
     pub(super) fn resolve(&self, krate: usize, module: usize, path: &syn::Path) -> Resolution {
+        match self.find(krate, module, path) {
+            Def::Type(found) => Resolution::Type(found),
+            Def::Module(..) => Resolution::NotAType("a module"),
+            Def::Trait(..) => Resolution::NotAType("a trait"),
+            Def::Value(.., what) | Def::NotAType(what) => Resolution::NotAType(what),
+            Def::Outside => Resolution::Outside,
+            // rustc found it, so the walk missed it.
+            Def::Missing => Resolution::Unknown("its module does not declare it as read"),
+            Def::Unknown(reason) => Resolution::Unknown(reason),
+        }
+    }
+
+    /// What `path`, as written in `module` of crate `krate`, names.
+    pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         let path = UsePath {
             global: path.leading_colon.is_some(),
             segments: path
@@ -83,13 +104,7 @@ impl<'a> Resolver<'a> {
                 .map(|segment| segment.ident.unraw().to_string())
                 .collect(),
         };
-        match self.path(krate, module, &path, &mut Vec::new()) {
-            Def::Type(found) => Resolution::Type(found),
-            Def::Module(..) => Resolution::NotAType("a module"),
-            Def::NotAType(what) => Resolution::NotAType(what),
-            Def::Outside => Resolution::Outside,
-            Def::Unknown(reason) => Resolution::Unknown(reason),
-        }
+        self.path(krate, module, &path, &mut Vec::new())
     }
 
     /// Resolves a path as written in `module`: its first segment from the
@@ -115,14 +130,12 @@ impl<'a> Resolver<'a> {
                     "self" => Def::Module(krate, module),
                     _ => self
                         .member(krate, module, segment, visiting)
-                        // rustc found it, so the walk missed it.
-                        .map_or(
-                            Def::Unknown("its module does not declare it as read"),
-                            |(found, _)| found,
-                        ),
+                        .map_or(Def::Missing, |(found, _)| found),
                 },
                 // An enum variant or an associated item.
-                Def::Type(_) | Def::NotAType(_) => Def::NotAType("an associated item"),
+                Def::Type(_) | Def::Trait(..) | Def::Value(..) | Def::NotAType(_) => {
+                    Def::NotAType("an associated item")
+                }
                 outside_or_unknown => return outside_or_unknown,
             };
         }
@@ -138,7 +151,9 @@ impl<'a> Resolver<'a> {
         {
             // A glob the walk could not follow may declare it, but a workspace
             // library of that name is what the path most likely means.
-            Some(Def::Unknown(reason)) => self.library(krate, name).unwrap_or(Def::Unknown(reason)),
+            Some(unknown @ (Def::Unknown(_) | Def::Missing)) => {
+                self.library(krate, name).unwrap_or(unknown)
+            }
             Some(found) => found,
             None => self.library(krate, name).unwrap_or(Def::Outside),
         }
@@ -205,7 +220,7 @@ impl<'a> Resolver<'a> {
             let found = match declared {
                 Declared::Type(id) => Def::Type(TypeRef { krate, id: *id }),
                 Declared::Module(child) => Def::Module(krate, *child),
-                Declared::Trait => Def::NotAType("a trait"),
+                Declared::Trait => Def::Trait(krate, module, name.to_owned()),
                 Declared::ExternCrate(named) => self.extern_crate(krate, named),
             };
             return Some((found, *visibility));
@@ -216,7 +231,10 @@ impl<'a> Resolver<'a> {
             return Some((self.path(krate, module, imported, visiting), *visibility));
         }
         if let Some((_, what, visibility)) = scope.values.iter().find(|(value, ..)| value == name) {
-            return Some((Def::NotAType(what), *visibility));
+            return Some((
+                Def::Value(krate, module, name.to_owned(), what),
+                *visibility,
+            ));
         }
         let mut unknown = None;
         for (glob, through) in &scope.globs {
@@ -238,11 +256,15 @@ impl<'a> Resolver<'a> {
                         _ => {}
                     }
                 }
-                Def::Unknown(reason) => unknown = Some(Def::Unknown(reason)),
+                found @ (Def::Unknown(_) | Def::Missing) => unknown = Some(found),
                 // A name a dependency's glob imports is outside the workspace,
                 // as a name found nowhere is; a glob over an enum's variants
                 // imports no type.
-                Def::Outside | Def::Type(_) | Def::NotAType(_) => {}
+                Def::Outside
+                | Def::Type(_)
+                | Def::Trait(..)
+                | Def::Value(..)
+                | Def::NotAType(_) => {}
             }
         }
         // The source is read unexpanded, so a name an item macro may declare is

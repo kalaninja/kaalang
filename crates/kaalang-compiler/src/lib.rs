@@ -17,6 +17,9 @@ pub use self::{
         type_declaration, type_items,
     },
     executions::Executions,
+    flows::{
+        Declarations, FlowItem, FlowPath, Impl, Owner, Place, Question, declarations, flows, select,
+    },
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
         ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input,
@@ -31,6 +34,7 @@ mod codegen;
 mod construct;
 mod datatype;
 mod executions;
+mod flows;
 pub mod geometry;
 mod model;
 mod parse;
@@ -85,107 +89,6 @@ fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticM
         arrangement,
         stages: Vec::new(),
     })
-}
-
-/// A `#[kaa]` function among a file's items.
-pub struct FlowItem {
-    /// Its path among the items: `route`, `review::route`, or `Report::approve`.
-    pub path: String,
-    pub function: ItemFn,
-    /// Whether a trait declares it, in the trait or in an `impl` of it. Such a
-    /// method takes the trait's visibility and has none of its own.
-    pub trait_method: bool,
-}
-
-/// Collects `#[kaa]` functions and methods from these items, in source
-/// order. Searches inline modules and trait methods with default bodies.
-#[must_use]
-pub fn flows(items: &[syn::Item]) -> Vec<FlowItem> {
-    let mut flows = Vec::new();
-    collect_flows(items, "", &mut flows);
-    flows
-}
-
-fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<FlowItem>) {
-    for item in items {
-        match item {
-            syn::Item::Fn(function) if declares_a_flow(&function.attrs) => {
-                flows.push(FlowItem {
-                    path: format!("{prefix}{}", function.sig.ident),
-                    function: function.clone(),
-                    trait_method: false,
-                });
-            }
-            syn::Item::Mod(module) => {
-                if let Some((_, items)) = &module.content {
-                    collect_flows(items, &format!("{prefix}{}::", module.ident), flows);
-                }
-            }
-            syn::Item::Impl(block) => {
-                // The path stays within the file: it starts at the impl block's
-                // module, not its type's, and an inherent and a trait method of
-                // one name share it, so selecting either is ambiguous.
-                let owner = impl_owner(&block.self_ty);
-                for item in &block.items {
-                    if let syn::ImplItem::Fn(method) = item
-                        && declares_a_flow(&method.attrs)
-                    {
-                        let function = ItemFn {
-                            attrs: method.attrs.clone(),
-                            vis: method.vis.clone(),
-                            modifiers: method.modifiers.clone(),
-                            sig: method.sig.clone(),
-                            block: Box::new(method.block.clone()),
-                        };
-                        flows.push(FlowItem {
-                            path: format!("{prefix}{owner}::{}", method.sig.ident),
-                            function,
-                            trait_method: block.trait_.is_some(),
-                        });
-                    }
-                }
-            }
-            syn::Item::Trait(declaration) => {
-                for item in &declaration.items {
-                    if let syn::TraitItem::Fn(method) = item
-                        && declares_a_flow(&method.attrs)
-                        && let Some(body) = &method.default
-                    {
-                        let function = ItemFn {
-                            attrs: method.attrs.clone(),
-                            vis: syn::Visibility::Inherited,
-                            modifiers: method.modifiers.clone(),
-                            sig: method.sig.clone(),
-                            block: Box::new(body.clone()),
-                        };
-                        flows.push(FlowItem {
-                            path: format!("{prefix}{}::{}", declaration.ident, method.sig.ident),
-                            function,
-                            trait_method: true,
-                        });
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-}
-
-/// The name that qualifies an impl's methods: the last segment of its self type.
-fn impl_owner(self_type: &syn::Type) -> String {
-    if let syn::Type::Path(syn::TypePath {
-        qself: None, path, ..
-    }) = self_type
-        && let Some(segment) = path.segments.last()
-    {
-        return segment.ident.to_string();
-    }
-    // shortcut: a non-path self type (`&T`, a tuple) is named by its token text; upgrade when someone renders such a flow.
-    quote::ToTokens::to_token_stream(self_type).to_string()
-}
-
-fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
-    attributes.iter().any(is_kaalang_attribute)
 }
 
 /// Whether `attribute` is kaalang's own, written `#[kaa]` or through its

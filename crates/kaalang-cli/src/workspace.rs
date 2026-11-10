@@ -11,17 +11,24 @@ use std::{
 };
 
 use cargo_metadata::{MetadataCommand, Target};
+use kaalang_compiler::{Declarations, FlowPath, Place, Question};
 use kaalang_svg::RenderError;
 use syn::{
     Attribute, Expr, ExprLit, Item, Lit, Meta, Token, UseTree, ext::IdentExt,
     punctuated::Punctuated, spanned::Spanned,
 };
 
-/// The file that declares a found flow, its source, and the flow's path within it.
+use crate::{
+    datatype,
+    resolve::{Def, Resolver},
+};
+
+/// The file that declares a found flow, its source, and the flow's position
+/// among the file's flows.
 pub(super) struct Found {
     pub(super) file: PathBuf,
     pub(super) source: String,
-    pub(super) path_in_file: String,
+    pub(super) position: usize,
 }
 
 /// One crate: a package's target with the modules read from its root.
@@ -74,6 +81,8 @@ pub(super) struct File {
     /// The path that tells two crates' copies of one file apart from two files.
     pub(super) canonical: PathBuf,
     pub(super) source: String,
+    /// Its items, none when it could not be read.
+    pub(super) items: Vec<Item>,
 }
 
 /// The names a module declares and imports, compared without `r#`, each with
@@ -130,22 +139,20 @@ pub(super) struct TypeEntry {
     pub(super) item: Item,
 }
 
-/// Reads every target of every workspace member, or only of `package`, in
-/// package name order. With `wanted`, only the modules that path passes
-/// through are read.
-pub(super) fn crates(wanted: Option<&str>, package: Option<&str>) -> Result<Vec<Crate>, String> {
+/// Reads every target of every workspace member, in package name order, once
+/// `package`, when given, is found among them.
+pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
     let metadata = MetadataCommand::new()
         .no_deps()
         .exec()
         .map_err(|error| format!("could not read the cargo workspace: {error}"))?;
     let mut packages = metadata.workspace_packages();
-    if let Some(package) = package {
-        packages.retain(|member| *member.name == package);
-        if packages.is_empty() {
-            return Err(format!(
-                "package `{package}` is not a member of this workspace"
-            ));
-        }
+    if let Some(package) = package
+        && !packages.iter().any(|member| *member.name == package)
+    {
+        return Err(format!(
+            "package `{package}` is not a member of this workspace"
+        ));
     }
     packages.sort_by(|left, right| left.name.cmp(&right.name));
 
@@ -165,7 +172,6 @@ pub(super) fn crates(wanted: Option<&str>, package: Option<&str>) -> Result<Vec<
             .filter(|target| !target.is_custom_build())
         {
             let mut walk = Walk {
-                wanted,
                 open: Vec::new(),
                 modules: Vec::new(),
                 types: Vec::new(),
@@ -205,73 +211,152 @@ pub(super) fn crates(wanted: Option<&str>, package: Option<&str>) -> Result<Vec<
     Ok(crates)
 }
 
-/// Finds the one flow whose path from its crate root is `path`, searching every
-/// target of every workspace member, or only of `package`. Only the modules
-/// that the path passes through are read. A file that cannot be read or parsed
-/// is skipped and listed, as an error when the flow is not found and as a
-/// warning when it is.
+/// Finds the one flow that `path` selects from its crate root, resolved as the
+/// compiler resolves it, in every target of every workspace member, or only of
+/// `package`. A crate's search spans its own files and those of the
+/// workspace's libraries, as a trait's default method may be in one. A file
+/// that cannot be read or parsed is skipped and listed, as an error when the
+/// flow is not found and as a warning when it is.
 pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
-    let path = path.strip_prefix("crate::").unwrap_or(path);
-    let crates = crates(Some(path), package)?;
+    let crates = crates(package)?;
+    let resolver = Resolver::new(&crates);
+    let selected = |krate: &Crate| package.is_none_or(|package| krate.package == package);
+    // Each crate's files, by their own modules, with their declarations.
+    let files: Vec<Vec<(usize, Declarations)>> = crates
+        .iter()
+        .map(|krate| {
+            krate
+                .modules
+                .iter()
+                .enumerate()
+                .filter(|(_, module)| module.in_file.is_empty())
+                .map(|(at, module)| (at, kaalang_compiler::declarations(&module.file.items)))
+                .collect()
+        })
+        .collect();
     let mut matches = Vec::new();
-    // A file that several crates include through `mod` declares a flow once.
+    // A file that several crates include, or one crate reads twice, declares a
+    // flow once.
     let mut seen = BTreeSet::new();
+    let flow_path = FlowPath::parse(path);
     for (index, krate) in crates.iter().enumerate() {
-        // A file's flows are listed from its own module, with their inline
-        // modules.
-        for module in krate
-            .modules
+        let Some(flow_path) = flow_path.as_ref().filter(|_| selected(krate)) else {
+            continue;
+        };
+        let listed: Vec<((usize, usize), &Declarations)> = crates
             .iter()
-            .filter(|module| module.in_file.is_empty())
-        {
-            let source = &module.file.source;
-            // Both `#[kaa]` and `#[kaalang::kaa]` contain the word, so most
-            // files skip the second parse.
-            if !source.contains("kaa") {
-                continue;
-            }
-            for path_in_file in kaalang_svg::flow_names(source).expect("the source parsed") {
-                if path.strip_prefix(&module.path) == Some(path_in_file.as_str()) {
-                    if !seen.insert((module.file.canonical.clone(), path_in_file.clone())) {
-                        continue;
-                    }
-                    let found = Found {
-                        file: module.file.path.clone(),
-                        source: source.clone(),
-                        path_in_file,
-                    };
-                    matches.push((index, found));
-                }
+            .enumerate()
+            .filter(|(source, other)| *source == index || other.library)
+            .flat_map(|(source, _)| {
+                files[source]
+                    .iter()
+                    .map(move |(at, declarations)| ((source, *at), declarations))
+            })
+            .collect();
+        let mut names =
+            |question: Question<'_, (usize, usize)>| answer(&crates, index, &resolver, question);
+        for (file, position) in kaalang_compiler::select(flow_path, &listed, &mut names) {
+            let ((source, at), declarations) = listed[file];
+            let module = &crates[source].modules[at];
+            if seen.insert((module.file.canonical.clone(), position)) {
+                let in_file = declarations.flows[position].path.clone();
+                matches.push((source, module, in_file, position));
             }
         }
     }
     if matches.len() > 1 {
-        let listed: Vec<(&Crate, &Path)> = matches
+        let listed: Vec<(&Crate, String)> = matches
             .iter()
-            .map(|(index, found)| (&crates[*index], found.file.as_path()))
+            .map(|(source, module, in_file, _)| {
+                let at = format!("{}: {in_file}", module.file.path.display());
+                (&crates[*source], at)
+            })
             .collect();
         return Err(ambiguous(
             &RenderError::AmbiguousFlow(path.to_owned()),
             &listed,
         ));
     }
-    let skipped = skipped(&crates);
-    let Some((_, found)) = matches.pop() else {
+    // Only a crate the search spans could declare the flow.
+    let skipped = skipped(
+        crates
+            .iter()
+            .filter(|krate| selected(krate) || krate.library),
+    );
+    let Some((_, module, _, position)) = matches.pop() else {
         let message = RenderError::FlowNotFound(path.to_owned()).to_string();
         return Err(with_skipped(message, &skipped));
     };
     warn_skipped(path, &skipped);
-    Ok(found)
+    Ok(Found {
+        file: module.file.path.clone(),
+        source: module.file.source.clone(),
+        position,
+    })
 }
 
-/// Lists the crates that declare a path, with a hint to `-p` when a package
-/// declares it once and could be selected.
-pub(super) fn ambiguous(error: &dyn std::fmt::Display, matches: &[(&Crate, &Path)]) -> String {
+/// Answers how names resolve for a flow path written from the root of crate
+/// `krate`. A place names a crate and a file's own module in it.
+fn answer(
+    crates: &[Crate],
+    krate: usize,
+    resolver: &Resolver,
+    question: Question<'_, (usize, usize)>,
+) -> bool {
+    // The module of a place: the file's own, or an inline one within it.
+    let module = |at: Place<'_, (usize, usize)>| {
+        let (source, own) = at.file;
+        let modules = &crates[source].modules;
+        let found = modules
+            .iter()
+            .position(|module| {
+                Rc::ptr_eq(&module.file, &modules[own].file) && module.in_file == at.module
+            })
+            .unwrap_or(own);
+        (source, found)
+    };
+    match question {
+        Question::Function { path, at, name } => {
+            let (source, inside) = module(at);
+            matches!(
+                resolver.find(krate, 0, path),
+                Def::Value(found, declared, value, "a function")
+                    if (found, declared) == (source, inside) && name.unraw() == value
+            )
+        }
+        Question::Same(left, left_path, right, right_path) => {
+            let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
+            let (left_crate, left_module) = left.map_or((krate, 0), module);
+            let (right_crate, right_module) = module(right);
+            match (
+                resolver.find(left_crate, left_module, left_path),
+                resolver.find(right_crate, right_module, right_path),
+            ) {
+                // rustc has not checked the flow path, so a name it misses is wrong.
+                (Def::Missing, _) if left.is_none() => false,
+                (Def::Type(left), Def::Type(right)) => datatype::same(crates, left, right),
+                (
+                    Def::Trait(left, left_module, left_name),
+                    Def::Trait(right, right_module, right_name),
+                ) => (left, left_module, left_name) == (right, right_module, right_name),
+                // The source alone cannot tell what a name it cannot resolve
+                // is, nor which name from outside the workspace.
+                (Def::Outside, Def::Outside)
+                | (Def::Missing | Def::Unknown(_), _)
+                | (_, Def::Missing | Def::Unknown(_)) => last(left_path) == last(right_path),
+                _ => false,
+            }
+        }
+    }
+}
+
+/// Lists where each match of a path is, after its crate, with a hint to `-p`
+/// when a package has one match and could be selected.
+pub(super) fn ambiguous(error: &dyn std::fmt::Display, matches: &[(&Crate, String)]) -> String {
     let mut message = error.to_string();
     message.push(':');
-    for (krate, file) in matches {
-        write!(message, "\n  {} in {}", krate.label(), file.display())
-            .expect("writing to a String cannot fail");
+    for (krate, at) in matches {
+        write!(message, "\n  {} in {at}", krate.label()).expect("writing to a String cannot fail");
     }
     let once = |package: &str| {
         matches
@@ -287,9 +372,9 @@ pub(super) fn ambiguous(error: &dyn std::fmt::Display, matches: &[(&Crate, &Path
 }
 
 /// Every file the crates could not read, once each.
-pub(super) fn skipped(crates: &[Crate]) -> BTreeSet<String> {
+pub(super) fn skipped<'a>(crates: impl IntoIterator<Item = &'a Crate>) -> BTreeSet<String> {
     crates
-        .iter()
+        .into_iter()
         .flat_map(|krate| krate.skipped.iter().cloned())
         .collect()
 }
@@ -314,9 +399,7 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
 }
 
 /// One crate's module tree as it is read.
-struct Walk<'a> {
-    /// The path whose modules alone are read, if any.
-    wanted: Option<&'a str>,
+struct Walk {
     /// The files being read, outermost first; a `#[path]` loop stops here.
     open: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -358,26 +441,29 @@ fn walk_file(
         return None;
     }
     let module = walk.modules.len();
+    let readable = parsed.is_some();
+    let shared = Rc::new(File {
+        path: file.to_owned(),
+        canonical: canonical.clone(),
+        source,
+        items: parsed.map(|parsed| parsed.items).unwrap_or_default(),
+    });
     walk.modules.push(Module {
         path,
         parent,
-        file: Rc::new(File {
-            path: file.to_owned(),
-            canonical: canonical.clone(),
-            source,
-        }),
+        file: Rc::clone(&shared),
         in_file: String::new(),
         cfgs: Vec::new(),
         scope,
     });
-    if let Some(parsed) = parsed {
+    if readable {
         let base = file.parent().unwrap_or(Path::new(""));
         let directory = match file.file_stem() {
             Some(stem) if !owns_directory => base.join(stem),
             _ => base.to_owned(),
         };
         walk.open.push(canonical);
-        walk_items(walk, &parsed.items, module, &directory, base);
+        walk_items(walk, &shared.items, module, &directory, base);
         walk.open.pop();
     }
     Some(module)
@@ -523,9 +609,9 @@ fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visib
     Visibility::Within(within)
 }
 
-/// Reads the modules that `declaration` declares inside `parent`, unless it
-/// is off the wanted path, and returns them: a module file is read once for
-/// its default file or `#[path]`, and once for each `path` under `cfg_attr`.
+/// Reads the modules that `declaration` declares inside `parent` and returns
+/// them: a module file is read once for its default file or `#[path]`, and
+/// once for each `path` under `cfg_attr`.
 fn walk_module(
     walk: &mut Walk,
     declaration: &syn::ItemMod,
@@ -534,10 +620,6 @@ fn walk_module(
     base: &Path,
 ) -> Vec<usize> {
     let path = format!("{}{}::", walk.modules[parent].path, declaration.ident);
-    // Every flow inside the module has a path that starts with the module's.
-    if walk.wanted.is_some_and(|wanted| !wanted.starts_with(&path)) {
-        return Vec::new();
-    }
     let name = declaration.ident.unraw().to_string();
     let attribute = path_attribute(&declaration.attrs);
     match (&declaration.content, attribute) {
@@ -733,7 +815,6 @@ fn target_label(target: &Target) -> String {
 pub(super) fn library(package: &str, source: &str) -> Crate {
     let parsed = syn::parse_file(source).expect("the test source parses");
     let mut walk = Walk {
-        wanted: None,
         open: Vec::new(),
         modules: vec![Module {
             path: String::new(),
@@ -742,6 +823,7 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
                 path: PathBuf::from("src/lib.rs"),
                 canonical: PathBuf::from(format!("/{package}/src/lib.rs")),
                 source: source.to_owned(),
+                items: parsed.items.clone(),
             }),
             in_file: String::new(),
             cfgs: Vec::new(),

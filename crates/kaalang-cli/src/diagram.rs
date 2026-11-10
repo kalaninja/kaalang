@@ -78,9 +78,9 @@ impl Diagram {
     /// Renders the flow at `path` and returns it with the file declaring it.
     fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
         let found = workspace::find(path, self.package.as_deref())?;
-        let svg = kaalang_svg::render_source_with_options(
+        let svg = kaalang_svg::render_flow(
             &found.source,
-            &found.path_in_file,
+            found.position,
             kaalang_svg::RenderOptions {
                 collapse_cycles: self.collapse_cycles,
             },
