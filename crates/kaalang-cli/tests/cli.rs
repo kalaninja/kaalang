@@ -330,6 +330,79 @@ fn a_method_of_an_impl_through_a_type_alias_is_selected_through_either_name() {
 }
 
 #[test]
+fn aliases_keep_their_arguments_and_scopes_when_selecting_methods() {
+    let directory = package(
+        "cli-alias-arguments",
+        &format!(
+            r"
+        struct Report<T>(T);
+        type ByteReport = Report<u8>;
+        type Forward<T> = Report<T>;
+        type DefaultReport<T = u8> = Forward<T>;
+        mod model {{ pub struct Payload; pub type Local = super::Report<Payload>; }}
+        struct Payload;
+        impl Report<u8> {{ {} }}
+        impl Report<u16> {{ {} }}
+        impl Report<model::Payload> {{ {} }}
+        impl Report<Payload> {{ {} }}
+    ",
+            method("approve", "&self", "Byte."),
+            method("approve", "&self", "Word."),
+            method("approve", "&self", "Model."),
+            method("approve", "&self", "Root."),
+        ),
+    );
+    for (path, description) in [
+        ("ByteReport::approve", "Byte."),
+        ("Forward::<u16>::approve", "Word."),
+        ("DefaultReport::approve", "Byte."),
+        ("model::Local::approve", "Model."),
+        ("Forward::<model::Payload>::approve", "Model."),
+        ("Forward::<Payload>::approve", "Root."),
+    ] {
+        let rendered = run_with(&directory, &["diagram", "--flow", path]);
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join("approve.svg")).unwrap();
+        assert!(svg.contains(description), "{path}: {svg}");
+    }
+}
+
+#[test]
+fn aliases_expand_on_both_sides_and_inside_structural_types() {
+    let directory = package(
+        "cli-alias-structural",
+        &format!(
+            r"
+        struct Report<T>(T);
+        type ByteReport = Report<u8>;
+        type Slice<const N: usize> = [ByteReport; N];
+        type Borrowed<'a> = &'a ByteReport;
+        trait Review {{ fn approve(self) -> u8; }}
+        impl ByteReport {{ {} }}
+        impl Review for Slice<2> {{ {} }}
+        impl Review for Slice<3> {{ {} }}
+        impl Review for Borrowed<'_> {{ {} }}
+    ",
+            method("approve", "&self", "Byte."),
+            method("approve", "self", "Pair."),
+            method("approve", "self", "Triple."),
+            method("approve", "self", "Borrowed."),
+        ),
+    );
+    for (path, description) in [
+        ("Report::<u8>::approve", "Byte."),
+        ("<Slice<2> as Review>::approve", "Pair."),
+        ("<[Report<u8>; 3] as Review>::approve", "Triple."),
+        ("<&Report<u8> as Review>::approve", "Borrowed."),
+    ] {
+        let rendered = run_with(&directory, &["diagram", "--flow", path]);
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join("approve.svg")).unwrap();
+        assert!(svg.contains(description), "{path}: {svg}");
+    }
+}
+
+#[test]
 fn an_inherent_method_is_selected_over_a_trait_method() {
     let directory = package(
         "cli-inherent-first",

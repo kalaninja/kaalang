@@ -4,9 +4,12 @@
 //! libraries by their crate names. rustc has already checked that the path
 //! names something; this finds what.
 
-use std::iter;
+use std::{collections::BTreeMap, iter};
 
-use syn::ext::IdentExt;
+use syn::{
+    ext::IdentExt,
+    visit_mut::{self, VisitMut},
+};
 
 use crate::workspace::{Crate, Declared, UsePath, Visibility};
 
@@ -50,6 +53,8 @@ pub(super) struct Resolver<'a> {
     crates: &'a [Crate],
     /// Each crate's names for the workspace's libraries.
     externs: Vec<Vec<(String, usize)>>,
+    /// One identity for each source declaration, including shared files.
+    types: Vec<Vec<usize>>,
 }
 
 impl<'a> Resolver<'a> {
@@ -83,7 +88,26 @@ impl<'a> Resolver<'a> {
                 names
             })
             .collect();
-        Self { crates, externs }
+        let mut declared = BTreeMap::new();
+        let types = crates
+            .iter()
+            .map(|krate| {
+                krate
+                    .types
+                    .iter()
+                    .map(|entry| {
+                        let key = (&krate.modules[entry.module].file.canonical, &entry.in_file);
+                        let next = declared.len();
+                        *declared.entry(key).or_insert(next)
+                    })
+                    .collect()
+            })
+            .collect();
+        Self {
+            crates,
+            externs,
+            types,
+        }
     }
 
     /// Resolves `path` as written in `module` of crate `krate`.
@@ -110,6 +134,72 @@ impl<'a> Resolver<'a> {
     /// `mod checkout; pub use checkout::checkout;`.
     pub(super) fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, true)
+    }
+
+    /// Compares types after expanding aliases in their own scopes.
+    pub(super) fn types_match(
+        &self,
+        query_scope: (usize, usize),
+        query: &syn::Type,
+        written_scope: (usize, usize),
+        written: &syn::Type,
+        generics: &syn::Generics,
+    ) -> bool {
+        let query = self.normalized_type(
+            query_scope.0,
+            query_scope.1,
+            query,
+            &syn::Generics::default(),
+        );
+        let written = self.normalized_type(written_scope.0, written_scope.1, written, generics);
+        kaalang_compiler::types_match(&query, &written, generics, &mut |left, right| {
+            let identity = |path: &syn::Path| {
+                path.leading_colon
+                    .and_then(|_| path.segments.first().map(|segment| segment.ident.clone()))
+            };
+            let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
+            let (left_id, right_id) = (identity(left), identity(right));
+            if left_id.as_ref().is_some_and(|id| id == "missing") {
+                return false;
+            }
+            if left_id.as_ref().is_some_and(|id| id == "unknown")
+                || right_id
+                    .as_ref()
+                    .is_some_and(|id| id == "unknown" || id == "missing")
+            {
+                return last(left) == last(right);
+            }
+            left_id == right_id && (left_id.is_some() || last(left) == last(right))
+        })
+    }
+
+    /// Internal identities retain the authored name for unresolved-path fallback.
+    fn normalized_type(
+        &self,
+        krate: usize,
+        module: usize,
+        ty: &syn::Type,
+        generics: &syn::Generics,
+    ) -> syn::Type {
+        let mut ty = ty.clone();
+        Normalize {
+            resolver: self,
+            krate,
+            module,
+            bound: generics
+                .params
+                .iter()
+                .filter_map(|parameter| match parameter {
+                    syn::GenericParam::Type(parameter) => Some(parameter.ident.clone()),
+                    syn::GenericParam::Const(parameter) => Some(parameter.ident.clone()),
+                    syn::GenericParam::Lifetime(_) => None,
+                })
+                .collect(),
+            arguments: Vec::new(),
+            aliases: Vec::new(),
+        }
+        .visit_type_mut(&mut ty);
+        ty
     }
 
     fn lookup(&self, krate: usize, module: usize, path: &syn::Path, value: bool) -> Def {
@@ -333,6 +423,184 @@ impl<'a> Resolver<'a> {
 
 type Visiting = Vec<(usize, usize, String)>;
 
+struct Normalize<'a, 'b> {
+    resolver: &'a Resolver<'b>,
+    krate: usize,
+    module: usize,
+    bound: Vec<syn::Ident>,
+    arguments: Vec<(syn::Ident, syn::GenericArgument)>,
+    aliases: Vec<TypeRef>,
+}
+
+impl Normalize<'_, '_> {
+    fn argument(&self, path: &syn::Path) -> Option<&syn::GenericArgument> {
+        let name = path.get_ident()?;
+        self.arguments
+            .iter()
+            .find(|(parameter, _)| parameter == name)
+            .map(|(_, argument)| argument)
+    }
+
+    fn alias(&mut self, path: &syn::Path) -> Option<syn::Type> {
+        let Def::Type(found) = self.resolver.find(self.krate, self.module, path) else {
+            return None;
+        };
+        let entry = &self.resolver.crates[found.krate].types[found.id];
+        let syn::Item::Type(alias) = &entry.item else {
+            return None;
+        };
+        if self.aliases.contains(&found) {
+            return None;
+        }
+        let mut supplied = path.segments.last()?.arguments.clone();
+        self.visit_path_arguments_mut(&mut supplied);
+        let supplied = match supplied {
+            syn::PathArguments::AngleBracketed(arguments) => arguments
+                .args
+                .into_iter()
+                .filter(|argument| !matches!(argument, syn::GenericArgument::Lifetime(_)))
+                .collect::<Vec<_>>(),
+            _ => Vec::new(),
+        };
+        let mut supplied = supplied.into_iter();
+        let previous = (
+            self.krate,
+            self.module,
+            std::mem::take(&mut self.bound),
+            std::mem::take(&mut self.arguments),
+        );
+        self.krate = found.krate;
+        self.module = entry.module;
+        self.aliases.push(found);
+        for parameter in &alias.generics.params {
+            let (name, default) = match parameter {
+                syn::GenericParam::Type(parameter) => (
+                    &parameter.ident,
+                    parameter
+                        .default
+                        .clone()
+                        .map(|(_, ty)| syn::GenericArgument::Type(ty)),
+                ),
+                syn::GenericParam::Const(parameter) => (
+                    &parameter.ident,
+                    parameter
+                        .default
+                        .clone()
+                        .map(|(_, expr)| syn::GenericArgument::Const(expr)),
+                ),
+                syn::GenericParam::Lifetime(_) => continue,
+            };
+            let argument = supplied.next().unwrap_or_else(|| {
+                let mut default = default.unwrap_or_else(|| syn::parse_quote!(_));
+                self.visit_generic_argument_mut(&mut default);
+                default
+            });
+            self.arguments.push((name.clone(), argument));
+        }
+        let mut expanded = (*alias.ty).clone();
+        self.visit_type_mut(&mut expanded);
+        self.aliases.pop();
+        (self.krate, self.module, self.bound, self.arguments) = previous;
+        Some(expanded)
+    }
+}
+
+impl VisitMut for Normalize<'_, '_> {
+    fn visit_type_mut(&mut self, ty: &mut syn::Type) {
+        if let syn::Type::Path(path) = ty
+            && path.qself.is_none()
+        {
+            if let Some(syn::GenericArgument::Type(argument)) = self.argument(&path.path) {
+                *ty = argument.clone();
+                return;
+            }
+            if path
+                .path
+                .get_ident()
+                .is_some_and(|name| self.bound.contains(name))
+            {
+                return;
+            }
+            if let Some(expanded) = self.alias(&path.path) {
+                *ty = expanded;
+                return;
+            }
+        }
+        visit_mut::visit_type_mut(self, ty);
+    }
+
+    fn visit_generic_argument_mut(&mut self, argument: &mut syn::GenericArgument) {
+        if let syn::GenericArgument::Type(syn::Type::Path(path)) = argument
+            && path.qself.is_none()
+            && let Some(replacement) = self.argument(&path.path)
+        {
+            *argument = replacement.clone();
+            return;
+        }
+        visit_mut::visit_generic_argument_mut(self, argument);
+    }
+
+    fn visit_expr_mut(&mut self, expr: &mut syn::Expr) {
+        if let syn::Expr::Path(path) = expr {
+            if path.qself.is_none()
+                && let Some(argument) = self.argument(&path.path)
+            {
+                *expr = syn::parse_quote!(#argument);
+                return;
+            }
+            // Constants are compared as written when their values are unknown.
+            if !matches!(
+                self.resolver.find(self.krate, self.module, &path.path),
+                Def::Value(..)
+            ) {
+                for segment in &mut path.path.segments {
+                    self.visit_path_arguments_mut(&mut segment.arguments);
+                }
+                return;
+            }
+        }
+        visit_mut::visit_expr_mut(self, expr);
+    }
+
+    fn visit_path_mut(&mut self, path: &mut syn::Path) {
+        visit_mut::visit_path_mut(self, path);
+        if path
+            .get_ident()
+            .is_some_and(|name| self.bound.contains(name))
+        {
+            return;
+        }
+        let identity = match self.resolver.find(self.krate, self.module, path) {
+            Def::Type(found) => Some(format!(
+                "type_{}",
+                self.resolver.types[found.krate][found.id]
+            )),
+            Def::Trait(krate, module, name) => Some(format!("trait_{krate}_{module}_{name}")),
+            Def::Value(krate, module, name, _) => Some(format!("value_{krate}_{module}_{name}")),
+            Def::Unknown(_) => Some("unknown".into()),
+            Def::Missing | Def::Module(..) | Def::NotAType(_) => Some("missing".into()),
+            Def::Outside => None,
+        };
+        let Some(last) = path.segments.last().cloned() else {
+            return;
+        };
+        *path = match identity {
+            Some(identity) => {
+                let ident = syn::Ident::new(&identity, last.ident.span());
+                syn::Path {
+                    leading_colon: Some(syn::token::PathSep::default()),
+                    segments: [syn::PathSegment::from(ident), last].into_iter().collect(),
+                }
+            }
+            // Names outside the workspace retain the RFC's last-segment match.
+            None => syn::Path {
+                leading_colon: None,
+                segments: iter::once(last).collect(),
+            },
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Def, Resolution, Resolver, TypeRef};
@@ -358,6 +626,42 @@ mod tests {
             .position(|entry| entry.path == path)
             .expect("the type exists");
         Resolution::Type(TypeRef { krate, id })
+    }
+
+    #[test]
+    fn type_matching_preserves_resolved_and_unresolved_name_rules() {
+        let crates = [library(
+            "app",
+            "struct Report;
+             use Report as Renamed;
+             mod generated { generate!(); }
+             mod small { pub const SIZE: usize = 1; }
+             mod large { pub const SIZE: usize = 2; }",
+        )];
+        let resolver = Resolver::new(&crates);
+        for (query, written, matches) in [
+            ("Renamed", "Report", true),
+            ("generated::Report", "Report", true),
+            ("Report", "generated::Report", true),
+            ("dyn generated::Fn(u8)", "dyn Fn(u8)", true),
+            ("external::Report", "Report", false),
+            ("crate::String", "std::string::String", false),
+            ("[u8; small::SIZE]", "[u8; small::SIZE]", true),
+            ("[u8; small::SIZE]", "[u8; large::SIZE]", false),
+            ("[u8; external::SMALL]", "[u8; other::SMALL]", false),
+        ] {
+            assert_eq!(
+                resolver.types_match(
+                    (0, 0),
+                    &syn::parse_str(query).unwrap(),
+                    (0, 0),
+                    &syn::parse_str(written).unwrap(),
+                    &syn::Generics::default(),
+                ),
+                matches,
+                "{query} against {written}",
+            );
+        }
     }
 
     #[test]

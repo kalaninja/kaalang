@@ -262,6 +262,14 @@ pub enum Question<'a, X> {
     /// Whether a path written in the flow path, from its root, names a type,
     /// or may name one the source cannot tell.
     Type(&'a Path),
+    /// Whether the query type matches the type written in an `impl`, after
+    /// resolving aliases in their respective scopes.
+    Types {
+        query: &'a Type,
+        at: Place<'a, X>,
+        written: &'a Type,
+        generics: &'a Generics,
+    },
 }
 
 /// Selects the flows `path` names among the files' declarations, as the
@@ -346,15 +354,24 @@ fn methods<X: Copy>(
                 file: *file,
                 module: &block.module,
             };
-            let mut same = |left: &Path, right: &Path| names(Question::Same(None, left, at, right));
             let of_trait = match (trait_, &block.trait_) {
                 (None, _) => true,
-                (Some(query), Some(written)) => {
-                    paths_match(query, written, &block.generics, &mut same)
-                }
+                (Some(query), Some(written)) => names(Question::Types {
+                    query: &syn::parse_quote!(#query),
+                    at,
+                    written: &syn::parse_quote!(#written),
+                    generics: &block.generics,
+                }),
                 (Some(_), None) => false,
             };
-            if of_trait && types_match(self_ty, &block.self_ty, &block.generics, &mut same) {
+            if of_trait
+                && names(Question::Types {
+                    query: self_ty,
+                    at,
+                    written: &block.self_ty,
+                    generics: &block.generics,
+                })
+            {
                 blocks.push((position, index, block));
             }
         }
@@ -434,7 +451,7 @@ fn named_str(text: &str, name: &Ident) -> bool {
 /// type of an `impl` block with `generics`. Lifetimes are ignored, and the
 /// block's parameters, `_`, and omitted generic arguments match any type.
 /// `same` tells whether a path of each names one item.
-fn types_match(
+pub fn types_match(
     query: &Type,
     written: &Type,
     generics: &Generics,
@@ -622,6 +639,14 @@ mod tests {
                 }
                 Question::Same(_, left, _, right) => last(left) == last(right),
                 Question::Type(_) => true,
+                Question::Types {
+                    query,
+                    written,
+                    generics,
+                    ..
+                } => super::types_match(query, written, generics, &mut |left, right| {
+                    last(left) == last(right)
+                }),
             },
         )
         .into_iter()

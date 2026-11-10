@@ -19,7 +19,7 @@ use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
 
 use crate::{
     datatype,
-    resolve::{Def, Resolver, TypeRef},
+    resolve::{Def, Resolver},
 };
 
 /// The file that declares a found flow, its source, the flow's position among
@@ -508,6 +508,12 @@ fn answer(
             resolver.find(krate, 0, path),
             Def::Type(_) | Def::Outside | Def::Unknown(_)
         ),
+        Question::Types {
+            query,
+            at,
+            written,
+            generics,
+        } => resolver.types_match((krate, 0), query, module(at), written, generics),
         Question::Same(left, left_path, right, right_path) => {
             let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
             let (left_crate, left_module) = left.map_or((krate, 0), module);
@@ -518,11 +524,7 @@ fn answer(
             ) {
                 // rustc has not checked the flow path, so a name it misses is wrong.
                 (Def::Missing, _) if left.is_none() => false,
-                (Def::Type(left), Def::Type(right)) => datatype::same(
-                    crates,
-                    unaliased(crates, resolver, left),
-                    unaliased(crates, resolver, right),
-                ),
+                (Def::Type(left), Def::Type(right)) => datatype::same(crates, left, right),
                 (
                     Def::Trait(left, left_module, left_name),
                     Def::Trait(right, right_module, right_name),
@@ -534,31 +536,6 @@ fn answer(
                 | (_, Def::Missing | Def::Unknown(_)) => last(left_path) == last(right_path),
                 _ => false,
             }
-        }
-    }
-}
-
-/// The type `found` stands for through aliases such as `type R = Report;`, as
-/// rustc sees through one written as an `impl` block's self type.
-fn unaliased(crates: &[Crate], resolver: &Resolver, found: TypeRef) -> TypeRef {
-    let mut current = found;
-    let mut seen = Vec::new();
-    loop {
-        seen.push(current);
-        let entry = &crates[current.krate].types[current.id];
-        let Item::Type(alias) = &entry.item else {
-            return current;
-        };
-        let syn::Type::Path(syn::TypePath {
-            qself: None, path, ..
-        }) = &*alias.ty
-        else {
-            return current;
-        };
-        match resolver.find(current.krate, entry.module, path) {
-            // A cycle of aliases, which rustc rejects, stops where it closes.
-            Def::Type(next) if !seen.contains(&next) => current = next,
-            _ => return current,
         }
     }
 }

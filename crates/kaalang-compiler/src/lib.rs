@@ -19,7 +19,8 @@ pub use self::{
     },
     executions::Executions,
     flows::{
-        Declarations, FlowItem, FlowPath, Impl, Owner, Place, Question, declarations, flows, select,
+        Declarations, FlowItem, FlowPath, Impl, Owner, Place, Question, declarations, flows,
+        select, types_match,
     },
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,

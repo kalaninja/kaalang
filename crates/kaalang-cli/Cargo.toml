@@ -17,7 +17,7 @@ kaalang-compiler = { workspace = true }
 kaalang-svg = { workspace = true }
 proc-macro2 = { workspace = true, features = ["span-locations"] }
 same-file = { workspace = true }
-syn = { workspace = true }
+syn = { workspace = true, features = ["visit-mut"] }
 
 [[bin]]
 name = "cargo-kaalang"
