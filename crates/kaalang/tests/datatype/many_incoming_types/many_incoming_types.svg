@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1739" height="1144" viewBox="0 0 1739 1144" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for - User</title>
-  <desc id="kaalang-description">Type - User with incoming types - Session, - Post, - Comment, - Follow (2 relationships), - Message (2 relationships), - Group (2 relationships), - Invitation (2 relationships), - Notification, - Complaint, - Standing, - AuditEntry, - Subscription, - Draft, - Reaction, - Mention, - Moderator.</desc>
+  <title id="kaalang-title">kaalang type diagram for User</title>
+  <desc id="kaalang-description">Type User with incoming types Session, Post, Comment, Follow (2 relationships), Message (2 relationships), Group (2 relationships), Invitation (2 relationships), Notification, Complaint, Standing, AuditEntry, Subscription, Draft, Reaction, Mention, Moderator.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -26,7 +26,7 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card">
-      <title xml:space="preserve">- Session</title>
+      <title xml:space="preserve">Session</title>
       <rect class="card-shape" x="32" y="32" width="299" height="178"/>
       <path class="card-rules" d="M 32 102 L 331 102 M 32 158 L 331 158"/>
       <rect class="card-outline" x="32" y="32" width="299" height="178"/>
@@ -51,7 +51,7 @@
       <text class="description" y="181" xml:space="preserve"><tspan x="133" dy="0">When the session ends, in </tspan><tspan x="133" dy="18">seconds.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Post</title>
+      <title xml:space="preserve">Post</title>
       <rect class="card-shape" x="363" y="32" width="314" height="174"/>
       <path class="card-rules" d="M 363 102 L 677 102 M 363 158 L 677 158"/>
       <rect class="card-outline" x="363" y="32" width="314" height="174"/>
@@ -76,7 +76,7 @@
       <text class="description" y="181" xml:space="preserve"><tspan x="457" dy="0">The post text.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Comment</title>
+      <title xml:space="preserve">Comment</title>
       <rect class="card-shape" x="709" y="32" width="309" height="174"/>
       <path class="card-rules" d="M 709 102 L 1018 102 M 709 158 L 1018 158"/>
       <rect class="card-outline" x="709" y="32" width="309" height="174"/>
@@ -101,7 +101,7 @@
       <text class="description" y="181" xml:space="preserve"><tspan x="803" dy="0">The reply text.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Follow</title>
+      <title xml:space="preserve">Follow</title>
       <rect class="card-shape" x="1050" y="32" width="288" height="182"/>
       <path class="card-rules" d="M 1050 102 L 1338 102 M 1050 158 L 1338 158"/>
       <rect class="card-outline" x="1050" y="32" width="288" height="182"/>
@@ -127,7 +127,7 @@
       <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="1324" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Message</title>
+      <title xml:space="preserve">Message</title>
       <rect class="card-shape" x="1370" y="32" width="309" height="230"/>
       <path class="card-rules" d="M 1370 102 L 1679 102 M 1370 158 L 1679 158 M 1370 214 L 1679 214"/>
       <rect class="card-outline" x="1370" y="32" width="309" height="230"/>
@@ -159,7 +159,7 @@
       <text class="description" y="237" xml:space="preserve"><tspan x="1486" dy="0">The message text.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Group</title>
+      <title xml:space="preserve">Group</title>
       <rect class="card-shape" x="32" y="294" width="299" height="200"/>
       <path class="card-rules" d="M 32 364 L 331 364 M 32 420 L 331 420"/>
       <rect class="card-outline" x="32" y="294" width="299" height="200"/>
@@ -185,7 +185,7 @@
       <text class="target" text-anchor="end" y="483" xml:space="preserve"><tspan x="317" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Invitation</title>
+      <title xml:space="preserve">Invitation</title>
       <rect class="card-shape" x="363" y="294" width="314" height="182"/>
       <path class="card-rules" d="M 363 364 L 677 364 M 363 420 L 677 420"/>
       <rect class="card-outline" x="363" y="294" width="314" height="182"/>
@@ -211,7 +211,7 @@
       <text class="target" text-anchor="end" y="465" xml:space="preserve"><tspan x="663" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Notification</title>
+      <title xml:space="preserve">Notification</title>
       <rect class="card-shape" x="709" y="294" width="309" height="174"/>
       <path class="card-rules" d="M 709 364 L 1018 364 M 709 420 L 1018 420"/>
       <rect class="card-outline" x="709" y="294" width="309" height="174"/>
@@ -236,7 +236,7 @@
       <text class="description" y="443" xml:space="preserve"><tspan x="825" dy="0">What happened.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Complaint</title>
+      <title xml:space="preserve">Complaint</title>
       <rect class="card-shape" x="1050" y="294" width="288" height="174"/>
       <path class="card-rules" d="M 1050 364 L 1338 364 M 1050 420 L 1338 420"/>
       <rect class="card-outline" x="1050" y="294" width="288" height="174"/>
@@ -261,7 +261,7 @@
       <text class="description" y="443" xml:space="preserve"><tspan x="1158" dy="0">Why.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Standing</title>
+      <title xml:space="preserve">Standing</title>
       <rect class="card-shape" x="1370" y="294" width="309" height="260"/>
       <path class="card-rules" d="M 1370 364 L 1679 364 M 1370 398 L 1679 398 M 1386 450 L 1679 450 M 1386 506 L 1679 506"/>
       <rect class="card-outline" x="1370" y="294" width="309" height="260"/>
@@ -284,7 +284,7 @@
       <text class="description" y="529" xml:space="preserve"><tspan x="1460" dy="0">Until when, in seconds.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- AuditEntry</title>
+      <title xml:space="preserve">AuditEntry</title>
       <rect class="card-shape" x="32" y="586" width="299" height="174"/>
       <path class="card-rules" d="M 32 656 L 331 656 M 32 712 L 331 712"/>
       <rect class="card-outline" x="32" y="586" width="299" height="174"/>
@@ -309,7 +309,7 @@
       <text class="description" y="735" xml:space="preserve"><tspan x="126" dy="0">What changed.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Subscription</title>
+      <title xml:space="preserve">Subscription</title>
       <rect class="card-shape" x="363" y="586" width="314" height="174"/>
       <path class="card-rules" d="M 363 656 L 677 656 M 363 712 L 677 712"/>
       <rect class="card-outline" x="363" y="586" width="314" height="174"/>
@@ -334,7 +334,7 @@
       <text class="description" y="735" xml:space="preserve"><tspan x="486" dy="0">The thread&apos;s number.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Draft</title>
+      <title xml:space="preserve">Draft</title>
       <rect class="card-shape" x="709" y="586" width="309" height="174"/>
       <path class="card-rules" d="M 709 656 L 1018 656 M 709 712 L 1018 712"/>
       <rect class="card-outline" x="709" y="586" width="309" height="174"/>
@@ -359,7 +359,7 @@
       <text class="description" y="735" xml:space="preserve"><tspan x="803" dy="0">The text so far.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Reaction</title>
+      <title xml:space="preserve">Reaction</title>
       <rect class="card-shape" x="1050" y="586" width="288" height="174"/>
       <path class="card-rules" d="M 1050 656 L 1338 656 M 1050 712 L 1338 712"/>
       <rect class="card-outline" x="1050" y="586" width="288" height="174"/>
@@ -384,7 +384,7 @@
       <text class="description" y="735" xml:space="preserve"><tspan x="1136" dy="0">The emoji.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Mention</title>
+      <title xml:space="preserve">Mention</title>
       <rect class="card-shape" x="1370" y="586" width="309" height="178"/>
       <path class="card-rules" d="M 1370 656 L 1679 656 M 1370 712 L 1679 712"/>
       <rect class="card-outline" x="1370" y="586" width="309" height="178"/>
@@ -409,7 +409,7 @@
       <text class="description" y="735" xml:space="preserve"><tspan x="1486" dy="0">Where the name starts </tspan><tspan x="1486" dy="18">in the text.</tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Moderator</title>
+      <title xml:space="preserve">Moderator</title>
       <rect class="card-shape" x="32" y="796" width="299" height="126"/>
       <path class="card-rules" d="M 32 866 L 331 866"/>
       <rect class="card-outline" x="32" y="796" width="299" height="126"/>
@@ -424,7 +424,7 @@
       <text class="target" text-anchor="end" y="911" xml:space="preserve"><tspan x="317" dy="0">▸ <tspan class="md-code">User</tspan></tspan></text>
     </g>
     <g class="card focus">
-      <title xml:space="preserve">- User</title>
+      <title xml:space="preserve">User</title>
       <rect class="card-shape" x="32" y="970" width="1675" height="142"/>
       <path class="card-rules" d="M 32 1040 L 1707 1040 M 842 1040 L 842 1112"/>
       <rect class="card-outline" x="32" y="970" width="1675" height="142"/>
@@ -450,102 +450,102 @@
   </g>
   <g class="relationships">
     <g class="relationship-route">
-      <title xml:space="preserve">- Session → - User</title>
+      <title xml:space="preserve">Session → User</title>
       <path class="relationship" d="M 331 142 L 345 142 L 345 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="331" cy="142" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Post → - User</title>
+      <title xml:space="preserve">Post → User</title>
       <path class="relationship" d="M 677 142 L 691 142 L 691 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="677" cy="142" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Comment → - User</title>
+      <title xml:space="preserve">Comment → User</title>
       <path class="relationship" d="M 1018 142 L 1032 142 L 1032 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1018" cy="142" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Follow → - User</title>
+      <title xml:space="preserve">Follow → User</title>
       <path class="relationship" d="M 1338 142 L 1352 142 L 1352 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1338" cy="142" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Follow → - User</title>
+      <title xml:space="preserve">Follow → User</title>
       <path class="relationship" d="M 1338 198 L 1352 198 L 1352 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1338" cy="198" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Message → - User</title>
+      <title xml:space="preserve">Message → User</title>
       <path class="relationship" d="M 1679 142 L 1693 142 L 1693 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1679" cy="142" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Message → - User</title>
+      <title xml:space="preserve">Message → User</title>
       <path class="relationship" d="M 1679 198 L 1693 198 L 1693 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1679" cy="198" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Group → - User</title>
+      <title xml:space="preserve">Group → User</title>
       <path class="relationship" d="M 331 404 L 345 404 L 345 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="331" cy="404" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Group → - User</title>
+      <title xml:space="preserve">Group → User</title>
       <path class="relationship" d="M 331 478 L 345 478 L 345 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="331" cy="478" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Invitation → - User</title>
+      <title xml:space="preserve">Invitation → User</title>
       <path class="relationship" d="M 677 404 L 691 404 L 691 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="677" cy="404" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Invitation → - User</title>
+      <title xml:space="preserve">Invitation → User</title>
       <path class="relationship" d="M 677 460 L 691 460 L 691 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="677" cy="460" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Notification → - User</title>
+      <title xml:space="preserve">Notification → User</title>
       <path class="relationship" d="M 1018 404 L 1032 404 L 1032 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1018" cy="404" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Complaint → - User</title>
+      <title xml:space="preserve">Complaint → User</title>
       <path class="relationship" d="M 1338 404 L 1352 404 L 1352 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1338" cy="404" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Standing → - User</title>
+      <title xml:space="preserve">Standing → User</title>
       <path class="relationship" d="M 1679 490 L 1693 490 L 1693 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1679" cy="490" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- AuditEntry → - User</title>
+      <title xml:space="preserve">AuditEntry → User</title>
       <path class="relationship" d="M 331 696 L 345 696 L 345 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="331" cy="696" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Subscription → - User</title>
+      <title xml:space="preserve">Subscription → User</title>
       <path class="relationship" d="M 677 696 L 691 696 L 691 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="677" cy="696" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Draft → - User</title>
+      <title xml:space="preserve">Draft → User</title>
       <path class="relationship" d="M 1018 696 L 1032 696 L 1032 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1018" cy="696" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Reaction → - User</title>
+      <title xml:space="preserve">Reaction → User</title>
       <path class="relationship" d="M 1338 696 L 1352 696 L 1352 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1338" cy="696" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Mention → - User</title>
+      <title xml:space="preserve">Mention → User</title>
       <path class="relationship" d="M 1679 696 L 1693 696 L 1693 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1679" cy="696" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Moderator → - User</title>
+      <title xml:space="preserve">Moderator → User</title>
       <path class="relationship" d="M 331 906 L 345 906 L 345 970" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="331" cy="906" r="4"/>
     </g>

@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1278" height="1148" viewBox="0 0 1278 1148" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for nested_stage_alternative_outputs</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: - nested_stage_alternative_outputs with parameters go: u8. Stage go. Cycles: Select an outer result. with inputs current and outputs finish or go; Select an inner result. with inputs current and outputs inner_finish or inner_again. Nodes: Stage: Choose a nested result.; Action: Read the current entry. capturing go handing over current; Question: Is the value zero? capturing current handing over inner_finish / inner_again; Action: Forward the finished value. capturing inner_finish handing over finish; Action: Count down before revisiting. capturing inner_again, current handing over go; Stage transition: Return the value.; Stage transition: Choose a nested result.. Connections: Stage: Choose a nested result. to Action: Read the current entry.; Action: Read the current entry. to the cycle entry; Question: Is the value zero? branch 1 to the inner_finish result of the cycle; Question: Is the value zero? branch 2 to the inner_again result of the cycle; Action: Forward the finished value. to the finish result of the cycle; Action: Count down before revisiting. to the go result of the cycle; the cycle entry to Question: Is the value zero?; the finish result of the cycle to Stage transition: Return the value.; the go result of the cycle to Stage transition: Choose a nested result.; the inner_finish result of the cycle to Action: Forward the finished value.; the inner_again result of the cycle to Action: Count down before revisiting.. Transition to stage finish. Transition to stage go. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1278" height="1130" viewBox="0 0 1278 1130" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for nested_stage_alternative_outputs</title><desc id="kaalang-description">The flow starts directly at stage go. Transitions return to the stage entry rail. Nodes: Start: nested_stage_alternative_outputs with parameters go: u8. Stage go. Cycles: Select an outer result. with inputs current and outputs finish or go; Select an inner result. with inputs current and outputs inner_finish or inner_again. Nodes: Stage: Choose a nested result.; Action: Read the current entry. capturing go handing over current; Question: Is the value zero? capturing current handing over inner_finish / inner_again; Action: Forward the finished value. capturing inner_finish handing over finish; Action: Count down before revisiting. capturing inner_again, current handing over go; Stage transition: Return the value.; Stage transition: Choose a nested result.. Connections: Stage: Choose a nested result. to Action: Read the current entry.; Action: Read the current entry. to the cycle entry; Question: Is the value zero? branch 1 to the inner_finish result of the cycle; Question: Is the value zero? branch 2 to the inner_again result of the cycle; Action: Forward the finished value. to the finish result of the cycle; Action: Count down before revisiting. to the go result of the cycle; the cycle entry to Question: Is the value zero?; the finish result of the cycle to Stage transition: Return the value.; the go result of the cycle to Stage transition: Choose a nested result.; the inner_finish result of the cycle to Action: Forward the finished value.; the inner_again result of the cycle to Action: Count down before revisiting.. Transition to stage finish. Transition to stage go. Stage finish. Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
-<path d="M 288 140 L 288 176 "/>
-<path d="M 288 176 L 288 212 "/>
-<path d="M 288 1056 L 288 1124 "/>
-<path d="M 648 1056 L 648 1124 "/>
-<path d="M 1082 176 L 1082 212 "/>
-<path d="M 288 176 L 1082 176 "/>
-<path d="M 648 1124 L 24 1124 L 24 176 L 288 176 " marker-end="url(#stage-return-arrow)"/>
+<path d="M 288 122 L 288 158 "/>
+<path d="M 288 158 L 288 194 "/>
+<path d="M 288 1038 L 288 1106 "/>
+<path d="M 648 1038 L 648 1106 "/>
+<path d="M 1082 158 L 1082 194 "/>
+<path d="M 288 158 L 1082 158 "/>
+<path d="M 648 1106 L 24 1106 L 24 158 L 288 158 " marker-end="url(#stage-return-arrow)"/>
 </g>
-<g transform="translate(116 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="148" viewBox="0 0 680 148" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
+<g transform="translate(116 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="130" viewBox="0 0 680 130" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for nested_stage_alternative_outputs</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: - nested_stage_alternative_outputs with parameters go: u8.</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: nested_stage_alternative_outputs with parameters go: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -35,27 +35,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <g class="cycle-regions">
@@ -65,24 +44,23 @@
     "/>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 74 L 408 74"/>
-    <g class="parameter-panel" transform="translate(528 74)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
       <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">go: u8</tspan></text>
     </g>
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">nested_stage_alternative_out</tspan></text>
-        <text x="-17.36" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">puts</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-112.84" y="-3.84" text-anchor="middle">−</text>
+        <text x="-105.84" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> nested_stage_alternative_</tspan></text>
+        <text x="-30.38" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">outputs</tspan></text>
       </g>
     </g>
   </g>
 </svg>
 </g>
-<g transform="translate(60 180)"><svg xmlns="http://www.w3.org/2000/svg" width="814" height="908" viewBox="0 0 814 908" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
+<g transform="translate(60 162)"><svg xmlns="http://www.w3.org/2000/svg" width="814" height="908" viewBox="0 0 814 908" role="img" aria-labelledby="kaalang-part-1-title" aria-describedby="kaalang-part-1-description">
   <title id="kaalang-part-1-title">kaalang diagram for nested_stage_alternative_outputs</title>
   <desc id="kaalang-part-1-description">Cycles: Select an outer result. with inputs current and outputs finish or go; Select an inner result. with inputs current and outputs inner_finish or inner_again. Nodes: Stage: Choose a nested result.; Action: Read the current entry. capturing go handing over current; Question: Is the value zero? capturing current handing over inner_finish / inner_again; Action: Forward the finished value. capturing inner_finish handing over finish; Action: Count down before revisiting. capturing inner_again, current handing over go; Stage transition: Return the value.; Stage transition: Choose a nested result.. Connections: Stage: Choose a nested result. to Action: Read the current entry.; Action: Read the current entry. to the cycle entry; Question: Is the value zero? branch 1 to the inner_finish result of the cycle; Question: Is the value zero? branch 2 to the inner_again result of the cycle; Action: Forward the finished value. to the finish result of the cycle; Action: Count down before revisiting. to the go result of the cycle; the cycle entry to Question: Is the value zero?; the finish result of the cycle to Stage transition: Return the value.; the go result of the cycle to Stage transition: Choose a nested result.; the inner_finish result of the cycle to Action: Forward the finished value.; the inner_again result of the cycle to Action: Count down before revisiting..</desc>
   <defs>
@@ -190,7 +168,7 @@
   </g>
 </svg>
 </g>
-<g transform="translate(910 180)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
+<g transform="translate(910 162)"><svg xmlns="http://www.w3.org/2000/svg" width="344" height="264" viewBox="0 0 344 264" role="img" aria-labelledby="kaalang-part-2-title" aria-describedby="kaalang-part-2-description">
   <title id="kaalang-part-2-title">kaalang diagram for nested_stage_alternative_outputs</title>
   <desc id="kaalang-part-2-description">Nodes: Stage: Return the value.; End: u8 capturing finish. Connections: Stage: Return the value. to End: u8.</desc>
   <defs>

@@ -3,7 +3,7 @@
 //! declarations in source order.
 
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeSet, HashMap},
     fmt::Write as _,
     fs, io,
     path::{Path, PathBuf},
@@ -12,7 +12,7 @@ use std::{
 
 use cargo_metadata::{MetadataCommand, Target};
 use kaalang_svg::RenderError;
-use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
+use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt, spanned::Spanned};
 
 /// The file that declares a found flow, its source, and the flow's path within it.
 pub(super) struct Found {
@@ -61,6 +61,8 @@ pub(super) struct Module {
     pub(super) file: Rc<File>,
     /// The path within its file: `""` for the file's own module.
     pub(super) in_file: String,
+    /// The `cfg` attributes of the `mod` item that declares it, as written.
+    pub(super) cfgs: Vec<String>,
     pub(super) scope: Scope,
 }
 
@@ -107,8 +109,13 @@ pub(super) struct TypeEntry {
     pub(super) module: usize,
     /// The path from the crate root, as `--type` names it.
     pub(super) path: String,
-    /// The path within its file, as `kaalang_svg::type_names` lists it.
+    /// The path within its file, as `kaalang_compiler::type_items` lists it.
     pub(super) in_file: String,
+    /// Which declaration of `in_file` in this reading of the file this is,
+    /// counted from 0: exclusive `cfg`s may declare a path more than once.
+    pub(super) occurrence: usize,
+    /// The declaration's own `cfg` attributes, as written.
+    pub(super) cfgs: Vec<String>,
     pub(super) item: Item,
 }
 
@@ -151,6 +158,7 @@ pub(super) fn crates(wanted: Option<&str>, package: Option<&str>) -> Result<Vec<
                 open: Vec::new(),
                 modules: Vec::new(),
                 types: Vec::new(),
+                occurrences: HashMap::new(),
                 skipped: Vec::new(),
             };
             walk_file(
@@ -247,7 +255,7 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
 
 /// Lists the crates that declare a path, with a hint to `-p` when a package
 /// declares it once and could be selected.
-pub(super) fn ambiguous(error: &RenderError, matches: &[(&Crate, &Path)]) -> String {
+pub(super) fn ambiguous(error: &dyn std::fmt::Display, matches: &[(&Crate, &Path)]) -> String {
     let mut message = error.to_string();
     message.push(':');
     for (krate, file) in matches {
@@ -302,6 +310,8 @@ struct Walk<'a> {
     open: Vec<PathBuf>,
     modules: Vec<Module>,
     types: Vec<TypeEntry>,
+    /// How many declarations of each path each reading of a file has had.
+    occurrences: HashMap<(*const File, String), usize>,
     skipped: Vec<String>,
 }
 
@@ -346,6 +356,7 @@ fn walk_file(
             source,
         }),
         in_file: String::new(),
+        cfgs: Vec::new(),
         scope,
     });
     if let Some(parsed) = parsed {
@@ -382,19 +393,28 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
                 };
                 (name(&declaration.ident), Declared::Module(child))
             }
-            Item::Struct(syn::ItemStruct { ident, .. })
-            | Item::Enum(syn::ItemEnum { ident, .. })
-            | Item::Union(syn::ItemUnion { ident, .. })
-            | Item::Type(syn::ItemType { ident, .. }) => {
+            Item::Struct(syn::ItemStruct { attrs, ident, .. })
+            | Item::Enum(syn::ItemEnum { attrs, ident, .. })
+            | Item::Union(syn::ItemUnion { attrs, ident, .. })
+            | Item::Type(syn::ItemType { attrs, ident, .. }) => {
                 let outer = &walk.modules[module];
                 let (path, in_file) = (
                     format!("{}{ident}", outer.path),
                     format!("{}{ident}", outer.in_file),
                 );
+                let reading = Rc::as_ptr(&outer.file);
+                let count = walk
+                    .occurrences
+                    .entry((reading, in_file.clone()))
+                    .or_default();
+                let occurrence = *count;
+                *count += 1;
                 walk.types.push(TypeEntry {
                     module,
                     path,
                     in_file,
+                    occurrence,
+                    cfgs: cfgs(attrs),
                     item: item.clone(),
                 });
                 (name(ident), Declared::Type(walk.types.len() - 1))
@@ -475,22 +495,38 @@ fn walk_module(
                 parent: Some(parent),
                 file: Rc::clone(&outer.file),
                 in_file: format!("{}{}::", outer.in_file, declaration.ident),
+                cfgs: cfgs(&declaration.attrs),
                 scope: Scope::default(),
             });
             walk_items(walk, items, module, &directory, &directory);
             Some(module)
         }
-        (None, Some(attribute)) => walk_file(walk, &base.join(attribute), true, path, Some(parent)),
-        (None, None) => {
-            let file = directory.join(format!("{name}.rs"));
-            if file.is_file() {
-                walk_file(walk, &file, false, path, Some(parent))
+        (None, attribute) => {
+            let (file, owns_directory) = if let Some(attribute) = attribute {
+                (base.join(attribute), true)
             } else {
-                let file = directory.join(&name).join("mod.rs");
-                walk_file(walk, &file, true, path, Some(parent))
-            }
+                let file = directory.join(format!("{name}.rs"));
+                if file.is_file() {
+                    (file, false)
+                } else {
+                    (directory.join(&name).join("mod.rs"), true)
+                }
+            };
+            let module = walk_file(walk, &file, owns_directory, path, Some(parent))?;
+            walk.modules[module].cfgs = cfgs(&declaration.attrs);
+            Some(module)
         }
     }
+}
+
+/// The `cfg` attributes among `attributes`, as written.
+fn cfgs(attributes: &[Attribute]) -> Vec<String> {
+    attributes
+        .iter()
+        .filter(|attribute| attribute.path().is_ident("cfg"))
+        .filter_map(|attribute| attribute.meta.span().source_text())
+        .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
+        .collect()
 }
 
 /// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
@@ -574,9 +610,11 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
                 source: source.to_owned(),
             }),
             in_file: String::new(),
+            cfgs: Vec::new(),
             scope: Scope::default(),
         }],
         types: Vec::new(),
+        occurrences: HashMap::new(),
         skipped: Vec::new(),
     };
     walk_items(

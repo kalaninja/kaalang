@@ -27,7 +27,7 @@ clippy: (tooling::build "rust")
 test: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust cargo test --workspace
 
-# Redraw the behavior diagrams and show the diff to review.
+# Redraw the fixture diagrams and show the diff to review.
 svg: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust cargo test -p kaalang --test diagrams
     git diff -- '*.svg'

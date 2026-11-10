@@ -387,13 +387,29 @@ fn the_package_hint_needs_a_package_that_declares_the_path_once() {
 #[test]
 fn an_unknown_package_fails() {
     let directory = package("cli-unknown-package", SOURCE);
-    let failed = run(&directory, "diagram -p missing --flow route");
-    assert!(!failed.status.success());
-    let stderr = String::from_utf8_lossy(&failed.stderr);
-    assert!(
-        stderr.contains("package `missing` is not a member"),
-        "{stderr}"
+    for line in [
+        "diagram -p missing --flow route",
+        "diagram -p missing --type Member",
+    ] {
+        let failed = run(&directory, line);
+        assert!(!failed.status.success(), "{line}");
+        let stderr = String::from_utf8_lossy(&failed.stderr);
+        assert!(
+            stderr.contains("package `missing` is not a member"),
+            "{stderr}"
+        );
+    }
+}
+
+#[test]
+fn a_module_that_includes_its_own_file_is_read_once() {
+    let directory = package(
+        "cli-path-loop",
+        "pub struct Member;\n#[path = \"lib.rs\"]\nmod again;\n",
     );
+    let rendered = run(&directory, "diagram --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("Member.svg").is_file());
 }
 
 /// The top of each card in `svg`, in drawing order.
@@ -436,6 +452,168 @@ fn a_type_is_drawn_with_the_types_that_refer_to_it() {
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
     positions(&svg, &["review::Report", "model::Member"]);
     assert!(svg.contains("relationship-route"));
+}
+
+#[test]
+fn a_type_in_an_inline_module_of_a_file_module_is_drawn_by_its_path() {
+    let directory = package(
+        "cli-type-inline-module",
+        "mod model;\n\n#[kaa]\nstruct Report {\n    #[kaa::refer(model::inner::Member, \"m\")]\n    m: u8,\n}\n",
+    );
+    write(
+        &directory,
+        "src/model.rs",
+        "pub mod inner {\n    pub struct Member;\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type model::inner::Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    positions(&svg, &["Report", "model::inner::Member"]);
+}
+
+#[test]
+fn every_declaration_of_a_type_under_exclusive_cfgs_is_drawn() {
+    let handle = |cfg: &str, ty: &str| {
+        format!(
+            "#[cfg({cfg})]\n#[kaa]\nstruct Handle {{\n    #[kaa::refer(Member, \"m\")]\n    m: {ty},\n}}\n"
+        )
+    };
+    let directory = package(
+        "cli-type-cfg-twin",
+        &format!(
+            "pub struct Member;\n{}{}#[kaa]\nstruct Session {{\n    #[kaa::refer(Handle, \"h\")]\n    h: u8,\n}}\n",
+            handle("unix", "u8"),
+            handle("windows", "u16"),
+        ),
+    );
+
+    let rendered = run(&directory, "diagram --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    positions(
+        &svg,
+        &[
+            "struct · repr(Rust) · cfg(unix)",
+            "struct · repr(Rust) · cfg(windows)",
+        ],
+    );
+    assert_eq!(svg.matches("class=\"relationship\"").count(), 2, "{svg}");
+
+    // As the focus, the declarations stand one under another, and the lines
+    // go into the first.
+    let rendered = run(&directory, "diagram --type Handle");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Handle.svg")).unwrap();
+    assert_eq!(svg.matches("class=\"card focus\"").count(), 2, "{svg}");
+    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
+}
+
+#[test]
+fn declarations_in_modules_under_exclusive_cfgs_show_the_module_cfgs() {
+    let handle = |ty: &str| {
+        format!(
+            "#[kaa]\npub struct Handle {{\n    #[kaa::refer(crate::Member, \"m\")]\n    m: {ty},\n}}\n"
+        )
+    };
+    let directory = package(
+        "cli-type-cfg-modules",
+        &format!(
+            "pub struct Member;\n#[cfg(unix)]\n#[path = \"unix.rs\"]\nmod sys;\n#[cfg(windows)]\n#[path = \"windows.rs\"]\nmod sys;\n#[cfg(unix)]\nmod inline {{\n{}}}\n#[cfg(windows)]\nmod inline {{\n{}}}\n",
+            handle("u8"),
+            handle("u16"),
+        ),
+    );
+    write(&directory, "src/unix.rs", &handle("u8"));
+    write(&directory, "src/windows.rs", &handle("u16"));
+    let unix = "struct · repr(Rust) · cfg(unix)";
+    let windows = "struct · repr(Rust) · cfg(windows)";
+
+    for (path, file, relationships) in [
+        ("Member", "Member.svg", 4),
+        ("sys::Handle", "Handle.svg", 0),
+        ("inline::Handle", "Handle.svg", 0),
+    ] {
+        let rendered = run(&directory, &format!("diagram --type {path}"));
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join(file)).unwrap();
+        assert_eq!(
+            svg.matches(unix).count(),
+            svg.matches(windows).count(),
+            "{path}: {svg}"
+        );
+        positions(&svg, &[unix, windows]);
+        let drawn = svg.matches("class=\"relationship\"").count();
+        assert_eq!(drawn, relationships, "{path}: {svg}");
+    }
+}
+
+#[test]
+fn a_file_read_twice_draws_its_type_once() {
+    // Both modules read `src/sys/common.rs`, which declares `Report` once.
+    let directory = package(
+        "cli-type-read-twice",
+        "pub struct Member;\n#[cfg(unix)]\nmod sys {\n    pub mod common;\n}\n#[cfg(windows)]\nmod sys {\n    pub mod common;\n}\n",
+    );
+    write(
+        &directory,
+        "src/sys/common.rs",
+        "#[kaa]\npub struct Report {\n    #[kaa::refer(crate::Member, \"m\")]\n    m: u8,\n}\n",
+    );
+    for (path, file, class, count) in [
+        ("Member", "Member.svg", "class=\"relationship\"", 1),
+        (
+            "sys::common::Report",
+            "Report.svg",
+            "class=\"card focus\"",
+            1,
+        ),
+    ] {
+        let rendered = run(&directory, &format!("diagram --type {path}"));
+        assert!(rendered.status.success(), "{:?}", rendered.stderr);
+        assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join(file)).unwrap();
+        assert_eq!(svg.matches(class).count(), count, "{path}: {svg}");
+    }
+}
+
+#[test]
+fn a_type_refers_to_itself_as_self() {
+    let directory = package(
+        "cli-type-self",
+        "#[kaa]\nstruct Section {\n    #[kaa::refer(Self, \"s\")]\n    children: Vec<Self>,\n}\n",
+    );
+    let rendered = run(&directory, "diagram --type Section");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Section.svg")).unwrap();
+    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
+}
+
+#[test]
+fn a_renamed_dependency_names_its_package_in_a_target() {
+    let directory = workspace(
+        "cli-type-renamed-dependency",
+        &[
+            (
+                "app",
+                "#[kaa]\nstruct FromApp {\n    #[kaa::refer(people::Member, \"m\")]\n    m: u8,\n}\n",
+            ),
+            ("model-types", "pub struct Member;\n"),
+        ],
+    );
+    write(
+        &directory,
+        "app/Cargo.toml",
+        &format!(
+            "{}[dependencies]\npeople = {{ package = \"model-types\", path = \"../model-types\" }}\n",
+            manifest("app")
+        ),
+    );
+    let rendered = run(&directory, "diagram --type Member -p model-types");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    positions(&svg, &["app::FromApp", "Member"]);
 }
 
 #[test]

@@ -71,8 +71,11 @@ const CORRIDOR: i32 = 48;
 pub(super) struct TypeScene {
     pub(super) width: i32,
     pub(super) height: i32,
-    /// The incoming cards in source order, then the focus.
+    /// The incoming cards in source order, then the focus's declarations.
     pub(super) cards: Vec<CardShape>,
+    /// Where the focus's first declaration, which the lines go into, stands
+    /// among `cards`.
+    pub(super) focus: usize,
     pub(super) routes: Vec<Route>,
     /// Where each bus along a groove of the focus leaves it, on its right side.
     pub(super) ports: Vec<Point>,
@@ -176,9 +179,18 @@ impl Text {
         if matches!(self, Self::Description | Self::Target) {
             lines
         } else {
+            // Only the first line carries a badge: a later one that starts
+            // with `+` or `-` continues the source.
             lines
                 .iter()
-                .map(|line| RichText::marked(line.as_ref(), Style::default()))
+                .enumerate()
+                .map(|(index, line)| {
+                    if index == 0 {
+                        RichText::marked(line.as_ref(), Style::default())
+                    } else {
+                        RichText::literal(line.as_ref())
+                    }
+                })
                 .collect()
         }
     }
@@ -205,10 +217,20 @@ pub(super) struct Route {
 }
 
 /// Lays out the focus under its incoming cards, in groups that each start a
-/// new row, with `columns` cards to a row when given.
-pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUsize>) -> TypeScene {
-    let sized = SizedCard::new(focus);
-    let natural = sized.width();
+/// new row, with `columns` cards to a row when given, and the focus's other
+/// declarations under it.
+pub(super) fn layout(
+    groups: &[&[Card]],
+    focus: &[Card],
+    columns: Option<NonZeroUsize>,
+) -> TypeScene {
+    let (first, others) = focus.split_first().expect("a type diagram has its focus");
+    let sized = SizedCard::new(first);
+    let others: Vec<SizedCard> = others.iter().map(SizedCard::new).collect();
+    let natural = others
+        .iter()
+        .map(SizedCard::width)
+        .fold(sized.width(), i32::max);
     let Row {
         mut cards,
         mut routes,
@@ -248,7 +270,7 @@ pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUs
     .into_iter()
     .max()
     .expect("the candidates are not empty");
-    let built = sized.build(natural, width);
+    let built = sized.build(sized.width(), width);
     let around = Around {
         origin: Point { x: MARGIN, y: top },
         right: MARGIN + width,
@@ -274,14 +296,24 @@ pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUs
             });
         }
     }
-    let bottom = built.buses.iter().copied().fold(built.height, i32::max);
-    let height = top + bottom + MARGIN;
-    cards.push(built.shape(focus, around.origin, width, true));
+    let mut bottom = top + built.buses.iter().copied().fold(built.height, i32::max);
+    cards.push(built.shape(first, around.origin, width, true));
+    // The other declarations stand under the first, as wide as it.
+    for (card, sized) in focus[1..].iter().zip(&others) {
+        let built = sized.build(sized.width(), width);
+        let origin = Point {
+            x: MARGIN,
+            y: bottom + CARD_GAP,
+        };
+        bottom = origin.y + built.height;
+        cards.push(built.shape(card, origin, width, true));
+    }
 
     TypeScene {
         width: MARGIN + width + if own { CHANNEL_INSET } else { 0 } + MARGIN,
-        height,
+        height: bottom + MARGIN,
         cards,
+        focus: incoming,
         routes,
         ports,
     }
@@ -574,7 +606,7 @@ impl SizedCard {
     fn new(card: &Card) -> Self {
         let tiles = |tiles: &[Tile]| tiles.iter().map(SizedTile::new).collect();
         Self {
-            name: Text::Name.parse(&card.name),
+            name: Text::Name.parse(&format!("{} {}", card.marker, card.name)),
             kind: Text::Kind.parse(&card.kind),
             description: card
                 .description
@@ -1033,11 +1065,27 @@ mod tests {
 
     use kaalang_compiler::geometry::{Point, bundle_meetings, compatible, enters, overlaps};
 
-    use super::{ROW_WIDTH, TypeScene, layout};
+    use super::{ROW_WIDTH, TILE_TEXT_MAX, Text, TypeScene, layout};
     use crate::{
         datatype::{Card, Structure, Tile, VariantTile},
         markup::MARGIN,
+        text::RichText,
     };
+
+    /// A `+` that starts a continuation line of a wrapped type is source, not
+    /// a visibility badge.
+    #[test]
+    fn a_wrapped_type_keeps_its_plus_signs() {
+        let ty = Text::Type.parse("Box<dyn Fn(&Request, &Context) -> Response + Send + Sync>");
+        let lines = Text::Type.wrap(&ty, TILE_TEXT_MAX);
+        assert!(lines.len() > 1);
+        assert!(
+            lines[1..]
+                .iter()
+                .flat_map(RichText::spans)
+                .all(|span| !span.style.badge)
+        );
+    }
 
     /// Whether `point` lies in `bounds`, edges included.
     fn holds((left, top, right, bottom): (i32, i32, i32, i32), point: Point) -> bool {
@@ -1057,6 +1105,7 @@ mod tests {
     fn card(name: &str, structure: Structure) -> Card {
         Card {
             name: name.to_owned(),
+            marker: '+',
             kind: "struct · repr(Rust)".to_owned(),
             description: Some("A card.".to_owned()),
             structure,
@@ -1126,7 +1175,7 @@ mod tests {
             Structure::Stack(own().into()),
         ]
         .into_iter()
-        .map(|structure| layout(&[&incoming], &card("Member", structure), None))
+        .map(|structure| layout(&[&incoming], &[card("Member", structure)], None))
         .collect()
     }
 
@@ -1136,6 +1185,39 @@ mod tests {
             assert_eq!(scene.routes.len(), 9);
             routes_neither_cross_nor_enter(&scene);
         }
+    }
+
+    #[test]
+    fn the_focus_s_other_declarations_stand_under_it_without_lines() {
+        let incoming = [card(
+            "Report",
+            Structure::Row(vec![tile("author", Some("Member"), true)]),
+        )];
+        let focus = [
+            card(
+                "Member",
+                Structure::Row(vec![tile("parent", Some("Member"), true)]),
+            ),
+            card(
+                "Member",
+                Structure::Stack(vec![
+                    tile("mentor", Some("Member"), false),
+                    tile("raw", None, false),
+                ]),
+            ),
+        ];
+        let scene = layout(&[&incoming], &focus, None);
+        let [first, second] = &scene.cards[scene.focus..] else {
+            panic!("the focus has two declarations");
+        };
+        assert!(second.y > first.y + first.height);
+        assert_eq!((second.x, second.width), (first.x, first.width));
+        assert_eq!(scene.height, second.y + second.height + MARGIN);
+        assert_eq!(scene.routes.len(), 2);
+        for route in &scene.routes {
+            assert_eq!(route.points.last().unwrap().y, first.y);
+        }
+        routes_neither_cross_nor_enter(&scene);
     }
 
     /// Twelve incoming cards with two lines each, too wide for one row.
@@ -1152,7 +1234,7 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        layout(&[&incoming], &focus, None)
+        layout(&[&incoming], std::slice::from_ref(&focus), None)
     }
 
     #[test]
@@ -1192,7 +1274,7 @@ mod tests {
         let source = |name: &str| card(name, Structure::Row(vec![tile("m", Some("Member"), true)]));
         let (first, second) = ([source("Library")], [source("Test"), source("Example")]);
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&first, &second], &focus, None);
+        let scene = layout(&[&first, &second], std::slice::from_ref(&focus), None);
         assert_eq!(rows(&scene, 3), 2);
         // The second group is a row of its own, aligned to the same columns.
         assert_eq!(scene.cards[0].x, scene.cards[1].x);
@@ -1216,8 +1298,8 @@ mod tests {
                 .collect();
             card("Member", Structure::Row(tiles))
         };
-        let narrow = layout(&[&incoming], &focus(1), None);
-        let wide = layout(&[&incoming], &focus(14), None);
+        let narrow = layout(&[&incoming], &[focus(1)], None);
+        let wide = layout(&[&incoming], &[focus(14)], None);
         assert!(wide.cards[16].width > 1800);
         assert!(rows(&wide, 16) < rows(&narrow, 16));
         routes_neither_cross_nor_enter(&wide);
@@ -1234,7 +1316,11 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&incoming], &focus, NonZeroUsize::new(3));
+        let scene = layout(
+            &[&incoming],
+            std::slice::from_ref(&focus),
+            NonZeroUsize::new(3),
+        );
         assert_eq!(rows(&scene, 7), 3);
         assert!(
             scene.cards[..3]
@@ -1360,7 +1446,7 @@ mod tests {
     #[test]
     fn every_route_ends_on_the_focus_top_edge() {
         for scene in scenes() {
-            let focus = scene.cards.last().unwrap();
+            let focus = &scene.cards[scene.focus];
             for route in &scene.routes {
                 let end = route.points.last().unwrap();
                 assert_eq!(end.y, focus.y, "{:?}", route.points);

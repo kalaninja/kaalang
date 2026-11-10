@@ -9,24 +9,49 @@ use syn::{Item, Meta, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
     RenderError, TypeCard, collapsed, collapsed_text, location, parse_file, parser_source,
-    validate_description, validate_label, with_visibility,
+    validate_description, validate_label, visibility_marker, with_visibility,
 };
 
 mod layout;
 mod svg;
 
 pub(crate) fn render(
-    focus: TypeCard<'_>,
+    focus: &[TypeCard<'_>],
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
+    // A file that declares several cards is parsed once.
+    let mut parsed = Vec::new();
     let groups = incoming
         .iter()
-        .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
+        .map(|group| {
+            group
+                .iter()
+                .map(|card| read(card, &mut parsed))
+                .collect::<Result<Vec<_>, _>>()
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    let focus = read(&focus)?;
+    let (first, others) = focus.split_first().expect("a type diagram has its focus");
+    let mut focus = vec![read(first, &mut parsed)?];
+    for card in others {
+        // Only the first declaration takes lines.
+        let card = TypeCard {
+            relationships: &[],
+            ..*card
+        };
+        focus.push(read(&card, &mut parsed)?);
+    }
     Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
+}
+
+/// A card's source file, parsed once for every card it declares.
+struct Parsed<'a> {
+    source: &'a str,
+    /// The source the parser read, without a byte order mark or shebang.
+    parser_source: &'a str,
+    /// Every type declaration with its path within the file.
+    items: Vec<(String, Item)>,
 }
 
 /// What one card shows, in source order. Descriptions stay authored
@@ -34,6 +59,8 @@ pub(crate) fn render(
 struct Card {
     /// The caller's name for the type, then its generics as declared.
     name: String,
+    /// The type's visibility marker, drawn before the name.
+    marker: char,
     /// The declaration form and, except on an alias, its representation.
     kind: String,
     description: Option<String>,
@@ -68,19 +95,31 @@ struct Tile {
 }
 
 /// Selects one card's declaration and reads what its card shows.
-fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
-    let file = parse_file(card.source)?;
-    let source = parser_source(card.source, &file);
-    let mut matches = kaalang_compiler::type_items(&file.items)
-        .into_iter()
-        .filter(|(path, _)| path == card.path);
-    let Some((_, item)) = matches.next() else {
+fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, RenderError> {
+    let index = if let Some(index) = parsed
+        .iter()
+        .position(|file| std::ptr::eq(file.source, card.source))
+    {
+        index
+    } else {
+        let file = parse_file(card.source)?;
+        parsed.push(Parsed {
+            source: card.source,
+            parser_source: parser_source(card.source, &file),
+            items: kaalang_compiler::type_items(&file.items),
+        });
+        parsed.len() - 1
+    };
+    let Parsed {
+        parser_source: source,
+        items,
+        ..
+    } = &parsed[index];
+    let mut matches = items.iter().filter(|(path, _)| path == card.path);
+    let Some((_, item)) = matches.nth(card.occurrence) else {
         return Err(RenderError::TypeNotFound(card.path.to_owned()));
     };
-    if matches.next().is_some() {
-        return Err(RenderError::AmbiguousType(card.path.to_owned()));
-    }
-    let declaration = kaalang_compiler::type_declaration(&item).map_err(|error| {
+    let declaration = kaalang_compiler::type_declaration(item).map_err(|error| {
         let (line, column) = location(error.span());
         RenderError::InvalidType {
             name: card.path.to_owned(),
@@ -108,8 +147,12 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
         _ => String::new(),
     };
     let read = Card {
-        name: with_visibility(visibility(&item), &format!("{}{generics}", card.header)),
-        kind: kind(source, &item),
+        name: format!("{}{generics}", card.header),
+        marker: visibility_marker(visibility(item)),
+        kind: card
+            .cfgs
+            .iter()
+            .fold(kind(source, item), |kind, cfg| format!("{kind} · {cfg}")),
         description: declaration.description,
         structure,
     };

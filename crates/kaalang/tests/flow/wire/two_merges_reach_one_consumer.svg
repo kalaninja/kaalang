@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1134" viewBox="0 0 704 1134" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1116" viewBox="0 0 704 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for two_merges_reach_one_consumer</title>
-  <desc id="kaalang-description">Nodes: Start: - two_merges_reach_one_consumer with parameters scale: bool; offset: bool handing over scale, offset; Question: Scale the value? capturing scale handing over scaled / plain; Action: Take the scaled factor. capturing scaled handing over factor; Action: Take the plain factor. capturing plain handing over factor; Question: Offset the value? capturing offset handing over shifted / centred; Action: Take the shifted base. capturing shifted handing over base; Action: Take the centred base. capturing centred handing over base; Action: Combine both merged values. capturing factor, base handing over end; End: u32 capturing end; Merge: factor; Merge: base. Connections: Start: - two_merges_reach_one_consumer to Question: Scale the value?; Question: Scale the value? branch 1 to Action: Take the scaled factor.; Question: Scale the value? branch 2 to Action: Take the plain factor.; Action: Take the scaled factor. to the factor merge; Action: Take the plain factor. to the factor merge; Question: Offset the value? branch 1 to Action: Take the shifted base.; Question: Offset the value? branch 2 to Action: Take the centred base.; Action: Take the shifted base. to the base merge; Action: Take the centred base. to the base merge; Action: Combine both merged values. to End: u32; the factor merge to Question: Offset the value?; the base merge to Action: Combine both merged values..</desc>
+  <desc id="kaalang-description">Nodes: Start: two_merges_reach_one_consumer with parameters scale: bool; offset: bool handing over scale, offset; Question: Scale the value? capturing scale handing over scaled / plain; Action: Take the scaled factor. capturing scaled handing over factor; Action: Take the plain factor. capturing plain handing over factor; Question: Offset the value? capturing offset handing over shifted / centred; Action: Take the shifted base. capturing shifted handing over base; Action: Take the centred base. capturing centred handing over base; Action: Combine both merged values. capturing factor, base handing over end; End: u32 capturing end; Merge: factor; Merge: base. Connections: Start: two_merges_reach_one_consumer to Question: Scale the value?; Question: Scale the value? branch 1 to Action: Take the scaled factor.; Question: Scale the value? branch 2 to Action: Take the plain factor.; Action: Take the scaled factor. to the factor merge; Action: Take the plain factor. to the factor merge; Question: Offset the value? branch 1 to Action: Take the shifted base.; Question: Offset the value? branch 2 to Action: Take the centred base.; Action: Take the shifted base. to the base merge; Action: Take the centred base. to the base merge; Action: Combine both merged values. to End: u32; the factor merge to Question: Offset the value?; the base merge to Action: Combine both merged values..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -52,90 +31,89 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 116 L 172 188
-      M 172 260 L 172 332
-      M 312 224 L 532 224 L 532 332
-      M 172 396 L 172 472
-      M 532 396 L 532 472 L 172 472
-      M 172 620 L 172 692
-      M 312 584 L 532 584 L 532 692
-      M 172 756 L 172 832
-      M 532 756 L 532 832 L 172 832
-      M 172 972 L 172 1044
-      M 172 472 L 172 548
-      M 172 832 L 172 908
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 602 L 172 674
+      M 312 566 L 532 566 L 532 674
+      M 172 738 L 172 814
+      M 532 738 L 532 814 L 172 814
+      M 172 954 L 172 1026
+      M 172 454 L 172 530
+      M 172 814 L 172 890
     "/>
-    <text class="connection-label code" x="185" y="490" xml:space="preserve"><tspan x="185" dy="0">factor</tspan></text>
-    <text class="connection-label code" x="185" y="850" xml:space="preserve"><tspan x="185" dy="0">base</tspan></text>
-    <text class="connection-label code" x="185" y="321" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
-    <text class="connection-label code" x="545" y="321" xml:space="preserve"><tspan x="545" dy="0">plain</tspan></text>
-    <text class="connection-label code" x="185" y="681" xml:space="preserve"><tspan x="185" dy="0">shifted</tspan></text>
-    <text class="connection-label code" x="545" y="681" xml:space="preserve"><tspan x="545" dy="0">centred</tspan></text>
-    <text class="connection-label code" x="185" y="1033" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">scale, offset</tspan></text>
-    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">scale</tspan></text>
-    <text class="connection-label code" x="185" y="537" xml:space="preserve"><tspan x="185" dy="0">offset</tspan></text>
-    <text class="connection-label code" x="185" y="897" xml:space="preserve"><tspan x="185" dy="0">factor, base</tspan></text>
+    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">factor</tspan></text>
+    <text class="connection-label code" x="185" y="832" xml:space="preserve"><tspan x="185" dy="0">base</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">plain</tspan></text>
+    <text class="connection-label code" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">shifted</tspan></text>
+    <text class="connection-label code" x="545" y="663" xml:space="preserve"><tspan x="545" dy="0">centred</tspan></text>
+    <text class="connection-label code" x="185" y="1015" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">scale, offset</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">scale</tspan></text>
+    <text class="connection-label code" x="185" y="519" xml:space="preserve"><tspan x="185" dy="0">offset</tspan></text>
+    <text class="connection-label code" x="185" y="879" xml:space="preserve"><tspan x="185" dy="0">factor, base</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 74 L 408 74"/>
-    <g class="parameter-panel" transform="translate(528 74)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">scale: bool</tspan><tspan x="-104" dy="18">offset: bool</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 472)">
+    <g class="node merge" transform="translate(172 454)">
       <title xml:space="preserve">the factor merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 832)">
+    <g class="node merge" transform="translate(172 814)">
       <title xml:space="preserve">the base merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">two_merges_reach_one_consume</tspan></text>
-        <text x="-4.34" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">r</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-95.48" y="-3.84" text-anchor="middle">−</text>
+        <text x="-88.48" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> two_merges_reach_one_</tspan></text>
+        <text x="-34.72" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">consumer</tspan></text>
       </g>
     </g>
-    <g class="node question" transform="translate(172 224)">
+    <g class="node question" transform="translate(172 206)">
       <title xml:space="preserve">Scale the value?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Scale the value?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 364)">
+    <g class="node action" transform="translate(172 346)">
       <title xml:space="preserve">Take the scaled factor.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the scaled factor.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 364)">
+    <g class="node action" transform="translate(532 346)">
       <title xml:space="preserve">Take the plain factor.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the plain factor.</tspan></text>
     </g>
-    <g class="node question" transform="translate(172 584)">
+    <g class="node question" transform="translate(172 566)">
       <title xml:space="preserve">Offset the value?</title>
       <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Offset the value?</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 724)">
+    <g class="node action" transform="translate(172 706)">
       <title xml:space="preserve">Take the shifted base.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the shifted base.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 724)">
+    <g class="node action" transform="translate(532 706)">
       <title xml:space="preserve">Take the centred base.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Take the centred base.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 940)">
+    <g class="node action" transform="translate(172 922)">
       <title xml:space="preserve">Combine both merged values.</title>
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Combine both merged values.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1073)">
+    <g class="node end" transform="translate(172 1055)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
     </g>

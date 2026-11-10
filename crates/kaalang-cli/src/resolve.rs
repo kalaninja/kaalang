@@ -357,6 +357,18 @@ mod tests {
     }
 
     #[test]
+    fn an_extern_crate_binds_a_workspace_library_under_its_rename() {
+        let crates = [
+            library("app", "extern crate model_types as mt;"),
+            library("model-types", "pub mod people { pub struct Member; }"),
+        ];
+        assert_eq!(
+            resolve(&crates, "", "mt::people::Member"),
+            named(&crates, 1, "people::Member")
+        );
+    }
+
+    #[test]
     fn a_renamed_dependency_resolves_to_its_library() {
         let mut app = library("app", "");
         app.renames

@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="1502" viewBox="0 0 680 1502" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_markup_fallbacks</title>
-  <desc id="kaalang-description">Nodes: Start: - render_markup_fallbacks with parameters condition: bool handing over condition; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing condition handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
+  <desc id="kaalang-description">Nodes: Start: render_markup_fallbacks with parameters condition: bool handing over condition; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing condition handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after capturing crossing handing over overlapping; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; capturing overlapping handing over noncanonical; Action: &lt;B&gt;warning&lt;/b&gt;
 &lt;u&gt;foo&lt;/u &gt; capturing noncanonical handing over enclosing; Action: &lt;b&gt;foo&lt;/b&gt; capturing enclosing handing over indented; Action:    “quote  ” capturing indented handing over colors; Action: $\color{not-a-color}x$ capturing colors handing over carriage_returns; Action: **Two&#13;&#13;paragraphs** stay literal.
 One&#13;paragraph keeps its style. capturing carriage_returns handing over empty_tags; Action: &lt;u&gt;&lt;/u&gt;
 &lt;mark&gt;&lt;/mark&gt;
-&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; End: () capturing nothing. Connections: Start: - render_markup_fallbacks to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
+&lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; End: () capturing nothing. Connections: Start: render_markup_fallbacks to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after to Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; to Action: &lt;B&gt;warning&lt;/b&gt;
 &lt;u&gt;foo&lt;/u &gt;; Action: &lt;B&gt;warning&lt;/b&gt;
@@ -98,7 +98,7 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-104.16" y="5.16" text-anchor="middle">−</text>
         <text x="-97.16" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> render_markup_fallbacks</tspan></text>
       </g>

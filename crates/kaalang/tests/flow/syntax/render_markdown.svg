@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="1626" viewBox="0 0 680 1626" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_markdown</title>
-  <desc id="kaalang-description">Nodes: Start: - render_markdown with parameters condition: bool handing over condition; Action: Plain, bold, italic, and bold italic text. capturing condition handing over code; Action: Use obsolete and inline code text. capturing code handing over tags; Action: Styles: underlined, highlighted, and blue. capturing tags handing over indices; Action: Indices: x^(2) and H_(2)O. capturing indices handing over quoted; Action: “Quoted guidance remains distinct.” capturing quoted handing over highlighted; Action: Little titles fit in a strict, tidy list. capturing highlighted handing over bold_highlight; Action: Little titles fit in a strict, tidy list. capturing bold_highlight handing over mixed_highlight; Action: Plain text, one highlighted phrase, plain again. capturing mixed_highlight handing over graphemes; Action: 👩‍💻 and é. capturing graphemes handing over styled_graphemes; Action: 👩‍💻 and é. capturing styled_graphemes handing over tested; End: () capturing nothing. Connections: Start: - render_markdown to Action: Plain, bold, italic, and bold italic text.; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to End: ().</desc>
+  <desc id="kaalang-description">Nodes: Start: render_markdown with parameters condition: bool handing over condition; Action: Plain, bold, italic, and bold italic text. capturing condition handing over code; Action: Use obsolete and inline code text. capturing code handing over tags; Action: Styles: underlined, highlighted, and blue. capturing tags handing over indices; Action: Indices: x^(2) and H_(2)O. capturing indices handing over quoted; Action: “Quoted guidance remains distinct.” capturing quoted handing over highlighted; Action: Little titles fit in a strict, tidy list. capturing highlighted handing over bold_highlight; Action: Little titles fit in a strict, tidy list. capturing bold_highlight handing over mixed_highlight; Action: Plain text, one highlighted phrase, plain again. capturing mixed_highlight handing over graphemes; Action: 👩‍💻 and é. capturing graphemes handing over styled_graphemes; Action: 👩‍💻 and é. capturing styled_graphemes handing over tested; End: () capturing nothing. Connections: Start: render_markdown to Action: Plain, bold, italic, and bold italic text.; Action: Plain, bold, italic, and bold italic text. to Action: Use obsolete and inline code text.; Action: Use obsolete and inline code text. to Action: Styles: underlined, highlighted, and blue.; Action: Styles: underlined, highlighted, and blue. to Action: Indices: x^(2) and H_(2)O.; Action: Indices: x^(2) and H_(2)O. to Action: “Quoted guidance remains distinct.”; Action: “Quoted guidance remains distinct.” to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Little titles fit in a strict, tidy list.; Action: Little titles fit in a strict, tidy list. to Action: Plain text, one highlighted phrase, plain again.; Action: Plain text, one highlighted phrase, plain again. to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to Action: 👩‍💻 and é.; Action: 👩‍💻 and é. to End: ().</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -85,7 +85,7 @@
     </g>
     <g class="node start" transform="translate(172 61)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-69.44" y="5.16" text-anchor="middle">−</text>
         <text x="-62.44" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> render_markdown</tspan></text>
       </g>
@@ -108,7 +108,7 @@
         <text x="-124" y="-3" text-anchor="start" textLength="134.96" lengthAdjust="spacing" xml:space="preserve">Styles: <tspan class="md-underline">underlined</tspan>, </text>
         <text style="stroke: none" x="10.96" y="-3" text-anchor="start" textLength="76.16" lengthAdjust="spacing" xml:space="preserve">highlighted</text>
         <text x="87.12" y="-3" text-anchor="start" textLength="36.96" lengthAdjust="spacing" xml:space="preserve">, and </text>
-        <text x="-124" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-color-blue">blue</tspan>.</text>
+        <text x="-124" y="15" text-anchor="start" textLength="32.48" lengthAdjust="spacing" xml:space="preserve"><tspan class="md-color-blue">blue</tspan>.</text>
       </g>
     </g>
     <g class="node action" transform="translate(172 608)">
@@ -149,7 +149,7 @@
         <text x="-124" y="-3" text-anchor="start" textLength="78.96" lengthAdjust="spacing" xml:space="preserve">Plain text, </text>
         <text style="stroke: none" x="-45.04" y="-3" text-anchor="start" textLength="155.68" lengthAdjust="spacing" xml:space="preserve">one highlighted phrase</text>
         <text x="110.64" y="-3" text-anchor="start" textLength="8.96" lengthAdjust="spacing" xml:space="preserve">, </text>
-        <text x="-124" y="15" text-anchor="start" xml:space="preserve">plain again.</text>
+        <text x="-124" y="15" text-anchor="start" textLength="77.28" lengthAdjust="spacing" xml:space="preserve">plain again.</text>
       </g>
     </g>
     <g class="node action" transform="translate(172 1296)">

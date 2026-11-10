@@ -3,7 +3,8 @@
 
 use std::rc::Rc;
 
-use syn::{Item, ItemFn, Meta, ReturnType, Signature, spanned::Spanned};
+use kaalang_compiler::FlowItem;
+use syn::{Item, Meta, ReturnType, Signature, spanned::Spanned};
 
 use crate::{
     RenderError, RenderOptions, location, parse_file, parser_source, validate_description,
@@ -21,14 +22,17 @@ pub(crate) fn render(
 ) -> Result<String, RenderError> {
     let file = parse_file(source)?;
     let parser_source = parser_source(source, &file);
-    let function = select_flow(&file.items, flow_path)?;
-    let mut model = kaalang_compiler::build_with_options(&function, options.collapse_cycles)
+    let flow = select_flow(&file.items, flow_path)?;
+    let function = &flow.function;
+    let mut model = kaalang_compiler::build_with_options(function, options.collapse_cycles)
         .map_err(|error| invalid_flow(flow_path, &error))?;
     kaalang_render::compact_arrangement(&mut model);
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
     }
-    let start = layout::start_text(parser_source, &function);
+    // A trait's method has its trait's visibility, which the file may not tell.
+    let visibility = (!flow.trait_method).then_some(&function.vis);
+    let start = layout::start_text(parser_source, &function.sig, visibility);
     let parameters = layout::parameter_text(parser_source, &function.sig);
     let return_type = layout::return_text(parser_source, &function.sig.output);
     validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
@@ -59,17 +63,18 @@ pub(crate) fn render(
     ))
 }
 
-fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
+fn select_flow(items: &[Item], flow_path: &str) -> Result<FlowItem, RenderError> {
     let mut matches = kaalang_compiler::flows(items)
         .into_iter()
-        .filter(|(path, _)| path == flow_path);
-    let Some((_, function)) = matches.next() else {
+        .filter(|flow| flow.path == flow_path);
+    let Some(flow) = matches.next() else {
         return Err(RenderError::FlowNotFound(flow_path.to_owned()));
     };
     if matches.next().is_some() {
         return Err(RenderError::AmbiguousFlow(flow_path.to_owned()));
     }
-    if let Some(attribute) = function
+    if let Some(attribute) = flow
+        .function
         .attrs
         .iter()
         .filter(|attribute| kaalang_compiler::is_kaalang_attribute(attribute))
@@ -85,7 +90,7 @@ fn select_flow(items: &[Item], flow_path: &str) -> Result<ItemFn, RenderError> {
         ));
     }
 
-    Ok(function)
+    Ok(flow)
 }
 
 /// Reports a flow-level error at its source position.

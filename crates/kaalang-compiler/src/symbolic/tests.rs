@@ -140,8 +140,8 @@ fn symbolic_analysis_matches_the_complete_fixture_corpus() {
             {
                 let source = std::fs::read_to_string(&path).expect("the fixture is readable");
                 if let Ok(file) = syn::parse_file(&source) {
-                    for (_, function) in crate::flows(&file.items) {
-                        *compared += usize::from(compare(&function));
+                    for flow in crate::flows(&file.items) {
+                        *compared += usize::from(compare(&flow.function));
                     }
                 }
             }
@@ -184,7 +184,7 @@ fn compare_generated(sources: &[String]) {
             Ok(function) => vec![function],
             Err(_) => crate::flows(&syn::parse_file(source).expect("the shape parses").items)
                 .into_iter()
-                .map(|(_, function)| function)
+                .map(|flow| flow.function)
                 .collect(),
         })
         .collect::<Vec<_>>();

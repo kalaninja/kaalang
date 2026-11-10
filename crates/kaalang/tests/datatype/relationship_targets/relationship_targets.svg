@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1163" height="686" viewBox="0 0 1163 686" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for - Member</title>
-  <desc id="kaalang-description">Type - Member with incoming types - MemberRef&lt;&apos;a&gt;, - Report&lt;&apos;a&gt; (4 relationships), ~ directory::Team.</desc>
+  <title id="kaalang-title">kaalang type diagram for Member</title>
+  <desc id="kaalang-description">Type Member with incoming types MemberRef&lt;&apos;a&gt;, Report&lt;&apos;a&gt; (4 relationships), directory::Team.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -26,7 +26,7 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card">
-      <title xml:space="preserve">- MemberRef&lt;&apos;a&gt;</title>
+      <title xml:space="preserve">MemberRef&lt;&apos;a&gt;</title>
       <rect class="card-shape" x="32" y="32" width="337" height="144"/>
       <path class="card-rules" d="M 32 102 L 369 102"/>
       <rect class="card-outline" x="32" y="32" width="337" height="144"/>
@@ -41,7 +41,7 @@
       <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="355" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">- Report&lt;&apos;a&gt;</title>
+      <title xml:space="preserve">Report&lt;&apos;a&gt;</title>
       <rect class="card-shape" x="401" y="32" width="323" height="432"/>
       <path class="card-rules" d="M 401 102 L 724 102 M 401 150 L 724 150 M 401 206 L 724 206 M 401 298 L 724 298 M 401 390 L 724 390"/>
       <rect class="card-outline" x="401" y="32" width="323" height="432"/>
@@ -87,7 +87,7 @@
       <text class="target" text-anchor="end" y="453" xml:space="preserve"><tspan x="710" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
     </g>
     <g class="card">
-      <title xml:space="preserve">~ directory::Team</title>
+      <title xml:space="preserve">directory::Team</title>
       <rect class="card-shape" x="756" y="32" width="347" height="200"/>
       <path class="card-rules" d="M 756 102 L 1103 102 M 756 158 L 1103 158"/>
       <rect class="card-outline" x="756" y="32" width="347" height="200"/>
@@ -113,7 +113,7 @@
       <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="1089" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
     </g>
     <g class="card focus">
-      <title xml:space="preserve">- Member</title>
+      <title xml:space="preserve">Member</title>
       <rect class="card-shape" x="32" y="512" width="1099" height="142"/>
       <path class="card-rules" d="M 32 582 L 1131 582"/>
       <rect class="card-outline" x="32" y="512" width="1099" height="142"/>
@@ -133,32 +133,32 @@
   </g>
   <g class="relationships">
     <g class="relationship-route">
-      <title xml:space="preserve">- MemberRef&lt;&apos;a&gt; → - Member</title>
+      <title xml:space="preserve">MemberRef&lt;&apos;a&gt; → Member</title>
       <path class="relationship" d="M 369 160 L 383 160 L 383 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="369" cy="160" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Report&lt;&apos;a&gt; → - Member</title>
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
       <path class="relationship" d="M 724 190 L 738 190 L 738 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="724" cy="190" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Report&lt;&apos;a&gt; → - Member</title>
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
       <path class="relationship" d="M 724 282 L 738 282 L 738 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="724" cy="282" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Report&lt;&apos;a&gt; → - Member</title>
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
       <path class="relationship" d="M 724 374 L 738 374 L 738 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="724" cy="374" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">- Report&lt;&apos;a&gt; → - Member</title>
+      <title xml:space="preserve">Report&lt;&apos;a&gt; → Member</title>
       <path class="relationship" d="M 724 448 L 738 448 L 738 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="724" cy="448" r="4"/>
     </g>
     <g class="relationship-route">
-      <title xml:space="preserve">~ directory::Team → - Member</title>
+      <title xml:space="preserve">directory::Team → Member</title>
       <path class="relationship" d="M 1103 142 L 1117 142 L 1117 512" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="1103" cy="142" r="4"/>
     </g>

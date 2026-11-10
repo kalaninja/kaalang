@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1136" viewBox="0 0 1064 1136" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for const_borrowed_input_partial_merge</title>
-  <desc id="kaalang-description">Nodes: Start: - const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end; Merge: partial; Merge: view. Connections: Start: - const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
+  <desc id="kaalang-description">Nodes: Start: const const_borrowed_input_partial_merge with parameters source: u8; bytes: &amp;[u8] handing over source, bytes; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Fallback. handing over fallback; Action: Use the input on the first branch. capturing first, bytes handing over partial; Action: Use the input on the second branch. capturing second, bytes handing over partial; Action: Carry the partially merged slice onward. capturing partial handing over view; Action: Use the fallback slice. capturing fallback handing over view; Action: Measure the merged slice. capturing view handing over end; End: usize capturing end; Merge: partial; Merge: view. Connections: Start: const const_borrowed_input_partial_merge to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Fallback.; Case: First source. to Action: Use the input on the first branch.; Case: Second source. to Action: Use the input on the second branch.; Case: Fallback. to Action: Use the fallback slice.; Action: Use the input on the first branch. to the partial merge; Action: Use the input on the second branch. to the partial merge; Action: Carry the partially merged slice onward. to the view merge; Action: Use the fallback slice. to the view merge; Action: Measure the merged slice. to End: usize; the partial merge to Action: Carry the partially merged slice onward.; the view merge to Action: Measure the merged slice..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -94,11 +73,11 @@
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-30.38" y="-12.84" text-anchor="middle">−</text>
         <text x="-23.38" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> const </tspan></text>
-        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">const_borrowed_input_partial</tspan></text>
-        <text x="-26.04" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">_merge</tspan></text>
+        <text x="-91.14" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">const_borrowed_input_</tspan></text>
+        <text x="-56.42" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">partial_merge</tspan></text>
       </g>
     </g>
     <g class="node select" transform="translate(172 224)">

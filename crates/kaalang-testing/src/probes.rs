@@ -17,7 +17,7 @@ pub fn flow(source: &str) -> ItemFn {
     kaalang_compiler::flows(&file.items)
         .pop()
         .expect("the generated source declares a flow")
-        .1
+        .function
 }
 
 /// The generated shapes every budget expects to be drawn, each with what it

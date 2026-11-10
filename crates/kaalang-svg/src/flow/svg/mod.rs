@@ -191,7 +191,8 @@ fn write_connection_label(svg: &mut String, label: &Label) {
     let class = match (label.kind, source.is_some()) {
         (LabelKind::Wire, false) => "connection-label",
         (LabelKind::Wire, true) => "connection-label code",
-        (LabelKind::Branch, _) => "connection-label branch-label",
+        (LabelKind::Branch, false) => "connection-label branch-label",
+        (LabelKind::Branch, true) => "connection-label branch-label code",
     };
     if needs_composed_lines(lines) {
         let style = matches!(label.kind, LabelKind::Branch)
@@ -478,7 +479,7 @@ fn merge_name(scene: &Scene, junction: usize) -> String {
 }
 
 fn node_name(scene: &Scene, id: NodeId) -> String {
-    let label = scene.captions.label(id).as_ref();
+    let label = scene.captions.label(id).unmarked();
     match scene.topology.node(id).kind {
         NodeKind::Start => format!("Start: {label}"),
         NodeKind::StageEntry => format!("Stage: {label}"),
@@ -583,10 +584,20 @@ fn write_label(svg: &mut String, node: &Node, center_y: i32, x: i32, anchor: Tex
 /// code, or `None` for text that keeps its Markdown spans.
 fn source(lines: &[RichText]) -> Option<Vec<RichText>> {
     lines.iter().all(RichText::is_code).then(|| {
-        lines
+        // A badge composes the block, which places each run by the width it
+        // was measured at, so the lines keep the style their rule renders.
+        if lines
             .iter()
-            .map(|line| RichText::literal(line.as_ref()))
-            .collect()
+            .flat_map(RichText::spans)
+            .any(|span| span.style.badge)
+        {
+            lines.to_vec()
+        } else {
+            lines
+                .iter()
+                .map(|line| RichText::literal(line.as_ref()))
+                .collect()
+        }
     })
 }
 

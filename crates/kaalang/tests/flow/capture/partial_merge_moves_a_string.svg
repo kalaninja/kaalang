@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1116" viewBox="0 0 1064 1116" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for partial_merge_moves_a_string</title>
-  <desc id="kaalang-description">Nodes: Start: - partial_merge_moves_a_string with parameters source: u8; order: &amp;Cell&lt;u32&gt; handing over source, order; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the text from the first source. capturing first, &amp;order handing over partial; Action: Build the text from the second source. capturing second, &amp;order handing over partial; Action: Extend the partially merged text. capturing partial, &amp;order handing over shared; Action: Build the text from the third source. capturing third, &amp;order handing over shared; Action: Finish with the merged text. capturing shared, &amp;order handing over end; End: String capturing end; Merge: partial; Merge: shared. Connections: Start: - partial_merge_moves_a_string to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the text from the first source.; Case: Second source. to Action: Build the text from the second source.; Case: Third source. to Action: Build the text from the third source.; Action: Build the text from the first source. to the partial merge; Action: Build the text from the second source. to the partial merge; Action: Extend the partially merged text. to the shared merge; Action: Build the text from the third source. to the shared merge; Action: Finish with the merged text. to End: String; the partial merge to Action: Extend the partially merged text.; the shared merge to Action: Finish with the merged text..</desc>
+  <desc id="kaalang-description">Nodes: Start: partial_merge_moves_a_string with parameters source: u8; order: &amp;Cell&lt;u32&gt; handing over source, order; Select: Which source? capturing source; Case: First source. handing over first; Case: Second source. handing over second; Case: Third source. handing over third; Action: Build the text from the first source. capturing first, &amp;order handing over partial; Action: Build the text from the second source. capturing second, &amp;order handing over partial; Action: Extend the partially merged text. capturing partial, &amp;order handing over shared; Action: Build the text from the third source. capturing third, &amp;order handing over shared; Action: Finish with the merged text. capturing shared, &amp;order handing over end; End: String capturing end; Merge: partial; Merge: shared. Connections: Start: partial_merge_moves_a_string to Select: Which source?; Select: Which source? to Case: First source.; Select: Which source? to Case: Second source.; Select: Which source? to Case: Third source.; Case: First source. to Action: Build the text from the first source.; Case: Second source. to Action: Build the text from the second source.; Case: Third source. to Action: Build the text from the third source.; Action: Build the text from the first source. to the partial merge; Action: Build the text from the second source. to the partial merge; Action: Extend the partially merged text. to the shared merge; Action: Build the text from the third source. to the shared merge; Action: Finish with the merged text. to End: String; the partial merge to Action: Extend the partially merged text.; the shared merge to Action: Finish with the merged text..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -97,10 +76,10 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-121.52" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">partial_merge_moves_a_string</tspan></text>
+      <g class="label code">
+        <text class="md-badge" x="-99.82" y="-3.84" text-anchor="middle">−</text>
+        <text x="-92.82" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> partial_merge_moves_a_</tspan></text>
+        <text x="-26.04" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">string</tspan></text>
       </g>
     </g>
     <g class="node select" transform="translate(172 206)">

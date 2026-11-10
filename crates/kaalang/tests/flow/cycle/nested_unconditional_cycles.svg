@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="836" height="956" viewBox="0 0 836 956" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_unconditional_cycles</title>
-  <desc id="kaalang-description">Cycles: Run the nested counter. with inputs limit and outputs result; Count to the limit. with inputs mut count, limit and outputs done. Nodes: Start: - nested_unconditional_cycles with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut count; Question: Has the counter reached the limit? capturing &amp;count, &amp;limit handing over done / again; Action: Increment the counter. capturing again, &amp;mut count; Action: Hand over the count. capturing done, count handing over result; End: usize capturing result. Connections: Start: - nested_unconditional_cycles to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the cycle; Question: Has the counter reached the limit? branch 1 to Action: Hand over the count.; Question: Has the counter reached the limit? branch 2 to Action: Increment the counter.; Action: Increment the counter. to the iteration tail of the cycle; Action: Hand over the count. to End: usize; the entry of the cycle to Question: Has the counter reached the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Run the nested counter. with inputs limit and outputs result; Count to the limit. with inputs mut count, limit and outputs done. Nodes: Start: nested_unconditional_cycles with parameters limit: usize handing over limit; Action: Initialize the counter. capturing nothing handing over mut count; Question: Has the counter reached the limit? capturing &amp;count, &amp;limit handing over done / again; Action: Increment the counter. capturing again, &amp;mut count; Action: Hand over the count. capturing done, count handing over result; End: usize capturing result. Connections: Start: nested_unconditional_cycles to Action: Initialize the counter.; Action: Initialize the counter. to the entry of the cycle; Question: Has the counter reached the limit? branch 1 to Action: Hand over the count.; Question: Has the counter reached the limit? branch 2 to Action: Increment the counter.; Action: Increment the counter. to the iteration tail of the cycle; Action: Hand over the count. to End: usize; the entry of the cycle to Question: Has the counter reached the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -93,10 +72,10 @@
     </g>
     <g class="node start" transform="translate(228 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-117.18" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">nested_unconditional_cycles</tspan></text>
+      <g class="label code">
+        <text class="md-badge" x="-95.48" y="-3.84" text-anchor="middle">−</text>
+        <text x="-88.48" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> nested_unconditional_</tspan></text>
+        <text x="-26.04" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">cycles</tspan></text>
       </g>
     </g>
     <g class="node action" transform="translate(228 202)">

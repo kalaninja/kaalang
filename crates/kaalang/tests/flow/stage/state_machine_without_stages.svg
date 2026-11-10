@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="834" viewBox="0 0 1120 834" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for state_machine_without_stages</title>
-  <desc id="kaalang-description">Cycles: Follow state transitions until Finish. with inputs mut state and outputs done. Nodes: Start: - state_machine_without_stages with parameters mut state: State handing over mut state; Select: Which state is selected? capturing &amp;state; Case: First handing over first; Case: Second handing over second; Case: Finish handing over done; Action: Continue to Second. capturing first, &amp;mut state handing over changed; Action: Continue to Finish. capturing second, &amp;mut state handing over changed; End: () capturing nothing; Merge: changed. Connections: Start: - state_machine_without_stages to the entry of the cycle; Select: Which state is selected? to Case: First; Select: Which state is selected? to Case: Second; Select: Which state is selected? to Case: Finish; Case: First to Action: Continue to Second.; Case: Second to Action: Continue to Finish.; Case: Finish to End: (); Action: Continue to Second. to the changed merge at the iteration tail of the cycle; Action: Continue to Finish. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which state is selected?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Follow state transitions until Finish. with inputs mut state and outputs done. Nodes: Start: state_machine_without_stages with parameters mut state: State handing over mut state; Select: Which state is selected? capturing &amp;state; Case: First handing over first; Case: Second handing over second; Case: Finish handing over done; Action: Continue to Second. capturing first, &amp;mut state handing over changed; Action: Continue to Finish. capturing second, &amp;mut state handing over changed; End: () capturing nothing; Merge: changed. Connections: Start: state_machine_without_stages to the entry of the cycle; Select: Which state is selected? to Case: First; Select: Which state is selected? to Case: Second; Select: Which state is selected? to Case: Finish; Case: First to Action: Continue to Second.; Case: Second to Action: Continue to Finish.; Case: Finish to End: (); Action: Continue to Second. to the changed merge at the iteration tail of the cycle; Action: Continue to Finish. to the changed merge at the iteration tail of the cycle; the entry of the cycle to Select: Which state is selected?; Repeat from the changed merge at the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -94,10 +94,10 @@
     </g>
     <g class="node start" transform="translate(220 65)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-3.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-121.52" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">state_machine_without_stages</tspan></text>
+      <g class="label code">
+        <text class="md-badge" x="-99.82" y="-3.84" text-anchor="middle">−</text>
+        <text x="-92.82" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> state_machine_without_</tspan></text>
+        <text x="-26.04" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">stages</tspan></text>
       </g>
     </g>
     <g class="node select" transform="translate(220 278)">

@@ -219,6 +219,12 @@ pub(crate) fn write_composed_lines(
     emit!(svg, ">");
     let metrics = block_metrics(lines, font_size, line_height);
     let first_baseline = metrics.baselines.first().copied().unwrap_or_default();
+    // A badge leaves the block's runs their natural width: its lines may be
+    // measured in another style than the element's class renders.
+    let pinned = !lines
+        .iter()
+        .flat_map(RichText::spans)
+        .any(|span| span.style.badge);
     for (index, line) in lines.iter().enumerate() {
         let baseline = first_y + metrics.baselines[index] - first_baseline;
         let shaped = shaping_spans(line, font_size);
@@ -233,11 +239,6 @@ pub(crate) fn write_composed_lines(
             TextAnchor::End => x - width,
         };
         write_decorations(svg, indent, &shaped, start.clone(), baseline, font_size);
-        // A badge alone leaves the runs their natural width: the line may be
-        // measured in another style than its element's class renders.
-        let pinned = shaped
-            .iter()
-            .any(|(span, _, _)| span.style.highlight || span.formula.is_some());
         let mut cursor = start;
         // A highlighted or badged span is a run of its own.
         let decorated = |style: Style| style.highlight || style.badge;

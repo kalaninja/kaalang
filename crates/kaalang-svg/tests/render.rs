@@ -714,3 +714,31 @@ fn describe(svg: &str) -> String {
         .0
         .to_owned()
 }
+
+/// A branch described by one code span is Rust source: it keeps the code font.
+#[test]
+fn a_branch_described_as_code_keeps_the_code_class() {
+    let source = r#"
+    #[kaa]
+    fn decide(value: Option<u8>) -> u8 {
+        #[kaa::question("Is there a value?")]
+        #[kaa::yes("`Some(_)`")]
+        #[kaa::no("`None`")]
+        let (some, none) = |&value| value.is_some();
+
+        #[kaa::action("Use it.")]
+        let end = |some, value| value.unwrap_or(0);
+
+        #[kaa::action("Use the default.")]
+        let end = |none, value| { drop(value); 0 };
+
+        |end| return end;
+    }
+    "#;
+    let svg = render_source(source, "decide").expect("the flow has a conforming diagram");
+    assert_eq!(
+        svg.matches("connection-label branch-label code").count(),
+        2,
+        "{svg}"
+    );
+}

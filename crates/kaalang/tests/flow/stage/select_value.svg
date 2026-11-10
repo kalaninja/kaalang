@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1589" height="876" viewBox="0 0 1589 876" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for select_value</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: - const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: - const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value.. Transition to stage choose. Stage choose. Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Stage transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Stage transition: Return the selected value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1589" height="876" viewBox="0 0 1589 876" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description"><title id="kaalang-title">kaalang diagram for select_value</title><desc id="kaalang-description">The leftmost flow selects the initial stage. Transitions return to the stage entry rail without repeating the initial flow. Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value.. Transition to stage choose. Stage choose. Nodes: Stage: Select one value.; Question: Take the left value? capturing take_left handing over yes / no; Action: Select left. capturing yes, left; Action: Select right. capturing no, right; Stage transition: Return the selected value.; Merge: . Connections: Stage: Select one value. to Question: Take the left value?; Question: Take the left value? branch 1 to Action: Select left.; Question: Take the left value? branch 2 to Action: Select right.; Action: Select left. to a structural junction; Action: Select right. to a structural junction; a structural junction to Stage transition: Return the selected value.. Transition to stage finish. Stage finish. Nodes: Stage: Return the selected value.; End: T capturing finish. Connections: Stage: Return the selected value. to End: T.</desc><rect width="100%" height="100%" fill="white"/>
 <defs><marker id="stage-return-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#1f2937"/></marker></defs>
 <g class="stage-connections" fill="none" stroke="#1f2937" stroke-width="1.75">
 <path d="M 232 784 L 232 852 "/>
@@ -10,7 +10,7 @@
 </g>
 <g transform="translate(60 24)"><svg xmlns="http://www.w3.org/2000/svg" width="680" height="792" viewBox="0 0 680 792" role="img" aria-labelledby="kaalang-part-0-title" aria-describedby="kaalang-part-0-description">
   <title id="kaalang-part-0-title">kaalang diagram for select_value</title>
-  <desc id="kaalang-part-0-description">Nodes: Start: - const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: - const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value..</desc>
+  <desc id="kaalang-part-0-description">Nodes: Start: const select_value&lt;T: Copy&gt; with parameters take_left: bool; left: T; right: T handing over take_left, left, right; Action: Begin selection. capturing nothing; Stage transition: Select one value.. Connections: Start: const select_value&lt;T: Copy&gt; to Action: Begin selection.; Action: Begin selection. to Stage transition: Select one value..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -34,27 +34,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
       .stage-entry .node-shape, .stage-transition .node-shape { fill: #f5f3ff; }
       .stage-entry .label, .stage-transition .label { font-weight: 600; }
       .stage-marker { fill: currentColor; }
@@ -78,7 +57,7 @@
     </g>
     <g class="node start" transform="translate(172 74)">
       <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-99.82" y="-3.84" text-anchor="middle">−</text>
         <text x="-92.82" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> const select_value&lt;T: </tspan></text>
         <text x="-21.7" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">Copy&gt;</tspan></text>

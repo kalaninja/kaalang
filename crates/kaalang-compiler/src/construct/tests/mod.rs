@@ -410,7 +410,7 @@ fn every_accepted_staged_shape_constructs_each_part() {
     let mut accepted = 0;
     for source in staged_shapes() {
         let file = syn::parse_file(&source).expect("the staged shape parses");
-        let (_, function) = crate::flows(&file.items).remove(0);
+        let function = crate::flows(&file.items).remove(0).function;
         match crate::build(&function) {
             Ok(_) => accepted += 1,
             Err(error) => assert!(

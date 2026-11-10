@@ -139,61 +139,66 @@ fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
     current.push(diagram);
 }
 
-/// One diagram for every type of a fixture without flows, named after the
-/// type, except the first: the subject of the `case` is named after it. A
-/// type's incoming types are those in the same file whose `refer` names it
-/// bare, a convention that stands in for the resolver of `cargo kaalang`.
+/// One diagram for every type path of a fixture without flows, with each of
+/// its declarations, named after the type, except the first: the subject of
+/// the `case` is named after it. A type's incoming types are those in the same
+/// file whose `refer` names it bare, a convention that stands in for the
+/// resolver of `cargo kaalang`.
 fn type_diagrams(source: &str, fixture: &Path, case: &str) -> Vec<(String, String)> {
     let fixture = fixture.display();
     let file = syn::parse_file(source).unwrap_or_else(|error| panic!("{fixture}: {error}"));
-    // Each type with the targets of its relationships, in source order.
-    let types: Vec<(String, Vec<String>)> = kaalang_compiler::type_items(&file.items)
-        .into_iter()
-        .map(|(path, item)| {
-            let declaration = kaalang_compiler::type_declaration(&item)
-                .unwrap_or_else(|error| panic!("{fixture}: {path}: {error}"));
-            let targets = declaration
-                .relationships()
-                .iter()
-                .map(|relationship| {
-                    relationship
-                        .target
-                        .get_ident()
-                        .map_or_else(String::new, ToString::to_string)
-                })
-                .collect();
-            (path, targets)
-        })
-        .collect();
+    // Each declaration with its place among those of its path, its `cfg`s,
+    // and the targets of its relationships, in source order.
+    let mut types: Vec<(String, usize, Vec<String>, Vec<String>)> = Vec::new();
+    for (path, item) in kaalang_compiler::type_items(&file.items) {
+        let declaration = kaalang_compiler::type_declaration(&item)
+            .unwrap_or_else(|error| panic!("{fixture}: {path}: {error}"));
+        let targets = declaration
+            .relationships()
+            .iter()
+            .map(|relationship| {
+                relationship
+                    .target
+                    .get_ident()
+                    .map_or_else(String::new, ToString::to_string)
+            })
+            .collect();
+        let occurrence = types.iter().filter(|(other, ..)| *other == path).count();
+        types.push((path, occurrence, cfgs(&item), targets));
+    }
     types
         .iter()
+        .filter(|(_, occurrence, ..)| *occurrence == 0)
         .enumerate()
-        .map(|(index, (focus, _))| {
+        .map(|(index, (focus, ..))| {
             let name = last_segment(focus);
-            let drawn: Vec<(&str, Vec<usize>)> = types
+            let drawn: Vec<(&str, usize, &[String], Vec<usize>)> = types
                 .iter()
-                .map(|(path, targets)| {
+                .map(|(path, occurrence, cfgs, targets)| {
                     let positions = (0..targets.len())
                         .filter(|&index| targets[index] == name)
                         .collect();
-                    (path.as_str(), positions)
+                    // Only the declarations of a path declared more than once
+                    // need their `cfg`s to tell them apart.
+                    let declared_once =
+                        types.iter().filter(|(other, ..)| other == path).count() == 1;
+                    let cfgs: &[String] = if declared_once { &[] } else { cfgs };
+                    (path.as_str(), *occurrence, cfgs, positions)
                 })
                 .collect();
             let incoming: Vec<_> = drawn
                 .iter()
-                .filter(|(path, positions)| path != focus && !positions.is_empty())
+                .filter(|(path, .., positions)| path != focus && !positions.is_empty())
                 .map(|drawn| card(source, drawn))
                 .collect();
-            let own = drawn
+            let own: Vec<_> = drawn
                 .iter()
-                .find(|(path, _)| path == focus)
-                .expect("the focus is among the file's types");
-            let svg = kaalang_svg::render_type(
-                card(source, own),
-                &[&incoming],
-                kaalang_svg::TypeOptions::default(),
-            )
-            .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
+                .filter(|(path, ..)| path == focus)
+                .map(|drawn| card(source, drawn))
+                .collect();
+            let svg =
+                kaalang_svg::render_type(&own, &[&incoming], kaalang_svg::TypeOptions::default())
+                    .unwrap_or_else(|error| panic!("{fixture}: {focus}: {error}"));
             let file = if index == 0 {
                 case.to_owned()
             } else {
@@ -221,14 +226,32 @@ fn last_segment(path: &str) -> &str {
 
 fn card<'a>(
     source: &'a str,
-    (path, relationships): &'a (&'a str, Vec<usize>),
+    (path, occurrence, cfgs, relationships): &'a (&'a str, usize, &'a [String], Vec<usize>),
 ) -> kaalang_svg::TypeCard<'a> {
     kaalang_svg::TypeCard {
         source,
         path,
+        occurrence: *occurrence,
         header: path,
         relationships,
+        cfgs,
     }
+}
+
+/// The declaration's own `cfg` attributes, as written.
+fn cfgs(item: &syn::Item) -> Vec<String> {
+    let attributes = match item {
+        syn::Item::Struct(item) => &item.attrs,
+        syn::Item::Enum(item) => &item.attrs,
+        syn::Item::Union(item) => &item.attrs,
+        syn::Item::Type(item) => &item.attrs,
+        _ => return Vec::new(),
+    };
+    attributes
+        .iter()
+        .filter(|attribute| attribute.path().is_ident("cfg"))
+        .filter_map(|attribute| syn::spanned::Spanned::span(&attribute.meta).source_text())
+        .collect()
 }
 
 /// Every module directory inside a test suite. `compile_fail` fixtures are

@@ -1,4 +1,4 @@
-error: #[kaa] applies to functions, structs, enums, unions, and type aliases
+error: #[kaa] applies to functions with a body, structs, enums, unions, and type aliases
  --> tests/datatype/compile_fail/unsupported_form.rs:4:1
   |
 4 | trait Named {}

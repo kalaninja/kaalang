@@ -372,13 +372,15 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
 /// which one it made and why it conforms.
 fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement)) -> Scene {
     let file = crate::parse_file(source).expect("the fixture is valid Rust");
-    let function =
+    let selected =
         crate::flow::select_flow(&file.items, flow).expect("the fixture declares the flow");
-    let mut model = kaalang_compiler::build(&function).expect("the fixture is a valid flow");
+    let function = &selected.function;
+    let mut model = kaalang_compiler::build(function).expect("the fixture is a valid flow");
     kaalang_render::compact_arrangement(&mut model);
     change(&mut model.arrangement);
     let model = model;
-    let start = start_text(source, &function);
+    let visibility = (!selected.trait_method).then_some(&function.vis);
+    let start = start_text(source, &function.sig, visibility);
     let parameters = parameter_text(source, &function.sig);
     let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
     let scene =
@@ -1542,7 +1544,8 @@ fn every_accepted_staged_shape_renders_in_both_views() {
     let mut rendered = 0;
     for source in kaalang_testing::shapes::staged_shapes() {
         let file = crate::parse_file(&source).expect("the staged shape parses");
-        let (name, function) = kaalang_compiler::flows(&file.items).remove(0);
+        let flow = kaalang_compiler::flows(&file.items).remove(0);
+        let (name, function) = (flow.path, flow.function);
         if kaalang_compiler::build(&function).is_err() {
             continue;
         }

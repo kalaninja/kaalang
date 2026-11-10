@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="372" height="228" viewBox="0 0 372 228" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
-  <title id="kaalang-title">kaalang type diagram for - AuditEntry</title>
-  <desc id="kaalang-description">Type - AuditEntry.</desc>
+  <title id="kaalang-title">kaalang type diagram for AuditEntry</title>
+  <desc id="kaalang-description">Type AuditEntry.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -26,7 +26,7 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card focus">
-      <title xml:space="preserve">- AuditEntry</title>
+      <title xml:space="preserve">AuditEntry</title>
       <rect class="card-shape" x="32" y="32" width="308" height="164"/>
       <path class="card-rules" d="M 32 102 L 340 102 M 212 102 L 212 196"/>
       <rect class="card-outline" x="32" y="32" width="308" height="164"/>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1424" height="1124" viewBox="0 0 1424 1124" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for split_case_between_merges</title>
-  <desc id="kaalang-description">Nodes: Start: - split_case_between_merges with parameters value: u8; low: bool handing over value, low; Select: Which source? capturing value; Case: The first source. handing over first; Case: The middle source. handing over middle; Case: The last source. handing over last; Question: Does the middle source lean low? capturing middle, low handing over lower / upper; Action: Build the low value from the first source. capturing first handing over low_value; Action: Build the low value from the middle source. capturing lower handing over low_value; Action: Build the high value from the middle source. capturing upper handing over high_value; Action: Build the high value from the last source. capturing last handing over high_value; Action: Finish a low value. capturing low_value handing over end; Action: Finish a high value. capturing high_value handing over end; End: u8 capturing end; Merge: low_value; Merge: high_value; Merge: end. Connections: Start: - split_case_between_merges to Select: Which source?; Select: Which source? to Case: The first source.; Select: Which source? to Case: The middle source.; Select: Which source? to Case: The last source.; Case: The first source. to Action: Build the low value from the first source.; Case: The middle source. to Question: Does the middle source lean low?; Case: The last source. to Action: Build the high value from the last source.; Question: Does the middle source lean low? branch 1 to Action: Build the low value from the middle source.; Question: Does the middle source lean low? branch 2 to Action: Build the high value from the middle source.; Action: Build the low value from the first source. to the low_value merge; Action: Build the low value from the middle source. to the low_value merge; Action: Build the high value from the middle source. to the high_value merge; Action: Build the high value from the last source. to the high_value merge; Action: Finish a low value. to the end merge; Action: Finish a high value. to the end merge; the low_value merge to Action: Finish a low value.; the high_value merge to Action: Finish a high value.; the end merge to End: u8.</desc>
+  <desc id="kaalang-description">Nodes: Start: split_case_between_merges with parameters value: u8; low: bool handing over value, low; Select: Which source? capturing value; Case: The first source. handing over first; Case: The middle source. handing over middle; Case: The last source. handing over last; Question: Does the middle source lean low? capturing middle, low handing over lower / upper; Action: Build the low value from the first source. capturing first handing over low_value; Action: Build the low value from the middle source. capturing lower handing over low_value; Action: Build the high value from the middle source. capturing upper handing over high_value; Action: Build the high value from the last source. capturing last handing over high_value; Action: Finish a low value. capturing low_value handing over end; Action: Finish a high value. capturing high_value handing over end; End: u8 capturing end; Merge: low_value; Merge: high_value; Merge: end. Connections: Start: split_case_between_merges to Select: Which source?; Select: Which source? to Case: The first source.; Select: Which source? to Case: The middle source.; Select: Which source? to Case: The last source.; Case: The first source. to Action: Build the low value from the first source.; Case: The middle source. to Question: Does the middle source lean low?; Case: The last source. to Action: Build the high value from the last source.; Question: Does the middle source lean low? branch 1 to Action: Build the low value from the middle source.; Question: Does the middle source lean low? branch 2 to Action: Build the high value from the middle source.; Action: Build the low value from the first source. to the low_value merge; Action: Build the low value from the middle source. to the low_value merge; Action: Build the high value from the middle source. to the high_value merge; Action: Build the high value from the last source. to the high_value merge; Action: Finish a low value. to the end merge; Action: Finish a high value. to the end merge; the low_value merge to Action: Finish a low value.; the high_value merge to Action: Finish a high value.; the end merge to End: u8.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -103,7 +82,7 @@
     </g>
     <g class="node start" transform="translate(172 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-112.84" y="5.16" text-anchor="middle">−</text>
         <text x="-105.84" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> split_case_between_merges</tspan></text>
       </g>

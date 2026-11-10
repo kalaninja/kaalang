@@ -76,8 +76,6 @@ pub enum RenderError {
     },
     /// No type has the requested path.
     TypeNotFound(String),
-    /// More than one type has the requested path.
-    AmbiguousType(String),
     /// A card's type has annotations that are not valid.
     InvalidType {
         name: String,
@@ -128,9 +126,6 @@ impl fmt::Display for RenderError {
             }
             Self::TypeNotFound(name) => {
                 write!(formatter, "type `{name}` was not found")
-            }
-            Self::AmbiguousType(name) => {
-                write!(formatter, "multiple types have the path `{name}`")
             }
             Self::InvalidType {
                 name,
@@ -197,7 +192,7 @@ pub fn render_source_with_options(
 pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
     Ok(kaalang_compiler::flows(&parse_file(source)?.items)
         .into_iter()
-        .map(|(path, _)| path)
+        .map(|flow| flow.path)
         .collect())
 }
 
@@ -207,8 +202,12 @@ pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
 pub struct TypeCard<'a> {
     /// The UTF-8 Rust source file that declares the type.
     pub source: &'a str,
-    /// The type's path within that file, as [`type_names`] lists it.
+    /// The type's path within that file, as `kaalang_compiler::type_items`
+    /// lists it.
     pub path: &'a str,
+    /// Which declaration of `path` the card shows, counted from 0 in source
+    /// order: a file may declare a path more than once under exclusive `cfg`s.
+    pub occurrence: usize,
     /// The name the card shows before the type's generics, such as its path
     /// from its crate root.
     pub header: &'a str,
@@ -216,46 +215,38 @@ pub struct TypeCard<'a> {
     /// among the type's relationships in source order. On the focus card, these
     /// are its relationships to itself.
     pub relationships: &'a [usize],
+    /// The `cfg` attributes the card shows after its kind, such as
+    /// `cfg(unix)`: what tells apart the declarations of a type that exclusive
+    /// `cfg`s declare more than once.
+    pub cfgs: &'a [String],
 }
 
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
-/// Each group of incoming cards starts a new row and wraps into further rows
-/// after `options.columns` cards, or where it would grow wider than a screen,
-/// or than the focus when it is wider.
+/// `focus` lists the focus's declarations: the lines go into the first, and
+/// the others stand under it and draw none. Each group of incoming cards
+/// starts a new row and wraps into further rows after `options.columns` cards,
+/// or where it would grow wider than a screen, or than the focus when it is
+/// wider.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when a card's source is not valid Rust,
-/// [`RenderError::TypeNotFound`] or [`RenderError::AmbiguousType`] when a card's
-/// path does not name exactly one type, [`RenderError::InvalidType`]
-/// when that type's annotations are not valid, and
-/// [`RenderError::InvalidLabelCharacter`] when a card's text contains a character
-/// XML 1.0 cannot represent.
+/// [`RenderError::TypeNotFound`] when a card's path and occurrence name no
+/// type, [`RenderError::InvalidType`] when that type's annotations are not
+/// valid, and [`RenderError::InvalidLabelCharacter`] when a card's text
+/// contains a character XML 1.0 cannot represent.
 ///
 /// # Panics
 ///
-/// Panics when a card draws a relationship index its type does not have.
+/// Panics when `focus` is empty, or when a card draws a relationship index its
+/// type does not have.
 pub fn render_type(
-    focus: TypeCard<'_>,
+    focus: &[TypeCard<'_>],
     incoming: &[&[TypeCard<'_>]],
     options: TypeOptions,
 ) -> Result<String, RenderError> {
     datatype::render(focus, incoming, options.columns)
-}
-
-/// Lists the path within a UTF-8 Rust source file of every struct, enum, union,
-/// and type alias, datatype or plain type, in source order and with duplicates:
-/// `Member`, or `directory::Team` inside an inline module.
-///
-/// # Errors
-///
-/// Returns [`RenderError::Parse`] when `source` is not valid Rust.
-pub fn type_names(source: &str) -> Result<Vec<String>, RenderError> {
-    Ok(kaalang_compiler::type_items(&parse_file(source)?.items)
-        .into_iter()
-        .map(|(path, _)| path)
-        .collect())
 }
 
 fn parse_file(source: &str) -> Result<File, RenderError> {
@@ -283,15 +274,19 @@ fn collapsed(source: &str, span: Span) -> String {
     collapsed_text(&source[span.byte_range()])
 }
 
-/// `text` after its UML visibility marker: `+` for `pub`, `~` for a restricted
-/// form such as `pub(crate)`, and `-` for private.
-fn with_visibility(visibility: &Visibility, text: &str) -> String {
-    let marker = match visibility {
+/// The UML visibility marker: `+` for `pub`, `~` for a restricted form such as
+/// `pub(crate)`, and `-` for private.
+fn visibility_marker(visibility: &Visibility) -> char {
+    match visibility {
         Visibility::Public(_) => '+',
         Visibility::Restricted(_) => '~',
         Visibility::Inherited => '-',
-    };
-    format!("{marker} {text}")
+    }
+}
+
+/// `text` after its visibility marker, as `RichText::marked` reads it.
+fn with_visibility(visibility: &Visibility, text: &str) -> String {
+    format!("{} {text}", visibility_marker(visibility))
 }
 
 fn collapsed_text(text: &str) -> String {
@@ -346,45 +341,56 @@ mod tests {
 
     #[test]
     fn selects_one_type_by_its_path_annotated_or_not() {
-        let source = "#[kaa] struct Twin;\n#[kaa] struct Twin;\nmod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
+        let source = "mod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
         let card = |path| TypeCard {
             source,
             path,
+            occurrence: 0,
             header: path,
             relationships: &[],
+            cfgs: &[],
         };
 
         assert_eq!(
-            render_type(card("Missing"), &[], TypeOptions::default()),
+            render_type(&[card("Missing")], &[], TypeOptions::default()),
             Err(RenderError::TypeNotFound("Missing".into()))
         );
-        assert_eq!(
-            render_type(card("Twin"), &[], TypeOptions::default()),
-            Err(RenderError::AmbiguousType("Twin".into()))
-        );
         assert!(matches!(
-            render_type(card("model::Empty"), &[], TypeOptions::default()),
-            Err(RenderError::InvalidType { name, line: 3, .. }) if name == "model::Empty"
+            render_type(&[card("model::Empty")], &[], TypeOptions::default()),
+            Err(RenderError::InvalidType { name, line: 1, .. }) if name == "model::Empty"
         ));
         assert!(
-            render_type(card("Plain"), &[], TypeOptions::default())
+            render_type(&[card("Plain")], &[], TypeOptions::default())
                 .is_ok_and(|svg| svg.contains("id"))
         );
     }
 
     #[test]
-    fn lists_types_by_their_paths_with_duplicates() {
-        let source = "#[kaa] struct Twin;\n#[kaa] struct Twin;\nmod model { #[kaa] struct Empty; }\nstruct Plain;\n";
+    fn a_declaration_is_selected_by_its_occurrence_and_shows_the_given_cfgs() {
+        let source = "#[cfg(unix)]\nstruct Handle(u8);\n#[cfg(not(unix))]\nstruct Handle(u16);\n";
+        let unix = [String::from("cfg(unix)")];
+        let svg = |occurrence, cfgs| {
+            let card = TypeCard {
+                source,
+                path: "Handle",
+                occurrence,
+                header: "Handle",
+                relationships: &[],
+                cfgs,
+            };
+            render_type(&[card], &[], TypeOptions::default())
+        };
 
-        assert_eq!(
-            type_names(source),
-            Ok(vec![
-                "Twin".into(),
-                "Twin".into(),
-                "model::Empty".into(),
-                "Plain".into()
-            ])
+        let first = svg(0, &unix).unwrap();
+        assert!(
+            first.contains(">struct · repr(Rust) · cfg(unix)</tspan>"),
+            "{first}"
         );
+        assert!(first.contains(">u8</tspan>"), "{first}");
+        let second = svg(1, &[]).unwrap();
+        assert!(second.contains(">struct · repr(Rust)</tspan>"), "{second}");
+        assert!(second.contains(">u16</tspan>"), "{second}");
+        assert_eq!(svg(2, &[]), Err(RenderError::TypeNotFound("Handle".into())));
     }
 
     #[test]
@@ -393,12 +399,14 @@ mod tests {
 
         assert_eq!(
             render_type(
-                TypeCard {
+                &[TypeCard {
                     source,
                     path: "Bad",
+                    occurrence: 0,
                     header: "Bad",
                     relationships: &[],
-                },
+                    cfgs: &[],
+                }],
                 &[],
                 TypeOptions::default(),
             ),
@@ -412,16 +420,44 @@ mod tests {
     }
 
     #[test]
+    fn rejects_a_type_label_that_xml_cannot_represent() {
+        let source = "struct Bad {\n    field: Vec</*\0*/ u8>,\n}\n";
+
+        assert_eq!(
+            render_type(
+                &[TypeCard {
+                    source,
+                    path: "Bad",
+                    occurrence: 0,
+                    header: "Bad",
+                    relationships: &[],
+                    cfgs: &[],
+                }],
+                &[],
+                TypeOptions::default(),
+            ),
+            Err(RenderError::InvalidLabelCharacter {
+                character: '\0',
+                line: 1,
+                column: 1,
+                context: "label of type `Bad`".into(),
+            })
+        );
+    }
+
+    #[test]
     fn shows_a_representation_only_when_it_does_not_depend_on_the_target() {
         let source = "#[kaa] #[repr(C)] #[repr(align(8))] struct Combined(u8);\n#[kaa] #[cfg_attr(unix, cfg_attr(target_pointer_width = \"64\", repr(C)))] struct Conditional(u8);\n";
         let svg = |path| {
             render_type(
-                TypeCard {
+                &[TypeCard {
                     source,
                     path,
+                    occurrence: 0,
                     header: path,
                     relationships: &[],
-                },
+                    cfgs: &[],
+                }],
                 &[],
                 TypeOptions::default(),
             )
@@ -487,6 +523,15 @@ mod tests {
         for path in paths {
             assert!(render_source(&source, path).is_ok(), "{path}");
         }
+        // A trait's method takes the trait's visibility and carries no marker.
+        let badge = "class=\"md-badge\"";
+        let svg = render_source(&source, "Review::copy").unwrap();
+        assert!(!svg.contains(badge) && svg.contains("Start: copy"), "{svg}");
+        assert!(
+            render_source(&source, "review::copy")
+                .unwrap()
+                .contains(badge)
+        );
         assert_eq!(
             render_source(&source, "copy"),
             Err(RenderError::FlowNotFound("copy".into()))

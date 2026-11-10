@@ -8,8 +8,9 @@ struct Section {
     heading: String,
     #[kaa::refer(Note, "Remarks pinned to this section.")]
     notes: Vec<Note>,
-    #[kaa::refer(Section, "Subsections in reading order.")]
-    children: Vec<Section>,
+    // `Self` names the declaring type here, as in the field's own type.
+    #[kaa::refer(Self, "Subsections in reading order.")]
+    children: Vec<Self>,
 }
 
 #[kaa("A key naming one section.")]

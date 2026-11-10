@@ -91,9 +91,10 @@ struct Article<'a> {
 `refer(Target, "description")` describes a relationship and names exactly one
 target: a struct, enum, union, or type alias of the workspace, a datatype or a
 plain type, written without parameters as a name or a path, as the field's
-module sees it. The field's Rust type remains a separate part of its
-declaration. A relationship description also serves as the field description;
-there is no second description attribute.
+module sees it; a type refers to itself by its name or, in a field, as `Self`.
+The field's Rust type remains a separate part of its declaration. A relationship
+description also serves as the field description; there is no second description
+attribute.
 
 Both descriptions are nonempty Rust string literals. The annotations apply to
 struct fields, enum-variant fields, and union fields. Tuple fields use their
@@ -235,6 +236,14 @@ separate cards below it. There are no lines from the focus to other cards. An
 incoming type with several relationships to the focus is drawn once; each
 relationship keeps its own source field or alias.
 
+A crate may declare one path more than once under exclusive `cfg`s, such as
+`#[cfg(unix)]` and `#[cfg(windows)]`, on the declarations or on the modules
+around them, in one file or in several. The diagram does not choose a target, so
+it draws each declaration: incoming ones as cards side by side, and the focus's
+one under another, with every line into the first. Each such card shows the
+`cfg` attributes from its crate root down to the declaration, as written, after
+its form, as in `struct · repr(Rust) · cfg(unix)`.
+
 ### 4.2 Structure
 
 Every card uses the same order: name, description when supplied, structure. The
@@ -287,8 +296,9 @@ Visibility is a UML marker before the name: `+` for `pub`, `~` for a restricted
 form such as `pub(crate)` or `pub(super)`, and `-` for private. The header
 carries the type's marker before its name and a field tile its field's. An enum
 variant's fields take the enum's visibility and carry none. A flow's start label
-carries the function's marker before the header the same way. This extends what
-RFC 0002 §4.1 retains.
+carries the function's marker before the header the same way; a trait's method,
+declared in the trait or in an `impl` of it, takes the trait's visibility and
+carries none. This extends what RFC 0002 §4.1 retains.
 
 ### 4.3 Arrangement
 
@@ -405,9 +415,9 @@ unsupported declaration forms, an unknown name under `kaa::`, empty
 descriptions, a `value`, `refer`, or `case` without its description, repeated or
 conflicting field, variant, and alias annotations, a `case` outside an enum
 variant, a `value` or `refer` on an enum variant, a declaration-level `value`, a
-declaration-level `refer` on anything but an alias, and parameterized `refer`
-targets at their source locations. An unannotated field is not a
-missing-description error.
+declaration-level `refer` on anything but an alias, `Self` as an alias's target,
+and parameterized `refer` targets at their source locations. An unannotated
+field is not a missing-description error.
 
 Relationship resolution must diagnose an unknown target, including a type
 parameter of the enclosing declaration, and a target that is not a struct, enum,

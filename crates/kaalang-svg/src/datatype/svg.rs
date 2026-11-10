@@ -18,7 +18,7 @@ const FOCUS_STROKE_WIDTH: f64 = 2.5;
 
 pub(super) fn serialize(scene: &TypeScene) -> String {
     let mut svg = String::new();
-    let focus = scene.cards.last().expect("a type diagram has its focus");
+    let focus = &scene.cards[scene.focus];
     let markdown_styles = markdown_styles(
         scene
             .cards
@@ -172,7 +172,7 @@ fn write_text(svg: &mut String, block: &TextBlock) {
 
 fn write_route(svg: &mut String, scene: &TypeScene, route: &Route) {
     let source = &scene.cards[route.card];
-    let focus = scene.cards.last().expect("a type diagram has its focus");
+    let focus = &scene.cards[scene.focus];
     svg.push_str("    <g class=\"relationship-route\">\n");
     write_title(svg, &format!("{} → {}", source.name, focus.name));
     let path: Vec<String> = route
@@ -197,7 +197,7 @@ fn write_route(svg: &mut String, scene: &TypeScene, route: &Route) {
 
 /// Names the focus, then each incoming type with the number of its lines.
 fn describe(scene: &TypeScene) -> String {
-    let focus = scene.cards.len() - 1;
+    let focus = scene.focus;
     let lines = |card: usize| {
         scene
             .routes
@@ -206,6 +206,11 @@ fn describe(scene: &TypeScene) -> String {
             .count()
     };
     let mut described = format!("Type {}", scene.cards[focus].name);
+    let declarations = scene.cards.len() - focus;
+    if declarations > 1 {
+        write!(described, " in {declarations} declarations")
+            .expect("writing to a String cannot fail");
+    }
     let incoming: Vec<String> = scene.cards[..focus]
         .iter()
         .enumerate()

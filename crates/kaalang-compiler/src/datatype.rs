@@ -15,7 +15,6 @@ use crate::{
 
 /// A struct, enum, union, or type alias, with its annotations if it has any.
 pub struct TypeDeclaration {
-    pub name: Ident,
     pub generics: Generics,
     /// The description from `#[kaa("description")]`, if any.
     pub description: Option<String>,
@@ -53,9 +52,13 @@ pub enum Annotation {
 }
 
 pub struct Relationship {
-    /// The target as written, a name or a path without parameters.
+    /// The target as written, a name or a path without parameters, with `Self`
+    /// replaced by the declaring type's name.
     pub target: Path,
     pub description: String,
+    /// The `cfg` attributes of the field and its variant: the target exists
+    /// only where they hold.
+    pub cfgs: Vec<Attribute>,
 }
 
 impl TypeDeclaration {
@@ -80,7 +83,8 @@ impl TypeDeclaration {
     }
 }
 
-const UNSUPPORTED: &str = "#[kaa] applies to functions, structs, enums, unions, and type aliases";
+const UNSUPPORTED: &str =
+    "#[kaa] applies to functions with a body, structs, enums, unions, and type aliases";
 
 /// Parses a type declaration with its annotations, if it has any. Its first
 /// `#[kaa]` attribute supplies the optional description.
@@ -136,32 +140,38 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
                     "a type alias takes one `refer` annotation",
                 ));
             }
-            Some("refer") => alias_relationship = Some(relationship(attribute, generics)?),
+            Some("refer") => {
+                alias_relationship = Some(relationship(attribute, None, generics, Vec::new())?);
+            }
             _ => {}
         }
     }
 
     let form = match item {
-        Item::Struct(declaration) => TypeForm::Struct(fields(&declaration.fields, generics)?),
+        Item::Struct(declaration) => {
+            TypeForm::Struct(fields(&declaration.fields, name, generics, &[])?)
+        }
         Item::Enum(declaration) => TypeForm::Enum(
             declaration
                 .variants
                 .iter()
                 .map(|variant| {
+                    let cfgs: Vec<Attribute> = cfg_attributes(&variant.attrs).cloned().collect();
                     Ok(Variant {
                         name: variant.ident.clone(),
                         case: variant_case(&variant.attrs)?,
-                        fields: fields(&variant.fields, generics)?,
+                        fields: fields(&variant.fields, name, generics, &cfgs)?,
                     })
                 })
                 .collect::<Result<_>>()?,
         ),
-        Item::Union(declaration) => TypeForm::Union(fields(&declaration.fields.named, generics)?),
+        Item::Union(declaration) => {
+            TypeForm::Union(fields(&declaration.fields.named, name, generics, &[])?)
+        }
         Item::Type(declaration) => TypeForm::Alias(declaration.ty.clone(), alias_relationship),
         _ => unreachable!("unsupported forms were rejected above"),
     };
     Ok(TypeDeclaration {
-        name: name.clone(),
         generics: generics.clone(),
         description,
         form,
@@ -266,13 +276,14 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
     }
     let declaration = type_declaration(&annotated)?;
 
-    // Each import is spanned at its target, where rustc reports an unknown one.
+    // Each import is spanned at its target, where rustc reports an unknown one,
+    // and stands under its field's `cfg`, as the target may.
     let imports: Vec<TokenStream> = declaration
         .relationships()
         .into_iter()
         .map(|relationship| {
-            let target = &relationship.target;
-            quote_spanned!(target.span()=> #[allow(unused_imports)] use #target as _;)
+            let (target, cfgs) = (&relationship.target, &relationship.cfgs);
+            quote_spanned!(target.span()=> #(#cfgs)* #[allow(unused_imports)] use #target as _;)
         })
         .collect();
     let imports = (!imports.is_empty()).then(|| quote! { const _: () = { #(#imports)* }; });
@@ -296,9 +307,13 @@ fn annotation(attribute: &Attribute) -> Result<Option<&'static str>> {
     })
 }
 
+/// Parses the fields of a struct, union, or variant of the type `owner`, whose
+/// `cfg` attributes are `outer`.
 fn fields<'a>(
     fields: impl IntoIterator<Item = &'a syn::Field>,
+    owner: &Ident,
     generics: &Generics,
+    outer: &[Attribute],
 ) -> Result<Vec<Field>> {
     fields
         .into_iter()
@@ -307,7 +322,11 @@ fn fields<'a>(
             for attribute in &field.attrs {
                 let parsed = match self::annotation(attribute)? {
                     Some("value") => Annotation::Value(description(attribute, "kaalang value")?),
-                    Some("refer") => Annotation::Refer(relationship(attribute, generics)?),
+                    Some("refer") => {
+                        let cfgs = outer.iter().chain(cfg_attributes(&field.attrs));
+                        let cfgs = cfgs.cloned().collect();
+                        Annotation::Refer(relationship(attribute, Some(owner), generics, cfgs)?)
+                    }
                     Some(_) => return Err(misplaced_case(attribute)),
                     None => continue,
                 };
@@ -359,8 +378,20 @@ fn misplaced_case(attribute: &Attribute) -> Error {
     Error::new_spanned(attribute, "`case` describes an enum variant")
 }
 
-/// Parses `refer(Target, "description")`.
-fn relationship(attribute: &Attribute, generics: &Generics) -> Result<Relationship> {
+fn cfg_attributes(attributes: &[Attribute]) -> impl Iterator<Item = &Attribute> {
+    attributes
+        .iter()
+        .filter(|attribute| attribute.path().is_ident("cfg"))
+}
+
+/// Parses `refer(Target, "description")` on a field of the type `owner` under
+/// `cfgs`, or on a type alias, which has no owner.
+fn relationship(
+    attribute: &Attribute,
+    owner: Option<&Ident>,
+    generics: &Generics,
+    cfgs: Vec<Attribute>,
+) -> Result<Relationship> {
     let malformed = || {
         Error::new_spanned(
             attribute,
@@ -370,7 +401,7 @@ fn relationship(attribute: &Attribute, generics: &Generics) -> Result<Relationsh
     let Meta::List(list) = &attribute.meta else {
         return Err(malformed());
     };
-    let (target, description) = list
+    let (mut target, description) = list
         .parse_args_with(|input: ParseStream| {
             let target: Path = input.parse()?;
             input.parse::<Token![,]>()?;
@@ -393,6 +424,16 @@ fn relationship(attribute: &Attribute, generics: &Generics) -> Result<Relationsh
             "a relationship target is written without parameters",
         ));
     }
+    if target.is_ident("Self") {
+        // As in Rust, `Self` names the type in its fields, and an alias has none.
+        let Some(owner) = owner else {
+            return Err(Error::new_spanned(&target, "a type alias has no `Self`"));
+        };
+        // Spanned at `Self`, so that the card shows the target as written.
+        let mut name = owner.clone();
+        name.set_span(target.span());
+        target = name.into();
+    }
     if let Some(name) = target.get_ident()
         && generics
             .type_params()
@@ -406,11 +447,13 @@ fn relationship(attribute: &Attribute, generics: &Generics) -> Result<Relationsh
     Ok(Relationship {
         target,
         description: description.value(),
+        cfgs,
     })
 }
 
 #[cfg(test)]
 mod tests {
+    use proc_macro2::TokenStream;
     use quote::ToTokens;
     use syn::{Item, parse_quote};
 
@@ -479,6 +522,55 @@ mod tests {
             expanded.contains("use super :: Member as _ ;"),
             "{expanded}"
         );
+    }
+
+    /// An attribute macro sees a field's `cfg` as written, so its import must
+    /// hold under the same one: the target may be gone with the field.
+    #[test]
+    fn expansion_keeps_a_field_cfg_and_its_variant_cfg_on_the_import() {
+        let item = parse_quote! {
+            enum Record {
+                #[cfg(feature = "audit")]
+                Audited {
+                    #[cfg(not(test))]
+                    #[kaa::refer(Auditor, "Who audited.")]
+                    by: u8,
+                },
+            }
+        };
+        let expanded = expand_type(&TokenStream::new(), item).unwrap().to_string();
+        assert!(
+            expanded.contains(
+                "# [cfg (feature = \"audit\")] # [cfg (not (test))] # [allow (unused_imports)] use Auditor as _ ;"
+            ),
+            "{expanded}"
+        );
+    }
+
+    #[test]
+    fn self_refers_to_the_declaring_type() {
+        let item: Item = parse_quote! {
+            #[kaa]
+            struct Section {
+                #[kaa::refer(Self, "Subsections.")]
+                children: Vec<Self>,
+            }
+        };
+        assert_eq!(targets(&item), ["Section"]);
+    }
+
+    #[test]
+    fn a_type_alias_has_no_self() {
+        let item: Item = parse_quote! {
+            #[kaa]
+            #[kaa::refer(Self, "Sections in reading order.")]
+            type Outline = Vec<Section>;
+        };
+        let error = type_declaration(&item)
+            .err()
+            .expect("`Self` is rejected")
+            .to_string();
+        assert_eq!(error, "a type alias has no `Self`");
     }
 
     #[test]

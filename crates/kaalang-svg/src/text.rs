@@ -354,13 +354,25 @@ impl RichText {
         result
     }
 
-    /// Whether the text is Rust source and nothing else.
+    /// Whether the text is Rust source and nothing else, behind a visibility
+    /// badge or not.
     pub(crate) fn is_code(&self) -> bool {
         !self.spans.is_empty()
-            && self
-                .spans
-                .iter()
-                .all(|span| span.formula.is_none() && span.style == CODE)
+            && self.spans.iter().all(|span| {
+                span.formula.is_none()
+                    && Style {
+                        badge: false,
+                        ..span.style
+                    } == CODE
+            })
+    }
+
+    /// The plain text without a leading visibility badge, for prose.
+    pub(crate) fn unmarked(&self) -> &str {
+        match self.spans.first() {
+            Some(span) if span.style.badge => self.plain[span.text.len()..].trim_start(),
+            _ => &self.plain,
+        }
     }
 
     pub(crate) fn markdown(text: &str) -> Self {
@@ -1066,7 +1078,14 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
     clusters.len()
 }
 
-/// Wraps at the last fitting space, or between grapheme clusters for long words.
+/// Whether `cluster` is an underscore in Rust source, after which an
+/// identifier too long for its line breaks without a hyphen.
+fn underscore_in_code(cluster: &Cluster) -> bool {
+    cluster.text == "_" && cluster.spans[0].style.code
+}
+
+/// Wraps at the last fitting space; a word too long for a line breaks after
+/// an underscore in Rust source, or else between grapheme clusters.
 /// Preserves text except newline separators; an oversized cluster stays intact.
 pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<RichText> {
     let mut all = clusters(text);
@@ -1089,12 +1108,30 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
         let mut start = 0;
         while clusters_width(&clusters[start..], font_size) > budget {
             let hard_end = start + fitting_count(&clusters[start..], budget, font_size);
-            let preferred_break = clusters[start..hard_end]
+            let candidates = &clusters[start..hard_end];
+            // Never a lone space, nor a badge or a leading underscore without
+            // the name it belongs to.
+            let accepted = |offset: usize| {
+                let end = start + offset + 1;
+                (end > start + 1
+                    && !clusters[start..end].iter().all(|cluster| {
+                        cluster.spans[0].style.badge
+                            || cluster.text.starts_with(char::is_whitespace)
+                            || underscore_in_code(cluster)
+                    }))
+                .then_some(end)
+            };
+            let at_space = candidates
                 .iter()
                 .rposition(|cluster| cluster.text.starts_with(char::is_whitespace))
-                .map(|offset| start + offset + 1)
-                .filter(|end| *end > start + 1);
-            let end = preferred_break.unwrap_or(hard_end);
+                .and_then(accepted);
+            let at_underscore = || {
+                candidates
+                    .iter()
+                    .rposition(underscore_in_code)
+                    .and_then(accepted)
+            };
+            let end = at_space.or_else(at_underscore).unwrap_or(hard_end);
             lines.push(line(&clusters[start..end]));
             start = end;
         }
@@ -1739,6 +1776,42 @@ mod tests {
                 "line exceeds the budget: {}",
                 line.as_ref()
             );
+        }
+    }
+
+    /// A start label is a badge and a `snake_case` name in code: the name breaks
+    /// after an underscore, and never leaves the badge alone on its line.
+    #[test]
+    fn wrapping_breaks_code_after_an_underscore_and_keeps_a_badge_with_its_name() {
+        let label = RichText::marked_code("+ transition_to_diverging_stage");
+        let lines = wrap_text(&label, text_width(&label, LABEL_FONT) - 1, LABEL_FONT);
+        assert_eq!(
+            lines.iter().map(RichText::as_ref).collect::<Vec<_>>(),
+            ["+ transition_to_diverging_", "stage"]
+        );
+
+        // A leading underscore stays with the name: the line breaks inside it.
+        let label = RichText::marked_code("+ _abcdefghijklmnopqrstuvwxyz_end");
+        let budget = text_width(&RichText::marked_code("+ _abcdefghij"), LABEL_FONT);
+        let lines = wrap_text(&label, budget, LABEL_FONT);
+        assert_eq!(lines[0].as_ref(), "+ _abcdefghij");
+
+        let label = RichText::marked_code("+ transitiontodivergingstage");
+        let lines = wrap_text(&label, text_width(&label, LABEL_FONT) - 1, LABEL_FONT);
+        assert!(
+            lines[0].as_ref().starts_with("+ t"),
+            "{:?}",
+            lines[0].as_ref()
+        );
+
+        // A space break keeps the next identifier whole; prose never breaks
+        // at an underscore.
+        for text in [
+            RichText::code("first_input_value, second_input_value"),
+            RichText::literal("first_input_value, second_input_value"),
+        ] {
+            let lines = wrap_text(&text, text_width(&text, LABEL_FONT) - 1, LABEL_FONT);
+            assert_eq!(lines[0].as_ref(), "first_input_value, ");
         }
     }
 

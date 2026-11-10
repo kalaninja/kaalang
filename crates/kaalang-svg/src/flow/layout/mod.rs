@@ -14,7 +14,7 @@ use kaalang_compiler::{
     Arrangement, RunLine, SemanticModel, Side,
     topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex},
 };
-use syn::{ItemFn, ReturnType, Signature, spanned::Spanned};
+use syn::{ReturnType, Signature, Visibility, spanned::Spanned};
 
 use self::label::{label_rect, vertical_gaps};
 pub(crate) use self::{
@@ -322,9 +322,13 @@ fn clear_labels(scene: &mut Scene) -> i32 {
     wanted
 }
 
-/// The authored flow header without its parameters and return type.
-pub(crate) fn start_text(source: &str, function: &ItemFn) -> String {
-    let signature = &function.sig;
+/// The authored flow header without its parameters and return type, behind
+/// its marker when the function has a visibility of its own.
+pub(crate) fn start_text(
+    source: &str,
+    signature: &Signature,
+    visibility: Option<&Visibility>,
+) -> String {
     let start = signature.span().byte_range().start;
     let end = signature.paren_token.span.open().byte_range().start;
     let keyword = signature.fn_token.span.byte_range();
@@ -335,7 +339,10 @@ pub(crate) fn start_text(source: &str, function: &ItemFn) -> String {
         authored.push(' ');
         authored.push_str(&collapsed(source, where_clause.span()));
     }
-    with_visibility(&function.vis, &authored)
+    match visibility {
+        Some(visibility) => with_visibility(visibility, &authored),
+        None => authored,
+    }
 }
 
 /// The authored flow parameters, one per panel row and without separating commas.

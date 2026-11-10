@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="413" height="616" viewBox="0 0 413 616" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Handle</title>
+  <desc id="kaalang-description">Type Handle in 2 declarations with incoming types Session.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Session</title>
+      <rect class="card-shape" x="32" y="32" width="265" height="144"/>
+      <path class="card-rules" d="M 32 120 L 297 120"/>
+      <rect class="card-outline" x="32" y="32" width="265" height="144"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Session</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="283" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A session that holds a device </tspan><tspan x="46" dy="18">open.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="140.28" text-anchor="middle">+</text>
+        <text x="58" y="141" text-anchor="start" xml:space="preserve"> handle</text>
+      </g>
+      <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">Handle</tspan></text>
+      <text class="description" y="143" xml:space="preserve"><tspan x="126" dy="0">The open device.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="283" dy="0">▸ <tspan class="md-code">Handle</tspan></tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Handle</title>
+      <rect class="card-shape" x="32" y="224" width="349" height="164"/>
+      <path class="card-rules" d="M 32 294 L 381 294 M 206 294 L 206 388"/>
+      <rect class="card-outline" x="32" y="224" width="349" height="164"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="254.92" text-anchor="middle">+</text>
+        <text x="64" y="256" text-anchor="start" xml:space="preserve"> Handle</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="256" xml:space="preserve"><tspan x="367" dy="0">struct · repr(Rust) · cfg(unix)</tspan></text>
+      <text class="description" y="279" xml:space="preserve"><tspan x="46" dy="0">An open device on Unix.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="314.28" text-anchor="middle">+</text>
+        <text x="58" y="315" text-anchor="start" xml:space="preserve"> device</text>
+      </g>
+      <text class="field-type" y="331" xml:space="preserve"><tspan x="46" dy="0">Device</tspan></text>
+      <text class="description" y="355" xml:space="preserve"><tspan x="46" dy="0">The device it opens.</tspan></text>
+      <text class="target" text-anchor="end" y="377" xml:space="preserve"><tspan x="192" dy="0">▸ <tspan class="md-code">Device</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="226" y="314.28" text-anchor="middle">+</text>
+        <text x="232" y="315" text-anchor="start" xml:space="preserve"> fd</text>
+      </g>
+      <text class="field-type" y="331" xml:space="preserve"><tspan x="220" dy="0">i32</tspan></text>
+      <text class="description" y="355" xml:space="preserve"><tspan x="220" dy="0">The file descriptor.</tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Handle</title>
+      <rect class="card-shape" x="32" y="420" width="349" height="164"/>
+      <path class="card-rules" d="M 32 490 L 381 490 M 220 490 L 220 584"/>
+      <rect class="card-outline" x="32" y="420" width="349" height="164"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="450.92" text-anchor="middle">+</text>
+        <text x="64" y="452" text-anchor="start" xml:space="preserve"> Handle</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="452" xml:space="preserve"><tspan x="367" dy="0">struct · repr(Rust) · cfg(not(unix))</tspan></text>
+      <text class="description" y="475" xml:space="preserve"><tspan x="46" dy="0">An open device on other systems.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="510.28" text-anchor="middle">+</text>
+        <text x="58" y="511" text-anchor="start" xml:space="preserve"> device</text>
+      </g>
+      <text class="field-type" y="527" xml:space="preserve"><tspan x="46" dy="0">Device</tspan></text>
+      <text class="description" y="551" xml:space="preserve"><tspan x="46" dy="0">The device it opens.</tspan></text>
+      <text class="target" text-anchor="end" y="573" xml:space="preserve"><tspan x="206" dy="0">▸ <tspan class="md-code">Device</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="240" y="510.28" text-anchor="middle">+</text>
+        <text x="246" y="511" text-anchor="start" xml:space="preserve"> raw</text>
+      </g>
+      <text class="field-type" y="527" xml:space="preserve"><tspan x="234" dy="0">isize</tspan></text>
+      <text class="description" y="551" xml:space="preserve"><tspan x="234" dy="0">The raw handle.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Session → Handle</title>
+      <path class="relationship" d="M 297 160 L 311 160 L 311 224" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="297" cy="160" r="4"/>
+    </g>
+  </g>
+</svg>

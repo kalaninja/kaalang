@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1138" viewBox="0 0 1064 1138" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1120" viewBox="0 0 1064 1120" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for unused_guard_survives_a_partial_merge</title>
-  <desc id="kaalang-description">Nodes: Start: - unused_guard_survives_a_partial_merge with parameters source: u8; cell: &amp;RefCell&lt;usize&gt; handing over source, cell; Select: Which branch borrows the cell? capturing source; Case: First borrower. handing over first; Case: Second borrower. handing over second; Case: Leave the cell unborrowed. handing over fallback; Action: Borrow the cell on the first branch. capturing first, cell handing over _guard, ready; Action: Borrow the cell on the second branch. capturing second, cell handing over _guard, ready; Action: Check that the partially merged guard is alive. capturing ready, cell handing over borrowed; Action: Continue without borrowing the cell. capturing fallback handing over borrowed; Action: Check that the wider merge releases the partial guard. capturing borrowed, cell handing over end; End: bool capturing end; Merge: ready; Merge: borrowed. Connections: Start: - unused_guard_survives_a_partial_merge to Select: Which branch borrows the cell?; Select: Which branch borrows the cell? to Case: First borrower.; Select: Which branch borrows the cell? to Case: Second borrower.; Select: Which branch borrows the cell? to Case: Leave the cell unborrowed.; Case: First borrower. to Action: Borrow the cell on the first branch.; Case: Second borrower. to Action: Borrow the cell on the second branch.; Case: Leave the cell unborrowed. to Action: Continue without borrowing the cell.; Action: Borrow the cell on the first branch. to the ready merge; Action: Borrow the cell on the second branch. to the ready merge; Action: Check that the partially merged guard is alive. to the borrowed merge; Action: Continue without borrowing the cell. to the borrowed merge; Action: Check that the wider merge releases the partial guard. to End: bool; the ready merge to Action: Check that the partially merged guard is alive.; the borrowed merge to Action: Check that the wider merge releases the partial guard..</desc>
+  <desc id="kaalang-description">Nodes: Start: unused_guard_survives_a_partial_merge with parameters source: u8; cell: &amp;RefCell&lt;usize&gt; handing over source, cell; Select: Which branch borrows the cell? capturing source; Case: First borrower. handing over first; Case: Second borrower. handing over second; Case: Leave the cell unborrowed. handing over fallback; Action: Borrow the cell on the first branch. capturing first, cell handing over _guard, ready; Action: Borrow the cell on the second branch. capturing second, cell handing over _guard, ready; Action: Check that the partially merged guard is alive. capturing ready, cell handing over borrowed; Action: Continue without borrowing the cell. capturing fallback handing over borrowed; Action: Check that the wider merge releases the partial guard. capturing borrowed, cell handing over end; End: bool capturing end; Merge: ready; Merge: borrowed. Connections: Start: unused_guard_survives_a_partial_merge to Select: Which branch borrows the cell?; Select: Which branch borrows the cell? to Case: First borrower.; Select: Which branch borrows the cell? to Case: Second borrower.; Select: Which branch borrows the cell? to Case: Leave the cell unborrowed.; Case: First borrower. to Action: Borrow the cell on the first branch.; Case: Second borrower. to Action: Borrow the cell on the second branch.; Case: Leave the cell unborrowed. to Action: Continue without borrowing the cell.; Action: Borrow the cell on the first branch. to the ready merge; Action: Borrow the cell on the second branch. to the ready merge; Action: Check that the partially merged guard is alive. to the borrowed merge; Action: Continue without borrowing the cell. to the borrowed merge; Action: Check that the wider merge releases the partial guard. to End: bool; the ready merge to Action: Check that the partially merged guard is alive.; the borrowed merge to Action: Check that the wider merge releases the partial guard..</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -52,104 +31,103 @@
   </g>
   <g class="connections">
     <path class="connection" d="
-      M 172 116 L 172 188
-      M 172 260 L 172 332
-      M 300 224 L 532 224 L 532 332
-      M 300 224 L 892 224 L 892 332
-      M 172 402 L 172 474
-      M 532 402 L 532 474
-      M 892 402 L 892 474
-      M 172 540 L 172 616
-      M 532 540 L 532 616 L 172 616
-      M 172 758 L 172 834
-      M 892 540 L 892 834 L 172 834
-      M 172 976 L 172 1048
-      M 172 616 L 172 692
-      M 172 834 L 172 910
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 300 206 L 532 206 L 532 314
+      M 300 206 L 892 206 L 892 314
+      M 172 384 L 172 456
+      M 532 384 L 532 456
+      M 892 384 L 892 456
+      M 172 522 L 172 598
+      M 532 522 L 532 598 L 172 598
+      M 172 740 L 172 816
+      M 892 522 L 892 816 L 172 816
+      M 172 958 L 172 1030
+      M 172 598 L 172 674
+      M 172 816 L 172 892
     "/>
-    <text class="connection-label code" x="185" y="852" xml:space="preserve"><tspan x="185" dy="0">borrowed</tspan></text>
-    <text class="connection-label code" x="905" y="463" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
-    <text class="connection-label code" x="185" y="1037" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
-    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">source, cell</tspan></text>
-    <text class="connection-label code" x="185" y="420" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
-    <text class="connection-label code" x="545" y="420" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
-    <text class="connection-label code" x="185" y="558" xml:space="preserve"><tspan x="185" dy="0">_guard, ready</tspan></text>
-    <text class="connection-label code" x="545" y="558" xml:space="preserve"><tspan x="545" dy="0">_guard, ready</tspan></text>
-    <text class="connection-label code" x="185" y="177" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
-    <text class="connection-label code" x="185" y="463" xml:space="preserve"><tspan x="185" dy="0">first, cell</tspan></text>
-    <text class="connection-label code" x="545" y="463" xml:space="preserve"><tspan x="545" dy="0">second, cell</tspan></text>
-    <text class="connection-label code" x="185" y="681" xml:space="preserve"><tspan x="185" dy="0">ready, cell</tspan></text>
-    <text class="connection-label code" x="185" y="899" xml:space="preserve"><tspan x="185" dy="0">borrowed, cell</tspan></text>
+    <text class="connection-label code" x="185" y="834" xml:space="preserve"><tspan x="185" dy="0">borrowed</tspan></text>
+    <text class="connection-label code" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">fallback</tspan></text>
+    <text class="connection-label code" x="185" y="1019" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">source, cell</tspan></text>
+    <text class="connection-label code" x="185" y="402" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="545" y="402" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label code" x="185" y="540" xml:space="preserve"><tspan x="185" dy="0">_guard, ready</tspan></text>
+    <text class="connection-label code" x="545" y="540" xml:space="preserve"><tspan x="545" dy="0">_guard, ready</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">source</tspan></text>
+    <text class="connection-label code" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">first, cell</tspan></text>
+    <text class="connection-label code" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">second, cell</tspan></text>
+    <text class="connection-label code" x="185" y="663" xml:space="preserve"><tspan x="185" dy="0">ready, cell</tspan></text>
+    <text class="connection-label code" x="185" y="881" xml:space="preserve"><tspan x="185" dy="0">borrowed, cell</tspan></text>
   </g>
   <g class="nodes">
-    <path class="parameter-link" d="M 312 74 L 408 74"/>
-    <g class="parameter-panel" transform="translate(528 74)">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
       <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
       <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">source: u8</tspan><tspan x="-104" dy="18">cell: &amp;RefCell&lt;usize&gt;</tspan></text>
     </g>
-    <g class="node merge" transform="translate(172 616)">
+    <g class="node merge" transform="translate(172 598)">
       <title xml:space="preserve">the ready merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node merge" transform="translate(172 834)">
+    <g class="node merge" transform="translate(172 816)">
       <title xml:space="preserve">the borrowed merge</title>
       <circle class="node-shape" r="4" style="fill: currentColor"/>
     </g>
-    <g class="node start" transform="translate(172 74)">
-      <rect class="node-shape" x="-140" y="-42" width="280" height="84" rx="42"/>
-      <g class="label">
-        <text class="md-badge" x="-4.34" y="-12.84" text-anchor="middle">−</text>
-        <text x="2.66" y="-12" text-anchor="start" xml:space="preserve"><tspan class="md-code"> </tspan></text>
-        <text x="-121.52" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code">unused_guard_survives_a_part</tspan></text>
-        <text x="-39.06" y="24" text-anchor="start" xml:space="preserve"><tspan class="md-code">ial_merge</tspan></text>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-108.5" y="-3.84" text-anchor="middle">−</text>
+        <text x="-101.5" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> unused_guard_survives_a_</tspan></text>
+        <text x="-56.42" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">partial_merge</tspan></text>
       </g>
     </g>
-    <g class="node select" transform="translate(172 224)">
+    <g class="node select" transform="translate(172 206)">
       <title xml:space="preserve">Which branch borrows the cell?</title>
       <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Which branch borrows the </tspan><tspan x="0" dy="18">cell?</tspan></text>
     </g>
-    <g class="node case" transform="translate(172 367)">
+    <g class="node case" transform="translate(172 349)">
       <title xml:space="preserve">First borrower.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">First borrower.</tspan></text>
     </g>
-    <g class="node case" transform="translate(532 367)">
+    <g class="node case" transform="translate(532 349)">
       <title xml:space="preserve">Second borrower.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Second borrower.</tspan></text>
     </g>
-    <g class="node case" transform="translate(892 367)">
+    <g class="node case" transform="translate(892 349)">
       <title xml:space="preserve">Leave the cell unborrowed.</title>
       <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Leave the cell unborrowed.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 507)">
+    <g class="node action" transform="translate(172 489)">
       <title xml:space="preserve">Borrow the cell on the first branch.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Borrow the cell on the first </tspan><tspan x="-124" dy="18">branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(532 507)">
+    <g class="node action" transform="translate(532 489)">
       <title xml:space="preserve">Borrow the cell on the second branch.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Borrow the cell on the second </tspan><tspan x="-124" dy="18">branch.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 725)">
+    <g class="node action" transform="translate(172 707)">
       <title xml:space="preserve">Check that the partially merged guard is alive.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Check that the partially merged </tspan><tspan x="-124" dy="18">guard is alive.</tspan></text>
     </g>
-    <g class="node action" transform="translate(892 507)">
+    <g class="node action" transform="translate(892 489)">
       <title xml:space="preserve">Continue without borrowing the cell.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Continue without borrowing the </tspan><tspan x="-124" dy="18">cell.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 943)">
+    <g class="node action" transform="translate(172 925)">
       <title xml:space="preserve">Check that the wider merge releases the partial guard.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Check that the wider merge </tspan><tspan x="-124" dy="18">releases the partial guard.</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1077)">
+    <g class="node end" transform="translate(172 1059)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">bool</tspan></text>
     </g>

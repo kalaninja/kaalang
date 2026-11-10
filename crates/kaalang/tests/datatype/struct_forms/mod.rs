@@ -6,7 +6,7 @@ use kaalang::kaa;
 pub struct Member {
     #[kaa::value("The member's key.")]
     pub id: MemberId,
-    #[kaa::value("The member's display name.")]
+    #[kaa::value("The **display** name, as the `directory` shows it.")]
     pub(crate) name: String,
     // No annotation: the tile shows the field's name and type only.
     active: bool,

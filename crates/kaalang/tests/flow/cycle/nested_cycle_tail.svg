@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="935" viewBox="0 0 1000 935" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for nested_cycle_tail</title>
-  <desc id="kaalang-description">Cycles: Count to the limit through an inner cycle. with inputs mut count, limit and outputs leave_1; Increment until the current pass is complete. with inputs iterate_1, mut count, limit and outputs leave_2. Nodes: Start: - nested_cycle_tail with parameters mut count: usize; limit: usize handing over mut count, limit; Question: Is another counting pass needed? capturing &amp;count, &amp;limit handing over leave_1 / iterate_1 described as branch 1: NO / branch 2: YES; Question: Is the count below the limit? capturing &amp;count, &amp;limit handing over iterate_2 / leave_2 described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate_2, &amp;mut count; End: usize capturing count. Connections: Start: - nested_cycle_tail to the entry of the cycle; Question: Is another counting pass needed? branch 1 to End: usize; Question: Is another counting pass needed? branch 2 to the entry of the cycle; Question: Is the count below the limit? branch 1 to Action: Increment the count.; Question: Is the count below the limit? branch 2 to the iteration tail of the cycle; Action: Increment the count. to the iteration tail of the cycle; the entry of the cycle to Question: Is another counting pass needed?; the entry of the cycle to Question: Is the count below the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <desc id="kaalang-description">Cycles: Count to the limit through an inner cycle. with inputs mut count, limit and outputs leave_1; Increment until the current pass is complete. with inputs iterate_1, mut count, limit and outputs leave_2. Nodes: Start: nested_cycle_tail with parameters mut count: usize; limit: usize handing over mut count, limit; Question: Is another counting pass needed? capturing &amp;count, &amp;limit handing over leave_1 / iterate_1 described as branch 1: NO / branch 2: YES; Question: Is the count below the limit? capturing &amp;count, &amp;limit handing over iterate_2 / leave_2 described as branch 1: YES / branch 2: NO; Action: Increment the count. capturing iterate_2, &amp;mut count; End: usize capturing count. Connections: Start: nested_cycle_tail to the entry of the cycle; Question: Is another counting pass needed? branch 1 to End: usize; Question: Is another counting pass needed? branch 2 to the entry of the cycle; Question: Is the count below the limit? branch 1 to Action: Increment the count.; Question: Is the count below the limit? branch 2 to the iteration tail of the cycle; Action: Increment the count. to the iteration tail of the cycle; the entry of the cycle to Question: Is another counting pass needed?; the entry of the cycle to Question: Is the count below the limit?; Repeat from the iteration tail of the cycle to the entry of the cycle; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -24,27 +24,6 @@
       .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
       .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
-      .cycle-caption .md-math { color: #166534; }
-      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
-      .md-bold { font-weight: 800; }
-      .md-italic { font-style: italic; }
-      .md-quote { font-style: italic; }
-      .md-strikethrough { text-decoration: line-through; }
-      .md-underline { text-decoration: underline; }
-      .md-strikethrough.md-underline { text-decoration: underline line-through; }
-      .md-highlight-box { fill: #fef08a; stroke: none; }
-      .md-superscript, .md-subscript { font-size: 75%; }
-      .md-superscript { baseline-shift: 0.4em; }
-      .md-subscript { baseline-shift: -0.2em; }
-      .md-math { color: inherit; overflow: visible; }
-      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
-      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
-      .md-math.md-bold g[stroke] path { stroke: inherit; }
-      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
-      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
-      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
-      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
-      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
   </defs>
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -96,7 +75,7 @@
     </g>
     <g class="node start" transform="translate(200 65)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
-      <g class="label">
+      <g class="label code">
         <text class="md-badge" x="-78.12" y="5.16" text-anchor="middle">−</text>
         <text x="-71.12" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> nested_cycle_tail</tspan></text>
       </g>

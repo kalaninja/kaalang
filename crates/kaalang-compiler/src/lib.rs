@@ -87,22 +87,34 @@ fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticM
     })
 }
 
+/// A `#[kaa]` function among a file's items.
+pub struct FlowItem {
+    /// Its path among the items: `route`, `review::route`, or `Report::approve`.
+    pub path: String,
+    pub function: ItemFn,
+    /// Whether a trait declares it, in the trait or in an `impl` of it. Such a
+    /// method takes the trait's visibility and has none of its own.
+    pub trait_method: bool,
+}
+
 /// Collects `#[kaa]` functions and methods from these items, in source
-/// order, each with its path among them: `route`, `review::route`, or
-/// `Report::approve`. Searches inline modules and trait methods with default
-/// bodies.
+/// order. Searches inline modules and trait methods with default bodies.
 #[must_use]
-pub fn flows(items: &[syn::Item]) -> Vec<(String, ItemFn)> {
+pub fn flows(items: &[syn::Item]) -> Vec<FlowItem> {
     let mut flows = Vec::new();
     collect_flows(items, "", &mut flows);
     flows
 }
 
-fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<(String, ItemFn)>) {
+fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<FlowItem>) {
     for item in items {
         match item {
             syn::Item::Fn(function) if declares_a_flow(&function.attrs) => {
-                flows.push((format!("{prefix}{}", function.sig.ident), function.clone()));
+                flows.push(FlowItem {
+                    path: format!("{prefix}{}", function.sig.ident),
+                    function: function.clone(),
+                    trait_method: false,
+                });
             }
             syn::Item::Mod(module) => {
                 if let Some((_, items)) = &module.content {
@@ -123,7 +135,11 @@ fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<(String, Ite
                             sig: method.sig.clone(),
                             block: Box::new(method.block.clone()),
                         };
-                        flows.push((format!("{prefix}{owner}::{}", method.sig.ident), function));
+                        flows.push(FlowItem {
+                            path: format!("{prefix}{owner}::{}", method.sig.ident),
+                            function,
+                            trait_method: block.trait_.is_some(),
+                        });
                     }
                 }
             }
@@ -140,8 +156,11 @@ fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<(String, Ite
                             sig: method.sig.clone(),
                             block: Box::new(body.clone()),
                         };
-                        let path = format!("{prefix}{}::{}", declaration.ident, method.sig.ident);
-                        flows.push((path, function));
+                        flows.push(FlowItem {
+                            path: format!("{prefix}{}::{}", declaration.ident, method.sig.ident),
+                            function,
+                            trait_method: true,
+                        });
                     }
                 }
             }
