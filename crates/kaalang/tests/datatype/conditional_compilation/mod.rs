@@ -37,7 +37,12 @@ pub struct Session {
     pub handle: Handle,
     // Only on Unix does the log name a device.
     #[cfg_attr(unix, kaa::refer(Device, "The device it logs to."))]
+    #[cfg_attr(not(unix), kaa::value("The log destination."))]
+    #[cfg_attr(any(), kaa::value(""))]
     pub log: String,
+    #[cfg_attr(all(), cfg(any()), allow(dead_code))]
+    #[kaa::refer(Missing, "An excluded destination.")]
+    pub excluded: u8,
 }
 
 #[test]
@@ -60,4 +65,18 @@ fn a_type_may_be_declared_once_for_each_target() {
     assert_eq!(session.handle.fd, 3);
     #[cfg(not(unix))]
     assert_eq!(session.handle.raw, 3);
+}
+
+#[test]
+fn conditional_variant_annotations_do_not_change_field_guards() {
+    #[kaa]
+    enum Record {
+        #[cfg_attr(unix, kaa::case("A Unix record."))]
+        #[cfg_attr(not(unix), kaa::case("Another record."))]
+        Current(#[kaa::refer(Device, "The device.")] u8),
+        #[cfg_attr(all(), cfg_attr(all(), cfg(any())))]
+        Excluded(#[kaa::refer(Missing, "An excluded device.")] u8),
+    }
+    let Record::Current(value) = Record::Current(3);
+    assert_eq!(value, 3);
 }

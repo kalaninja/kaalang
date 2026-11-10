@@ -159,7 +159,7 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
                 .variants
                 .iter()
                 .map(|variant| {
-                    let cfgs: Vec<Attribute> = cfg_attributes(&variant.attrs).cloned().collect();
+                    let cfgs = cfg_attributes(&variant.attrs);
                     Ok(Variant {
                         name: variant.ident.clone(),
                         case: variant_case(&variant.attrs)?,
@@ -236,56 +236,60 @@ fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
 ///
 /// # Errors
 ///
-/// Returns the first annotation error at its source span.
+/// Rejects unsupported declaration forms. Annotation errors are emitted at
+/// their source spans under the same compilation guards as the annotations.
 pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStream> {
     // Spanned at the arguments, so that a malformed description points at them.
     let attribute: Attribute = match arguments.clone().into_iter().next() {
         None => syn::parse_quote!(#[kaa]),
         Some(first) => syn::parse_quote_spanned!(first.span()=> #[kaa(#arguments)]),
     };
-    let mut annotated: Item = syn::parse_quote!(#attribute #item);
-    // The `cfg_attr`s of fields and variants reach the macro unexpanded, so an
-    // annotation under one is read under a `cfg` of its predicates instead,
-    // and the item keeps the rest of the `cfg_attr`.
-    for attributes in inner_attributes(&mut annotated) {
-        *attributes = lift_annotations(attributes).1;
-    }
-    for attributes in inner_attributes(&mut item) {
-        *attributes = lift_annotations(attributes).0;
-    }
-
-    // Only the annotations go: rustc rejects a `#[kaa]` left on a field or variant.
-    let unannotated = |attribute: &Attribute| annotation_name(attribute).is_none();
-    let mut fields: Vec<&mut syn::Field> = match &mut item {
+    let mut checks = TokenStream::new();
+    let attributes = match &mut item {
         Item::Struct(declaration) => {
-            declaration.attrs.retain(unannotated);
-            declaration.fields.iter_mut().collect()
+            checks.extend(expand_fields(
+                &mut declaration.fields,
+                &declaration.ident,
+                &declaration.generics,
+                &[],
+            ));
+            &mut declaration.attrs
         }
         Item::Enum(declaration) => {
-            declaration.attrs.retain(unannotated);
-            declaration
-                .variants
-                .iter_mut()
-                .flat_map(|variant| {
-                    variant.attrs.retain(unannotated);
-                    variant.fields.iter_mut()
-                })
-                .collect()
+            for variant in &mut declaration.variants {
+                let cfgs = cfg_attributes(&variant.attrs);
+                checks.extend(expand_annotations(&mut variant.attrs, &[], |attributes| {
+                    variant_case(attributes).map(|_| None)
+                }));
+                checks.extend(expand_fields(
+                    &mut variant.fields,
+                    &declaration.ident,
+                    &declaration.generics,
+                    &cfgs,
+                ));
+            }
+            &mut declaration.attrs
         }
         Item::Union(declaration) => {
-            declaration.attrs.retain(unannotated);
-            declaration.fields.named.iter_mut().collect()
+            checks.extend(expand_fields(
+                &mut declaration.fields.named,
+                &declaration.ident,
+                &declaration.generics,
+                &[],
+            ));
+            &mut declaration.attrs
         }
-        Item::Type(declaration) => {
-            declaration.attrs.retain(unannotated);
-            Vec::new()
-        }
+        Item::Type(declaration) => &mut declaration.attrs,
         // Rejected before validation, so that the span leaves out the inserted attribute.
         _ => return Err(Error::new_spanned(item, UNSUPPORTED)),
     };
-    for field in &mut fields {
-        field.attrs.retain(unannotated);
-    }
+    let root: Vec<_> = attributes
+        .iter()
+        .filter(|attribute| annotation_name(attribute).is_some())
+        .cloned()
+        .collect();
+    attributes.retain(|attribute| annotation_name(attribute).is_none());
+    let annotated: Item = syn::parse_quote!(#attribute #(#root)* #item);
     let declaration = match type_declaration(&annotated) {
         Ok(declaration) => declaration,
         // Without its annotations the item is valid Rust, so its uses still resolve.
@@ -297,59 +301,106 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
 
     // Each import is spanned at its target, where rustc reports an unknown one,
     // and stands under its field's `cfg`, as the target may.
-    let imports: Vec<TokenStream> = declaration
-        .relationships()
-        .into_iter()
-        .map(|relationship| {
-            let (target, cfgs) = (&relationship.target, &relationship.cfgs);
-            quote_spanned!(target.span()=> #(#cfgs)* #[allow(unused_imports)] use #target as _;)
-        })
-        .collect();
-    let imports = (!imports.is_empty()).then(|| quote! { const _: () = { #(#imports)* }; });
-    Ok(quote! { #item #imports })
-}
-
-/// The attributes of each field and variant of a supported declaration form.
-fn inner_attributes(item: &mut Item) -> Vec<&mut Vec<Attribute>> {
-    match item {
-        Item::Struct(declaration) => declaration
-            .fields
-            .iter_mut()
-            .map(|field| &mut field.attrs)
-            .collect(),
-        Item::Enum(declaration) => declaration
-            .variants
-            .iter_mut()
-            .flat_map(|variant| {
-                iter::once(&mut variant.attrs)
-                    .chain(variant.fields.iter_mut().map(|field| &mut field.attrs))
+    checks.extend(
+        declaration
+            .relationships()
+            .into_iter()
+            .map(|relationship| {
+                let (target, cfgs) = (&relationship.target, &relationship.cfgs);
+                quote_spanned!(target.span()=> #(#cfgs)* #[allow(unused_imports)] use #target as _;)
             })
-            .collect(),
-        Item::Union(declaration) => declaration
-            .fields
-            .named
-            .iter_mut()
-            .map(|field| &mut field.attrs)
-            .collect(),
-        _ => Vec::new(),
-    }
+            .collect::<TokenStream>(),
+    );
+    let checks = (!checks.is_empty()).then(|| quote! { const _: () = { #checks }; });
+    Ok(quote! { #item #checks })
 }
 
-/// Splits `attributes` around the annotations under their `cfg_attr`s: the
-/// attributes without them, and the attributes where each stands on its own
-/// after a `cfg` of the predicates around it.
-fn lift_annotations(attributes: &[Attribute]) -> (Vec<Attribute>, Vec<Attribute>) {
+fn expand_fields<'a>(
+    fields: impl IntoIterator<Item = &'a mut syn::Field>,
+    owner: &Ident,
+    generics: &Generics,
+    outer: &[Attribute],
+) -> TokenStream {
+    let mut checks = TokenStream::new();
+    for field in fields {
+        let mut read = field.clone();
+        checks.extend(expand_annotations(&mut field.attrs, outer, |attributes| {
+            read.attrs = attributes.to_vec();
+            let parsed = self::fields(iter::once(&read), owner, generics, &[])?;
+            Ok(parsed
+                .into_iter()
+                .next()
+                .and_then(|field| match field.annotation {
+                    Some(Annotation::Refer(relationship)) => Some(relationship.target),
+                    _ => None,
+                }))
+        }));
+    }
+    checks
+}
+
+/// Rust evaluates the guards on each check, including whether two annotations
+/// coexist; the procedural macro itself runs for the host, not the target.
+fn expand_annotations(
+    attributes: &mut Vec<Attribute>,
+    outer: &[Attribute],
+    mut validate: impl FnMut(&[Attribute]) -> Result<Option<Path>>,
+) -> TokenStream {
+    let (kept, annotations) = lift_annotations(attributes);
+    *attributes = kept;
+    let cfgs: Vec<_> = outer
+        .iter()
+        .cloned()
+        .chain(cfg_attributes(attributes))
+        .collect();
+    let mut checks = TokenStream::new();
+    let mut valid = Vec::new();
+    for (predicates, annotation) in &annotations {
+        let guarded = |check: TokenStream, other: &[TokenStream]| {
+            let condition = (!predicates.is_empty() || !other.is_empty()).then(|| {
+                let predicates = predicates.iter().chain(other);
+                quote!(#[cfg(all(#(#predicates),*))])
+            });
+            quote! { #(#cfgs)* #condition #check }
+        };
+        match validate(std::slice::from_ref(annotation)) {
+            Ok(target) => {
+                if let Some(target) = target {
+                    checks.extend(guarded(
+                        quote_spanned!(target.span()=> #[allow(unused_imports)] use #target as _;),
+                        &[],
+                    ));
+                }
+                for &(previous, prior) in &valid {
+                    if let Err(error) = validate(&[Attribute::clone(prior), annotation.clone()]) {
+                        checks.extend(guarded(error.into_compile_error(), previous));
+                    }
+                }
+                valid.push((predicates.as_slice(), annotation));
+            }
+            Err(error) => checks.extend(guarded(error.into_compile_error(), &[])),
+        }
+    }
+    checks
+}
+
+/// Removes annotations, retaining the predicates around each separately.
+fn lift_annotations(
+    attributes: &[Attribute],
+) -> (Vec<Attribute>, Vec<(Vec<TokenStream>, Attribute)>) {
     let mut kept = Vec::new();
     let mut read = Vec::new();
     for attribute in attributes {
+        if annotation_name(attribute).is_some() {
+            read.push((Vec::new(), attribute.clone()));
+            continue;
+        }
         let Meta::List(list) = &attribute.meta else {
             kept.push(attribute.clone());
-            read.push(attribute.clone());
             continue;
         };
         if !list.path.is_ident("cfg_attr") {
             kept.push(attribute.clone());
-            read.push(attribute.clone());
             continue;
         }
         let mut lifted = Vec::new();
@@ -359,16 +410,16 @@ fn lift_annotations(attributes: &[Attribute]) -> (Vec<Attribute>, Vec<Attribute>
                 meta: syn::parse_quote_spanned!(list.path.span()=> cfg_attr(#rest)),
                 ..attribute.clone()
             };
-            kept.push(rest.clone());
-            read.push(rest);
+            kept.push(rest);
         }
         for (predicates, annotation) in lifted {
-            let at = annotation.span();
-            read.push(syn::parse_quote_spanned!(at=> #[cfg(all(#(#predicates),*))]));
-            read.push(Attribute {
-                meta: annotation,
-                ..attribute.clone()
-            });
+            read.push((
+                predicates,
+                Attribute {
+                    meta: annotation,
+                    ..attribute.clone()
+                },
+            ));
         }
     }
     (kept, read)
@@ -436,8 +487,11 @@ fn fields<'a>(
                 let parsed = match self::annotation(attribute)? {
                     Some("value") => Annotation::Value(description(attribute, "kaalang value")?),
                     Some("refer") => {
-                        let cfgs = outer.iter().chain(cfg_attributes(&field.attrs));
-                        let cfgs = cfgs.cloned().collect();
+                        let cfgs = outer
+                            .iter()
+                            .cloned()
+                            .chain(cfg_attributes(&field.attrs))
+                            .collect();
                         Annotation::Refer(relationship(attribute, Some(owner), generics, cfgs)?)
                     }
                     Some(_) => return Err(misplaced_case(attribute)),
@@ -491,10 +545,34 @@ fn misplaced_case(attribute: &Attribute) -> Error {
     Error::new_spanned(attribute, "`case` describes an enum variant")
 }
 
-fn cfg_attributes(attributes: &[Attribute]) -> impl Iterator<Item = &Attribute> {
+fn cfg_attributes(attributes: &[Attribute]) -> Vec<Attribute> {
+    fn guard(meta: &Meta) -> Option<Meta> {
+        let Meta::List(list) = meta else {
+            return None;
+        };
+        if list.path.is_ident("cfg") {
+            return Some(meta.clone());
+        }
+        if !list.path.is_ident("cfg_attr") {
+            return None;
+        }
+        let mut parts = split_at_commas(list.tokens.clone()).into_iter();
+        let predicate = parts.next()?;
+        let guards: Vec<_> = parts
+            .filter_map(|part| syn::parse2::<Meta>(part).ok().and_then(|meta| guard(&meta)))
+            .collect();
+        (!guards.is_empty())
+            .then(|| syn::parse_quote_spanned!(list.span()=> cfg_attr(#predicate, #(#guards),*)))
+    }
     attributes
         .iter()
-        .filter(|attribute| attribute.path().is_ident("cfg"))
+        .filter_map(|attribute| {
+            guard(&attribute.meta).map(|meta| Attribute {
+                meta,
+                ..attribute.clone()
+            })
+        })
+        .collect()
 }
 
 /// Parses `refer(Target, "description")` on a field of the type `owner` under
