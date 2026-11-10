@@ -6,6 +6,7 @@ use std::{
 
 use clap::{ArgGroup, builder::NonEmptyStringValueParser};
 use kaalang_svg::RenderError;
+use syn::ext::IdentExt;
 
 use crate::{datatype, workspace};
 
@@ -32,6 +33,8 @@ pub(super) struct Diagram {
     /// Incoming types to a row [default: as many as fit a Full HD screen]
     #[arg(long, conflicts_with = "flow")]
     columns: Option<NonZeroUsize>,
+    #[command(flatten)]
+    target: workspace::TargetOptions,
 }
 
 impl Diagram {
@@ -46,15 +49,17 @@ impl Diagram {
                 let options = kaalang_svg::TypeOptions {
                     columns: self.columns,
                 };
-                let drawn = datatype::draw(ty, self.package.as_deref(), options)?;
+                let drawn = datatype::draw(ty, self.package.as_deref(), &self.target, options)?;
                 (ty, drawn.svg, drawn.files)
             }
             (None, None) => unreachable!("clap requires --flow or --type"),
         };
-        let name = path
-            .rsplit_once("::")
-            .map_or(path.as_str(), |(_, name)| name);
-        let name = name.strip_prefix("r#").unwrap_or(name);
+        // The last segment's name, without its generic arguments or `r#`. The
+        // path rendered, so it parses.
+        let name = syn::parse_str::<syn::TypePath>(path)
+            .ok()
+            .and_then(|parsed| parsed.path.segments.last().map(|last| last.ident.unraw()))
+            .map_or_else(|| path.clone(), |name| name.to_string());
         let output = self.output.unwrap_or_else(|| {
             PathBuf::from(if self.collapse_cycles {
                 format!("{name}_collapsed.svg")
@@ -77,12 +82,13 @@ impl Diagram {
 
     /// Renders the flow at `path` and returns it with the file declaring it.
     fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
-        let found = workspace::find(path, self.package.as_deref())?;
+        let found = workspace::find(path, self.package.as_deref(), &self.target)?;
         let svg = kaalang_svg::render_flow(
             &found.source,
             found.position,
             kaalang_svg::RenderOptions {
                 collapse_cycles: self.collapse_cycles,
+                target: &found.cfg,
             },
         )
         .map_err(|mut error| {

@@ -1,6 +1,8 @@
 //! Parses type declarations with their annotations, and expands datatypes for
 //! the macro.
 
+use std::iter;
+
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
@@ -9,8 +11,9 @@ use syn::{
 };
 
 use crate::{
+    configure::split_at_commas,
     is_kaalang_attribute,
-    parse::{annotation_name, description},
+    parse::{annotation_name, description, path_annotation_name},
 };
 
 /// A struct, enum, union, or type alias, with its annotations if it has any.
@@ -240,7 +243,16 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
         None => syn::parse_quote!(#[kaa]),
         Some(first) => syn::parse_quote_spanned!(first.span()=> #[kaa(#arguments)]),
     };
-    let annotated: Item = syn::parse_quote!(#attribute #item);
+    let mut annotated: Item = syn::parse_quote!(#attribute #item);
+    // The `cfg_attr`s of fields and variants reach the macro unexpanded, so an
+    // annotation under one is read under a `cfg` of its predicates instead,
+    // and the item keeps the rest of the `cfg_attr`.
+    for attributes in inner_attributes(&mut annotated) {
+        *attributes = lift_annotations(attributes).1;
+    }
+    for attributes in inner_attributes(&mut item) {
+        *attributes = lift_annotations(attributes).0;
+    }
 
     // Only the annotations go: rustc rejects a `#[kaa]` left on a field or variant.
     let unannotated = |attribute: &Attribute| annotation_name(attribute).is_none();
@@ -274,7 +286,14 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
     for field in &mut fields {
         field.attrs.retain(unannotated);
     }
-    let declaration = type_declaration(&annotated)?;
+    let declaration = match type_declaration(&annotated) {
+        Ok(declaration) => declaration,
+        // Without its annotations the item is valid Rust, so its uses still resolve.
+        Err(error) => {
+            let error = error.into_compile_error();
+            return Ok(quote! { #item #error });
+        }
+    };
 
     // Each import is spanned at its target, where rustc reports an unknown one,
     // and stands under its field's `cfg`, as the target may.
@@ -288,6 +307,100 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
         .collect();
     let imports = (!imports.is_empty()).then(|| quote! { const _: () = { #(#imports)* }; });
     Ok(quote! { #item #imports })
+}
+
+/// The attributes of each field and variant of a supported declaration form.
+fn inner_attributes(item: &mut Item) -> Vec<&mut Vec<Attribute>> {
+    match item {
+        Item::Struct(declaration) => declaration
+            .fields
+            .iter_mut()
+            .map(|field| &mut field.attrs)
+            .collect(),
+        Item::Enum(declaration) => declaration
+            .variants
+            .iter_mut()
+            .flat_map(|variant| {
+                iter::once(&mut variant.attrs)
+                    .chain(variant.fields.iter_mut().map(|field| &mut field.attrs))
+            })
+            .collect(),
+        Item::Union(declaration) => declaration
+            .fields
+            .named
+            .iter_mut()
+            .map(|field| &mut field.attrs)
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Splits `attributes` around the annotations under their `cfg_attr`s: the
+/// attributes without them, and the attributes where each stands on its own
+/// after a `cfg` of the predicates around it.
+fn lift_annotations(attributes: &[Attribute]) -> (Vec<Attribute>, Vec<Attribute>) {
+    let mut kept = Vec::new();
+    let mut read = Vec::new();
+    for attribute in attributes {
+        let Meta::List(list) = &attribute.meta else {
+            kept.push(attribute.clone());
+            read.push(attribute.clone());
+            continue;
+        };
+        if !list.path.is_ident("cfg_attr") {
+            kept.push(attribute.clone());
+            read.push(attribute.clone());
+            continue;
+        }
+        let mut lifted = Vec::new();
+        let rest = take_annotations(list.tokens.clone(), &mut Vec::new(), &mut lifted);
+        if let Some(rest) = rest {
+            let rest = Attribute {
+                meta: syn::parse_quote_spanned!(list.path.span()=> cfg_attr(#rest)),
+                ..attribute.clone()
+            };
+            kept.push(rest.clone());
+            read.push(rest);
+        }
+        for (predicates, annotation) in lifted {
+            let at = annotation.span();
+            read.push(syn::parse_quote_spanned!(at=> #[cfg(all(#(#predicates),*))]));
+            read.push(Attribute {
+                meta: annotation,
+                ..attribute.clone()
+            });
+        }
+    }
+    (kept, read)
+}
+
+/// Takes the annotations out of the arguments of a `cfg_attr`, nested ones
+/// included, pushing each onto `lifted` with the predicates around it, and
+/// returns the arguments left, unless no attribute is.
+fn take_annotations(
+    arguments: TokenStream,
+    predicates: &mut Vec<TokenStream>,
+    lifted: &mut Vec<(Vec<TokenStream>, Meta)>,
+) -> Option<TokenStream> {
+    let mut parts = split_at_commas(arguments).into_iter();
+    let predicate = parts.next()?;
+    predicates.push(predicate.clone());
+    let mut rest = Vec::new();
+    for part in parts {
+        match syn::parse2::<Meta>(part.clone()) {
+            Ok(Meta::List(nested)) if nested.path.is_ident("cfg_attr") => {
+                if let Some(nested) = take_annotations(nested.tokens, predicates, lifted) {
+                    rest.push(quote!(cfg_attr(#nested)));
+                }
+            }
+            Ok(meta) if path_annotation_name(meta.path()).is_some() => {
+                lifted.push((predicates.clone(), meta));
+            }
+            _ => rest.push(part),
+        }
+    }
+    predicates.pop();
+    (!rest.is_empty()).then(|| quote!(#predicate, #(#rest),*))
 }
 
 /// The type annotation `attribute` names: `kaa::value`, `kaa::refer`, or
@@ -522,6 +635,42 @@ mod tests {
             expanded.contains("use super :: Member as _ ;"),
             "{expanded}"
         );
+    }
+
+    #[test]
+    fn an_annotation_under_a_cfg_attr_checks_its_target_under_the_predicate() {
+        let item = parse_quote! {
+            struct Session {
+                #[cfg_attr(unix, kaa::refer(Device, "The device."), allow(dead_code))]
+                device: u8,
+                #[cfg_attr(unix, cfg_attr(test, kaa::value("A log.")))]
+                log: String,
+            }
+        };
+        let expanded = expand_type(&TokenStream::new(), item).unwrap().to_string();
+        assert!(!expanded.contains("kaa"), "{expanded}");
+        assert!(
+            expanded.contains("# [cfg_attr (unix , allow (dead_code))] device : u8 , log : String"),
+            "{expanded}"
+        );
+        assert!(
+            expanded.contains("# [cfg (all (unix))] # [allow (unused_imports)] use Device as _ ;"),
+            "{expanded}"
+        );
+    }
+
+    #[test]
+    fn a_rejected_annotation_keeps_the_type_beside_its_error() {
+        let item = parse_quote! {
+            struct Article {
+                #[kaa::vlaue("The title.")]
+                title: String,
+            }
+        };
+        let expanded = expand_type(&TokenStream::new(), item).unwrap().to_string();
+        assert!(expanded.starts_with("struct Article"), "{expanded}");
+        assert!(expanded.contains("compile_error"), "{expanded}");
+        assert!(!expanded.contains("vlaue ("), "{expanded}");
     }
 
     /// An attribute macro sees a field's `cfg` as written, so its import must

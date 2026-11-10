@@ -349,7 +349,7 @@ mod tests {
         layout_staged(&model, name, &[], return_type).unwrap()
     }
 
-    /// The first flow of `source` as `render_source` lays it out: every part
+    /// The first flow of `source` as `render_flow` lays it out: every part
     /// compacted, with its parameter captions.
     fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Vec<String>) {
         let file = syn::parse_file(source).unwrap();

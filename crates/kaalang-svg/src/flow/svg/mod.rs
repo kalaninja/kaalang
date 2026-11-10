@@ -13,7 +13,7 @@ use crate::{
         BADGE_STYLE, BASE_STYLE, FONT_WEIGHT_BOLD, FONT_WEIGHT_MEDIUM, FONT_WEIGHT_REGULAR,
         FONT_WEIGHT_SEMIBOLD, MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker,
         escape, markdown_styles, needs_composed_lines, write_composed_lines, write_lines,
-        write_title,
+        write_svg_open, write_title,
     },
     text::{LABEL_FONT, LINE_HEIGHT, RichText, block_metrics},
 };
@@ -78,23 +78,12 @@ pub(crate) fn serialize(scene: &Scene, flow_name: &str, part: Option<usize>) -> 
     } else {
         String::new()
     };
-    emit!(
-        svg,
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="kaalang-{part_id}title" aria-describedby="kaalang-{part_id}description">"#,
-        scene.width,
-        scene.height,
-        scene.width,
-        scene.height
-    );
-    emit!(
-        svg,
-        "  <title id=\"kaalang-{part_id}title\">kaalang diagram for {}</title>",
-        escape(flow_name)
-    );
-    emit!(
-        svg,
-        "  <desc id=\"kaalang-{part_id}description\">{}</desc>",
-        escape(&describe(scene))
+    write_svg_open(
+        &mut svg,
+        (scene.width, scene.height),
+        &format!("kaalang-{part_id}"),
+        &format!("kaalang diagram for {flow_name}"),
+        &describe(scene),
     );
     emit_inline!(
         svg,

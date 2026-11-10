@@ -1,7 +1,7 @@
 //! Draws a type diagram: finds the focus type in the workspace, resolves every
 //! relationship there, and renders the focus under the types that refer to it.
 
-use std::{collections::BTreeSet, fmt::Write as _, path::PathBuf};
+use std::{collections::BTreeSet, fmt::Write as _, iter, path::PathBuf};
 
 use kaalang_compiler::TypeDeclaration;
 use kaalang_svg::{RenderError, TypeCard, TypeOptions};
@@ -9,7 +9,7 @@ use syn::spanned::Spanned;
 
 use crate::{
     resolve::{Def, Resolution, Resolver, TypeRef},
-    workspace::{self, Crate},
+    workspace::{self, Crate, TargetOptions},
 };
 
 /// A rendered type diagram and every file it was drawn from.
@@ -25,10 +25,10 @@ pub(super) struct Drawn {
 pub(super) fn draw(
     path: &str,
     package: Option<&str>,
+    target: &TargetOptions,
     options: TypeOptions,
 ) -> Result<Drawn, String> {
-    let path = path.strip_prefix("crate::").unwrap_or(path);
-    let crates = workspace::crates(package)?;
+    let crates = workspace::crates(package, target)?;
     let (declarations, unreadable) = declarations(&crates);
     let skipped = workspace::skipped(&crates);
     let focus = focus(&crates, path, package, &skipped).map_err(|mut message| {
@@ -39,8 +39,8 @@ pub(super) fn draw(
     })?;
     workspace::warn_skipped(path, &skipped);
     warn("warning: these types could not be read:", &unreadable);
-    let drawn = relationships(&crates, &declarations, &focus)?;
-    render(&crates, &focus, &drawn, options)
+    let drawn = relationships(&crates, &declarations, focus)?;
+    render(&crates, focus, &drawn, options)
 }
 
 /// Each crate's type declarations, parsed with their annotations, and the
@@ -74,7 +74,7 @@ fn declarations(crates: &[Crate]) -> (Vec<Vec<Option<TypeDeclaration>>>, BTreeSe
 fn relationships(
     crates: &[Crate],
     declarations: &[Vec<Option<TypeDeclaration>>],
-    focus: &[TypeRef],
+    focus: TypeRef,
 ) -> Result<Vec<(TypeRef, Vec<usize>)>, String> {
     let resolver = Resolver::new(crates);
     let mut errors = BTreeSet::new();
@@ -91,11 +91,7 @@ fn relationships(
                 let at = location(krate, entry.module, target.span());
                 let written = written(target);
                 match resolver.resolve(index, entry.module, target) {
-                    Resolution::Type(found)
-                        if focus
-                            .iter()
-                            .any(|declaration| same(crates, found, *declaration)) =>
-                    {
+                    Resolution::Type(found) if same(crates, found, focus) => {
                         positions.push(position);
                     }
                     Resolution::Type(_) => {}
@@ -128,30 +124,27 @@ fn relationships(
 }
 
 /// Renders the focus under its incoming types in diagram order, one card for a
-/// file that several crates include, and one for each declaration that
-/// exclusive `cfg`s make of a type. Each package's library and binaries, its
+/// file that several crates include. Each package's library and binaries, its
 /// tests, its examples, and its benches start a new row.
 fn render(
     crates: &[Crate],
-    focus: &[TypeRef],
+    focus: TypeRef,
     drawn: &[(TypeRef, Vec<usize>)],
     options: TypeOptions,
 ) -> Result<Drawn, String> {
     let mut own: &[usize] = &[];
     let mut incoming: Vec<(TypeRef, &[usize])> = Vec::new();
-    for krate in order(crates, focus[0].krate) {
+    for krate in order(crates, focus.krate) {
         for (source, positions) in drawn.iter().filter(|(source, _)| source.krate == krate) {
-            if focus
-                .iter()
-                .any(|declaration| same(crates, *source, *declaration))
-            {
-                // Only the focus's first declaration takes lines.
-                if own.is_empty() && identical(crates, *source, focus[0]) {
+            if same(crates, *source, focus) {
+                // Another crate reads the focus's file under its own `cfg`s,
+                // so only the focus's own reading gives its lines.
+                if *source == focus {
                     own = positions;
                 }
             } else if !incoming
                 .iter()
-                .any(|(other, _)| identical(crates, *other, *source))
+                .any(|(other, _)| same(crates, *other, *source))
             {
                 incoming.push((*source, positions));
             }
@@ -164,40 +157,22 @@ fn render(
 
     let headers: Vec<String> = incoming
         .iter()
-        .map(|(source, _)| header(crates, *source, focus[0].krate))
+        .map(|(source, _)| header(crates, *source, focus.krate))
         .collect();
-    let incoming_cfgs: Vec<Vec<String>> = incoming
-        .iter()
-        .map(|(source, _)| cfgs(crates, *source))
-        .collect();
-    let focus_header = header(crates, focus[0], focus[0].krate);
-    let focus_cfgs: Vec<Vec<String>> = focus.iter().map(|found| cfgs(crates, *found)).collect();
-    let focus_cards: Vec<TypeCard> = focus
-        .iter()
-        .zip(&focus_cfgs)
-        .enumerate()
-        .map(|(index, (found, cfgs))| {
-            let relationships = if index == 0 { own } else { &[] };
-            card(crates, *found, &focus_header, relationships, cfgs)
-        })
-        .collect();
+    let focus_header = header(crates, focus, focus.krate);
+    let focus_card = card(crates, focus, &focus_header, own);
     let incoming_cards: Vec<TypeCard> = incoming
         .iter()
         .zip(&headers)
-        .zip(&incoming_cfgs)
-        .map(|(((source, positions), header), cfgs)| card(crates, *source, header, positions, cfgs))
+        .map(|((source, positions), header)| card(crates, *source, header, positions))
         .collect();
     let cards = || {
-        focus
-            .iter()
-            .copied()
-            .zip(focus_cards.iter().copied())
-            .chain(
-                incoming
-                    .iter()
-                    .map(|(source, _)| *source)
-                    .zip(incoming_cards.iter().copied()),
-            )
+        iter::once((focus, focus_card)).chain(
+            incoming
+                .iter()
+                .map(|(source, _)| *source)
+                .zip(incoming_cards.iter().copied()),
+        )
     };
     let mut groups: Vec<&[TypeCard]> = Vec::new();
     let mut start = 0;
@@ -211,11 +186,11 @@ fn render(
             start = end;
         }
     }
-    let svg = kaalang_svg::render_type(&focus_cards, &groups, options).map_err(|error| {
+    let svg = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
         // The renderer names no file, so find the card it rejects.
         let culprit = cards()
-            .find(|(_, card)| kaalang_svg::render_type(&[*card], &[], options).is_err())
-            .map_or(focus[0], |(source, _)| source);
+            .find(|(_, card)| kaalang_svg::render_type(card, &[], options).is_err())
+            .map_or(focus, |(source, _)| source);
         format!("{}: {error}", file(culprit).display())
     })?;
     let mut files: Vec<PathBuf> = cards().map(|(source, _)| file(source)).collect();
@@ -229,95 +204,39 @@ fn card<'a>(
     source: TypeRef,
     header: &'a str,
     relationships: &'a [usize],
-    cfgs: &'a [String],
 ) -> TypeCard<'a> {
-    let entry = &crates[source.krate].types[source.id];
+    let krate = &crates[source.krate];
+    let entry = &krate.types[source.id];
     TypeCard {
-        source: &crates[source.krate].modules[entry.module].file.source,
+        source: &krate.modules[entry.module].file.source,
         path: &entry.in_file,
-        occurrence: entry.occurrence,
+        target: &krate.cfg,
         header,
         relationships,
-        cfgs,
     }
-}
-
-/// The `cfg` attributes from the crate root down to a declaration, as
-/// written, which tell a type's declarations apart; none for a type declared
-/// once.
-fn cfgs(crates: &[Crate], found: TypeRef) -> Vec<String> {
-    let krate = &crates[found.krate];
-    let entry = &krate.types[found.id];
-    let declared_once = !(0..krate.types.len()).any(|id| {
-        let other = TypeRef {
-            krate: found.krate,
-            id,
-        };
-        krate.types[id].path == entry.path && !identical(crates, other, found)
-    });
-    if declared_once {
-        return Vec::new();
-    }
-    let mut modules = Vec::new();
-    let mut module = Some(entry.module);
-    while let Some(index) = module {
-        modules.push(index);
-        module = krate.modules[index].parent;
-    }
-    modules
-        .iter()
-        .rev()
-        .flat_map(|&index| &krate.modules[index].cfgs)
-        .chain(&entry.cfgs)
-        .cloned()
-        .collect()
 }
 
 /// The one type that `path` resolves to from a crate root, from `package` when
-/// given, the first in crate order when several crates include its file: each
-/// of its declarations there, in source order.
+/// given, the first in crate order when several crates include its file.
 fn focus(
     crates: &[Crate],
     path: &str,
     package: Option<&str>,
     skipped: &BTreeSet<String>,
-) -> Result<Vec<TypeRef>, String> {
+) -> Result<TypeRef, String> {
     let resolver = Resolver::new(crates);
     let target = syn::parse_str::<syn::Path>(path).ok();
-    let mut found: Vec<Vec<TypeRef>> = Vec::new();
+    let mut found: Vec<TypeRef> = Vec::new();
     for krate in order(crates, usize::MAX) {
         if package.is_some_and(|package| crates[krate].package != package) {
             continue;
         }
-        let Some(Def::Type(declared)) = target
+        if let Some(Def::Type(declared)) = target
             .as_ref()
             .map(|target| resolver.find(krate, 0, target))
-        else {
-            continue;
-        };
-        let types = &crates[declared.krate].types;
-        for (id, entry) in types.iter().enumerate() {
-            let candidate = TypeRef {
-                krate: declared.krate,
-                id,
-            };
-            // Exclusive `cfg`s may declare the path again.
-            if entry.path != types[declared.id].path {
-                continue;
-            }
-            match found
-                .iter_mut()
-                .find(|declarations| same(crates, declarations[0], candidate))
-            {
-                // Another crate that includes the file, or another reading of
-                // it, declares it again.
-                Some(declarations)
-                    if declarations
-                        .iter()
-                        .any(|other| identical(crates, *other, candidate)) => {}
-                Some(declarations) => declarations.push(candidate),
-                None => found.push(vec![candidate]),
-            }
+            && !found.iter().any(|other| same(crates, *other, declared))
+        {
+            found.push(declared);
         }
     }
     match found.as_slice() {
@@ -325,13 +244,13 @@ fn focus(
             let message = RenderError::TypeNotFound(path.to_owned()).to_string();
             Err(workspace::with_skipped(message, skipped))
         }
-        [one] => Ok(one.clone()),
+        [one] => Ok(*one),
         many => {
             let listed: Vec<(&Crate, String)> = many
                 .iter()
-                .map(|declarations| {
-                    let krate = &crates[declarations[0].krate];
-                    let module = &krate.modules[krate.types[declarations[0].id].module];
+                .map(|declared| {
+                    let krate = &crates[declared.krate];
+                    let module = &krate.modules[krate.types[declared.id].module];
                     (krate, module.file.path.display().to_string())
                 })
                 .collect();
@@ -364,29 +283,15 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
     order
 }
 
-/// Whether two declarations are of one type: a file that several crates
-/// include, or one crate reads twice, declares it in each reading, and
-/// exclusive `cfg`s may declare its path more than once in a crate, in one
-/// file or in several.
-pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
-    let path = |found: TypeRef| &crates[found.krate].types[found.id].path;
-    place(crates, left).0 == place(crates, right).0
-        || (left.krate == right.krate && path(left) == path(right))
-}
-
 /// Whether two declarations are one: the same place in the same file, which
 /// several crates may include or one crate may read twice.
-fn identical(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
-    place(crates, left) == place(crates, right)
-}
-
-/// Where a declaration stands: its file and path within it, then which of that
-/// path's declarations in the file it is.
-fn place(crates: &[Crate], found: TypeRef) -> ((&std::path::Path, &str), usize) {
-    let krate = &crates[found.krate];
-    let entry = &krate.types[found.id];
-    let file = &krate.modules[entry.module].file.canonical;
-    ((file.as_path(), entry.in_file.as_str()), entry.occurrence)
+pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
+    let place = |found: TypeRef| {
+        let krate = &crates[found.krate];
+        let entry = &krate.types[found.id];
+        (&krate.modules[entry.module].file.canonical, &entry.in_file)
+    };
+    place(left) == place(right)
 }
 
 /// The path a card shows, from its crate root, after the crate's name when it

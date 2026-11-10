@@ -7,6 +7,8 @@ use std::{error::Error, fmt, num::NonZeroUsize};
 use proc_macro2::Span;
 use syn::{File, Visibility};
 
+pub use self::target::Target;
+
 /// Appends one line to the SVG. Writing to a `String` cannot fail.
 macro_rules! emit {
     ($svg:expr, $($argument:tt)*) => {
@@ -26,13 +28,26 @@ macro_rules! emit_inline {
 mod datatype;
 mod flow;
 mod markup;
+mod target;
 mod text;
 
-/// Presentation options for one rendered flow.
-#[derive(Clone, Copy, Default)]
-pub struct RenderOptions {
+/// Options for one rendered flow: its presentation, and the compilation target
+/// its file is read for.
+#[derive(Clone, Copy)]
+pub struct RenderOptions<'a> {
     /// Replace every validated cycle region with one described cycle node.
     pub collapse_cycles: bool,
+    /// The compilation target the file is read for. The default set is empty.
+    pub target: &'a Target,
+}
+
+impl Default for RenderOptions<'_> {
+    fn default() -> Self {
+        Self {
+            collapse_cycles: false,
+            target: Target::EMPTY,
+        }
+    }
 }
 
 /// Presentation options for one rendered type diagram.
@@ -54,9 +69,10 @@ pub enum RenderError {
         column: usize,
         message: String,
     },
-    /// No exact `#[kaa]` function has the requested path.
+    /// No `#[kaa]` function stands at the requested position, or has the path
+    /// a caller requested.
     FlowNotFound(String),
-    /// More than one exact `#[kaa]` function has the requested path.
+    /// More than one `#[kaa]` function has the path a caller requested.
     AmbiguousFlow(String),
     /// The selected function is not a valid kaalang flow.
     InvalidFlow {
@@ -152,64 +168,57 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders one exact `#[kaa]` function from a UTF-8 Rust source file.
-/// `flow_path` is its path within the file, as [`flow_names`] lists it.
+/// Renders the flow at `position` among those [`flow_names`] lists for
+/// `options.target`, which the caller selected by its own rules.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust,
-/// [`RenderError::FlowNotFound`] or [`RenderError::AmbiguousFlow`] when
-/// `flow_path` does not name exactly one `#[kaa]` function,
+/// [`RenderError::FlowNotFound`] when no flow stands at `position`,
 /// [`RenderError::InvalidFlow`] when that function is not a valid kaalang flow,
 /// [`RenderError::InvalidLabelCharacter`] when a rendered label contains a
 /// character XML 1.0 cannot represent, and
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
-/// arrangement cannot route every connection or place every label.
-pub fn render_source(source: &str, flow_path: &str) -> Result<String, RenderError> {
-    render_source_with_options(source, flow_path, RenderOptions::default())
-}
-
-/// Renders one flow using the requested presentation options.
-///
-/// # Errors
-///
-/// Returns the same errors as [`render_source`].
-pub fn render_source_with_options(
-    source: &str,
-    flow_path: &str,
-    options: RenderOptions,
-) -> Result<String, RenderError> {
-    flow::render(source, flow::Selection::Path(flow_path), options)
-}
-
-/// Renders the flow at `position` among those [`flow_names`] lists, for a
-/// caller that selected it by its own rules.
-///
-/// # Errors
-///
-/// Returns the same errors as [`render_source`], with the flow named by its
-/// path within the file.
+/// arrangement cannot route every connection or place every label. A flow is
+/// named by its path within the file.
 pub fn render_flow(
     source: &str,
     position: usize,
-    options: RenderOptions,
+    options: RenderOptions<'_>,
 ) -> Result<String, RenderError> {
-    flow::render(source, flow::Selection::Position(position), options)
+    flow::render(source, position, options)
+}
+
+/// Renders the flow at `path` within `source`, as [`flow_names`] lists it, for
+/// tests that name a flow rather than count it.
+#[cfg(test)]
+pub(crate) fn render_path(
+    source: &str,
+    path: &str,
+    options: RenderOptions<'_>,
+) -> Result<String, RenderError> {
+    let position = flow_names(source, options.target)?
+        .iter()
+        .position(|listed| listed == path)
+        .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
+    render_flow(source, position, options)
 }
 
 /// Lists the path within a UTF-8 Rust source file of every `#[kaa]`
-/// function, free or associated, in source order and with duplicates: `route`,
-/// `review::route` inside an inline module, `Report::approve`,
-/// `<Report as Approve>::approve`, or `Approve::approve`.
+/// function `target` compiles, free or associated, in source order and with
+/// duplicates: `route`, `review::route` inside an inline module,
+/// `Report::approve`, `<Report as Approve>::approve`, or `Approve::approve`.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when `source` is not valid Rust.
-pub fn flow_names(source: &str) -> Result<Vec<String>, RenderError> {
-    Ok(kaalang_compiler::flows(&parse_file(source)?.items)
-        .into_iter()
-        .map(|flow| flow.path)
-        .collect())
+pub fn flow_names(source: &str, target: &Target) -> Result<Vec<String>, RenderError> {
+    Ok(
+        kaalang_compiler::flows(&parse_configured(source, target)?.items)
+            .into_iter()
+            .map(|flow| flow.path)
+            .collect(),
+    )
 }
 
 /// One card of a type diagram: a type, the name its header shows,
@@ -221,48 +230,47 @@ pub struct TypeCard<'a> {
     /// The type's path within that file, as `kaalang_compiler::type_items`
     /// lists it.
     pub path: &'a str,
-    /// Which declaration of `path` the card shows, counted from 0 in source
-    /// order: a file may declare a path more than once under exclusive `cfg`s.
-    pub occurrence: usize,
+    /// The compilation target the file is read for.
+    pub target: &'a Target,
     /// The name the card shows before the type's generics, such as its path
     /// from its crate root.
     pub header: &'a str,
     /// The relationships drawn as lines into the focus, by their position
-    /// among the type's relationships in source order. On the focus card, these
-    /// are its relationships to itself.
+    /// among the type's relationships in source order, as the target compiles
+    /// it. On the focus card, these are its relationships to itself.
     pub relationships: &'a [usize],
-    /// The `cfg` attributes the card shows after its kind, such as
-    /// `cfg(unix)`: what tells apart the declarations of a type that exclusive
-    /// `cfg`s declare more than once.
-    pub cfgs: &'a [String],
 }
 
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
-/// `focus` lists the focus's declarations: the lines go into the first, and
-/// the others stand under it and draw none. Each group of incoming cards
-/// starts a new row and wraps into further rows after `options.columns` cards,
-/// or where it would grow wider than a screen, or than the focus when it is
-/// wider.
+/// Each group of incoming cards starts a new row and wraps into further rows
+/// after `options.columns` cards, or where it would grow wider than a screen,
+/// or than the focus when it is wider.
 ///
 /// # Errors
 ///
 /// Returns [`RenderError::Parse`] when a card's source is not valid Rust,
-/// [`RenderError::TypeNotFound`] when a card's path and occurrence name no
-/// type, [`RenderError::InvalidType`] when that type's annotations are not
+/// [`RenderError::TypeNotFound`] when a card's path names no type its target
+/// compiles, [`RenderError::InvalidType`] when that type's annotations are not
 /// valid, and [`RenderError::InvalidLabelCharacter`] when a card's text
 /// contains a character XML 1.0 cannot represent.
 ///
 /// # Panics
 ///
-/// Panics when `focus` is empty, or when a card draws a relationship index its
-/// type does not have.
+/// Panics when a card draws a relationship index its type does not have.
 pub fn render_type(
-    focus: &[TypeCard<'_>],
+    focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     options: TypeOptions,
 ) -> Result<String, RenderError> {
     datatype::render(focus, incoming, options.columns)
+}
+
+/// Parses `source` and removes what `target` does not compile.
+fn parse_configured(source: &str, target: &Target) -> Result<File, RenderError> {
+    let mut file = parse_file(source)?;
+    target.configure(&mut file);
+    Ok(file)
 }
 
 fn parse_file(source: &str) -> Result<File, RenderError> {
@@ -355,58 +363,53 @@ const fn valid_xml_character(character: char) -> bool {
 mod tests {
     use super::*;
 
+    /// A card of the type at `path` in `source`, read for `target`.
+    fn card<'a>(source: &'a str, path: &'a str, target: &'a Target) -> TypeCard<'a> {
+        TypeCard {
+            source,
+            path,
+            target,
+            header: path,
+            relationships: &[],
+        }
+    }
+
     #[test]
     fn selects_one_type_by_its_path_annotated_or_not() {
         let source = "mod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
-        let card = |path| TypeCard {
-            source,
-            path,
-            occurrence: 0,
-            header: path,
-            relationships: &[],
-            cfgs: &[],
-        };
+        let card = |path| card(source, path, Target::EMPTY);
 
         assert_eq!(
-            render_type(&[card("Missing")], &[], TypeOptions::default()),
+            render_type(&card("Missing"), &[], TypeOptions::default()),
             Err(RenderError::TypeNotFound("Missing".into()))
         );
         assert!(matches!(
-            render_type(&[card("model::Empty")], &[], TypeOptions::default()),
+            render_type(&card("model::Empty"), &[], TypeOptions::default()),
             Err(RenderError::InvalidType { name, line: 1, .. }) if name == "model::Empty"
         ));
         assert!(
-            render_type(&[card("Plain")], &[], TypeOptions::default())
+            render_type(&card("Plain"), &[], TypeOptions::default())
                 .is_ok_and(|svg| svg.contains("id"))
         );
     }
 
     #[test]
-    fn a_declaration_is_selected_by_its_occurrence_and_shows_the_given_cfgs() {
-        let source = "#[cfg(unix)]\nstruct Handle(u8);\n#[cfg(not(unix))]\nstruct Handle(u16);\n";
-        let unix = [String::from("cfg(unix)")];
-        let svg = |occurrence, cfgs| {
-            let card = TypeCard {
-                source,
-                path: "Handle",
-                occurrence,
-                header: "Handle",
-                relationships: &[],
-                cfgs,
-            };
-            render_type(&[card], &[], TypeOptions::default())
-        };
+    fn a_card_reads_its_type_as_its_target_compiles_it() {
+        let source = "#[cfg(unix)]\nstruct Handle(u8, #[cfg(windows)] isize);\n#[cfg(not(unix))]\nstruct Handle(u16);\n#[cfg(windows)]\nstruct Raw;\n";
+        let unix: Target = "unix".parse().unwrap();
+        let svg =
+            |target| render_type(&card(source, "Handle", target), &[], TypeOptions::default());
 
-        let first = svg(0, &unix).unwrap();
-        assert!(
-            first.contains(">struct · repr(Rust) · cfg(unix)</tspan>"),
-            "{first}"
+        let read = svg(&unix).unwrap();
+        assert!(read.contains(">u8</tspan>"), "{read}");
+        assert!(!read.contains("isize"), "{read}");
+        assert!(read.contains(">struct · repr(Rust)</tspan>"), "{read}");
+        let other = svg(Target::EMPTY).unwrap();
+        assert!(other.contains(">u16</tspan>"), "{other}");
+        assert_eq!(
+            render_type(&card(source, "Raw", &unix), &[], TypeOptions::default()),
+            Err(RenderError::TypeNotFound("Raw".into()))
         );
-        assert!(first.contains(">u8</tspan>"), "{first}");
-        let second = svg(1, &[]).unwrap();
-        assert!(second.contains(">struct · repr(Rust)</tspan>"), "{second}");
-        assert!(second.contains(">u16</tspan>"), "{second}");
-        assert_eq!(svg(2, &[]), Err(RenderError::TypeNotFound("Handle".into())));
     }
 
     #[test]
@@ -415,16 +418,9 @@ mod tests {
 
         assert_eq!(
             render_type(
-                &[TypeCard {
-                    source,
-                    path: "Bad",
-                    occurrence: 0,
-                    header: "Bad",
-                    relationships: &[],
-                    cfgs: &[],
-                }],
+                &card(source, "Bad", Target::EMPTY),
                 &[],
-                TypeOptions::default(),
+                TypeOptions::default()
             ),
             Err(RenderError::InvalidLabelCharacter {
                 character: '\u{1}',
@@ -441,16 +437,9 @@ mod tests {
 
         assert_eq!(
             render_type(
-                &[TypeCard {
-                    source,
-                    path: "Bad",
-                    occurrence: 0,
-                    header: "Bad",
-                    relationships: &[],
-                    cfgs: &[],
-                }],
+                &card(source, "Bad", Target::EMPTY),
                 &[],
-                TypeOptions::default(),
+                TypeOptions::default()
             ),
             Err(RenderError::InvalidLabelCharacter {
                 character: '\0',
@@ -462,84 +451,78 @@ mod tests {
     }
 
     #[test]
-    fn shows_a_representation_only_when_it_does_not_depend_on_the_target() {
+    fn a_representation_under_a_cfg_attr_counts_when_it_holds() {
         let source = "#[kaa] #[repr(C)] #[repr(align(8))] struct Combined(u8);\n#[kaa] #[cfg_attr(unix, cfg_attr(target_pointer_width = \"64\", repr(C)))] struct Conditional(u8);\n";
-        let svg = |path| {
-            render_type(
-                &[TypeCard {
-                    source,
-                    path,
-                    occurrence: 0,
-                    header: path,
-                    relationships: &[],
-                    cfgs: &[],
-                }],
-                &[],
-                TypeOptions::default(),
-            )
-            .unwrap()
+        let unix: Target = "unix\ntarget_pointer_width=\"64\"".parse().unwrap();
+        let svg = |path, target| {
+            render_type(&card(source, path, target), &[], TypeOptions::default()).unwrap()
         };
 
-        assert!(svg("Combined").contains(">struct · repr(C, align(8))</tspan>"));
-        let conditional = svg("Conditional");
-        assert!(conditional.contains(">struct</tspan>"));
-        assert!(!conditional.contains("repr("));
+        assert!(svg("Combined", Target::EMPTY).contains(">struct · repr(C, align(8))</tspan>"));
+        assert!(svg("Conditional", &unix).contains(">struct · repr(C)</tspan>"));
+        assert!(svg("Conditional", Target::EMPTY).contains(">struct · repr(Rust)</tspan>"));
+    }
+
+    /// Renders the flow at `path` within `source`, read for no target.
+    fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
+        render_path(source, path, RenderOptions::default())
     }
 
     #[test]
     fn requires_an_exact_kaalang_attribute() {
         let source = "#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n";
 
-        assert_eq!(
-            render_source(source, "nested_attribute"),
-            Err(RenderError::FlowNotFound("nested_attribute".into()))
-        );
+        assert_eq!(flow_names(source, Target::EMPTY), Ok(Vec::new()));
     }
 
     #[test]
-    fn distinguishes_parse_selection_and_model_errors() {
+    fn distinguishes_parse_position_and_model_errors() {
         assert!(matches!(
-            render_source("fn", "broken"),
+            render_flow("fn", 0, RenderOptions::default()),
             Err(RenderError::Parse { .. })
         ));
         assert_eq!(
-            render_source("fn plain() {}", "plain"),
-            Err(RenderError::FlowNotFound("plain".into()))
+            render_flow("fn plain() {}", 0, RenderOptions::default()),
+            Err(RenderError::FlowNotFound("0".into()))
         );
         assert!(matches!(
-            render_source("#[kaa] fn empty() {}", "empty"),
+            render_flow("#[kaa] fn empty() {}", 0, RenderOptions::default()),
             Err(RenderError::InvalidFlow { .. })
         ));
-        assert_eq!(
-            render_source(
-                "#[kaa] fn duplicate() {} #[kaa] fn duplicate() {}",
-                "duplicate"
-            ),
-            Err(RenderError::AmbiguousFlow("duplicate".into()))
-        );
     }
 
     #[test]
     fn finds_a_flow_marked_through_the_crate_path() {
         let source = "#[kaalang::kaa]\nfn qualified(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
-        assert_eq!(flow_names(source), Ok(vec!["qualified".to_owned()]));
-        assert!(render_source(source, "qualified").is_ok());
+        assert_eq!(
+            flow_names(source, Target::EMPTY),
+            Ok(vec!["qualified".to_owned()])
+        );
+        assert!(render_flow(source, 0, RenderOptions::default()).is_ok());
     }
 
     #[test]
-    fn flows_are_selected_by_their_path_within_the_file() {
+    fn flows_are_listed_by_their_path_within_the_file() {
         let flow = "fn copy(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
         let source = format!(
             "mod review {{ #[kaa] {flow} }}\nstruct Report;\nimpl Report {{ #[kaa] {flow} }}\ntrait Review {{ #[kaa] {flow} }}\n"
         );
 
         let paths = ["review::copy", "Report::copy", "Review::copy"];
-        assert_eq!(flow_names(&source), Ok(paths.map(str::to_owned).to_vec()));
+        assert_eq!(
+            flow_names(&source, Target::EMPTY),
+            Ok(paths.map(str::to_owned).to_vec())
+        );
         for path in paths {
             assert!(render_source(&source, path).is_ok(), "{path}");
         }
-        // A trait's method takes the trait's visibility and carries no marker.
+    }
+
+    #[test]
+    fn a_traits_method_carries_no_visibility_marker() {
+        let flow = "fn copy(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let source = format!("mod review {{ #[kaa] {flow} }}\ntrait Review {{ #[kaa] {flow} }}\n");
         let badge = "class=\"md-badge\"";
         let svg = render_source(&source, "Review::copy").unwrap();
         assert!(!svg.contains(badge) && svg.contains("Start: copy"), "{svg}");
@@ -547,10 +530,6 @@ mod tests {
             render_source(&source, "review::copy")
                 .unwrap()
                 .contains(badge)
-        );
-        assert_eq!(
-            render_source(&source, "copy"),
-            Err(RenderError::FlowNotFound("copy".into()))
         );
     }
 

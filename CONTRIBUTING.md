@@ -148,7 +148,9 @@ declares, datatype or plain type, named after the type in snake case. The first
 type it declares is the case's subject, and its diagram is named after the
 directory instead, as `many_incoming_types/many_incoming_types.svg`, so that the
 diagram to look at first is obvious. A type's incoming types there are those in
-the same file that refer to it by its bare name.
+the same file that refer to it by its bare name. Every fixture is read for one
+fixed compilation target, 64-bit Linux, written out in `tests/diagrams.rs`, so
+that the diagrams do not depend on the machine that draws them.
 
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated

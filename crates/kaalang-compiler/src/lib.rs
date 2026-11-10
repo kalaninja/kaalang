@@ -9,6 +9,7 @@ use syn::{Error, ItemFn, Result};
 pub(crate) use self::choice::{choice_match, is_todo_body};
 pub use self::{
     codegen::expand,
+    configure::configure,
     construct::{
         Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
     },
@@ -31,6 +32,7 @@ pub use self::{
 mod analyze;
 mod choice;
 mod codegen;
+mod configure;
 mod construct;
 mod datatype;
 mod executions;

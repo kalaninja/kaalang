@@ -6,4 +6,10 @@ struct Member {
     name: String,
 }
 
-fn main() {}
+// The type stands beside the error, so its uses still compile.
+fn main() {
+    let member = Member {
+        name: String::new(),
+    };
+    drop(member.name);
+}

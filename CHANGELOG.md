@@ -10,11 +10,15 @@
   name. It searches every crate of the cargo workspace, and `-p` names the
   package when the path exists in several. The default output is named after the
   last path segment. See [RFC 0009](docs/rfcs/0009-types.md).
-- `kaalang-svg`'s `render_source` and `render_source_with_options` select a flow
-  by its path within the file, in the command's forms without resolving them,
-  and `flow_names` lists those paths, including flows in inline modules. A
-  method's path goes through its type or trait, and a trait's method in an
-  `impl` block takes the qualified form, as `<Report as Approve>::approve`.
+- `kaalang-svg`'s `render_source` and `render_source_with_options` are removed:
+  `render_flow` renders the flow at a position among those `flow_names` lists,
+  which the caller selects. `flow_names` lists each flow by its path within the
+  file, including flows in inline modules. A method's path goes through its type
+  or trait, and a trait's method in an `impl` block takes the qualified form, as
+  `<Report as Approve>::approve`.
+- `kaalang-svg`'s `RenderOptions` gains `target`, and `flow_names` takes a
+  `Target`: the file is read as compiled for that target's cfg set, which is
+  empty by default.
 - `kaalang-compiler`'s `flows` returns each flow as a `FlowItem`, with its path
   within the file, its inline modules, what declares it, and whether a trait
   declares it, and descends into inline modules.
@@ -33,8 +37,14 @@
   fails on a target that is not a type of the workspace. See
   [RFC 0009](docs/rfcs/0009-types.md). The incoming types stand in rows as wide
   as a Full HD screen, each target group from a new row, and `--columns` sets
-  how many a row holds. A type declared more than once under exclusive `cfg`s is
-  drawn in each declaration, which shows its `cfg`s.
+  how many a row holds.
+- `cargo kaalang diagram` reads the workspace as cargo compiles it for one
+  compilation target: `--target <triple>`, the host by default, with
+  `--features`, `--all-features`, and `--no-default-features`. A `cfg` holds as
+  cargo decides one for that target, from `rustc --print cfg`, `RUSTFLAGS`, and
+  the resolved features, and what does not hold is left out, from modules and
+  items to fields and variants. A `cfg_attr` that holds counts, a `repr` or a
+  module's `path` under one included. See [RFC 0009](docs/rfcs/0009-types.md).
 - `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
   optional description. Fields take `kaa::value` or `kaa::refer` annotations,
   enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.
@@ -42,19 +52,20 @@
   the declaring type, under the field's `cfg`. A plain type, without `#[kaa]`,
   may be a target too and has a diagram. See
   [RFC 0009](docs/rfcs/0009-types.md).
-- `kaalang-svg`'s `render_flow` renders a flow by its position among those
-  `flow_names` lists, and `kaalang-compiler`'s `declarations`, `FlowPath`, and
-  `select` find the flows a path selects as the compiler resolves it.
-- `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for each
-  declaration of the focus and one for each incoming type, in groups that each
-  start a row, with `TypeOptions` for the number of cards a row holds: the focus
-  card under the incoming cards, with a line for each relationship they draw
-  into it.
+- `kaalang-compiler`'s `declarations`, `FlowPath`, and `select` find the flows a
+  path selects as the compiler resolves it.
+- `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for the
+  focus and one for each incoming type, each read for its `Target`, in groups
+  that each start a row, with `TypeOptions` for the number of cards a row holds:
+  the focus card under the incoming cards, with a line for each relationship
+  they draw into it. `Target` holds a target's cfg set, read from the lines of
+  `rustc --print cfg` and the enabled features.
 - `kaalang-compiler` reads type declarations: `type_items` collects them,
   datatypes and plain types alike, with their paths within the file,
   `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,
   its `Field`s and `Variant`s with their `Annotation`s, and its `Relationship`s,
-  and `expand_type` expands it for the macro.
+  and `expand_type` expands it for the macro. `configure` removes from a parsed
+  file what does not hold for a cfg set, as rustc does.
 - Diagrams mark visibility before a name as UML does: `+` for `pub`, `~` for a
   restricted form such as `pub(crate)`, and `-` for private, on a flow's start
   label, a type card's name, and each field tile outside an enum variant. A

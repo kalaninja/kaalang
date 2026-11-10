@@ -66,11 +66,11 @@ const CODE: Style = Style {
 /// The cell a visibility badge's marker is centered in, as a percentage of the
 /// font size.
 const BADGE_WIDTH_PERCENT: i64 = 100;
-/// The circle's center above the baseline, as a fraction of the font size:
-/// where `+`, `-`, and `~` have theirs.
+/// The marker's center above the line's baseline, as a fraction of the font
+/// size: where `+`, `-`, and `~` have theirs.
 pub(crate) const BADGE_CENTER: (i32, i32) = (9, 25);
-/// The marker's baseline below the circle's center, as a fraction of the font
-/// size: the markers sit a third of their own size above it, in every font.
+/// The marker's baseline below its center, as a fraction of the font size: the
+/// markers sit a third of their own size above their baseline, in every font.
 pub(crate) const BADGE_GLYPH_DROP: (i32, i32) = (3, 10);
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

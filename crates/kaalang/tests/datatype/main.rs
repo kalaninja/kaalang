@@ -4,7 +4,7 @@
 
 mod aliases;
 mod bare_annotation;
-mod cfg_twins;
+mod conditional_compilation;
 mod enum_self_reference;
 mod enum_variants;
 mod generic_targets;

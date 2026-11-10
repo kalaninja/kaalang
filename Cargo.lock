@@ -239,12 +239,14 @@ dependencies = [
 name = "kaalang-svg"
 version = "0.2.0"
 dependencies = [
+ "cargo-platform",
  "kaalang-compiler",
  "kaalang-render",
  "kaalang-testing",
  "latex-rust",
  "proc-macro2",
  "pulldown-cmark",
+ "quote",
  "syn",
  "unicode-segmentation",
 ]

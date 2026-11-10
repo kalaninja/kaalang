@@ -261,37 +261,6 @@ pub enum Question<'a, X> {
     Same(Option<Place<'a, X>>, &'a Path, Place<'a, X>, &'a Path),
 }
 
-impl Declarations {
-    /// The positions of the flows `path` selects in this file alone, which
-    /// resolves nothing: a free function by the inline modules that enclose
-    /// it, then its name, and every type and trait by its last segment.
-    #[must_use]
-    pub fn select(&self, path: &FlowPath) -> Vec<usize> {
-        let unraw = |text: &str| text.strip_prefix("r#").unwrap_or(text).to_owned();
-        let last = |path: &Path| path.segments.last().map(|segment| segment.ident.unraw());
-        select(path, &[((), self)], &mut |question| match question {
-            Question::Function { path, at, name } => {
-                let written: Vec<String> = path
-                    .segments
-                    .iter()
-                    .map(|segment| segment.ident.unraw().to_string())
-                    .collect();
-                let declared: Vec<String> = at
-                    .module
-                    .split_terminator("::")
-                    .map(unraw)
-                    .chain([name.unraw().to_string()])
-                    .collect();
-                path.leading_colon.is_none() && written == declared
-            }
-            Question::Same(_, left, _, right) => last(left) == last(right),
-        })
-        .into_iter()
-        .map(|(_, flow)| flow)
-        .collect()
-    }
-}
-
 /// Selects the flows `path` names among the files' declarations, as the
 /// compiler resolves a path to a function. A plain path names a free function,
 /// a trait's default method, or a type's inherent method, and when the type
@@ -316,11 +285,13 @@ pub fn select<X: Copy>(
                     }
                 }
             });
+            // A path names one item, so a free function leaves no method to
+            // look for, and a trait's default method no type's method.
             let mut prefix = path.clone();
             if let Some(name) = prefix
                 .segments
                 .pop()
-                .filter(|_| !prefix.segments.is_empty())
+                .filter(|_| found.is_empty() && !prefix.segments.is_empty())
             {
                 let name = name.ident;
                 prefix.segments.pop_punct();
@@ -332,12 +303,14 @@ pub fn select<X: Copy>(
                         found.push(position);
                     }
                 });
-                let self_ty = Type::Path(TypePath {
-                    attrs: Vec::new(),
-                    qself: None,
-                    path: prefix,
-                });
-                found.extend(methods(&self_ty, None, &name, files, names));
+                if found.is_empty() {
+                    let self_ty = Type::Path(TypePath {
+                        attrs: Vec::new(),
+                        qself: None,
+                        path: prefix,
+                    });
+                    found.extend(methods(&self_ty, None, &name, files, names));
+                }
             }
         }
         FlowPath::Qualified {
@@ -601,18 +574,43 @@ fn paths_match(
 
 #[cfg(test)]
 mod tests {
-    use super::{FlowPath, declarations};
+    use syn::{Path, ext::IdentExt};
 
-    /// The paths of the flows `path` selects in `source`.
+    use super::{FlowPath, Question, declarations, select};
+
+    /// The paths of the flows `path` selects in `source` alone, which resolves
+    /// nothing: a free function by the inline modules that enclose it, then
+    /// its name, and every type and trait by its last segment.
     fn selected(source: &str, path: &str) -> Vec<String> {
         let file = syn::parse_file(source).expect("the source parses");
         let declarations = declarations(&file.items);
         let path = FlowPath::parse(path).expect("the path parses");
-        declarations
-            .select(&path)
-            .into_iter()
-            .map(|flow| declarations.flows[flow].path.clone())
-            .collect()
+        let unraw = |text: &str| text.strip_prefix("r#").unwrap_or(text).to_owned();
+        let last = |path: &Path| path.segments.last().map(|segment| segment.ident.unraw());
+        select(
+            &path,
+            &[((), &declarations)],
+            &mut |question| match question {
+                Question::Function { path, at, name } => {
+                    let written: Vec<String> = path
+                        .segments
+                        .iter()
+                        .map(|segment| segment.ident.unraw().to_string())
+                        .collect();
+                    let declared: Vec<String> = at
+                        .module
+                        .split_terminator("::")
+                        .map(unraw)
+                        .chain([name.unraw().to_string()])
+                        .collect();
+                    path.leading_colon.is_none() && written == declared
+                }
+                Question::Same(_, left, _, right) => last(left) == last(right),
+            },
+        )
+        .into_iter()
+        .map(|(_, flow)| declarations.flows[flow].path.clone())
+        .collect()
     }
 
     const METHODS: &str = "
@@ -658,6 +656,18 @@ mod tests {
         );
         assert_eq!(selected(METHODS, "Report::check"), ["Approve::check"]);
         assert_eq!(selected(METHODS, "Review::approve"), ["Review::approve"]);
+    }
+
+    #[test]
+    fn a_blanket_impl_does_not_take_a_free_function_or_default_methods_path() {
+        let source = "
+            mod nested { #[kaa] fn route() {} }
+            trait Approve { #[kaa] fn approve(&self) {} }
+            trait Route { fn route(&self); fn approve(&self); }
+            impl<T> Route for T { #[kaa] fn route(&self) {} #[kaa] fn approve(&self) {} }
+        ";
+        assert_eq!(selected(source, "nested::route"), ["nested::route"]);
+        assert_eq!(selected(source, "Approve::approve"), ["Approve::approve"]);
     }
 
     #[test]

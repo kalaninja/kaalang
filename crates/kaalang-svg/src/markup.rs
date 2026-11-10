@@ -437,6 +437,27 @@ fn write_formula(
     }
 }
 
+/// Opens a standalone diagram with its accessible name and description, under
+/// ids that start with `id`, which tells a page's diagrams apart.
+pub(crate) fn write_svg_open(
+    svg: &mut String,
+    (width, height): (i32, i32),
+    id: &str,
+    title: &str,
+    description: &str,
+) {
+    emit!(
+        svg,
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="{id}title" aria-describedby="{id}description">"#
+    );
+    emit!(svg, "  <title id=\"{id}title\">{}</title>", escape(title));
+    emit!(
+        svg,
+        "  <desc id=\"{id}description\">{}</desc>",
+        escape(description)
+    );
+}
+
 pub(crate) fn write_title(svg: &mut String, label: &str) {
     emit!(
         svg,

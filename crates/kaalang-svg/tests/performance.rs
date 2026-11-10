@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use kaalang_svg::RenderOptions;
+use kaalang_svg::{RenderOptions, Target};
 use kaalang_testing::{
     corpus::{self, Suite},
     performance::{ItemBudget, assert_pass_budget, assert_within},
@@ -37,22 +37,28 @@ const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
 
 fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, limit: Duration) {
-    let diagrams: Vec<(String, String, RenderOptions)> = corpus::files(suite)
+    let diagrams: Vec<(String, usize, String, RenderOptions<'static>)> = corpus::files(suite)
         .into_iter()
         .flat_map(|(_, source)| {
-            let names = kaalang_svg::flow_names(&source).expect("the fixture parses");
+            let names =
+                kaalang_svg::flow_names(&source, Target::EMPTY).expect("the fixture parses");
             // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
             let views = std::iter::once(false)
                 .chain(source.contains("#[kaa::cycle(").then_some(true))
                 .collect::<Vec<_>>();
             names
                 .into_iter()
-                .flat_map(|name| {
+                .enumerate()
+                .flat_map(|(position, name)| {
                     views.iter().map(move |&collapse_cycles| {
-                        (name.clone(), RenderOptions { collapse_cycles })
+                        let options = RenderOptions {
+                            collapse_cycles,
+                            target: Target::EMPTY,
+                        };
+                        (name.clone(), position, options)
                     })
                 })
-                .map(|(name, options)| (name, source.clone(), options))
+                .map(|(name, position, options)| (name, position, source.clone(), options))
                 .collect::<Vec<_>>()
         })
         .collect();
@@ -62,13 +68,13 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
         "diagrams",
         &diagrams,
         allowance * u32::try_from(diagrams.len()).expect("the diagram count fits in u32"),
-        |(name, _, options)| ItemBudget {
+        |(name, _, _, options)| ItemBudget {
             name: format!("{name} (collapsed={})", options.collapse_cycles),
             limit,
             report: matches!(suite, Suite::Stress),
         },
-        |(name, source, options)| {
-            let drawn = kaalang_svg::render_source_with_options(source, name, *options);
+        |(name, position, source, options)| {
+            let drawn = kaalang_svg::render_flow(source, *position, *options);
             drawn.unwrap_or_else(|error| panic!("{name}: {error}"));
         },
     );
@@ -101,10 +107,18 @@ fn the_stress_fixture_corpus_renderer_stays_inside_its_budgets() {
 fn generated_probes_render_inside_their_budget() {
     for (what, source, name) in accepted() {
         for collapse_cycles in [false, true] {
-            let options = RenderOptions { collapse_cycles };
+            let options = RenderOptions {
+                collapse_cycles,
+                target: Target::EMPTY,
+            };
+            let position = kaalang_svg::flow_names(&source, Target::EMPTY)
+                .expect("the probe parses")
+                .iter()
+                .position(|listed| listed == name)
+                .expect("the probe declares its flow");
             // No warm-up: at seconds a page fault is noise, not what it removes.
             let started = Instant::now();
-            let drawn = kaalang_svg::render_source_with_options(&source, name, options);
+            let drawn = kaalang_svg::render_flow(&source, position, options);
             let elapsed = started.elapsed();
             drawn.unwrap_or_else(|error| panic!("{what} (collapsed={collapse_cycles}): {error}"));
             assert_within(

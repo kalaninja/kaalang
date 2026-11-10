@@ -6,14 +6,20 @@ pub struct Device {
     pub name: String,
 }
 
-// Rust compiles one of the two; the diagrams draw both.
+// Rust compiles one of the two, and the diagrams draw the one the fixture
+// target, 64-bit Linux, compiles: without its Windows field, in its Unix
+// representation.
 #[cfg(unix)]
 #[kaa("An open device on Unix.")]
+#[cfg_attr(unix, repr(C))]
 pub struct Handle {
     #[kaa::refer(Device, "The device it opens.")]
     pub device: Device,
     #[kaa::value("The file descriptor.")]
     pub fd: i32,
+    #[cfg(windows)]
+    #[kaa::value("A raw handle, which Unix has none of.")]
+    pub raw: isize,
 }
 
 #[cfg(not(unix))]
@@ -29,6 +35,9 @@ pub struct Handle {
 pub struct Session {
     #[kaa::refer(Handle, "The open device.")]
     pub handle: Handle,
+    // Only on Unix does the log name a device.
+    #[cfg_attr(unix, kaa::refer(Device, "The device it logs to."))]
+    pub log: String,
 }
 
 #[test]
@@ -40,9 +49,13 @@ fn a_type_may_be_declared_once_for_each_target() {
     let handle = Handle { device, fd: 3 };
     #[cfg(not(unix))]
     let handle = Handle { device, raw: 3 };
-    let session = Session { handle };
+    let session = Session {
+        handle,
+        log: String::from("console"),
+    };
 
     assert_eq!(session.handle.device.name, "tty");
+    assert_eq!(session.log, "console");
     #[cfg(unix)]
     assert_eq!(session.handle.fd, 3);
     #[cfg(not(unix))]

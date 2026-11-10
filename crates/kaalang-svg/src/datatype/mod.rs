@@ -4,23 +4,23 @@
 use std::num::NonZeroUsize;
 
 use kaalang_compiler::{Annotation, Field, TypeForm};
-use proc_macro2::{Span, TokenStream, TokenTree};
+use proc_macro2::Span;
 use syn::{Item, Meta, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
-    RenderError, TypeCard, collapsed, collapsed_text, location, parse_file, parser_source,
-    validate_description, validate_label, visibility_marker, with_visibility,
+    RenderError, Target, TypeCard, collapsed, collapsed_text, location, parse_configured,
+    parser_source, validate_description, validate_label, visibility_marker, with_visibility,
 };
 
 mod layout;
 mod svg;
 
 pub(crate) fn render(
-    focus: &[TypeCard<'_>],
+    focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
-    // A file that declares several cards is parsed once.
+    // A file that declares several cards is parsed once for each target.
     let mut parsed = Vec::new();
     let groups = incoming
         .iter()
@@ -32,22 +32,14 @@ pub(crate) fn render(
         })
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    let (first, others) = focus.split_first().expect("a type diagram has its focus");
-    let mut focus = vec![read(first, &mut parsed)?];
-    for card in others {
-        // Only the first declaration takes lines.
-        let card = TypeCard {
-            relationships: &[],
-            ..*card
-        };
-        focus.push(read(&card, &mut parsed)?);
-    }
+    let focus = read(focus, &mut parsed)?;
     Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
 }
 
 /// A card's source file, parsed once for every card it declares.
 struct Parsed<'a> {
     source: &'a str,
+    target: &'a Target,
     /// The source the parser read, without a byte order mark or shebang.
     parser_source: &'a str,
     /// Every type declaration with its path within the file.
@@ -77,6 +69,19 @@ enum Structure {
     Stack(Vec<Tile>),
 }
 
+impl Structure {
+    /// Every tile, in source order.
+    fn tiles(&self) -> Vec<&Tile> {
+        match self {
+            Self::Empty => Vec::new(),
+            Self::Row(tiles) | Self::Stack(tiles) => tiles.iter().collect(),
+            Self::Variants(variants) => {
+                variants.iter().flat_map(|variant| &variant.tiles).collect()
+            }
+        }
+    }
+}
+
 struct VariantTile {
     name: String,
     case: Option<String>,
@@ -98,13 +103,14 @@ struct Tile {
 fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, RenderError> {
     let index = if let Some(index) = parsed
         .iter()
-        .position(|file| std::ptr::eq(file.source, card.source))
+        .position(|file| std::ptr::eq(file.source, card.source) && file.target == card.target)
     {
         index
     } else {
-        let file = parse_file(card.source)?;
+        let file = parse_configured(card.source, card.target)?;
         parsed.push(Parsed {
             source: card.source,
+            target: card.target,
             parser_source: parser_source(card.source, &file),
             items: kaalang_compiler::type_items(&file.items),
         });
@@ -115,8 +121,8 @@ fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, R
         items,
         ..
     } = &parsed[index];
-    let mut matches = items.iter().filter(|(path, _)| path == card.path);
-    let Some((_, item)) = matches.nth(card.occurrence) else {
+    // Only code rustc rejects declares a path twice for one target.
+    let Some((_, item)) = items.iter().find(|(path, _)| path == card.path) else {
         return Err(RenderError::TypeNotFound(card.path.to_owned()));
     };
     let declaration = kaalang_compiler::type_declaration(item).map_err(|error| {
@@ -149,10 +155,7 @@ fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, R
     let read = Card {
         name: format!("{}{generics}", card.header),
         marker: visibility_marker(visibility(item)),
-        kind: card
-            .cfgs
-            .iter()
-            .fold(kind(source, item), |kind, cfg| format!("{kind} · {cfg}")),
+        kind: kind(source, item),
         description: declaration.description,
         structure,
     };
@@ -246,8 +249,8 @@ fn visibility(item: &Item) -> &Visibility {
 }
 
 /// `struct · repr(Rust)`: the form, and the representation Rust's `repr`
-/// attributes give it, or its default. A `repr` under `cfg_attr` makes the
-/// representation depend on the target, so the form stands alone.
+/// attributes give it, or its default. A `repr` under a `cfg_attr` that holds
+/// is one of them, since configuring the source expanded it.
 fn kind(source: &str, item: &Item) -> String {
     let (form, attributes) = match item {
         Item::Struct(declaration) => ("struct", &declaration.attrs),
@@ -255,12 +258,6 @@ fn kind(source: &str, item: &Item) -> String {
         Item::Union(declaration) => ("union", &declaration.attrs),
         _ => return "type alias".to_owned(),
     };
-    if attributes.iter().any(|attribute| {
-        attribute.path().is_ident("cfg_attr")
-            && matches!(&attribute.meta, Meta::List(list) if mentions_repr(list.tokens.clone()))
-    }) {
-        return form.to_owned();
-    }
     let representations: Vec<String> = attributes
         .iter()
         .filter(|attribute| attribute.path().is_ident("repr"))
@@ -285,30 +282,15 @@ fn kind(source: &str, item: &Item) -> String {
     format!("{form} · repr({representation})")
 }
 
-/// Whether `repr` appears anywhere in these tokens, nested `cfg_attr` included.
-fn mentions_repr(tokens: TokenStream) -> bool {
-    tokens.into_iter().any(|token| match token {
-        TokenTree::Ident(ident) => ident == "repr",
-        TokenTree::Group(group) => mentions_repr(group.stream()),
-        _ => false,
-    })
-}
-
 /// Checks every text the card shows for characters XML 1.0 cannot represent.
 fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
-    let (tiles, cases): (Vec<&Tile>, Vec<&String>) = match &card.structure {
-        Structure::Empty => (Vec::new(), Vec::new()),
-        Structure::Row(tiles) | Structure::Stack(tiles) => (tiles.iter().collect(), Vec::new()),
-        Structure::Variants(variants) => (
-            variants.iter().flat_map(|variant| &variant.tiles).collect(),
-            variants.iter().flat_map(|variant| &variant.case).collect(),
-        ),
+    let tiles = card.structure.tiles();
+    let variants: &[VariantTile] = match &card.structure {
+        Structure::Variants(variants) => variants,
+        _ => &[],
     };
-    let variants = match &card.structure {
-        Structure::Variants(variants) => variants.iter().map(|variant| &variant.name).collect(),
-        _ => Vec::new(),
-    };
-    let labels = [&card.name, &card.kind].into_iter().chain(variants).chain(
+    let names = variants.iter().map(|variant| &variant.name);
+    let labels = [&card.name, &card.kind].into_iter().chain(names).chain(
         tiles
             .iter()
             .flat_map(|tile| tile.label.iter().chain([&tile.ty]).chain(&tile.target)),
@@ -319,7 +301,7 @@ fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
     let descriptions = card
         .description
         .iter()
-        .chain(cases)
+        .chain(variants.iter().flat_map(|variant| &variant.case))
         .chain(tiles.iter().flat_map(|tile| &tile.description));
     for description in descriptions {
         validate_description(description, span, format!("description of type `{path}`"))?;
@@ -329,21 +311,15 @@ fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Structure, structure};
+    use super::structure;
 
     /// Whether each tile with a target draws its line, in source order.
     fn drawn(source: &str, drawn: &[usize]) -> Vec<bool> {
         let file = syn::parse_file(source).unwrap();
         let declaration = kaalang_compiler::type_declaration(&file.items[0]).unwrap();
-        let tiles = match structure(source, &declaration.form, drawn).0 {
-            Structure::Empty => Vec::new(),
-            Structure::Row(tiles) | Structure::Stack(tiles) => tiles,
-            Structure::Variants(variants) => variants
-                .into_iter()
-                .flat_map(|variant| variant.tiles)
-                .collect(),
-        };
-        tiles
+        structure(source, &declaration.form, drawn)
+            .0
+            .tiles()
             .iter()
             .filter(|tile| tile.target.is_some())
             .map(|tile| tile.drawn)

@@ -96,6 +96,17 @@ impl<'a> Resolver<'a> {
 
     /// What `path`, as written in `module` of crate `krate`, names.
     pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+        self.lookup(krate, module, path, false)
+    }
+
+    /// What `path` names among functions, constants, and statics: its last
+    /// segment passes over a module or type that shares the name, as in
+    /// `mod checkout; pub use checkout::checkout;`.
+    pub(super) fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+        self.lookup(krate, module, path, true)
+    }
+
+    fn lookup(&self, krate: usize, module: usize, path: &syn::Path, value: bool) -> Def {
         let path = UsePath {
             global: path.leading_colon.is_some(),
             segments: path
@@ -104,12 +115,20 @@ impl<'a> Resolver<'a> {
                 .map(|segment| segment.ident.unraw().to_string())
                 .collect(),
         };
-        self.path(krate, module, &path, &mut Vec::new())
+        self.path(krate, module, &path, value, &mut Vec::new())
     }
 
     /// Resolves a path as written in `module`: its first segment from the
-    /// module's scope or the crates it may name, the rest through modules.
-    fn path(&self, krate: usize, module: usize, path: &UsePath, visiting: &mut Visiting) -> Def {
+    /// module's scope or the crates it may name, the rest through modules. A
+    /// `value` path looks its last segment up among values.
+    fn path(
+        &self,
+        krate: usize,
+        module: usize,
+        path: &UsePath,
+        value: bool,
+        visiting: &mut Visiting,
+    ) -> Def {
         let Some((first, rest)) = path.segments.split_first() else {
             return Def::Unknown("the path is empty");
         };
@@ -120,16 +139,17 @@ impl<'a> Resolver<'a> {
                 "crate" => Def::Module(krate, 0),
                 "self" => Def::Module(krate, module),
                 "super" => self.parent(krate, module),
-                _ => self.first(krate, module, first, visiting),
+                _ => self.first(krate, module, first, value && rest.is_empty(), visiting),
             }
         };
-        for segment in rest {
+        for (index, segment) in rest.iter().enumerate() {
+            let value = value && index + 1 == rest.len();
             current = match current {
                 Def::Module(krate, module) => match segment.as_str() {
                     "super" => self.parent(krate, module),
                     "self" => Def::Module(krate, module),
                     _ => self
-                        .member(krate, module, segment, visiting)
+                        .member(krate, module, segment, value, visiting)
                         .map_or(Def::Missing, |(found, _)| found),
                 },
                 // An enum variant or an associated item.
@@ -144,9 +164,16 @@ impl<'a> Resolver<'a> {
 
     /// A relative path's first segment: a name in the module's scope, a
     /// workspace library, or a name from outside the workspace.
-    fn first(&self, krate: usize, module: usize, name: &str, visiting: &mut Visiting) -> Def {
+    fn first(
+        &self,
+        krate: usize,
+        module: usize,
+        name: &str,
+        value: bool,
+        visiting: &mut Visiting,
+    ) -> Def {
         match self
-            .member(krate, module, name, visiting)
+            .member(krate, module, name, value, visiting)
             .map(|(found, _)| found)
         {
             // A glob the walk could not follow may declare it, but a workspace
@@ -184,38 +211,25 @@ impl<'a> Resolver<'a> {
     }
 
     /// What `name` stands for in the type namespace of `module`, then among
-    /// its values: declared there, imported by name, or through a glob that
-    /// sees it. Returns where in `krate` the name may be used from.
+    /// its values, or only among its values when `value` is set: declared
+    /// there, imported by name, or through a glob that sees it. Returns where
+    /// in `krate` the name may be used from.
     fn member(
         &self,
         krate: usize,
         module: usize,
         name: &str,
-        visiting: &mut Visiting,
-    ) -> Option<(Def, Visibility)> {
-        // A `use` cycle, such as two globs importing each other, ends here.
-        let key = (krate, module, name.to_owned());
-        if visiting.contains(&key) {
-            return None;
-        }
-        visiting.push(key);
-        let found = self.member_unguarded(krate, module, name, visiting);
-        visiting.pop();
-        found
-    }
-
-    fn member_unguarded(
-        &self,
-        krate: usize,
-        module: usize,
-        name: &str,
+        value: bool,
         visiting: &mut Visiting,
     ) -> Option<(Def, Visibility)> {
         let scope = &self.crates[krate].modules[module].scope;
-        if let Some((_, declared, visibility)) = scope
-            .declared
-            .iter()
-            .find(|(declared, ..)| declared == name)
+        // A declared name is found even inside the `use` that imports a value
+        // of that name, as `mod checkout; pub use checkout::checkout;` does.
+        if !value
+            && let Some((_, declared, visibility)) = scope
+                .declared
+                .iter()
+                .find(|(declared, ..)| declared == name)
         {
             let found = match declared {
                 Declared::Type(id) => Def::Type(TypeRef { krate, id: *id }),
@@ -225,10 +239,32 @@ impl<'a> Resolver<'a> {
             };
             return Some((found, *visibility));
         }
-        if let Some((_, imported, visibility)) =
-            scope.imports.iter().find(|(bound, ..)| bound == name)
-        {
-            return Some((self.path(krate, module, imported, visiting), *visibility));
+        // A `use` cycle, such as two globs importing each other, ends here.
+        let key = (krate, module, name.to_owned());
+        if visiting.contains(&key) {
+            return None;
+        }
+        visiting.push(key);
+        let found = self.member_unguarded(krate, module, name, value, visiting);
+        visiting.pop();
+        found
+    }
+
+    fn member_unguarded(
+        &self,
+        krate: usize,
+        module: usize,
+        name: &str,
+        value: bool,
+        visiting: &mut Visiting,
+    ) -> Option<(Def, Visibility)> {
+        let scope = &self.crates[krate].modules[module].scope;
+        for (_, imported, visibility) in scope.imports.iter().filter(|(bound, ..)| bound == name) {
+            let found = self.path(krate, module, imported, value, visiting);
+            // An import may bind the name only as a module or a type.
+            if !(value && matches!(found, Def::Missing)) {
+                return Some((found, *visibility));
+            }
         }
         if let Some((_, what, visibility)) = scope.values.iter().find(|(value, ..)| value == name) {
             return Some((
@@ -238,11 +274,15 @@ impl<'a> Resolver<'a> {
         }
         let mut unknown = None;
         for (glob, through) in &scope.globs {
-            match self.path(krate, module, glob, visiting) {
+            match self.path(krate, module, glob, false, visiting) {
                 Def::Module(source, inner) => {
                     // A glob imports only the names its module may use, and
                     // binds them no wider than the glob itself.
-                    match self.member(source, inner, name, visiting) {
+                    match self.member(source, inner, name, value, visiting) {
+                        // An unknown name must not hide one a later glob imports.
+                        Some((found @ (Def::Unknown(_) | Def::Missing), _)) => {
+                            unknown = Some(found);
+                        }
                         Some((found, Visibility::Public)) => return Some((found, *through)),
                         Some((found, Visibility::Within(outer)))
                             if source == krate && self.inside(krate, module, outer) =>
@@ -289,7 +329,7 @@ type Visiting = Vec<(usize, usize, String)>;
 
 #[cfg(test)]
 mod tests {
-    use super::{Resolution, Resolver, TypeRef};
+    use super::{Def, Resolution, Resolver, TypeRef};
     use crate::workspace::{Crate, library};
 
     /// Resolves `target` from the module at `module`, a path such as `a::b::`,
@@ -548,6 +588,65 @@ mod tests {
             resolve(&crates, "", "Member"),
             Resolution::Unknown(_)
         ));
+    }
+
+    #[test]
+    fn a_glob_into_a_module_with_an_item_macro_does_not_hide_a_later_glob() {
+        let crates = [library(
+            "app",
+            "mod generated { declare_types!(Other); }
+             mod model { pub struct Member; }
+             use self::generated::*;
+             use self::model::*;",
+        )];
+        assert_eq!(
+            resolve(&crates, "", "Member"),
+            named(&crates, 0, "model::Member")
+        );
+    }
+
+    /// Whether `path`, as written in the root of the last of `crates`, names a
+    /// function of the first crate's module at `module`.
+    fn names_a_function(crates: &[Crate], path: &str, module: &str) -> bool {
+        let path: syn::Path = syn::parse_str(path).expect("the path parses");
+        let at = crates[0]
+            .modules
+            .iter()
+            .position(|candidate| candidate.path == module)
+            .expect("the module exists");
+        matches!(
+            Resolver::new(crates).find_value(crates.len() - 1, 0, &path),
+            Def::Value(0, found, _, "a function") if found == at
+        )
+    }
+
+    #[test]
+    fn a_function_is_found_beside_a_module_of_its_name() {
+        let crates = [library(
+            "app",
+            "mod checkout { pub fn checkout() {} } pub use checkout::checkout;",
+        )];
+        assert!(names_a_function(&crates, "checkout", "checkout::"));
+    }
+
+    #[test]
+    fn a_function_is_found_through_a_library_of_its_name() {
+        let crates = [
+            library("checkout", "pub fn checkout() {}"),
+            library("app", "pub use checkout::checkout;"),
+        ];
+        assert!(names_a_function(&crates, "checkout", ""));
+    }
+
+    #[test]
+    fn a_function_is_found_through_any_import_of_its_name() {
+        let crates = [library(
+            "app",
+            "mod flows { pub mod checkout { pub fn checkout() {} } }
+             pub use flows::checkout;
+             pub use flows::checkout::checkout;",
+        )];
+        assert!(names_a_function(&crates, "checkout", "flows::checkout::"));
     }
 
     #[test]

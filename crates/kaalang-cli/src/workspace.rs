@@ -3,32 +3,49 @@
 //! declarations in source order.
 
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::BTreeSet,
+    env,
     fmt::Write as _,
     fs, io, iter,
     path::{Path, PathBuf},
+    process::Command,
     rc::Rc,
 };
 
-use cargo_metadata::{MetadataCommand, Target};
+use cargo_metadata::{CargoOpt, MetadataCommand, Target};
 use kaalang_compiler::{Declarations, FlowPath, Place, Question};
 use kaalang_svg::RenderError;
-use syn::{
-    Attribute, Expr, ExprLit, Item, Lit, Meta, Token, UseTree, ext::IdentExt,
-    punctuated::Punctuated, spanned::Spanned,
-};
+use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
 
 use crate::{
     datatype,
-    resolve::{Def, Resolver},
+    resolve::{Def, Resolver, TypeRef},
 };
 
-/// The file that declares a found flow, its source, and the flow's position
-/// among the file's flows.
+/// The file that declares a found flow, its source, the flow's position among
+/// the file's flows, and the cfg set its crate is read for.
 pub(super) struct Found {
     pub(super) file: PathBuf,
     pub(super) source: String,
     pub(super) position: usize,
+    pub(super) cfg: kaalang_svg::Target,
+}
+
+/// The target options, as cargo takes them.
+#[derive(clap::Args)]
+pub(super) struct TargetOptions {
+    /// Target triple to read the code for [default: the host's]
+    #[arg(long)]
+    pub(super) target: Option<String>,
+    /// Features to enable, as cargo takes them
+    #[arg(long)]
+    pub(super) features: Vec<String>,
+    /// Enable every feature
+    #[arg(long)]
+    pub(super) all_features: bool,
+    /// Leave out the default features
+    #[arg(long)]
+    pub(super) no_default_features: bool,
 }
 
 /// One crate: a package's target with the modules read from its root.
@@ -53,6 +70,8 @@ pub(super) struct Crate {
     pub(super) types: Vec<TypeEntry>,
     /// Each file that could not be read or parsed, with the reason.
     pub(super) skipped: Vec<String>,
+    /// The cfg set its files are read for.
+    pub(super) cfg: kaalang_svg::Target,
 }
 
 impl Crate {
@@ -71,8 +90,6 @@ pub(super) struct Module {
     pub(super) file: Rc<File>,
     /// The path within its file: `""` for the file's own module.
     pub(super) in_file: String,
-    /// The `cfg` attributes of the `mod` item that declares it, as written.
-    pub(super) cfgs: Vec<String>,
     pub(super) scope: Scope,
 }
 
@@ -81,7 +98,8 @@ pub(super) struct File {
     /// The path that tells two crates' copies of one file apart from two files.
     pub(super) canonical: PathBuf,
     pub(super) source: String,
-    /// Its items, none when it could not be read.
+    /// Its items as its crate's target compiles them, none when it could not
+    /// be read.
     pub(super) items: Vec<Item>,
 }
 
@@ -131,21 +149,15 @@ pub(super) struct TypeEntry {
     pub(super) path: String,
     /// The path within its file, as `kaalang_compiler::type_items` lists it.
     pub(super) in_file: String,
-    /// Which declaration of `in_file` in this reading of the file this is,
-    /// counted from 0: exclusive `cfg`s may declare a path more than once.
-    pub(super) occurrence: usize,
-    /// The declaration's own `cfg` attributes, as written.
-    pub(super) cfgs: Vec<String>,
     pub(super) item: Item,
 }
 
 /// Reads every target of every workspace member, in package name order, once
-/// `package`, when given, is found among them.
-pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
-    let metadata = MetadataCommand::new()
-        .no_deps()
-        .exec()
-        .map_err(|error| format!("could not read the cargo workspace: {error}"))?;
+/// `package`, when given, is found among them, each as cargo compiles it for
+/// the target `options` name.
+pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<Vec<Crate>, String> {
+    let printed = rustc_cfg(options.target.as_deref(), true)?;
+    let metadata = metadata(package, options)?;
     let mut packages = metadata.workspace_packages();
     if let Some(package) = package
         && !packages.iter().any(|member| *member.name == package)
@@ -155,9 +167,25 @@ pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
         ));
     }
     packages.sort_by(|left, right| left.name.cmp(&right.name));
+    // Cargo builds a procedural macro for the host, without the target's flags.
+    let host = if options.target.is_some()
+        && packages
+            .iter()
+            .any(|package| package.targets.iter().any(Target::is_proc_macro))
+    {
+        Some(rustc_cfg(None, false)?)
+    } else {
+        None
+    };
 
     let mut crates = Vec::new();
     for package in packages {
+        let features: Vec<String> = metadata
+            .resolve
+            .as_ref()
+            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id))
+            .map(|node| node.features.iter().map(ToString::to_string).collect())
+            .unwrap_or_default();
         let renames: Vec<(String, String)> = package
             .dependencies
             .iter()
@@ -166,16 +194,24 @@ pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
                 Some((rename.replace('-', "_"), dependency.name.clone()))
             })
             .collect();
-        for target in package
-            .targets
-            .iter()
-            .filter(|target| !target.is_custom_build())
-        {
+        // Cargo builds no target whose required features are off.
+        for target in package.targets.iter().filter(|target| {
+            !target.is_custom_build()
+                && target
+                    .required_features
+                    .iter()
+                    .all(|required| required.contains('/') || features.contains(required))
+        }) {
+            let printed = match &host {
+                Some(host) if target.is_proc_macro() => host,
+                _ => &printed,
+            };
+            let cfg = cfg_set(target, printed, &features)?;
             let mut walk = Walk {
+                cfg: &cfg,
                 open: Vec::new(),
                 modules: Vec::new(),
                 types: Vec::new(),
-                occurrences: HashMap::new(),
                 skipped: Vec::new(),
             };
             walk_file(
@@ -205,10 +241,135 @@ pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
                 modules: walk.modules,
                 types: walk.types,
                 skipped: walk.skipped,
+                cfg,
             });
         }
     }
     Ok(crates)
+}
+
+/// The cfg set cargo builds `target` with: what rustc `printed` for its
+/// compilation target, its package's `features`, `test` for a test or bench
+/// target, which cargo builds with `--test`, and `proc_macro`, which rustc sets
+/// for a procedural macro.
+fn cfg_set(
+    target: &Target,
+    printed: &str,
+    features: &[String],
+) -> Result<kaalang_svg::Target, String> {
+    let mut lines = vec![printed.to_owned()];
+    lines.extend(
+        features
+            .iter()
+            .map(|feature| format!("feature=\"{feature}\"")),
+    );
+    if target.is_test() || target.is_bench() {
+        lines.push("test".to_owned());
+    }
+    if target.is_proc_macro() {
+        lines.push("proc_macro".to_owned());
+    }
+    lines
+        .join("\n")
+        .parse()
+        .map_err(|error| format!("could not read the cfg rustc printed: {error}"))
+}
+
+/// The workspace as `cargo metadata` describes it, with each package's features
+/// resolved as cargo resolves them for the target `options` name. As with
+/// `cargo build -p`, a feature without a package is `package`'s.
+fn metadata(
+    package: Option<&str>,
+    options: &TargetOptions,
+) -> Result<cargo_metadata::Metadata, String> {
+    let triple = match &options.target {
+        Some(triple) => triple.clone(),
+        None => host()?,
+    };
+    let mut command = MetadataCommand::new();
+    command.other_options(vec!["--filter-platform".to_owned(), triple]);
+    if options.all_features {
+        command.features(CargoOpt::AllFeatures);
+    }
+    if options.no_default_features {
+        command.features(CargoOpt::NoDefaultFeatures);
+    }
+    // Cargo takes features separated by commas or spaces.
+    let features: Vec<String> = options
+        .features
+        .iter()
+        .flat_map(|features| features.split([',', ' ']))
+        .filter(|feature| !feature.is_empty())
+        .map(|feature| match package {
+            Some(package) if !feature.contains('/') => format!("{package}/{feature}"),
+            _ => feature.to_owned(),
+        })
+        .collect();
+    if !features.is_empty() {
+        command.features(CargoOpt::SomeFeatures(features));
+    }
+    command
+        .exec()
+        .map_err(|error| format!("could not read the cargo workspace: {error}"))
+}
+
+/// What `rustc --print cfg` prints for `target`, or the host, with the flags
+/// cargo passes when `flags` is set.
+fn rustc_cfg(target: Option<&str>, flags: bool) -> Result<String, String> {
+    let mut arguments = vec!["--print".to_owned(), "cfg".to_owned()];
+    if let Some(target) = target {
+        arguments.extend(["--target".to_owned(), target.to_owned()]);
+    }
+    if flags {
+        arguments.extend(rustflags());
+    }
+    rustc(&arguments)
+}
+
+/// The flags cargo passes rustc: `CARGO_ENCODED_RUSTFLAGS`, else `RUSTFLAGS`.
+fn rustflags() -> Vec<String> {
+    match env::var("CARGO_ENCODED_RUSTFLAGS") {
+        Ok(encoded) => encoded
+            .split('\x1f')
+            .filter(|flag| !flag.is_empty())
+            .map(str::to_owned)
+            .collect(),
+        Err(_) => env::var("RUSTFLAGS")
+            .unwrap_or_default()
+            .split_whitespace()
+            .map(str::to_owned)
+            .collect(),
+    }
+}
+
+/// The host's target triple, as `rustc -vV` names it.
+fn host() -> Result<String, String> {
+    let version = rustc(&["-vV".to_owned()])?;
+    version
+        .lines()
+        .find_map(|line| line.strip_prefix("host: "))
+        .map(str::to_owned)
+        .ok_or_else(|| "rustc -vV names no host".to_owned())
+}
+
+/// Runs rustc, the one `RUSTC` names or else the one on the path, as cargo does.
+fn rustc(arguments: &[String]) -> Result<String, String> {
+    let rustc = env::var_os("RUSTC").unwrap_or_else(|| "rustc".into());
+    let output = Command::new(&rustc)
+        .args(arguments)
+        .output()
+        .map_err(|error| format!("could not run {}: {error}", rustc.display()))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!(
+            "{} {} failed:\n{}",
+            rustc.display(),
+            arguments.join(" "),
+            stderr.trim_end()
+        ));
+    }
+    String::from_utf8(output.stdout)
+        .map_err(|error| format!("{} printed no UTF-8: {error}", rustc.display()))
 }
 
 /// Finds the one flow that `path` selects from its crate root, resolved as the
@@ -217,8 +378,12 @@ pub(super) fn crates(package: Option<&str>) -> Result<Vec<Crate>, String> {
 /// workspace's libraries, as a trait's default method may be in one. A file
 /// that cannot be read or parsed is skipped and listed, as an error when the
 /// flow is not found and as a warning when it is.
-pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
-    let crates = crates(package)?;
+pub(super) fn find(
+    path: &str,
+    package: Option<&str>,
+    options: &TargetOptions,
+) -> Result<Found, String> {
+    let crates = crates(package, options)?;
     let resolver = Resolver::new(&crates);
     let selected = |krate: &Crate| package.is_none_or(|package| krate.package == package);
     // Each crate's files, by their own modules, with their declarations.
@@ -258,18 +423,28 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
         for (file, position) in kaalang_compiler::select(flow_path, &listed, &mut names) {
             let ((source, at), declarations) = listed[file];
             let module = &crates[source].modules[at];
-            if seen.insert((module.file.canonical.clone(), position)) {
+            // Crates read a shared file under their own `cfg`s, so its flow
+            // is known by where it stands, not by its position among them.
+            let at = declarations.flows[position]
+                .function
+                .sig
+                .ident
+                .span()
+                .start();
+            if seen.insert((module.file.canonical.clone(), at.line, at.column)) {
                 let in_file = declarations.flows[position].path.clone();
-                matches.push((source, module, in_file, position));
+                // Listed under the crate the path was resolved from, which `-p`
+                // selects, and read for the crate whose file declares it.
+                matches.push((index, source, module, in_file, position));
             }
         }
     }
     if matches.len() > 1 {
         let listed: Vec<(&Crate, String)> = matches
             .iter()
-            .map(|(source, module, in_file, _)| {
+            .map(|(index, _, module, in_file, _)| {
                 let at = format!("{}: {in_file}", module.file.path.display());
-                (&crates[*source], at)
+                (&crates[*index], at)
             })
             .collect();
         return Err(ambiguous(
@@ -283,7 +458,7 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
             .iter()
             .filter(|krate| selected(krate) || krate.library),
     );
-    let Some((_, module, _, position)) = matches.pop() else {
+    let Some((_, source, module, _, position)) = matches.pop() else {
         let message = RenderError::FlowNotFound(path.to_owned()).to_string();
         return Err(with_skipped(message, &skipped));
     };
@@ -292,6 +467,7 @@ pub(super) fn find(path: &str, package: Option<&str>) -> Result<Found, String> {
         file: module.file.path.clone(),
         source: module.file.source.clone(),
         position,
+        cfg: crates[source].cfg.clone(),
     })
 }
 
@@ -319,7 +495,7 @@ fn answer(
         Question::Function { path, at, name } => {
             let (source, inside) = module(at);
             matches!(
-                resolver.find(krate, 0, path),
+                resolver.find_value(krate, 0, path),
                 Def::Value(found, declared, value, "a function")
                     if (found, declared) == (source, inside) && name.unraw() == value
             )
@@ -334,7 +510,11 @@ fn answer(
             ) {
                 // rustc has not checked the flow path, so a name it misses is wrong.
                 (Def::Missing, _) if left.is_none() => false,
-                (Def::Type(left), Def::Type(right)) => datatype::same(crates, left, right),
+                (Def::Type(left), Def::Type(right)) => datatype::same(
+                    crates,
+                    unaliased(crates, resolver, left),
+                    unaliased(crates, resolver, right),
+                ),
                 (
                     Def::Trait(left, left_module, left_name),
                     Def::Trait(right, right_module, right_name),
@@ -346,6 +526,31 @@ fn answer(
                 | (_, Def::Missing | Def::Unknown(_)) => last(left_path) == last(right_path),
                 _ => false,
             }
+        }
+    }
+}
+
+/// The type `found` stands for through aliases such as `type R = Report;`, as
+/// rustc sees through one written as an `impl` block's self type.
+fn unaliased(crates: &[Crate], resolver: &Resolver, found: TypeRef) -> TypeRef {
+    let mut current = found;
+    let mut seen = Vec::new();
+    loop {
+        seen.push(current);
+        let entry = &crates[current.krate].types[current.id];
+        let Item::Type(alias) = &entry.item else {
+            return current;
+        };
+        let syn::Type::Path(syn::TypePath {
+            qself: None, path, ..
+        }) = &*alias.ty
+        else {
+            return current;
+        };
+        match resolver.find(current.krate, entry.module, path) {
+            // A cycle of aliases, which rustc rejects, stops where it closes.
+            Def::Type(next) if !seen.contains(&next) => current = next,
+            _ => return current,
         }
     }
 }
@@ -399,13 +604,13 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
 }
 
 /// One crate's module tree as it is read.
-struct Walk {
+struct Walk<'a> {
+    /// The cfg set the crate's files are read for.
+    cfg: &'a kaalang_svg::Target,
     /// The files being read, outermost first; a `#[path]` loop stops here.
     open: Vec<PathBuf>,
     modules: Vec<Module>,
     types: Vec<TypeEntry>,
-    /// How many declarations of each path each reading of a file has had.
-    occurrences: HashMap<(*const File, String), usize>,
     skipped: Vec<String>,
 }
 
@@ -416,17 +621,19 @@ struct Walk {
 /// declared with an opaque scope, so that a path into it is unknown rather than
 /// outside the workspace.
 fn walk_file(
-    walk: &mut Walk,
+    walk: &mut Walk<'_>,
     file: &Path,
     owns_directory: bool,
     path: String,
     parent: Option<usize>,
 ) -> Option<usize> {
     let (canonical, source, parsed, scope) = match read(file) {
-        Ok((canonical, source, parsed)) => (canonical, source, Some(parsed), Scope::default()),
+        Ok((canonical, source, mut parsed)) => {
+            walk.cfg.configure(&mut parsed);
+            (canonical, source, Some(parsed), Scope::default())
+        }
         Err(error) => {
-            // A missing module file may be generated or belong to another
-            // configuration.
+            // A missing module file may be one a build script generates.
             if error.kind() != io::ErrorKind::NotFound {
                 walk.skipped.push(format!("{}: {error}", file.display()));
             }
@@ -453,7 +660,6 @@ fn walk_file(
         parent,
         file: Rc::clone(&shared),
         in_file: String::new(),
-        cfgs: Vec::new(),
         scope,
     });
     if readable {
@@ -480,49 +686,29 @@ fn read(file: &Path) -> io::Result<(PathBuf, String, syn::File)> {
 /// Declares the names among `items` in `module` and follows its `mod`
 /// declarations. `directory` holds their default files, and a `#[path]` is
 /// relative to `base`.
-fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, base: &Path) {
+fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Path, base: &Path) {
     for item in items {
         let name = |ident: &syn::Ident| ident.unraw().to_string();
         let (bound, declared, vis) = match item {
             Item::Mod(declaration) => {
-                let bound = name(&declaration.ident);
-                let visibility = visibility(&walk.modules, module, &declaration.vis);
-                for child in walk_module(walk, declaration, module, directory, base) {
-                    let declared = (bound.clone(), Declared::Module(child), visibility);
-                    walk.modules[module].scope.declared.push(declared);
-                }
-                continue;
+                let Some(child) = walk_module(walk, declaration, module, directory, base) else {
+                    continue;
+                };
+                (
+                    name(&declaration.ident),
+                    Declared::Module(child),
+                    &declaration.vis,
+                )
             }
-            Item::Struct(syn::ItemStruct {
-                attrs, vis, ident, ..
-            })
-            | Item::Enum(syn::ItemEnum {
-                attrs, vis, ident, ..
-            })
-            | Item::Union(syn::ItemUnion {
-                attrs, vis, ident, ..
-            })
-            | Item::Type(syn::ItemType {
-                attrs, vis, ident, ..
-            }) => {
+            Item::Struct(syn::ItemStruct { vis, ident, .. })
+            | Item::Enum(syn::ItemEnum { vis, ident, .. })
+            | Item::Union(syn::ItemUnion { vis, ident, .. })
+            | Item::Type(syn::ItemType { vis, ident, .. }) => {
                 let outer = &walk.modules[module];
-                let (path, in_file) = (
-                    format!("{}{ident}", outer.path),
-                    format!("{}{ident}", outer.in_file),
-                );
-                let reading = Rc::as_ptr(&outer.file);
-                let count = walk
-                    .occurrences
-                    .entry((reading, in_file.clone()))
-                    .or_default();
-                let occurrence = *count;
-                *count += 1;
                 walk.types.push(TypeEntry {
                     module,
-                    path,
-                    in_file,
-                    occurrence,
-                    cfgs: cfgs(attrs),
+                    path: format!("{}{ident}", outer.path),
+                    in_file: format!("{}{ident}", outer.in_file),
                     item: item.clone(),
                 });
                 (name(ident), Declared::Type(walk.types.len() - 1), vis)
@@ -609,16 +795,16 @@ fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visib
     Visibility::Within(within)
 }
 
-/// Reads the modules that `declaration` declares inside `parent` and returns
-/// them: a module file is read once for its default file or `#[path]`, and
-/// once for each `path` under `cfg_attr`.
+/// Reads the module that `declaration` declares inside `parent`: an inline one,
+/// or its file, its `#[path]` or default one. Configuring the source turned a
+/// `cfg_attr` path that holds into a plain `#[path]`.
 fn walk_module(
-    walk: &mut Walk,
+    walk: &mut Walk<'_>,
     declaration: &syn::ItemMod,
     parent: usize,
     directory: &Path,
     base: &Path,
-) -> Vec<usize> {
+) -> Option<usize> {
     let path = format!("{}{}::", walk.modules[parent].path, declaration.ident);
     let name = declaration.ident.unraw().to_string();
     let attribute = path_attribute(&declaration.attrs);
@@ -634,11 +820,10 @@ fn walk_module(
                 parent: Some(parent),
                 file: Rc::clone(&outer.file),
                 in_file: format!("{}{}::", outer.in_file, declaration.ident),
-                cfgs: cfgs(&declaration.attrs),
                 scope: Scope::default(),
             });
             walk_items(walk, items, module, &directory, &directory);
-            vec![module]
+            Some(module)
         }
         (None, attribute) => {
             let (file, owns_directory) = if let Some(attribute) = attribute {
@@ -651,44 +836,9 @@ fn walk_module(
                     (directory.join(&name).join("mod.rs"), true)
                 }
             };
-            let conditional = cfg_attr_paths(&declaration.attrs);
-            let mut files = Vec::new();
-            // Under `cfg_attr` paths, the default file is only a fallback that
-            // need not exist.
-            if conditional.is_empty() || file.is_file() {
-                files.push((file, owns_directory, Vec::new()));
-            }
-            for (attribute, conditions) in conditional {
-                files.push((base.join(attribute), true, conditions));
-            }
-            files
-                .into_iter()
-                .filter_map(|(file, owns_directory, conditions)| {
-                    let module =
-                        walk_file(walk, &file, owns_directory, path.clone(), Some(parent))?;
-                    let mut written = cfgs(&declaration.attrs);
-                    written.extend(conditions);
-                    walk.modules[module].cfgs = written;
-                    Some(module)
-                })
-                .collect()
+            walk_file(walk, &file, owns_directory, path, Some(parent))
         }
     }
-}
-
-/// The `cfg` attributes among `attributes`, as written.
-fn cfgs(attributes: &[Attribute]) -> Vec<String> {
-    attributes
-        .iter()
-        .filter(|attribute| attribute.path().is_ident("cfg"))
-        .filter_map(|attribute| as_written(&attribute.meta))
-        .collect()
-}
-
-/// The source text of `tokens` with its whitespace collapsed.
-fn as_written(tokens: &impl Spanned) -> Option<String> {
-    let text = tokens.span().source_text()?;
-    Some(text.split_whitespace().collect::<Vec<_>>().join(" "))
 }
 
 /// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
@@ -746,49 +896,6 @@ fn path_attribute(attributes: &[Attribute]) -> Option<String> {
         .find_map(|attribute| path_value(&attribute.meta))
 }
 
-/// Each literal `path = "…"` under `cfg_attr` on a module declaration, with
-/// the `cfg`s it applies under, outermost first.
-fn cfg_attr_paths(attributes: &[Attribute]) -> Vec<(String, Vec<String>)> {
-    let mut found = Vec::new();
-    for attribute in attributes {
-        if let Meta::List(list) = &attribute.meta
-            && list.path.is_ident("cfg_attr")
-        {
-            cfg_attr_path(list, &mut Vec::new(), &mut found);
-        }
-    }
-    found
-}
-
-fn cfg_attr_path(
-    list: &syn::MetaList,
-    conditions: &mut Vec<String>,
-    found: &mut Vec<(String, Vec<String>)>,
-) {
-    let Ok(arguments) = list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
-    else {
-        return;
-    };
-    let mut arguments = arguments.iter();
-    let Some(predicate) = arguments.next().and_then(as_written) else {
-        return;
-    };
-    conditions.push(format!("cfg({predicate})"));
-    for argument in arguments {
-        match argument {
-            Meta::List(nested) if nested.path.is_ident("cfg_attr") => {
-                cfg_attr_path(nested, conditions, found);
-            }
-            argument => {
-                if let Some(path) = path_value(argument) {
-                    found.push((path, conditions.clone()));
-                }
-            }
-        }
-    }
-    conditions.pop();
-}
-
 /// The string of a `path = "…"` attribute.
 fn path_value(meta: &Meta) -> Option<String> {
     match meta {
@@ -814,7 +921,9 @@ fn target_label(target: &Target) -> String {
 #[cfg(test)]
 pub(super) fn library(package: &str, source: &str) -> Crate {
     let parsed = syn::parse_file(source).expect("the test source parses");
+    let cfg = kaalang_svg::Target::default();
     let mut walk = Walk {
+        cfg: &cfg,
         open: Vec::new(),
         modules: vec![Module {
             path: String::new(),
@@ -826,11 +935,9 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
                 items: parsed.items.clone(),
             }),
             in_file: String::new(),
-            cfgs: Vec::new(),
             scope: Scope::default(),
         }],
         types: Vec::new(),
-        occurrences: HashMap::new(),
         skipped: Vec::new(),
     };
     walk_items(
@@ -851,5 +958,6 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         modules: walk.modules,
         types: walk.types,
         skipped: walk.skipped,
+        cfg,
     }
 }

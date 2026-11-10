@@ -697,7 +697,7 @@ fn attribute_role(attribute: &Attribute) -> Result<Role> {
         Some(name) => {
             return Err(Error::new_spanned(
                 attribute,
-                format!("`kaa::{name}` is not a kaalang attribute"),
+                format!("`kaa::{name}` is not a kaalang block attribute"),
             ));
         }
         None => {
@@ -914,7 +914,11 @@ fn output_ident(pattern: &Pat) -> Result<Ident> {
 /// The name in a `#[kaa::name]` attribute, the form every block and type
 /// annotation takes.
 pub(crate) fn annotation_name(attribute: &Attribute) -> Option<&Ident> {
-    let path = attribute.path();
+    path_annotation_name(attribute.path())
+}
+
+/// The name under `kaa::` that `path` names, as `value` in `kaa::value`.
+pub(crate) fn path_annotation_name(path: &syn::Path) -> Option<&Ident> {
     (path.leading_colon.is_none() && path.segments.len() == 2 && path.segments[0].ident == "kaa")
         .then(|| &path.segments[1].ident)
 }

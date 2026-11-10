@@ -5,7 +5,7 @@ use crate::{
     markup::{
         BADGE_STYLE, BASE_STYLE, DOT_RADIUS, FONT_WEIGHT_BOLD, FONT_WEIGHT_REGULAR,
         FONT_WEIGHT_SEMIBOLD, MONOSPACE, SECONDARY_COLOR, STROKE_WIDTH, TextAnchor, arrow_marker,
-        escape, markdown_styles, needs_composed_lines, write_composed_lines, write_lines,
+        markdown_styles, needs_composed_lines, write_composed_lines, write_lines, write_svg_open,
         write_title,
     },
     text::{LABEL_FONT, SECONDARY_FONT, block_metrics},
@@ -27,23 +27,12 @@ pub(super) fn serialize(scene: &TypeScene) -> String {
             .filter(|block| block.text == Text::Description)
             .flat_map(|block| &block.lines),
     );
-    emit!(
-        svg,
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">"#,
-        scene.width,
-        scene.height,
-        scene.width,
-        scene.height
-    );
-    emit!(
-        svg,
-        "  <title id=\"kaalang-title\">kaalang type diagram for {}</title>",
-        escape(&focus.name)
-    );
-    emit!(
-        svg,
-        "  <desc id=\"kaalang-description\">{}</desc>",
-        escape(&describe(scene))
+    write_svg_open(
+        &mut svg,
+        (scene.width, scene.height),
+        "kaalang-",
+        &format!("kaalang type diagram for {}", focus.name),
+        &describe(scene),
     );
     emit_inline!(
         svg,
@@ -206,11 +195,6 @@ fn describe(scene: &TypeScene) -> String {
             .count()
     };
     let mut described = format!("Type {}", scene.cards[focus].name);
-    let declarations = scene.cards.len() - focus;
-    if declarations > 1 {
-        write!(described, " in {declarations} declarations")
-            .expect("writing to a String cannot fail");
-    }
     let incoming: Vec<String> = scene.cards[..focus]
         .iter()
         .enumerate()

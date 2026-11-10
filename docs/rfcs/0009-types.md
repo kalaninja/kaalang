@@ -180,6 +180,12 @@ that type, and those take short common names: `#[derive(clap::ValueEnum)]` reads
 two apart. The path leaves bare names to other macros. It needs no import of its
 own: the attribute removes its annotations before Rust resolves them.
 
+An annotation on a field or a variant may stand under `cfg_attr`, as in
+`#[cfg_attr(unix, kaa::refer(Device, "…"))]`. It then holds where the predicate
+holds: the attribute removes it from the `cfg_attr`, keeping the attributes
+beside it, and checks its target under the same predicate, as a diagram draws it
+only for a compilation target that holds the predicate.
+
 A flow's body is less exposed. A derive cannot attach to a statement, and an
 attribute macro on a statement is unstable, so a collision would take another
 macro on the same function that interprets attributes in its body. Flows take
@@ -227,8 +233,9 @@ A type diagram shows:
    focus, and from each relationship of the focus to itself. The relationships
    of one column of cards join one line on their way to the focus.
 
-The selected source is the workspace the focus type belongs to. A relationship
-target and an incoming type may be declared in any crate of that workspace.
+The selected source is the workspace the focus type belongs to, as cargo
+compiles it for one compilation target (§6). A relationship target and an
+incoming type may be declared in any crate of that workspace.
 
 The diagram does not recursively add callers of incoming types. Types used by
 the focus appear in its field types and relationship targets; they do not get
@@ -236,13 +243,12 @@ separate cards below it. There are no lines from the focus to other cards. An
 incoming type with several relationships to the focus is drawn once; each
 relationship keeps its own source field or alias.
 
-A crate may declare one path more than once under exclusive `cfg`s, such as
-`#[cfg(unix)]` and `#[cfg(windows)]`, on the declarations or on the modules
-around them, in one file or in several. The diagram does not choose a target, so
-it draws each declaration: incoming ones as cards side by side, and the focus's
-one under another, with every line into the first. Each such card shows the
-`cfg` attributes from its crate root down to the declaration, as written, after
-its form, as in `struct · repr(Rust) · cfg(unix)`.
+A declaration, field, or variant under a `cfg` that does not hold for the
+compilation target is not part of the source the diagram reads, and a `cfg_attr`
+whose predicate holds stands for the attributes it carries. A crate may declare
+one path under exclusive `cfg`s, such as `#[cfg(unix)]` and `#[cfg(windows)]`,
+on the declarations or on the modules around them; the diagram draws the
+declaration the compilation target compiles.
 
 ### 4.2 Structure
 
@@ -349,9 +355,8 @@ Read representation from Rust's `repr` attributes. Show `repr(Rust)` when a
 nominal type uses the default, and preserve explicit representations and
 modifiers, including `C`, `transparent`, integer enum representations, `align`,
 and `packed`. Rust decides which combinations are valid. Several `repr`
-attributes combine into one label. A `repr` under `cfg_attr` makes the
-representation depend on the target, so the card shows the declaration form
-without one. An alias has no independent representation label.
+attributes combine into one label, those under a `cfg_attr` that holds for the
+compilation target included. An alias has no independent representation label.
 
 Representation does not specify a relationship kind. `repr(C)` on one type does
 not change the representation of its field types, and a `repr(Rust)` struct need
@@ -363,8 +368,8 @@ not store fields in source order.
 The command selects a flow or a focus type by its Rust path:
 
 ```text
-cargo kaalang diagram [-p <package>] --flow <item> [--collapse-cycles] [-o <path>]
-cargo kaalang diagram [-p <package>] --type <item> [--columns <n>] [-o <path>]
+cargo kaalang diagram [-p <package>] [<compilation options>] --flow <item> [--collapse-cycles] [-o <path>]
+cargo kaalang diagram [-p <package>] [<compilation options>] --type <item> [--columns <n>] [-o <path>]
 ```
 
 The item is a Rust path from the crate root, which the command resolves as the
@@ -404,29 +409,55 @@ them. With `--type`, the command resolves every relationship in the workspace to
 find the incoming types, and one whose target is not a type of the workspace is
 a failure too.
 
+The command reads the workspace as cargo compiles it for one compilation target.
+The compilation options are cargo's: `--target <triple>` names the compilation
+target, the host when it is omitted, and `--features <features>`,
+`--all-features`, and `--no-default-features` select features. With `-p`, a
+feature without a package is that package's, as with `cargo build -p`; the other
+two apply to every member. The compilation target's cfg set is what
+`rustc --print cfg` prints for it, with the flags in `RUSTFLAGS`, then
+`feature = "…"` for each feature `cargo metadata` resolves for the crate's
+package, and `test` in test and bench targets. That resolution counts the
+features a dev-dependency enables, as `cargo test` does and `cargo build` does
+not. As cargo builds a procedural macro for the host, without the flags, its set
+is the host's, with `proc_macro`; and a target whose required features are not
+all enabled is not read, as cargo does not build it. A `cfg` holds when its
+predicate holds for that set, as cargo decides a
+`[target.'cfg(…)'.dependencies]` table; any other name is unset, one a build
+script sets included. Cargo's configuration files are not read, so their
+`build.target` and `rustflags` do not apply. An unknown compilation target is a
+failure.
+
+Before reading a file, the command removes what does not hold, as rustc does:
+items, `impl` and trait items, fields, and variants under a `cfg` that fails,
+and the whole file when its inner `cfg` fails. It replaces each `cfg_attr` whose
+predicate holds with the attributes it carries, so
+`#[cfg_attr(unix, path = "unix.rs")]` names a module's file for a Unix
+compilation target.
+
 The command reads each crate from its root through its `mod` declarations, as
 Rust does, and resolves by Rust's path rules the item from the crate root and a
 `refer` target from the module that declares the field: `crate`, `self`, and
 `super`, declared items, `use` imports with renames, groups, and globs, and the
-workspace's libraries by their crate names, renamed dependencies included. It
-reads the source as written, so an item under `cfg` counts. A target the source
-alone cannot resolve, such as a name an item macro may declare, draws no line
-and is reported as a warning. The command creates or replaces the output only
-after the selected declaration and, for a type, its incoming types are validated
-and the diagram rendered. On success it prints the output path; on failure it
-writes a diagnostic to stderr and exits with a nonzero status.
+workspace's libraries by their crate names, renamed dependencies included. A
+target the source alone cannot resolve, such as a name an item macro may
+declare, draws no line and is reported as a warning. The command creates or
+replaces the output only after the selected declaration and, for a type, its
+incoming types are validated and the diagram rendered. On success it prints the
+output path; on failure it writes a diagnostic to stderr and exits with a
+nonzero status.
 
-This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): the part
-of §4 under which the renderer selects one function by its unqualified name and
-does not descend into inline modules, §5, which selects a flow by source file
-and name, and the part of §6 under which the renderer does not search an entire
-crate or resolve external modules. The renderer instead selects a flow by its
-path within the file, which takes the command's forms and resolves nothing: a
-free function by the inline modules that enclose it, then its name, and a method
-through its type or trait, each compared by its last segment, as in
-`<&Report as Approve>::approve`. Conditional compilation and macro-expanded
-source remain outside the renderer's scope: declarations under `cfg` are read as
-written.
+This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): in §4, the
+entry points `render_source` and `render_source_with_options`, which select one
+function by its unqualified name, and the rule that the renderer does not
+descend into inline modules; §5, which selects a flow by source file and name,
+and the part of §6 under which the renderer does not search an entire crate or
+resolve external modules or conditional compilation. The renderer instead lists
+the file's flows, each by its path within the file in the command's forms, as
+`review::route` or `<&Report as Approve>::approve`, and draws the one at the
+position its caller selects; it resolves no path. It removes what does not hold
+for the cfg set its caller gives, as the command does; without one, the set is
+empty. Macro-expanded source remains outside the renderer's scope.
 
 ## 7. Validation and acceptance scenarios
 
@@ -449,35 +480,43 @@ assume that an attribute invocation can discover it alone.
 
 Acceptance scenarios:
 
-| Scenario                                               | Required result                                                        |
-| ------------------------------------------------------ | ---------------------------------------------------------------------- |
-| Named, tuple, and unit structs; enums; unions; aliases | Preserve the Rust declaration form.                                    |
-| Bare `#[kaa]` on a type                                | Draw the card without a description line.                              |
-| Unequal enum variant field counts                      | Draw each variant's own product.                                       |
-| `case` on a unit variant                               | Draw the description beside the variant's name.                        |
-| `value` and an unannotated field                       | Show values without inferring relationships.                           |
-| `refer(Member)` on `MemberId`                          | Keep `Member` as the target.                                           |
-| Aliases sharing a right-hand side                      | Keep their authored names and descriptions.                            |
-| Declaration-level `refer` on `History`                 | Associate it with the alias, without inventing a field.                |
-| `refer(Attachment)` on `Attachment<Payload>`           | Create exactly one relationship to `Attachment`.                       |
-| `refer(T)` inside `Attachment<T>`                      | Reject the type parameter as a target.                                 |
-| A field referring to the focus itself                  | Route the line around the card; draw no second card.                   |
-| Multiple fields referring to the focus                 | Draw the incoming type once and retain the separate relationships.     |
-| An unannotated container or a large array              | Keep one field tile, with no element expansion.                        |
-| Focus view                                             | Draw incoming types above it and omit target cards below.              |
-| The item path declared in two packages                 | Fail listing both packages; `-p` selects one.                          |
-| The item path declared in two crates of one package    | Fail listing both crates, even with `-p`.                              |
-| A re-exported item path                                | Select the declaration it resolves to.                                 |
-| A method whose `impl` block is in another module       | Select it through its type's path.                                     |
-| `Report::approve` with inherent and trait methods      | Select the inherent method.                                            |
-| `Report::approve` provided by two traits only          | Fail listing both.                                                     |
-| `<Report as Approve>::approve` on an `impl` without it | Select the trait's default method.                                     |
-| `<&Report as Approve>::approve`                        | Select the method of the `impl` for `&Report`.                         |
-| Incoming types from two crates                         | Order the focus type's crate first, then its package, then others.     |
-| More incoming types than fit one row                   | Wrap them into rows in source order, each target group from a new one. |
-| A focus type without `#[kaa]`                          | Draw its Rust structure without descriptions.                          |
-| `refer` to a plain type of the workspace               | Draw the relationship as to any other type.                            |
-| `refer` to `String`, a trait, or a module              | Fail naming the relationship and its target.                           |
+| Scenario                                                | Required result                                                          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Named, tuple, and unit structs; enums; unions; aliases  | Preserve the Rust declaration form.                                      |
+| Bare `#[kaa]` on a type                                 | Draw the card without a description line.                                |
+| Unequal enum variant field counts                       | Draw each variant's own product.                                         |
+| `case` on a unit variant                                | Draw the description beside the variant's name.                          |
+| `value` and an unannotated field                        | Show values without inferring relationships.                             |
+| `refer(Member)` on `MemberId`                           | Keep `Member` as the target.                                             |
+| Aliases sharing a right-hand side                       | Keep their authored names and descriptions.                              |
+| Declaration-level `refer` on `History`                  | Associate it with the alias, without inventing a field.                  |
+| `refer(Attachment)` on `Attachment<Payload>`            | Create exactly one relationship to `Attachment`.                         |
+| `refer(T)` inside `Attachment<T>`                       | Reject the type parameter as a target.                                   |
+| A field referring to the focus itself                   | Route the line around the card; draw no second card.                     |
+| Multiple fields referring to the focus                  | Draw the incoming type once and retain the separate relationships.       |
+| An unannotated container or a large array               | Keep one field tile, with no element expansion.                          |
+| Focus view                                              | Draw incoming types above it and omit target cards below.                |
+| The item path declared in two packages                  | Fail listing both packages; `-p` selects one.                            |
+| The item path declared in two crates of one package     | Fail listing both crates, even with `-p`.                                |
+| A re-exported item path                                 | Select the declaration it resolves to.                                   |
+| A method whose `impl` block is in another module        | Select it through its type's path.                                       |
+| `Report::approve` with inherent and trait methods       | Select the inherent method.                                              |
+| `Report::approve` provided by two traits only           | Fail listing both.                                                       |
+| `<Report as Approve>::approve` on an `impl` without it  | Select the trait's default method.                                       |
+| `<&Report as Approve>::approve`                         | Select the method of the `impl` for `&Report`.                           |
+| Incoming types from two crates                          | Order the focus type's crate first, then its package, then others.       |
+| More incoming types than fit one row                    | Wrap them into rows in source order, each target group from a new one.   |
+| A focus type without `#[kaa]`                           | Draw its Rust structure without descriptions.                            |
+| `refer` to a plain type of the workspace                | Draw the relationship as to any other type.                              |
+| `refer` to `String`, a trait, or a module               | Fail naming the relationship and its target.                             |
+| A type under `cfg(unix)` and again under `cfg(windows)` | Draw the declaration the compilation target compiles.                    |
+| A field under a `cfg` that does not hold                | Draw no tile for it.                                                     |
+| `cfg_attr(unix, path = "unix.rs")` on a module          | Read `unix.rs` for a Unix compilation target.                            |
+| `repr(C)` under `cfg_attr(unix, …)`                     | Show `repr(C)` for a Unix compilation target and `repr(Rust)` otherwise. |
+| `cfg_attr(unix, kaa::refer(Device, …))` on a field      | Check and draw the relationship only where the predicate holds.          |
+| `cfg(feature = "audit")`                                | Hold with `audit` enabled by default or through `--features`.            |
+| `cfg(test)`                                             | Hold in test and bench targets only.                                     |
+| An unknown `--target`                                   | Fail.                                                                    |
 
 ## 8. Compatibility and exclusions
 

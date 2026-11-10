@@ -3,11 +3,11 @@
 
 use std::rc::Rc;
 
-use kaalang_compiler::{FlowItem, FlowPath};
+use kaalang_compiler::FlowItem;
 use syn::{Item, Meta, ReturnType, Signature, spanned::Spanned};
 
 use crate::{
-    RenderError, RenderOptions, location, parse_file, parser_source, validate_description,
+    RenderError, RenderOptions, location, parse_configured, parser_source, validate_description,
     validate_label,
 };
 
@@ -15,23 +15,15 @@ mod captions;
 pub(crate) mod layout;
 mod svg;
 
-/// How the caller selects a flow of the file.
-#[derive(Clone, Copy)]
-pub(crate) enum Selection<'a> {
-    /// By its path within the file.
-    Path(&'a str),
-    /// By its position among the file's flows.
-    Position(usize),
-}
-
+/// Renders the flow at `position` among the file's flows.
 pub(crate) fn render(
     source: &str,
-    selection: Selection,
-    options: RenderOptions,
+    position: usize,
+    options: RenderOptions<'_>,
 ) -> Result<String, RenderError> {
-    let file = parse_file(source)?;
+    let file = parse_configured(source, options.target)?;
     let parser_source = parser_source(source, &file);
-    let flow = select_flow(&file.items, selection)?;
+    let flow = select_flow(&file.items, position)?;
     let flow_path = flow.path.as_str();
     let function = &flow.function;
     let mut model = kaalang_compiler::build_with_options(function, options.collapse_cycles)
@@ -73,28 +65,26 @@ pub(crate) fn render(
     ))
 }
 
-fn select_flow(items: &[Item], selection: Selection) -> Result<FlowItem, RenderError> {
-    let declarations = kaalang_compiler::declarations(items);
-    let (position, selected_path) = match selection {
-        Selection::Path(flow_path) => {
-            let selected = FlowPath::parse(flow_path)
-                .map(|path| declarations.select(&path))
-                .unwrap_or_default();
-            match selected.as_slice() {
-                [] => return Err(RenderError::FlowNotFound(flow_path.to_owned())),
-                [position] => (*position, Some(flow_path)),
-                _ => return Err(RenderError::AmbiguousFlow(flow_path.to_owned())),
-            }
-        }
-        Selection::Position(position) => (position, None),
-    };
-    let Some(mut flow) = declarations.flows.into_iter().nth(position) else {
+/// The flow at `path` among `items`, as `flow_names` lists it, for tests that
+/// name a flow rather than count it.
+#[cfg(test)]
+pub(crate) fn select_named(items: &[Item], path: &str) -> Result<FlowItem, RenderError> {
+    let position = kaalang_compiler::declarations(items)
+        .flows
+        .iter()
+        .position(|flow| flow.path == path)
+        .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
+    select_flow(items, position)
+}
+
+fn select_flow(items: &[Item], position: usize) -> Result<FlowItem, RenderError> {
+    let Some(flow) = kaalang_compiler::declarations(items)
+        .flows
+        .into_iter()
+        .nth(position)
+    else {
         return Err(RenderError::FlowNotFound(position.to_string()));
     };
-    // Errors name the flow as the caller selected it.
-    if let Some(path) = selected_path {
-        path.clone_into(&mut flow.path);
-    }
     if let Some(attribute) = flow
         .function
         .attrs

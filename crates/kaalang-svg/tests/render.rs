@@ -1,7 +1,26 @@
-use kaalang_svg::{RenderError, RenderOptions, render_source, render_source_with_options};
+use kaalang_svg::{RenderError, RenderOptions, Target, flow_names, render_flow};
 
-const COLLAPSED: RenderOptions = RenderOptions {
+/// Renders the flow at `path` within `source`, as `flow_names` lists it.
+fn render_source_with_options(
+    source: &str,
+    path: &str,
+    options: RenderOptions<'_>,
+) -> Result<String, RenderError> {
+    let position = flow_names(source, options.target)?
+        .iter()
+        .position(|listed| listed == path)
+        .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
+    render_flow(source, position, options)
+}
+
+/// Renders the flow at `path` within `source`, read for no target.
+fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
+    render_source_with_options(source, path, RenderOptions::default())
+}
+
+const COLLAPSED: RenderOptions<'static> = RenderOptions {
     collapse_cycles: true,
+    target: Target::EMPTY,
 };
 
 /// One flow carrying every label case at once, with a distinct wire name for
@@ -561,7 +580,14 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     let invalid = CYCLE_SOURCE.replace("|iterate_1| continue;", "|iterate_1, count| return count;");
     for collapse_cycles in [false, true] {
         assert!(matches!(
-            render_source_with_options(&invalid, "count_to", RenderOptions { collapse_cycles }),
+            render_source_with_options(
+                &invalid,
+                "count_to",
+                RenderOptions {
+                    collapse_cycles,
+                    target: Target::EMPTY,
+                }
+            ),
             Err(RenderError::InvalidFlow { .. })
         ));
     }

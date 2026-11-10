@@ -144,7 +144,7 @@ fn explicit_output_replaces_an_existing_file() {
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     assert_eq!(
         fs::read_to_string(directory.join("chosen.svg")).unwrap(),
-        kaalang_svg::render_source(SOURCE, "route").unwrap()
+        kaalang_svg::render_flow(SOURCE, 0, kaalang_svg::RenderOptions::default()).unwrap()
     );
 }
 
@@ -277,6 +277,22 @@ fn a_re_exported_item_is_selected_through_its_re_export() {
 }
 
 #[test]
+fn a_flow_re_exported_beside_its_module_of_the_same_name_is_selected() {
+    let directory = package(
+        "cli-flow-named-like-its-module",
+        "mod route;\npub use route::route;\n",
+    );
+    write(
+        &directory,
+        "src/route.rs",
+        &SOURCE.replace("fn route", "pub fn route"),
+    );
+    let rendered = run(&directory, "diagram --flow route");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("route.svg").is_file());
+}
+
+#[test]
 fn a_method_is_selected_through_its_types_path_wherever_its_impl_is() {
     let directory = package(
         "cli-impl-elsewhere",
@@ -295,6 +311,21 @@ fn a_method_is_selected_through_its_types_path_wherever_its_impl_is() {
     ] {
         let failed = run(&directory, &format!("diagram --flow {wrong}"));
         assert!(!failed.status.success(), "{wrong}");
+    }
+}
+
+#[test]
+fn a_method_of_an_impl_through_a_type_alias_is_selected_through_either_name() {
+    let directory = package(
+        "cli-impl-through-alias",
+        &format!(
+            "struct Report;\ntype Alias = Report;\nimpl Alias {{ {} }}\n",
+            method("approve", "&self", "Approve.")
+        ),
+    );
+    for path in ["Report::approve", "Alias::approve"] {
+        let rendered = run(&directory, &format!("diagram --flow {path}"));
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
     }
 }
 
@@ -609,139 +640,377 @@ fn a_type_in_an_inline_module_of_a_file_module_is_drawn_by_its_path() {
     positions(&svg, &["Report", "model::inner::Member"]);
 }
 
+const LINUX: &str = "x86_64-unknown-linux-gnu";
+const WINDOWS: &str = "x86_64-pc-windows-msvc";
+
+/// Draws `item` from `directory` for `target` and returns the diagram.
+fn drawn(directory: &Path, item: &str, target: &str) -> String {
+    let rendered = run(
+        directory,
+        &format!("diagram {item} --target {target} -o drawn.svg"),
+    );
+    assert!(
+        rendered.status.success(),
+        "{item} for {target}: {:?}",
+        rendered.stderr
+    );
+    fs::read_to_string(directory.join("drawn.svg")).expect("the diagram was written")
+}
+
+/// Asserts that drawing `item` from `directory` fails, finding no such type
+/// or flow.
+fn not_found(directory: &Path, line: &str) {
+    let failed = run(directory, line);
+    assert!(!failed.status.success(), "{line}");
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(stderr.contains("was not found"), "{line}: {stderr}");
+}
+
 #[test]
-fn every_declaration_of_a_type_under_exclusive_cfgs_is_drawn() {
-    let handle = |cfg: &str, ty: &str| {
+fn the_target_draws_the_declaration_it_compiles() {
+    let directory = package(
+        "cli-target-declaration",
+        "pub struct Member;\n#[cfg(windows)]\n#[kaa]\nstruct Handle {\n    #[kaa::refer(Member, \"m\")]\n    m: isize,\n}\n#[cfg(unix)]\n#[kaa]\nstruct Handle {\n    #[kaa::refer(Member, \"m\")]\n    m: i32,\n}\n",
+    );
+    for (target, kept, gone) in [(LINUX, ">i32<", ">isize<"), (WINDOWS, ">isize<", ">i32<")] {
+        let svg = drawn(&directory, "--type Handle", target);
+        assert!(svg.contains(kept) && !svg.contains(gone), "{target}: {svg}");
+        assert!(!svg.contains("cfg("), "{target}: {svg}");
+        let svg = drawn(&directory, "--type Member", target);
+        assert_eq!(
+            svg.matches("class=\"relationship\"").count(),
+            1,
+            "{target}: {svg}"
+        );
+    }
+}
+
+#[test]
+fn a_field_the_target_does_not_compile_has_no_tile_or_line() {
+    let directory = package(
+        "cli-target-field",
+        "pub struct Member;\n#[kaa]\nstruct Handle {\n    #[cfg(windows)]\n    #[kaa::refer(Member, \"w\")]\n    w: u16,\n    #[cfg(unix)]\n    #[kaa::refer(Member, \"m\")]\n    m: i32,\n}\n",
+    );
+    for (target, kept, gone) in [(LINUX, ">i32<", ">u16<"), (WINDOWS, ">u16<", ">i32<")] {
+        let svg = drawn(&directory, "--type Handle", target);
+        assert!(svg.contains(kept) && !svg.contains(gone), "{target}: {svg}");
+        // The line leaves the field the target keeps, whichever comes first.
+        let svg = drawn(&directory, "--type Member", target);
+        assert_eq!(
+            svg.matches("class=\"relationship\"").count(),
+            1,
+            "{target}: {svg}"
+        );
+    }
+}
+
+#[test]
+fn the_target_draws_the_flow_it_compiles() {
+    let flow = |name: &str, step: &str| {
         format!(
-            "#[cfg({cfg})]\n#[kaa]\nstruct Handle {{\n    #[kaa::refer(Member, \"m\")]\n    m: {ty},\n}}\n"
+            "#[kaa]\npub fn {name}(request: u8) -> u8 {{\n    #[kaa::action(\"{step}\")]\n    let response = |request| request;\n\n    |response| return response;\n}}\n"
         )
     };
     let directory = package(
-        "cli-type-cfg-twin",
+        "cli-target-flow",
         &format!(
-            "pub struct Member;\n{}{}#[kaa]\nstruct Session {{\n    #[kaa::refer(Handle, \"h\")]\n    h: u8,\n}}\n",
-            handle("unix", "u8"),
-            handle("windows", "u16"),
+            "pub struct Report;\n#[cfg(windows)]\n{}#[cfg(unix)]\n{}#[cfg(windows)]\nimpl Report {{\n{}}}\n#[cfg(unix)]\nimpl Report {{\n{}}}\n",
+            flow("route", "Route on Windows."),
+            flow("route", "Route on Unix."),
+            flow("approve", "Approve on Windows."),
+            flow("approve", "Approve on Unix."),
         ),
     );
+    for (target, kept, gone) in [(LINUX, "Unix.", "Windows."), (WINDOWS, "Windows.", "Unix.")] {
+        for item in ["--flow route", "--flow Report::approve"] {
+            let svg = drawn(&directory, item, target);
+            assert!(
+                svg.contains(kept) && !svg.contains(gone),
+                "{item} for {target}: {svg}"
+            );
+        }
+    }
+}
 
-    let rendered = run(&directory, "diagram --type Member");
-    assert!(rendered.status.success(), "{:?}", rendered.stderr);
-    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
-    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    positions(
-        &svg,
+#[test]
+fn the_target_selects_a_cfg_attr_module_file() {
+    let flow = |step: &str| {
+        format!(
+            "#[kaa]\npub fn route(request: u8) -> u8 {{\n    #[kaa::action(\"{step}\")]\n    let response = |request| request;\n\n    |response| return response;\n}}\n"
+        )
+    };
+    let directory = package(
+        "cli-target-cfg-attr-path",
+        "#[cfg_attr(unix, path = \"unix.rs\")]\n#[cfg_attr(windows, path = \"windows.rs\")]\nmod sys;\n",
+    );
+    write(&directory, "src/unix.rs", &flow("On Unix."));
+    write(&directory, "src/windows.rs", &flow("On Windows."));
+    for (target, step) in [(LINUX, "On Unix."), (WINDOWS, "On Windows.")] {
+        let svg = drawn(&directory, "--flow sys::route", target);
+        assert!(svg.contains(step), "{target}: {svg}");
+    }
+}
+
+#[test]
+fn the_host_is_the_default_target() {
+    let os = std::env::consts::OS;
+    let directory = package(
+        "cli-target-host",
+        &format!(
+            "#[cfg(target_os = \"{os}\")]\npub struct Here;\n#[cfg(not(target_os = \"{os}\"))]\npub struct Elsewhere;\n"
+        ),
+    );
+    assert!(run(&directory, "diagram --type Here").status.success());
+    not_found(&directory, "diagram --type Elsewhere");
+}
+
+#[test]
+fn rustflags_cfgs_hold_and_the_encoded_ones_come_first() {
+    let directory = package(
+        "cli-target-rustflags",
+        "#[cfg(kaalang_plain)]\npub struct Plain;\n#[cfg(kaalang_encoded)]\npub struct Encoded;\n",
+    );
+    let run_with_flags = |ty: &str, encoded: Option<&str>| {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"));
+        command
+            .current_dir(&directory)
+            .env("NO_COLOR", "1")
+            .env("RUSTFLAGS", "--cfg kaalang_plain")
+            .env_remove("CARGO_ENCODED_RUSTFLAGS")
+            .args(["diagram", "--type", ty]);
+        if let Some(encoded) = encoded {
+            command.env("CARGO_ENCODED_RUSTFLAGS", encoded);
+        }
+        command.output().expect("the binary runs").status.success()
+    };
+    assert!(run_with_flags("Plain", None));
+    assert!(!run_with_flags("Encoded", None));
+    let encoded = Some("--cfg\u{1f}kaalang_encoded");
+    assert!(run_with_flags("Encoded", encoded));
+    assert!(!run_with_flags("Plain", encoded));
+}
+
+#[test]
+fn features_follow_the_cargo_feature_options() {
+    let directory = package(
+        "cli-target-features",
+        "#[cfg(feature = \"audit\")]\npub struct Audited;\n#[cfg(feature = \"extra\")]\npub struct Extra;\n",
+    );
+    write(
+        &directory,
+        "Cargo.toml",
+        &format!(
+            "{}\n[features]\ndefault = [\"audit\"]\naudit = []\nextra = []\n\n[workspace]\n",
+            manifest("cli-target-features")
+        ),
+    );
+    for (options, audited, extra) in [
+        ("", true, false),
+        ("--features extra", true, true),
+        ("--no-default-features --features extra", false, true),
+        ("--all-features", true, true),
+    ] {
+        for (ty, drawn) in [("Audited", audited), ("Extra", extra)] {
+            let line = format!("diagram --type {ty} {options}");
+            if drawn {
+                let rendered = run(&directory, &line);
+                assert!(rendered.status.success(), "{line}: {:?}", rendered.stderr);
+            } else {
+                not_found(&directory, &line);
+            }
+        }
+    }
+}
+
+#[test]
+fn features_given_with_a_package_are_that_packages() {
+    let directory = workspace(
+        "cli-target-package-features",
         &[
-            "struct · repr(Rust) · cfg(unix)",
-            "struct · repr(Rust) · cfg(windows)",
+            ("first", "pub struct Member;\n"),
+            (
+                "second",
+                "#[cfg(feature = \"audit\")]\n#[kaa]\npub struct Report {\n    #[kaa::refer(first::Member, \"m\")]\n    m: u8,\n}\n",
+            ),
         ],
     );
-    assert_eq!(svg.matches("class=\"relationship\"").count(), 2, "{svg}");
-
-    // As the focus, the declarations stand one under another, and the lines
-    // go into the first.
-    let rendered = run(&directory, "diagram --type Handle");
-    assert!(rendered.status.success(), "{:?}", rendered.stderr);
-    let svg = fs::read_to_string(directory.join("Handle.svg")).unwrap();
-    assert_eq!(svg.matches("class=\"card focus\"").count(), 2, "{svg}");
-    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
-}
-
-#[test]
-fn declarations_in_modules_under_exclusive_cfgs_show_the_module_cfgs() {
-    let handle = |ty: &str| {
-        format!(
-            "#[kaa]\npub struct Handle {{\n    #[kaa::refer(crate::Member, \"m\")]\n    m: {ty},\n}}\n"
-        )
-    };
-    let directory = package(
-        "cli-type-cfg-modules",
+    write(
+        &directory,
+        "first/Cargo.toml",
+        &format!("{}\n[features]\naudit = []\n", manifest("first")),
+    );
+    write(
+        &directory,
+        "second/Cargo.toml",
         &format!(
-            "pub struct Member;\n#[cfg(unix)]\n#[path = \"unix.rs\"]\nmod sys;\n#[cfg(windows)]\n#[path = \"windows.rs\"]\nmod sys;\n#[cfg(unix)]\nmod inline {{\n{}}}\n#[cfg(windows)]\nmod inline {{\n{}}}\n",
-            handle("u8"),
-            handle("u16"),
+            "{}\n[dependencies]\nfirst = {{ path = \"../first\" }}\n\n[features]\naudit = []\n",
+            manifest("second")
         ),
     );
-    write(&directory, "src/unix.rs", &handle("u8"));
-    write(&directory, "src/windows.rs", &handle("u16"));
-    let unix = "struct · repr(Rust) · cfg(unix)";
-    let windows = "struct · repr(Rust) · cfg(windows)";
-
-    for (path, file, relationships) in [
-        ("Member", "Member.svg", 4),
-        ("sys::Handle", "Handle.svg", 0),
-        ("inline::Handle", "Handle.svg", 0),
+    for (line, relationships) in [
+        ("diagram -p first --type Member --features audit", 0),
+        ("diagram -p first --type Member --features second/audit", 1),
     ] {
-        let rendered = run(&directory, &format!("diagram --type {path}"));
-        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
-        let svg = fs::read_to_string(directory.join(file)).unwrap();
-        assert_eq!(
-            svg.matches(unix).count(),
-            svg.matches(windows).count(),
-            "{path}: {svg}"
-        );
-        positions(&svg, &[unix, windows]);
-        let drawn = svg.matches("class=\"relationship\"").count();
-        assert_eq!(drawn, relationships, "{path}: {svg}");
+        let rendered = run(&directory, line);
+        assert!(rendered.status.success(), "{line}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+        let lines = svg.matches("class=\"relationship\"").count();
+        assert_eq!(lines, relationships, "{line}: {svg}");
     }
 }
 
 #[test]
-fn every_cfg_attr_path_of_a_module_is_read_under_its_cfg() {
-    let handle = |ty: &str| {
-        format!(
-            "#[kaa]\npub struct Handle {{\n    #[kaa::refer(crate::Member, \"m\")]\n    m: {ty},\n}}\n"
-        )
-    };
-    let directory = package(
-        "cli-type-cfg-attr-paths",
-        "pub struct Member;\n#[cfg_attr(unix, path = \"unix.rs\")]\n#[cfg_attr(windows, path = \"windows.rs\")]\nmod sys;\n",
+fn a_target_whose_required_features_are_off_is_not_read() {
+    let directory = package("cli-target-required-features", "");
+    write(
+        &directory,
+        "Cargo.toml",
+        &format!(
+            "{}\n[features]\nextra = []\n\n[[bin]]\nname = \"extra\"\npath = \"src/main.rs\"\nrequired-features = [\"extra\"]\n\n[workspace]\n",
+            manifest("cli-target-required-features")
+        ),
     );
-    write(&directory, "src/unix.rs", &handle("u8"));
-    write(&directory, "src/windows.rs", &handle("u16"));
-    let unix = "struct · repr(Rust) · cfg(unix)";
-    let windows = "struct · repr(Rust) · cfg(windows)";
+    write(
+        &directory,
+        "src/main.rs",
+        "pub struct OnlyWithExtra;\nfn main() {}\n",
+    );
+    not_found(&directory, "diagram --type OnlyWithExtra");
+    let rendered = run(&directory, "diagram --type OnlyWithExtra --features extra");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+}
 
-    for (path, file, relationships) in [
-        ("Member", "Member.svg", 2),
-        ("sys::Handle", "Handle.svg", 0),
-    ] {
-        let rendered = run(&directory, &format!("diagram --type {path}"));
-        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
-        let svg = fs::read_to_string(directory.join(file)).unwrap();
-        positions(&svg, &[unix, windows]);
-        let drawn = svg.matches("class=\"relationship\"").count();
-        assert_eq!(drawn, relationships, "{path}: {svg}");
+#[test]
+fn cfg_test_holds_in_test_targets_only() {
+    let directory = package("cli-target-test", "#[cfg(test)]\npub struct InLibrary;\n");
+    write(
+        &directory,
+        "tests/check.rs",
+        "#[cfg(test)]\npub struct InTests;\n",
+    );
+    assert!(run(&directory, "diagram --type InTests").status.success());
+    not_found(&directory, "diagram --type InLibrary");
+}
+
+#[test]
+fn a_procedural_macro_is_read_for_the_host() {
+    let os = std::env::consts::OS;
+    let directory = package(
+        "cli-target-proc-macro",
+        &format!("#[cfg(all(proc_macro, target_os = \"{os}\"))]\npub struct OnHost;\n"),
+    );
+    write(
+        &directory,
+        "Cargo.toml",
+        &format!(
+            "{}\n[lib]\nproc-macro = true\n\n[workspace]\n",
+            manifest("cli-target-proc-macro")
+        ),
+    );
+    let rendered = run(
+        &directory,
+        "diagram --type OnHost --target wasm32-unknown-unknown",
+    );
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+}
+
+#[test]
+fn an_unknown_target_fails() {
+    let directory = package("cli-target-unknown", "pub struct Member;\n");
+    let failed = run(&directory, "diagram --type Member --target no-such-target");
+    assert!(!failed.status.success());
+    let stderr = String::from_utf8_lossy(&failed.stderr);
+    assert!(stderr.contains("no-such-target"), "{stderr}");
+    assert!(!directory.join("Member.svg").exists());
+}
+
+#[test]
+fn a_use_the_target_does_not_compile_names_no_target() {
+    let directory = package(
+        "cli-target-use",
+        "pub mod unix { pub struct Handle; }\npub mod windows { pub struct Handle; }\n#[cfg(windows)]\nuse windows::Handle;\n#[cfg(unix)]\nuse unix::Handle;\n#[kaa]\nstruct Session {\n    #[kaa::refer(Handle, \"h\")]\n    h: u8,\n}\n",
+    );
+    for (target, unix, windows) in [(LINUX, 1, 0), (WINDOWS, 0, 1)] {
+        for (ty, relationships) in [("unix::Handle", unix), ("windows::Handle", windows)] {
+            let svg = drawn(&directory, &format!("--type {ty}"), target);
+            let lines = svg.matches("class=\"relationship\"").count();
+            assert_eq!(lines, relationships, "{ty} for {target}: {svg}");
+        }
     }
+}
+
+#[test]
+fn a_module_the_target_does_not_compile_is_not_read() {
+    let directory = package(
+        "cli-target-unread-module",
+        "pub struct Member;\n#[cfg(windows)]\nmod broken;\n",
+    );
+    write(&directory, "src/broken.rs", "this is not Rust");
+    let rendered = run(
+        &directory,
+        &format!("diagram --type Member --target {LINUX}"),
+    );
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
 }
 
 #[test]
 fn a_file_read_twice_draws_its_type_once() {
-    // Both modules read `src/sys/common.rs`, which declares `Report` once.
+    // Both modules read `src/common.rs`, which declares `Report` once.
     let directory = package(
         "cli-type-read-twice",
-        "pub struct Member;\n#[cfg(unix)]\nmod sys {\n    pub mod common;\n}\n#[cfg(windows)]\nmod sys {\n    pub mod common;\n}\n",
+        "pub struct Member;\n#[path = \"common.rs\"]\nmod first;\n#[path = \"common.rs\"]\nmod second;\n",
     );
     write(
         &directory,
-        "src/sys/common.rs",
+        "src/common.rs",
         "#[kaa]\npub struct Report {\n    #[kaa::refer(crate::Member, \"m\")]\n    m: u8,\n}\n",
     );
-    for (path, file, class, count) in [
-        ("Member", "Member.svg", "class=\"relationship\"", 1),
-        (
-            "sys::common::Report",
-            "Report.svg",
-            "class=\"card focus\"",
-            1,
+    let rendered = run(&directory, "diagram --type Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
+    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
+}
+
+#[test]
+fn a_file_two_crates_read_under_their_own_cfgs_draws_the_focus_lines_of_its_crate() {
+    let directory = package("cli-shared-file-type", "pub mod model;\n");
+    write(
+        &directory,
+        "src/model.rs",
+        "#[kaa]\npub struct Node {\n    #[cfg(test)]\n    #[kaa::refer(Node, \"p\")]\n    p: u8,\n}\n",
+    );
+    write(
+        &directory,
+        "tests/it.rs",
+        "#[path = \"../src/model.rs\"]\nmod model;\n",
+    );
+    let rendered = run(&directory, "diagram --type model::Node");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Node.svg")).unwrap();
+    assert_eq!(svg.matches("class=\"relationship\"").count(), 0, "{svg}");
+}
+
+#[test]
+fn a_flow_two_crates_read_under_their_own_cfgs_is_found_once() {
+    let directory = package("cli-shared-file-flow", "pub mod review;\n");
+    write(
+        &directory,
+        "src/review.rs",
+        &format!(
+            "#[cfg(test)]\n{}{}",
+            SOURCE.replace("fn route", "pub fn fixture"),
+            SOURCE.replace("fn route", "pub fn route")
         ),
-    ] {
-        let rendered = run(&directory, &format!("diagram --type {path}"));
-        assert!(rendered.status.success(), "{:?}", rendered.stderr);
-        assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
-        let svg = fs::read_to_string(directory.join(file)).unwrap();
-        assert_eq!(svg.matches(class).count(), count, "{path}: {svg}");
-    }
+    );
+    write(
+        &directory,
+        "tests/it.rs",
+        "#[path = \"../src/review.rs\"]\nmod review;\n",
+    );
+    let rendered = run(&directory, "diagram --flow review::route");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
 }
 
 #[test]
@@ -793,6 +1062,14 @@ fn a_plain_type_may_be_the_focus() {
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Timestamp.svg")).unwrap();
     positions(&svg, &["Change", "Timestamp"]);
+}
+
+#[test]
+fn the_default_output_is_named_without_generic_arguments() {
+    let directory = package("cli-generic-output", "pub struct Attachment<T>(T);\n");
+    let rendered = run(&directory, "diagram --type Attachment<crate::Payload>");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("Attachment.svg").is_file());
 }
 
 #[test]

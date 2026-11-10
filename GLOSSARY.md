@@ -83,6 +83,10 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
   type** is one without the mark.
 - **relationship**: one `refer` annotation, from a field or an alias to the type
   it names, a datatype or a plain type; neither a wire nor a connection.
+- **compilation target**: the platform the source is read for, named by a triple
+  such as `x86_64-unknown-linux-gnu`; its **cfg set** decides which `cfg` and
+  `cfg_attr` predicates hold. Not a relationship's target, nor a package's
+  target such as its library or tests.
 
 ## Diagram
 
