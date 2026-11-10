@@ -4,9 +4,11 @@
 //! libraries by their crate names. rustc has already checked that the path
 //! names something; this finds what.
 
+use std::iter;
+
 use syn::ext::IdentExt;
 
-use crate::workspace::{Crate, Declared, UsePath};
+use crate::workspace::{Crate, Declared, UsePath, Visibility};
 
 /// A type declaration: its crate and its index among the crate's types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -114,7 +116,10 @@ impl<'a> Resolver<'a> {
                     _ => self
                         .member(krate, module, segment, visiting)
                         // rustc found it, so the walk missed it.
-                        .unwrap_or(Def::Unknown("its module does not declare it as read")),
+                        .map_or(
+                            Def::Unknown("its module does not declare it as read"),
+                            |(found, _)| found,
+                        ),
                 },
                 // An enum variant or an associated item.
                 Def::Type(_) | Def::NotAType(_) => Def::NotAType("an associated item"),
@@ -127,7 +132,10 @@ impl<'a> Resolver<'a> {
     /// A relative path's first segment: a name in the module's scope, a
     /// workspace library, or a name from outside the workspace.
     fn first(&self, krate: usize, module: usize, name: &str, visiting: &mut Visiting) -> Def {
-        match self.member(krate, module, name, visiting) {
+        match self
+            .member(krate, module, name, visiting)
+            .map(|(found, _)| found)
+        {
             // A glob the walk could not follow may declare it, but a workspace
             // library of that name is what the path most likely means.
             Some(Def::Unknown(reason)) => self.library(krate, name).unwrap_or(Def::Unknown(reason)),
@@ -161,15 +169,15 @@ impl<'a> Resolver<'a> {
     }
 
     /// What `name` stands for in the type namespace of `module`, then among
-    /// its values: declared there, imported by name, or through a glob.
-    // shortcut: visibility is not checked, so a glob may import a private name rustc would not; upgrade by reading each item's visibility.
+    /// its values: declared there, imported by name, or through a glob that
+    /// sees it. Returns where in `krate` the name may be used from.
     fn member(
         &self,
         krate: usize,
         module: usize,
         name: &str,
         visiting: &mut Visiting,
-    ) -> Option<Def> {
+    ) -> Option<(Def, Visibility)> {
         // A `use` cycle, such as two globs importing each other, ends here.
         let key = (krate, module, name.to_owned());
         if visiting.contains(&key) {
@@ -187,28 +195,47 @@ impl<'a> Resolver<'a> {
         module: usize,
         name: &str,
         visiting: &mut Visiting,
-    ) -> Option<Def> {
+    ) -> Option<(Def, Visibility)> {
         let scope = &self.crates[krate].modules[module].scope;
-        if let Some((_, declared)) = scope.declared.iter().find(|(declared, _)| declared == name) {
-            return Some(match declared {
+        if let Some((_, declared, visibility)) = scope
+            .declared
+            .iter()
+            .find(|(declared, ..)| declared == name)
+        {
+            let found = match declared {
                 Declared::Type(id) => Def::Type(TypeRef { krate, id: *id }),
                 Declared::Module(child) => Def::Module(krate, *child),
                 Declared::Trait => Def::NotAType("a trait"),
                 Declared::ExternCrate(named) => self.extern_crate(krate, named),
-            });
+            };
+            return Some((found, *visibility));
         }
-        if let Some((_, imported)) = scope.imports.iter().find(|(bound, _)| bound == name) {
-            return Some(self.path(krate, module, imported, visiting));
+        if let Some((_, imported, visibility)) =
+            scope.imports.iter().find(|(bound, ..)| bound == name)
+        {
+            return Some((self.path(krate, module, imported, visiting), *visibility));
         }
-        if let Some((_, what)) = scope.values.iter().find(|(value, _)| value == name) {
-            return Some(Def::NotAType(what));
+        if let Some((_, what, visibility)) = scope.values.iter().find(|(value, ..)| value == name) {
+            return Some((Def::NotAType(what), *visibility));
         }
         let mut unknown = None;
-        for glob in &scope.globs {
+        for (glob, through) in &scope.globs {
             match self.path(krate, module, glob, visiting) {
                 Def::Module(source, inner) => {
-                    if let Some(found) = self.member(source, inner, name, visiting) {
-                        return Some(found);
+                    // A glob imports only the names its module may use, and
+                    // binds them no wider than the glob itself.
+                    match self.member(source, inner, name, visiting) {
+                        Some((found, Visibility::Public)) => return Some((found, *through)),
+                        Some((found, Visibility::Within(outer)))
+                            if source == krate && self.inside(krate, module, outer) =>
+                        {
+                            let narrower = match *through {
+                                Visibility::Within(glob) if self.inside(krate, glob, outer) => glob,
+                                _ => outer,
+                            };
+                            return Some((found, Visibility::Within(narrower)));
+                        }
+                        _ => {}
                     }
                 }
                 Def::Unknown(reason) => unknown = Some(Def::Unknown(reason)),
@@ -224,7 +251,14 @@ impl<'a> Resolver<'a> {
                 "its module may declare it through an item macro or a file that was not read",
             ));
         }
-        unknown
+        unknown.map(|unknown| (unknown, Visibility::Public))
+    }
+
+    /// Whether module `inner` of `krate` is `outer` or nested in it.
+    fn inside(&self, krate: usize, inner: usize, outer: usize) -> bool {
+        let modules = &self.crates[krate].modules;
+        iter::successors(Some(inner), |&module| modules[module].parent)
+            .any(|module| module == outer)
     }
 }
 
@@ -325,6 +359,68 @@ mod tests {
             resolve(&crates, "", "left::Missing"),
             Resolution::Unknown(_)
         ));
+    }
+
+    #[test]
+    fn a_glob_skips_a_name_its_module_may_not_use() {
+        let crates = [library(
+            "app",
+            "mod hidden { struct Member; }
+             mod shown { pub struct Member; }
+             mod user { use crate::hidden::*; use crate::shown::*; }",
+        )];
+        assert_eq!(
+            resolve(&crates, "user::", "Member"),
+            named(&crates, 0, "shown::Member")
+        );
+    }
+
+    #[test]
+    fn a_glob_imports_the_names_a_restricted_visibility_lets_it_use() {
+        let crates = [library(
+            "app",
+            "struct Root;
+             mod outer {
+                 pub mod hidden {
+                     pub(super) struct Near; pub(in crate::outer) struct Named; pub(crate) struct Wide;
+                 }
+                 mod sibling { use super::hidden::*; }
+                 mod tests { use crate::*; }
+             }
+             mod far { use crate::outer::hidden::*; }",
+        )];
+        for (module, target, name) in [
+            ("outer::sibling::", "Near", Some("outer::hidden::Near")),
+            ("outer::sibling::", "Named", Some("outer::hidden::Named")),
+            ("outer::tests::", "Root", Some("Root")),
+            ("far::", "Wide", Some("outer::hidden::Wide")),
+            ("far::", "Near", None),
+            ("far::", "Named", None),
+        ] {
+            let expected = name.map_or(Resolution::Outside, |name| named(&crates, 0, name));
+            assert_eq!(
+                resolve(&crates, module, target),
+                expected,
+                "{module}{target}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_glob_skips_the_private_imports_of_its_module() {
+        let crates = [library(
+            "app",
+            "mod model { pub struct Member; pub struct Team; }
+             mod middle { use crate::model::Member; use crate::model::*; }
+             mod user { use crate::middle::*; }",
+        )];
+        for target in ["Member", "Team"] {
+            assert_eq!(
+                resolve(&crates, "user::", target),
+                Resolution::Outside,
+                "{target}"
+            );
+        }
     }
 
     #[test]

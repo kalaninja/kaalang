@@ -5,7 +5,7 @@
 use std::{
     collections::{BTreeSet, HashMap},
     fmt::Write as _,
-    fs, io,
+    fs, io, iter,
     path::{Path, PathBuf},
     rc::Rc,
 };
@@ -73,20 +73,28 @@ pub(super) struct File {
     pub(super) source: String,
 }
 
-/// The names a module declares and imports, compared without `r#`.
+/// The names a module declares and imports, compared without `r#`, each with
+/// its visibility.
 #[derive(Default)]
 pub(super) struct Scope {
     /// Declared names in the type namespace.
-    pub(super) declared: Vec<(String, Declared)>,
+    pub(super) declared: Vec<(String, Declared, Visibility)>,
     /// Functions, constants, and statics, with what each is.
-    pub(super) values: Vec<(String, &'static str)>,
+    pub(super) values: Vec<(String, &'static str, Visibility)>,
     /// Each name a `use` binds, with the path it imports.
-    pub(super) imports: Vec<(String, UsePath)>,
+    pub(super) imports: Vec<(String, UsePath, Visibility)>,
     /// The module path of each glob import.
-    pub(super) globs: Vec<UsePath>,
+    pub(super) globs: Vec<(UsePath, Visibility)>,
     /// Whether names this scope does not list may be declared here: by an
     /// item macro, or in a file that could not be read.
     pub(super) opaque: bool,
+}
+
+/// Where a name may be used from: anywhere, or inside a module of its crate.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Visibility {
+    Public,
+    Within(usize),
 }
 
 pub(super) enum Declared {
@@ -386,17 +394,26 @@ fn read(file: &Path) -> io::Result<(PathBuf, String, syn::File)> {
 fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, base: &Path) {
     for item in items {
         let name = |ident: &syn::Ident| ident.unraw().to_string();
-        let declared = match item {
+        let (bound, declared, vis) = match item {
             Item::Mod(declaration) => {
                 let Some(child) = walk_module(walk, declaration, module, directory, base) else {
                     continue;
                 };
-                (name(&declaration.ident), Declared::Module(child))
+                let bound = name(&declaration.ident);
+                (bound, Declared::Module(child), &declaration.vis)
             }
-            Item::Struct(syn::ItemStruct { attrs, ident, .. })
-            | Item::Enum(syn::ItemEnum { attrs, ident, .. })
-            | Item::Union(syn::ItemUnion { attrs, ident, .. })
-            | Item::Type(syn::ItemType { attrs, ident, .. }) => {
+            Item::Struct(syn::ItemStruct {
+                attrs, vis, ident, ..
+            })
+            | Item::Enum(syn::ItemEnum {
+                attrs, vis, ident, ..
+            })
+            | Item::Union(syn::ItemUnion {
+                attrs, vis, ident, ..
+            })
+            | Item::Type(syn::ItemType {
+                attrs, vis, ident, ..
+            }) => {
                 let outer = &walk.modules[module];
                 let (path, in_file) = (
                     format!("{}{ident}", outer.path),
@@ -417,40 +434,47 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
                     cfgs: cfgs(attrs),
                     item: item.clone(),
                 });
-                (name(ident), Declared::Type(walk.types.len() - 1))
+                (name(ident), Declared::Type(walk.types.len() - 1), vis)
             }
-            Item::Trait(syn::ItemTrait { ident, .. })
-            | Item::TraitAlias(syn::ItemTraitAlias { ident, .. }) => (name(ident), Declared::Trait),
+            Item::Trait(syn::ItemTrait { vis, ident, .. })
+            | Item::TraitAlias(syn::ItemTraitAlias { vis, ident, .. }) => {
+                (name(ident), Declared::Trait, vis)
+            }
             Item::ExternCrate(declaration) => {
                 let bound = declaration
                     .rename
                     .as_ref()
                     .map_or(&declaration.ident, |(_, rename)| rename);
                 let named = name(&declaration.ident);
-                (name(bound), Declared::ExternCrate(named))
+                (name(bound), Declared::ExternCrate(named), &declaration.vis)
             }
             Item::Fn(function) => {
-                let value = (name(&function.sig.ident), "a function");
+                let visibility = visibility(&walk.modules, module, &function.vis);
+                let value = (name(&function.sig.ident), "a function", visibility);
                 walk.modules[module].scope.values.push(value);
                 continue;
             }
             Item::Const(constant) => {
-                let value = (name(&constant.ident), "a constant");
+                let visibility = visibility(&walk.modules, module, &constant.vis);
+                let value = (name(&constant.ident), "a constant", visibility);
                 walk.modules[module].scope.values.push(value);
                 continue;
             }
             Item::Static(staticdecl) => {
-                let value = (name(&staticdecl.ident), "a static");
+                let visibility = visibility(&walk.modules, module, &staticdecl.vis);
+                let value = (name(&staticdecl.ident), "a static", visibility);
                 walk.modules[module].scope.values.push(value);
                 continue;
             }
             Item::Use(declaration) => {
                 let mut prefix = Vec::new();
                 let global = declaration.leading_colon.is_some();
+                let visibility = visibility(&walk.modules, module, &declaration.vis);
                 imports(
                     &declaration.tree,
                     &mut prefix,
                     global,
+                    visibility,
                     &mut walk.modules[module].scope,
                 );
                 continue;
@@ -463,8 +487,37 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
             }
             _ => continue,
         };
-        walk.modules[module].scope.declared.push(declared);
+        let visibility = visibility(&walk.modules, module, vis);
+        walk.modules[module]
+            .scope
+            .declared
+            .push((bound, declared, visibility));
     }
+}
+
+/// Where an item of `module` with `vis` may be used from. A restricted
+/// visibility names an ancestor of the module.
+fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visibility {
+    let restricted = match vis {
+        syn::Visibility::Public(_) => return Visibility::Public,
+        syn::Visibility::Inherited => return Visibility::Within(module),
+        syn::Visibility::Restricted(restricted) => restricted,
+    };
+    let mut within = module;
+    for segment in &restricted.path.segments {
+        within = match segment.ident.to_string().as_str() {
+            "crate" => 0,
+            "self" => within,
+            "super" => modules[within].parent.unwrap_or(0),
+            name => {
+                let path = format!("{}{name}::", modules[within].path);
+                iter::successors(Some(module), |&ancestor| modules[ancestor].parent)
+                    .find(|&ancestor| modules[ancestor].path == path)
+                    .unwrap_or(0)
+            }
+        };
+    }
+    Visibility::Within(within)
 }
 
 /// Reads the module that `declaration` declares inside `parent`, unless it is
@@ -530,8 +583,14 @@ fn cfgs(attributes: &[Attribute]) -> Vec<String> {
 }
 
 /// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
-/// is nested in.
-fn imports(tree: &UseTree, prefix: &mut Vec<String>, global: bool, scope: &mut Scope) {
+/// is nested in, with the visibility of the `use`.
+fn imports(
+    tree: &UseTree,
+    prefix: &mut Vec<String>,
+    global: bool,
+    visibility: Visibility,
+    scope: &mut Scope,
+) {
     let path = |prefix: &[String], last: &syn::Ident| {
         let mut segments = prefix.to_vec();
         // `a::{self}` imports `a` itself.
@@ -543,28 +602,29 @@ fn imports(tree: &UseTree, prefix: &mut Vec<String>, global: bool, scope: &mut S
     match tree {
         UseTree::Path(nested) => {
             prefix.push(nested.ident.unraw().to_string());
-            imports(&nested.tree, prefix, global, scope);
+            imports(&nested.tree, prefix, global, visibility, scope);
             prefix.pop();
         }
         UseTree::Name(name) => {
             let imported = path(prefix, &name.ident);
             if let Some(bound) = imported.segments.last() {
-                scope.imports.push((bound.clone(), imported));
+                scope.imports.push((bound.clone(), imported, visibility));
             }
         }
         // `as _` binds no name.
         UseTree::Rename(rename) if rename.rename != "_" => {
             let bound = rename.rename.unraw().to_string();
-            scope.imports.push((bound, path(prefix, &rename.ident)));
+            let imported = path(prefix, &rename.ident);
+            scope.imports.push((bound, imported, visibility));
         }
         UseTree::Rename(_) => {}
-        UseTree::Glob(_) => scope.globs.push(UsePath {
-            global,
-            segments: prefix.clone(),
-        }),
+        UseTree::Glob(_) => {
+            let segments = prefix.clone();
+            scope.globs.push((UsePath { global, segments }, visibility));
+        }
         UseTree::Group(group) => {
             for tree in &group.items {
-                imports(tree, prefix, global, scope);
+                imports(tree, prefix, global, visibility, scope);
             }
         }
     }
