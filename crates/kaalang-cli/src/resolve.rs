@@ -245,7 +245,8 @@ impl<'a> Resolver<'a> {
                 Def::Outside | Def::Type(_) | Def::NotAType(_) => {}
             }
         }
-        // shortcut: a name an item macro declares is not seen, so a module with one cannot tell it from the prelude; upgrade by expanding the macro.
+        // The source is read unexpanded, so a name an item macro may declare is
+        // unknown rather than outside.
         if unknown.is_none() && scope.opaque {
             unknown = Some(Def::Unknown(
                 "its module may declare it through an item macro or a file that was not read",

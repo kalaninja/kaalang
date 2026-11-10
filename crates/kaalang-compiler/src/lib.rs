@@ -122,7 +122,9 @@ fn collect_flows(items: &[syn::Item], prefix: &str, flows: &mut Vec<FlowItem>) {
                 }
             }
             syn::Item::Impl(block) => {
-                // shortcut: a method's path starts at its impl block's module, not its type's, and an inherent and a trait method of one name share it; upgrade when an IDE engine or a resolver supplies the self type's path.
+                // The path stays within the file: it starts at the impl block's
+                // module, not its type's, and an inherent and a trait method of
+                // one name share it, so selecting either is ambiguous.
                 let owner = impl_owner(&block.self_ty);
                 for item in &block.items {
                     if let syn::ImplItem::Fn(method) = item
