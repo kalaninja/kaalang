@@ -12,7 +12,10 @@ use std::{
 
 use cargo_metadata::{MetadataCommand, Target};
 use kaalang_svg::RenderError;
-use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt, spanned::Spanned};
+use syn::{
+    Attribute, Expr, ExprLit, Item, Lit, Meta, Token, UseTree, ext::IdentExt,
+    punctuated::Punctuated, spanned::Spanned,
+};
 
 /// The file that declares a found flow, its source, and the flow's path within it.
 pub(super) struct Found {
@@ -396,11 +399,13 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
         let name = |ident: &syn::Ident| ident.unraw().to_string();
         let (bound, declared, vis) = match item {
             Item::Mod(declaration) => {
-                let Some(child) = walk_module(walk, declaration, module, directory, base) else {
-                    continue;
-                };
                 let bound = name(&declaration.ident);
-                (bound, Declared::Module(child), &declaration.vis)
+                let visibility = visibility(&walk.modules, module, &declaration.vis);
+                for child in walk_module(walk, declaration, module, directory, base) {
+                    let declared = (bound.clone(), Declared::Module(child), visibility);
+                    walk.modules[module].scope.declared.push(declared);
+                }
+                continue;
             }
             Item::Struct(syn::ItemStruct {
                 attrs, vis, ident, ..
@@ -467,13 +472,11 @@ fn walk_items(walk: &mut Walk, items: &[Item], module: usize, directory: &Path, 
                 continue;
             }
             Item::Use(declaration) => {
-                let mut prefix = Vec::new();
-                let global = declaration.leading_colon.is_some();
                 let visibility = visibility(&walk.modules, module, &declaration.vis);
                 imports(
                     &declaration.tree,
-                    &mut prefix,
-                    global,
+                    &mut Vec::new(),
+                    declaration.leading_colon.is_some(),
                     visibility,
                     &mut walk.modules[module].scope,
                 );
@@ -520,19 +523,20 @@ fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visib
     Visibility::Within(within)
 }
 
-/// Reads the module that `declaration` declares inside `parent`, unless it is
-/// off the wanted path, and returns it.
+/// Reads the modules that `declaration` declares inside `parent`, unless it
+/// is off the wanted path, and returns them: a module file is read once for
+/// its default file or `#[path]`, and once for each `path` under `cfg_attr`.
 fn walk_module(
     walk: &mut Walk,
     declaration: &syn::ItemMod,
     parent: usize,
     directory: &Path,
     base: &Path,
-) -> Option<usize> {
+) -> Vec<usize> {
     let path = format!("{}{}::", walk.modules[parent].path, declaration.ident);
     // Every flow inside the module has a path that starts with the module's.
     if walk.wanted.is_some_and(|wanted| !wanted.starts_with(&path)) {
-        return None;
+        return Vec::new();
     }
     let name = declaration.ident.unraw().to_string();
     let attribute = path_attribute(&declaration.attrs);
@@ -552,7 +556,7 @@ fn walk_module(
                 scope: Scope::default(),
             });
             walk_items(walk, items, module, &directory, &directory);
-            Some(module)
+            vec![module]
         }
         (None, attribute) => {
             let (file, owns_directory) = if let Some(attribute) = attribute {
@@ -565,9 +569,27 @@ fn walk_module(
                     (directory.join(&name).join("mod.rs"), true)
                 }
             };
-            let module = walk_file(walk, &file, owns_directory, path, Some(parent))?;
-            walk.modules[module].cfgs = cfgs(&declaration.attrs);
-            Some(module)
+            let conditional = cfg_attr_paths(&declaration.attrs);
+            let mut files = Vec::new();
+            // Under `cfg_attr` paths, the default file is only a fallback that
+            // need not exist.
+            if conditional.is_empty() || file.is_file() {
+                files.push((file, owns_directory, Vec::new()));
+            }
+            for (attribute, conditions) in conditional {
+                files.push((base.join(attribute), true, conditions));
+            }
+            files
+                .into_iter()
+                .filter_map(|(file, owns_directory, conditions)| {
+                    let module =
+                        walk_file(walk, &file, owns_directory, path.clone(), Some(parent))?;
+                    let mut written = cfgs(&declaration.attrs);
+                    written.extend(conditions);
+                    walk.modules[module].cfgs = written;
+                    Some(module)
+                })
+                .collect()
         }
     }
 }
@@ -577,9 +599,14 @@ fn cfgs(attributes: &[Attribute]) -> Vec<String> {
     attributes
         .iter()
         .filter(|attribute| attribute.path().is_ident("cfg"))
-        .filter_map(|attribute| attribute.meta.span().source_text())
-        .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
+        .filter_map(|attribute| as_written(&attribute.meta))
         .collect()
+}
+
+/// The source text of `tokens` with its whitespace collapsed.
+fn as_written(tokens: &impl Spanned) -> Option<String> {
+    let text = tokens.span().source_text()?;
+    Some(text.split_whitespace().collect::<Vec<_>>().join(" "))
 }
 
 /// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
@@ -631,20 +658,67 @@ fn imports(
 }
 
 /// The literal `#[path = "…"]` on a module declaration.
-// shortcut: a `path` inside `cfg_attr` is not read, so that module is skipped; upgrade by walking every `cfg_attr` path, as rustfmt does.
 fn path_attribute(attributes: &[Attribute]) -> Option<String> {
     attributes
         .iter()
-        .find_map(|attribute| match &attribute.meta {
-            Meta::NameValue(pair) if pair.path.is_ident("path") => match &pair.value {
-                Expr::Lit(ExprLit {
-                    lit: Lit::Str(path),
-                    ..
-                }) => Some(path.value()),
-                _ => None,
-            },
+        .find_map(|attribute| path_value(&attribute.meta))
+}
+
+/// Each literal `path = "…"` under `cfg_attr` on a module declaration, with
+/// the `cfg`s it applies under, outermost first.
+fn cfg_attr_paths(attributes: &[Attribute]) -> Vec<(String, Vec<String>)> {
+    let mut found = Vec::new();
+    for attribute in attributes {
+        if let Meta::List(list) = &attribute.meta
+            && list.path.is_ident("cfg_attr")
+        {
+            cfg_attr_path(list, &mut Vec::new(), &mut found);
+        }
+    }
+    found
+}
+
+fn cfg_attr_path(
+    list: &syn::MetaList,
+    conditions: &mut Vec<String>,
+    found: &mut Vec<(String, Vec<String>)>,
+) {
+    let Ok(arguments) = list.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
+    else {
+        return;
+    };
+    let mut arguments = arguments.iter();
+    let Some(predicate) = arguments.next().and_then(as_written) else {
+        return;
+    };
+    conditions.push(format!("cfg({predicate})"));
+    for argument in arguments {
+        match argument {
+            Meta::List(nested) if nested.path.is_ident("cfg_attr") => {
+                cfg_attr_path(nested, conditions, found);
+            }
+            argument => {
+                if let Some(path) = path_value(argument) {
+                    found.push((path, conditions.clone()));
+                }
+            }
+        }
+    }
+    conditions.pop();
+}
+
+/// The string of a `path = "…"` attribute.
+fn path_value(meta: &Meta) -> Option<String> {
+    match meta {
+        Meta::NameValue(pair) if pair.path.is_ident("path") => match &pair.value {
+            Expr::Lit(ExprLit {
+                lit: Lit::Str(path),
+                ..
+            }) => Some(path.value()),
             _ => None,
-        })
+        },
+        _ => None,
+    }
 }
 
 /// Names a crate by its target, as `` lib `app` `` or `` test `cli` ``.

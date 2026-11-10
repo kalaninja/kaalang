@@ -549,6 +549,35 @@ fn declarations_in_modules_under_exclusive_cfgs_show_the_module_cfgs() {
 }
 
 #[test]
+fn every_cfg_attr_path_of_a_module_is_read_under_its_cfg() {
+    let handle = |ty: &str| {
+        format!(
+            "#[kaa]\npub struct Handle {{\n    #[kaa::refer(crate::Member, \"m\")]\n    m: {ty},\n}}\n"
+        )
+    };
+    let directory = package(
+        "cli-type-cfg-attr-paths",
+        "pub struct Member;\n#[cfg_attr(unix, path = \"unix.rs\")]\n#[cfg_attr(windows, path = \"windows.rs\")]\nmod sys;\n",
+    );
+    write(&directory, "src/unix.rs", &handle("u8"));
+    write(&directory, "src/windows.rs", &handle("u16"));
+    let unix = "struct · repr(Rust) · cfg(unix)";
+    let windows = "struct · repr(Rust) · cfg(windows)";
+
+    for (path, file, relationships) in [
+        ("Member", "Member.svg", 2),
+        ("sys::Handle", "Handle.svg", 0),
+    ] {
+        let rendered = run(&directory, &format!("diagram --type {path}"));
+        assert!(rendered.status.success(), "{path}: {:?}", rendered.stderr);
+        let svg = fs::read_to_string(directory.join(file)).unwrap();
+        positions(&svg, &[unix, windows]);
+        let drawn = svg.matches("class=\"relationship\"").count();
+        assert_eq!(drawn, relationships, "{path}: {svg}");
+    }
+}
+
+#[test]
 fn a_file_read_twice_draws_its_type_once() {
     // Both modules read `src/sys/common.rs`, which declares `Report` once.
     let directory = package(
