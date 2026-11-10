@@ -473,7 +473,17 @@ fn types_match(
                     .all(|(query, written)| types_match(query, written, generics, same))
         }
         (Type::FnPtr(query), Type::FnPtr(written)) => {
-            query.inputs.len() == written.inputs.len()
+            let abi = |abi: &Option<syn::Abi>| match abi {
+                None => "Rust".to_owned(),
+                Some(abi) => abi
+                    .name
+                    .as_ref()
+                    .map_or_else(|| "C".to_owned(), syn::LitStr::value),
+            };
+            query.unsafety.is_some() == written.unsafety.is_some()
+                && abi(&query.abi) == abi(&written.abi)
+                && query.variadic.is_some() == written.variadic.is_some()
+                && query.inputs.len() == written.inputs.len()
                 && query
                     .inputs
                     .iter()
@@ -728,6 +738,36 @@ mod tests {
             assert_eq!(selected(source, path), [flow], "{path}");
         }
         assert_eq!(selected(source, "Pair::swap").len(), 2);
+    }
+
+    #[test]
+    fn function_pointer_safety_abi_and_variadics_select_distinct_impls() {
+        let source = r#"
+            trait Run { fn run(); }
+            impl Run for fn() { #[kaa] fn run() {} }
+            impl Run for unsafe fn() { #[kaa] fn run() {} }
+            impl Run for extern "C" fn() { #[kaa] fn run() {} }
+            impl Run for unsafe extern "C" fn() { #[kaa] fn run() {} }
+            impl Run for unsafe extern "C" fn(...) { #[kaa] fn run() {} }
+        "#;
+        for ty in [
+            "fn()",
+            "unsafe fn()",
+            "extern \"C\" fn()",
+            "unsafe extern \"C\" fn()",
+            "unsafe extern \"C\" fn(...)",
+        ] {
+            let path = format!("<{ty} as Run>::run");
+            assert_eq!(selected(source, &path), [path.as_str()]);
+        }
+        assert_eq!(
+            selected(source, "<extern fn() as Run>::run"),
+            ["<extern \"C\" fn() as Run>::run"]
+        );
+        assert_eq!(
+            selected(source, "<extern \"Rust\" fn() as Run>::run"),
+            ["<fn() as Run>::run"]
+        );
     }
 
     #[test]
