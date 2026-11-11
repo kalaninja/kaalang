@@ -299,12 +299,7 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
 /// Whether two declarations are one: the same place in the same file, which
 /// several crates may include or one crate may read twice.
 pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
-    let place = |found: TypeRef| {
-        let krate = &crates[found.krate];
-        let entry = &krate.types[found.id];
-        (&krate.modules[entry.module].file.canonical, entry.position)
-    };
-    place(left) == place(right)
+    left.place(crates) == right.place(crates)
 }
 
 /// Shortens incoming paths against the focus, restoring module segments when

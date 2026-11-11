@@ -20,6 +20,16 @@ pub(super) struct TypeRef {
     pub(super) id: usize,
 }
 
+impl TypeRef {
+    /// Where the declaration is written: its file and its place in the file,
+    /// which identify it across the crates that include the file.
+    pub(super) fn place(self, crates: &[Crate]) -> (&std::path::Path, proc_macro2::LineColumn) {
+        let krate = &crates[self.krate];
+        let entry = &krate.types[self.id];
+        (&krate.modules[entry.module].file.canonical, entry.position)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum Resolution {
     /// A struct, enum, union, or alias of the workspace.
@@ -101,12 +111,11 @@ impl<'a> Resolver<'a> {
         let mut declared = BTreeMap::new();
         let types = crates
             .iter()
-            .map(|krate| {
-                krate
-                    .types
-                    .iter()
-                    .map(|entry| {
-                        let key = (&krate.modules[entry.module].file.canonical, entry.position);
+            .enumerate()
+            .map(|(index, krate)| {
+                (0..krate.types.len())
+                    .map(|id| {
+                        let key = TypeRef { krate: index, id }.place(crates);
                         let next = declared.len();
                         *declared.entry(key).or_insert(next)
                     })
