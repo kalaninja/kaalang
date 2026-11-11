@@ -2,23 +2,28 @@
 
 use kaalang::kaa;
 
-#[kaa("An order a customer placed in the shop.")]
-struct Order {
+#[kaa("A **shop order**, with its revision history and split shipments.")]
+pub struct Order {
     #[kaa::value("The order's number, unique in the shop.")]
-    number: OrderNumber,
+    pub number: OrderNumber,
     #[kaa::refer(Customer, "Who placed the order.")]
-    customer: CustomerId,
-    #[kaa::refer(Line, "What was ordered, in the order it was added.")]
+    pub(crate) customer: CustomerId,
+    #[kaa::refer(Line, r"Items and quantities. Total: $\sum_i q_i p_i$.")]
     lines: Vec<Line>,
+    #[kaa::refer(Self, "The original order, when this is a *split shipment*.")]
+    pub(crate) split_from: Option<OrderNumber>,
+    #[kaa::refer(Self, "The previous revision, kept for audit. `None` on creation.")]
+    previous: Option<Box<Self>>,
 }
 
 #[kaa("The number of an order, unique in the shop.")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct OrderNumber(u32);
+#[repr(transparent)]
+pub struct OrderNumber(#[kaa::refer(Order, "The order identified by this number.")] u32);
 
 #[kaa("The key of a customer.")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct CustomerId(u32);
+pub(crate) struct CustomerId(u32);
 
 #[kaa("A stock-keeping unit: the key of a product.")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -61,6 +66,7 @@ struct Line {
 }
 
 #[kaa("Money received for an order.")]
+#[repr(C)]
 struct Payment {
     #[kaa::refer(Order, "The order the money is for.")]
     order: OrderNumber,
@@ -79,12 +85,10 @@ struct Shipment {
 }
 
 #[kaa("Why an order is not on its way yet.")]
+#[repr(u8)]
 enum Hold {
     #[kaa::case("The payment has not arrived.")]
-    AwaitingPayment {
-        #[kaa::refer(Order, "The unpaid order.")]
-        order: OrderNumber,
-    },
+    AwaitingPayment(#[kaa::refer(Order, "The unpaid order.")] OrderNumber),
     #[kaa::case("The shop has fewer units than the order needs.")]
     OutOfStock {
         #[kaa::refer(Order, "The order that waits.")]
@@ -107,6 +111,14 @@ struct Receipt<'a> {
     order: &'a Order,
     #[kaa::value("The amount the customer paid.")]
     paid: Money,
+}
+
+#[kaa("An order event with an application-defined payload.")]
+pub(crate) struct OrderEvent<T> {
+    #[kaa::refer(Order, "The order this event records.")]
+    pub order: OrderNumber,
+    #[kaa::value("The event's details, such as a payment or receipt.")]
+    pub payload: T,
 }
 
 #[kaa("The orders waiting to be packed, oldest first.")]
@@ -132,7 +144,7 @@ impl Order {
             .map(|payment| payment.amount.0)
             .sum();
         if paid < self.total().0 {
-            return Some(Hold::AwaitingPayment { order: self.number });
+            return Some(Hold::AwaitingPayment(self.number));
         }
         let short = self.lines.iter().find(|line| {
             !catalog
@@ -176,15 +188,15 @@ pub(super) fn check() {
                 price: Money(800),
             },
         ],
+        split_from: None,
+        previous: None,
     };
     assert_eq!(order.total(), Money(4100));
 
     for products in [[].as_slice(), &catalog] {
         assert!(matches!(
             order.hold(&[], products),
-            Some(Hold::AwaitingPayment {
-                order: OrderNumber(7)
-            })
+            Some(Hold::AwaitingPayment(OrderNumber(7)))
         ));
     }
 
@@ -203,4 +215,42 @@ pub(super) fn check() {
 
     catalog[1].stocked = 2;
     assert!(order.hold(&payments, &catalog).is_none());
+
+    let split = Order {
+        number: OrderNumber(8),
+        customer: order.customer,
+        lines: vec![Line {
+            product: Sku(2),
+            quantity: 2,
+            price: Money(800),
+        }],
+        split_from: Some(order.number),
+        previous: None,
+    };
+    let revised = Order {
+        number: order.number,
+        customer: order.customer,
+        lines: vec![Line {
+            product: Sku(1),
+            quantity: 1,
+            price: Money(2500),
+        }],
+        split_from: None,
+        previous: Some(Box::new(order)),
+    };
+    assert_eq!(split.split_from, Some(revised.number));
+    assert!(matches!(revised.previous.as_deref(), Some(previous)
+        if previous.number == revised.number
+            && previous.previous.is_none()
+            && previous.total() == Money(revised.total().0 + split.total().0)));
+
+    let event = OrderEvent {
+        order: revised.number,
+        payload: Receipt {
+            order: &revised,
+            paid: revised.total(),
+        },
+    };
+    assert_eq!(event.order, event.payload.order.number);
+    assert_eq!(event.payload.paid, Money(2500));
 }

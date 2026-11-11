@@ -31,7 +31,7 @@
       <path class="card-rules" d="M 32 102 L 401 102"/>
       <rect class="card-outline" x="32" y="32" width="369" height="118"/>
       <g class="type-name">
-        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">~</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> order::CustomerId</text>
       </g>
       <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="387" dy="0">struct · repr(Rust)</tspan></text>

@@ -431,17 +431,22 @@ carry descriptions, and a field can name the type it stands for, even when Rust
 stores only a key:
 
 ```rust ignore
-#[kaa("An order a customer placed in the shop.")]
-struct Order {
+#[kaa("A **shop order**, with its revision history and split shipments.")]
+pub struct Order {
     #[kaa::value("The order's number, unique in the shop.")]
-    number: OrderNumber,
+    pub number: OrderNumber,
     #[kaa::refer(Customer, "Who placed the order.")]
-    customer: CustomerId,
-    #[kaa::refer(Line, "What was ordered, in the order it was added.")]
+    pub(crate) customer: CustomerId,
+    #[kaa::refer(Line, r"Items and quantities. Total: $\sum_i q_i p_i$.")]
     lines: Vec<Line>,
+    #[kaa::refer(Self, "The original order, when this is a *split shipment*.")]
+    pub(crate) split_from: Option<OrderNumber>,
+    #[kaa::refer(Self, "The previous revision, kept for audit. `None` on creation.")]
+    previous: Option<Box<Self>>,
 }
 
 #[kaa("Money received for an order.")]
+#[repr(C)]
 struct Payment {
     #[kaa::refer(Order, "The order the money is for.")]
     order: OrderNumber,
@@ -461,6 +466,11 @@ A type's diagram draws it under every type that refers to it:
 [![Diagram of the Order type under the types that refer to it](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/order/order.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/order/order.svg)
 
 [Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/order/mod.rs)
+
+The gallery follows a split order and keeps its previous revision. The diagram
+combines self-references, a tuple identifier with `repr(transparent)`, generic
+events, a borrowed receipt, an enum with `repr(u8)` and both tuple and named
+fields, and an alias.
 
 A type's name and its fields, like a flow's name in its start node, carry a UML
 visibility marker: `+` for `pub`, `~` for `pub(crate)` and other restricted

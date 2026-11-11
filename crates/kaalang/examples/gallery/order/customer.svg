@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="609" height="564" viewBox="0 0 609 564" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="609" height="767" viewBox="0 0 609 767" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang type diagram for order::Customer</title>
   <desc id="kaalang-description">Type order::Customer with incoming types order::Order.</desc>
   <defs>
@@ -20,6 +20,26 @@
       .relationship-source { fill: currentColor; }
       .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
       .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
     </style>
     <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
   </defs>
@@ -27,73 +47,102 @@
   <g class="cards">
     <g class="card">
       <title xml:space="preserve">order::Order</title>
-      <rect class="card-shape" x="32" y="32" width="314" height="252"/>
-      <path class="card-rules" d="M 32 102 L 346 102 M 32 154 L 346 154 M 32 210 L 346 210"/>
-      <rect class="card-outline" x="32" y="32" width="314" height="252"/>
+      <rect class="card-shape" x="32" y="32" width="345" height="455"/>
+      <path class="card-rules" d="M 32 120 L 377 120 M 32 172 L 377 172 M 32 228 L 377 228 M 32 303 L 377 303 M 32 395 L 377 395"/>
+      <rect class="card-outline" x="32" y="32" width="345" height="455"/>
       <g class="type-name">
-        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> order::Order</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="332" dy="0">struct · repr(Rust)</tspan></text>
-      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">An order a customer placed in the shop.</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A <tspan class="md-bold">shop order</tspan>, with its revision history and </tspan><tspan x="46" dy="18">split shipments.</tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="52" y="122.28" text-anchor="middle">−</text>
-        <text x="58" y="123" text-anchor="start" xml:space="preserve"> number</text>
+        <text class="md-badge" x="52" y="140.28" text-anchor="middle">+</text>
+        <text x="58" y="141" text-anchor="start" xml:space="preserve"> number</text>
       </g>
-      <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">OrderNumber</tspan></text>
-      <text class="description" y="125" xml:space="preserve"><tspan x="143" dy="0">The order&apos;s number, </tspan><tspan x="143" dy="18">unique in the shop.</tspan></text>
+      <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">OrderNumber</tspan></text>
+      <text class="description" y="143" xml:space="preserve"><tspan x="203" dy="0">The order&apos;s number, </tspan><tspan x="203" dy="18">unique in the shop.</tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="52" y="174.28" text-anchor="middle">−</text>
-        <text x="58" y="175" text-anchor="start" xml:space="preserve"> customer</text>
+        <text class="md-badge" x="52" y="192.28" text-anchor="middle">~</text>
+        <text x="58" y="193" text-anchor="start" xml:space="preserve"> customer</text>
       </g>
-      <text class="field-type" y="191" xml:space="preserve"><tspan x="46" dy="0">CustomerId</tspan></text>
-      <text class="description" y="177" xml:space="preserve"><tspan x="143" dy="0">Who placed the order.</tspan></text>
-      <text class="target" text-anchor="end" y="199" xml:space="preserve"><tspan x="332" dy="0">▸ <tspan class="md-code">Customer</tspan></tspan></text>
+      <text class="field-type" y="209" xml:space="preserve"><tspan x="46" dy="0">CustomerId</tspan></text>
+      <text class="description" y="195" xml:space="preserve"><tspan x="203" dy="0">Who placed the order.</tspan></text>
+      <text class="target" text-anchor="end" y="217" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Customer</tspan></tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="52" y="230.28" text-anchor="middle">−</text>
-        <text x="58" y="231" text-anchor="start" xml:space="preserve"> lines</text>
+        <text class="md-badge" x="52" y="248.28" text-anchor="middle">−</text>
+        <text x="58" y="249" text-anchor="start" xml:space="preserve"> lines</text>
       </g>
-      <text class="field-type" y="247" xml:space="preserve"><tspan x="46" dy="0">Vec&lt;Line&gt;</tspan></text>
-      <text class="description" y="233" xml:space="preserve"><tspan x="143" dy="0">What was ordered, in the </tspan><tspan x="143" dy="18">order it was added.</tspan></text>
-      <text class="target" text-anchor="end" y="273" xml:space="preserve"><tspan x="332" dy="0">▸ <tspan class="md-code">Line</tspan></tspan></text>
+      <text class="field-type" y="265" xml:space="preserve"><tspan x="46" dy="0">Vec&lt;Line&gt;</tspan></text>
+      <g class="description">
+        <text x="203" y="251" text-anchor="start" textLength="153.72" lengthAdjust="spacing" xml:space="preserve">Items and quantities. </text>
+        <text x="203" y="269" text-anchor="start" textLength="46.48" lengthAdjust="spacing" xml:space="preserve">Total: </text>
+        <svg class="md-math" x="249.48" y="258.052" width="42.3117" height="14.42" viewBox="0 0 3.0223 1.03" aria-hidden="true">
+
+<g fill="inherit">
+<path d="M 861.0 70.0 L 821.0 70.0 C 781.0 -66.0 746.0 -150.0 621.0 -150.0 L 196.0 -150.0 L 196.0 -145.0 L 545.0 315.0 L 545.0 334.0 L 237.0 725.0 L 237.0 729.0 L 566.0 729.0 C 700.0 729.0 766.0 699.0 789.0 532.0 L 828.0 532.0 L 817.0 782.0 L 69.0 782.0 L 69.0 758.0 L 449.0 282.0 L 62.0 -224.0 L 62.0 -248.0 L 800.0 -248.0 Z" transform="translate(0.0 0.782) scale(0.001 -0.001)"/>
+<path d="M 255.0 515.0 L 219.0 515.0 L 74.0 504.0 L 74.0 471.0 C 74.0 471.0 93.0 473.0 109.0 473.0 C 139.0 473.0 147.0 454.0 147.0 438.0 C 147.0 418.0 143.0 404.0 143.0 404.0 L 89.0 147.0 C 75.0 85.0 72.0 63.0 72.0 46.0 C 72.0 8.0 99.0 -9.0 145.0 -9.0 C 223.0 -9.0 261.0 48.0 299.0 100.0 L 274.0 120.0 C 260.0 103.0 231.0 64.0 194.0 64.0 C 181.0 64.0 172.0 70.0 172.0 87.0 C 172.0 103.0 180.0 141.0 180.0 141.0 Z M 278.0 656.0 C 278.0 695.0 252.0 719.0 215.0 719.0 C 181.0 719.0 155.0 696.0 155.0 656.0 C 155.0 616.0 181.0 594.0 215.0 594.0 C 252.0 594.0 278.0 617.0 278.0 656.0 Z" transform="translate(0.936 0.992) scale(0.0007 -0.0007)"/>
+<path d="M 496.0 472.0 L 448.0 472.0 L 409.0 434.0 L 405.0 434.0 C 387.0 456.0 353.0 479.0 299.0 479.0 C 168.0 479.0 41.0 346.0 41.0 164.0 C 41.0 65.0 79.0 -12.0 158.0 -12.0 C 167.0 -12.0 260.0 -11.0 331.0 85.0 L 338.0 85.0 L 267.0 -220.0 L 443.0 -220.0 L 448.0 -192.0 C 389.0 -192.0 376.0 -175.0 376.0 -140.0 C 376.0 -123.0 379.0 -109.0 379.0 -109.0 Z M 381.0 344.0 C 381.0 309.0 369.0 229.0 348.0 173.0 C 322.0 103.0 279.0 54.0 209.0 54.0 C 149.0 54.0 130.0 90.0 130.0 167.0 C 130.0 311.0 197.0 441.0 292.0 441.0 C 342.0 441.0 381.0 406.0 381.0 344.0 Z" transform="translate(1.370866666666666666666666 0.782) scale(0.001 -0.001)"/>
+<path d="M 255.0 515.0 L 219.0 515.0 L 74.0 504.0 L 74.0 471.0 C 74.0 471.0 93.0 473.0 109.0 473.0 C 139.0 473.0 147.0 454.0 147.0 438.0 C 147.0 418.0 143.0 404.0 143.0 404.0 L 89.0 147.0 C 75.0 85.0 72.0 63.0 72.0 46.0 C 72.0 8.0 99.0 -9.0 145.0 -9.0 C 223.0 -9.0 261.0 48.0 299.0 100.0 L 274.0 120.0 C 260.0 103.0 231.0 64.0 194.0 64.0 C 181.0 64.0 172.0 70.0 172.0 87.0 C 172.0 103.0 180.0 141.0 180.0 141.0 Z M 278.0 656.0 C 278.0 695.0 252.0 719.0 215.0 719.0 C 181.0 719.0 155.0 696.0 155.0 656.0 C 155.0 616.0 181.0 594.0 215.0 594.0 C 252.0 594.0 278.0 617.0 278.0 656.0 Z" transform="translate(1.887866666666666666666666 0.992) scale(0.0007 -0.0007)"/>
+<path d="M 275.0 -220.0 L 282.0 -193.0 C 202.0 -193.0 181.0 -166.0 181.0 -143.0 C 181.0 -129.0 183.0 -111.0 185.0 -101.0 L 209.0 15.0 C 229.0 3.0 268.0 -11.0 300.0 -11.0 C 456.0 -11.0 572.0 119.0 572.0 307.0 C 572.0 423.0 510.0 479.0 432.0 479.0 C 380.0 479.0 338.0 451.0 290.0 397.0 L 285.0 397.0 L 299.0 474.0 L 280.0 474.0 L 137.0 459.0 L 137.0 434.0 C 137.0 434.0 154.0 436.0 169.0 436.0 C 195.0 436.0 206.0 427.0 206.0 407.0 C 206.0 400.0 205.0 394.0 204.0 388.0 L 77.0 -220.0 Z M 272.0 311.0 C 300.0 370.0 340.0 423.0 404.0 423.0 C 434.0 423.0 484.0 402.0 484.0 307.0 C 484.0 131.0 415.0 32.0 308.0 32.0 C 266.0 32.0 238.0 49.0 221.0 64.0 Z" transform="translate(2.156066666666666666666666 0.782) scale(0.001 -0.001)"/>
+<path d="M 255.0 515.0 L 219.0 515.0 L 74.0 504.0 L 74.0 471.0 C 74.0 471.0 93.0 473.0 109.0 473.0 C 139.0 473.0 147.0 454.0 147.0 438.0 C 147.0 418.0 143.0 404.0 143.0 404.0 L 89.0 147.0 C 75.0 85.0 72.0 63.0 72.0 46.0 C 72.0 8.0 99.0 -9.0 145.0 -9.0 C 223.0 -9.0 261.0 48.0 299.0 100.0 L 274.0 120.0 C 260.0 103.0 231.0 64.0 194.0 64.0 C 181.0 64.0 172.0 70.0 172.0 87.0 C 172.0 103.0 180.0 141.0 180.0 141.0 Z M 278.0 656.0 C 278.0 695.0 252.0 719.0 215.0 719.0 C 181.0 719.0 155.0 696.0 155.0 656.0 C 155.0 616.0 181.0 594.0 215.0 594.0 C 252.0 594.0 278.0 617.0 278.0 656.0 Z" transform="translate(2.754066666666666666666666 0.992) scale(0.0007 -0.0007)"/>
+</g>
+        </svg>
+        <text x="292.48" y="269" text-anchor="start" textLength="4.48" lengthAdjust="spacingAndGlyphs" xml:space="preserve">.</text>
+      </g>
+      <text class="target" text-anchor="end" y="292" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Line</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="323.28" text-anchor="middle">~</text>
+        <text x="58" y="324" text-anchor="start" xml:space="preserve"> split_from</text>
+      </g>
+      <text class="field-type" y="340" xml:space="preserve"><tspan x="46" dy="0">Option&lt;OrderNumber&gt;</tspan></text>
+      <text class="description" y="326" xml:space="preserve"><tspan x="203" dy="0">The original order, </tspan><tspan x="203" dy="18">when this is a <tspan class="md-italic">split </tspan></tspan><tspan x="203" dy="18"><tspan class="md-italic">shipment</tspan>.</tspan></text>
+      <text class="target" text-anchor="end" y="384" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Self</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="415.28" text-anchor="middle">−</text>
+        <text x="58" y="416" text-anchor="start" xml:space="preserve"> previous</text>
+      </g>
+      <text class="field-type" y="432" xml:space="preserve"><tspan x="46" dy="0">Option&lt;Box&lt;Self&gt;&gt;</tspan></text>
+      <text class="description" y="418" xml:space="preserve"><tspan x="203" dy="0">The previous revision, </tspan><tspan x="203" dy="18">kept for audit. <tspan class="md-code">None</tspan> </tspan><tspan x="203" dy="18">on creation.</tspan></text>
+      <text class="target" text-anchor="end" y="476" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Self</tspan></tspan></text>
     </g>
     <g class="card focus">
       <title xml:space="preserve">order::Customer</title>
-      <rect class="card-shape" x="32" y="332" width="545" height="200"/>
-      <path class="card-rules" d="M 32 402 L 577 402 M 201 402 L 201 532 M 389 402 L 389 532"/>
-      <rect class="card-outline" x="32" y="332" width="545" height="200"/>
+      <rect class="card-shape" x="32" y="535" width="545" height="200"/>
+      <path class="card-rules" d="M 32 605 L 577 605 M 201 605 L 201 735 M 389 605 L 389 735"/>
+      <rect class="card-outline" x="32" y="535" width="545" height="200"/>
       <g class="type-name">
-        <text class="md-badge" x="55" y="362.92" text-anchor="middle">−</text>
-        <text x="64" y="364" text-anchor="start" xml:space="preserve"> order::Customer</text>
+        <text class="md-badge" x="55" y="565.92" text-anchor="middle">−</text>
+        <text x="64" y="567" text-anchor="start" xml:space="preserve"> order::Customer</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="364" xml:space="preserve"><tspan x="563" dy="0">struct · repr(Rust)</tspan></text>
-      <text class="description" y="387" xml:space="preserve"><tspan x="46" dy="0">A person who buys from the shop.</tspan></text>
+      <text class="type-kind" text-anchor="end" y="567" xml:space="preserve"><tspan x="563" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="590" xml:space="preserve"><tspan x="46" dy="0">A person who buys from the shop.</tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="52" y="422.28" text-anchor="middle">−</text>
-        <text x="58" y="423" text-anchor="start" xml:space="preserve"> id</text>
+        <text class="md-badge" x="52" y="625.28" text-anchor="middle">−</text>
+        <text x="58" y="626" text-anchor="start" xml:space="preserve"> id</text>
       </g>
-      <text class="field-type" y="439" xml:space="preserve"><tspan x="46" dy="0">CustomerId</tspan></text>
-      <text class="description" y="463" xml:space="preserve"><tspan x="46" dy="0">The customer&apos;s key.</tspan></text>
+      <text class="field-type" y="642" xml:space="preserve"><tspan x="46" dy="0">CustomerId</tspan></text>
+      <text class="description" y="666" xml:space="preserve"><tspan x="46" dy="0">The customer&apos;s key.</tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="221" y="422.28" text-anchor="middle">−</text>
-        <text x="227" y="423" text-anchor="start" xml:space="preserve"> name</text>
+        <text class="md-badge" x="221" y="625.28" text-anchor="middle">−</text>
+        <text x="227" y="626" text-anchor="start" xml:space="preserve"> name</text>
       </g>
-      <text class="field-type" y="439" xml:space="preserve"><tspan x="215" dy="0">String</tspan></text>
-      <text class="description" y="463" xml:space="preserve"><tspan x="215" dy="0">The name on the </tspan><tspan x="215" dy="18">parcel.</tspan></text>
+      <text class="field-type" y="642" xml:space="preserve"><tspan x="215" dy="0">String</tspan></text>
+      <text class="description" y="666" xml:space="preserve"><tspan x="215" dy="0">The name on the </tspan><tspan x="215" dy="18">parcel.</tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="409" y="422.28" text-anchor="middle">−</text>
-        <text x="415" y="423" text-anchor="start" xml:space="preserve"> latest</text>
+        <text class="md-badge" x="409" y="625.28" text-anchor="middle">−</text>
+        <text x="415" y="626" text-anchor="start" xml:space="preserve"> latest</text>
       </g>
-      <text class="field-type" y="439" xml:space="preserve"><tspan x="403" dy="0">Option&lt;OrderNumber&gt;</tspan></text>
-      <text class="description" y="463" xml:space="preserve"><tspan x="403" dy="0">The customer&apos;s </tspan><tspan x="403" dy="18">latest order, once </tspan><tspan x="403" dy="18">they placed one.</tspan></text>
-      <text class="target" text-anchor="end" y="521" xml:space="preserve"><tspan x="563" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>
+      <text class="field-type" y="642" xml:space="preserve"><tspan x="403" dy="0">Option&lt;OrderNumber&gt;</tspan></text>
+      <text class="description" y="666" xml:space="preserve"><tspan x="403" dy="0">The customer&apos;s </tspan><tspan x="403" dy="18">latest order, once </tspan><tspan x="403" dy="18">they placed one.</tspan></text>
+      <text class="target" text-anchor="end" y="724" xml:space="preserve"><tspan x="563" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>
     </g>
   </g>
   <g class="relationships">
     <g class="relationship-route">
       <title xml:space="preserve">order::Order → order::Customer</title>
-      <path class="relationship" d="M 346 194 L 360 194 L 360 332" marker-end="url(#relationship-arrow)"/>
-      <circle class="relationship-source" cx="346" cy="194" r="4"/>
+      <path class="relationship" d="M 377 212 L 391 212 L 391 535" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="377" cy="212" r="4"/>
     </g>
   </g>
 </svg>

@@ -65,11 +65,11 @@
         <text class="md-badge" x="386" y="62.92" text-anchor="middle">−</text>
         <text x="395" y="64" text-anchor="start" xml:space="preserve"> order::Hold</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="724" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="724" dy="0">enum · repr(u8)</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="377" dy="0">Why an order is not on its way yet.</tspan></text>
       <text class="variant-name" y="125" xml:space="preserve"><tspan x="377" dy="0">AwaitingPayment</tspan></text>
       <text class="description" y="125" xml:space="preserve"><tspan x="519" dy="0">The payment has not arrived.</tspan></text>
-      <text class="field-name" y="157" xml:space="preserve"><tspan x="393" dy="0">order</tspan></text>
+      <text class="field-name" y="157" xml:space="preserve"><tspan x="393" dy="0">0</tspan></text>
       <text class="field-type" y="173" xml:space="preserve"><tspan x="393" dy="0">OrderNumber</tspan></text>
       <text class="description" y="159" xml:space="preserve"><tspan x="490" dy="0">The unpaid order.</tspan></text>
       <text class="target" text-anchor="end" y="181" xml:space="preserve"><tspan x="724" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>

@@ -42,6 +42,7 @@ done <<'DIAGRAMS'
 --type order::Line order/line
 --type order::Money order/money
 --type order::Order order/order
+--type order::OrderEvent order/order_event
 --type order::OrderNumber order/order_number
 --type order::Payment order/payment
 --type order::Product order/product
