@@ -3,9 +3,12 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+gallery=crates/kaalang/examples/gallery
+drawn=()
 while read -r kind item destination option; do
+  drawn+=("$gallery/$destination.svg")
   arguments=(diagram -p kaalang "$kind" "$item" --target x86_64-unknown-linux-gnu
-    -o "crates/kaalang/examples/gallery/$destination.svg")
+    -o "$gallery/$destination.svg")
   if [[ -n "$option" ]]; then
     arguments+=("$option")
   fi
@@ -55,3 +58,10 @@ done <<'DIAGRAMS'
 --flow sorting::quick_sort::quick_sort sorting/quick_sort_collapsed --collapse-cycles
 --flow swap::swap swap/swap
 DIAGRAMS
+
+# A diagram no line draws any more is removed, so the diff shows it.
+while IFS= read -r -d '' file; do
+  if [[ ! " ${drawn[*]} " =~ " $file " ]]; then
+    rm "$file"
+  fi
+done < <(find "$gallery" -name '*.svg' -print0)
