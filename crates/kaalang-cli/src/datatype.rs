@@ -101,6 +101,11 @@ fn relationships(
                     Resolution::Outside => {
                         errors.insert(format!("{at}: `{written}` is not a type of this workspace"));
                     }
+                    Resolution::Ambiguous => {
+                        errors.insert(format!(
+                            "{at}: `{written}` is ambiguous through glob imports"
+                        ));
+                    }
                     Resolution::Unknown(reason) => {
                         unknown.insert(format!("{at}: `{written}`: {reason}"));
                     }
@@ -233,12 +238,22 @@ fn focus(
         {
             continue;
         }
-        if let Some(Def::Type(declared)) = target
+        match target
             .as_ref()
             .map(|target| resolver.find(krate, 0, target))
-            && !found.iter().any(|other| same(crates, *other, declared))
         {
-            found.push(declared);
+            Some(Def::Type(declared))
+                if !found.iter().any(|other| same(crates, *other, declared)) =>
+            {
+                found.push(declared);
+            }
+            Some(Def::Ambiguous(_)) => {
+                return Err(format!(
+                    "the type path `{path}` is ambiguous through glob imports in {}",
+                    crates[krate].label()
+                ));
+            }
+            _ => {}
         }
     }
     match found.as_slice() {

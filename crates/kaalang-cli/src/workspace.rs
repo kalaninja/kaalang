@@ -54,6 +54,8 @@ pub(super) struct Crate {
     pub(super) package_id: String,
     /// The name its code and other crates use for it.
     pub(super) name: String,
+    /// Rust 2015 resolves imports and absolute paths from the crate root.
+    pub(super) edition: cargo_metadata::Edition,
     /// The target as errors list it: `` lib `app` ``.
     pub(super) target: String,
     /// Where it stands among its package's crates: its library and binaries
@@ -82,6 +84,10 @@ impl Crate {
     /// The crate as an error lists it: its package and target.
     pub(super) fn label(&self) -> String {
         format!("{}: {}", self.package, self.target)
+    }
+
+    pub(super) fn edition_2015(&self) -> bool {
+        self.edition == cargo_metadata::Edition::E2015
     }
 }
 
@@ -220,13 +226,7 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 .map(|node| node.features.iter().map(ToString::to_string).collect())
                 .unwrap_or_default();
             let cfg = cfg_set(target, printed, &features)?;
-            let mut walk = Walk {
-                cfg: &cfg,
-                open: Vec::new(),
-                modules: Vec::new(),
-                types: Vec::new(),
-                skipped: Vec::new(),
-            };
+            let mut walk = Walk::new(&cfg, target.edition);
             walk_file(
                 &mut walk,
                 target.src_path.as_std_path(),
@@ -239,6 +239,7 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 package: package.name.to_string(),
                 package_id: package.id.to_string(),
                 name: target.name.replace('-', "_"),
+                edition: target.edition,
                 target: target_label(target),
                 group,
                 library: group == 0 && !target.is_bin(),
@@ -519,9 +520,21 @@ pub(super) fn find(
                     .map(move |(at, declarations)| ((source, *at), declarations))
             })
             .collect();
-        let mut names =
-            |question: Question<'_, (usize, usize)>| answer(&crates, index, &resolver, question);
-        for (file, position) in kaalang_compiler::select(flow_path, &listed, &mut names) {
+        let mut ambiguous = false;
+        let mut names = |question: Question<'_, (usize, usize)>| {
+            answer(&crates, index, &resolver, question).unwrap_or_else(|| {
+                ambiguous = true;
+                false
+            })
+        };
+        let selected = kaalang_compiler::select(flow_path, &listed, &mut names);
+        if ambiguous {
+            return Err(format!(
+                "the flow path `{path}` is ambiguous through glob imports in {}",
+                krate.label()
+            ));
+        }
+        for (file, position) in selected {
             let ((source, at), declarations) = listed[file];
             let module = &crates[source].modules[at];
             // Crates read a shared file under their own `cfg`s, so its flow
@@ -579,7 +592,7 @@ fn answer(
     krate: usize,
     resolver: &Resolver,
     question: Question<'_, (usize, usize)>,
-) -> bool {
+) -> Option<bool> {
     // The module of a place: the file's own, or an inline one within it.
     let module = |at: Place<'_, (usize, usize)>| {
         let (source, own) = at.file;
@@ -592,16 +605,17 @@ fn answer(
             .unwrap_or(own);
         (source, found)
     };
-    match question {
+    let query = |def| (!matches!(def, Def::Ambiguous(_))).then_some(def);
+    Some(match question {
         Question::Function { path, at, name } => {
             let (source, inside) = module(at);
             matches!(
-                resolver.find_value(krate, 0, path),
+                query(resolver.find_value(krate, 0, path))?,
                 Def::Value(found, declared, value, "a function")
                     if (found, declared) == (source, inside) && name.unraw() == value
             )
         }
-        Question::Type(path) => resolver.is_type(krate, 0, path),
+        Question::Type(path) => resolver.is_type(krate, 0, path)?,
         Question::Types {
             query,
             at,
@@ -612,8 +626,14 @@ fn answer(
             let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
             let (left_crate, left_module) = left.map_or((krate, 0), module);
             let (right_crate, right_module) = module(right);
+            let left_def = resolver.find(left_crate, left_module, left_path);
+            let left_def = if left.is_none() {
+                query(left_def)?
+            } else {
+                left_def
+            };
             match (
-                resolver.find(left_crate, left_module, left_path),
+                left_def,
                 resolver.find(right_crate, right_module, right_path),
             ) {
                 // rustc has not checked the flow path, so a name it misses is wrong.
@@ -631,7 +651,7 @@ fn answer(
                 _ => false,
             }
         }
-    }
+    })
 }
 
 /// Lists where each match of a path is, after its crate, with a hint to `-p`
@@ -686,11 +706,25 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
 struct Walk<'a> {
     /// The cfg set the crate's files are read for.
     cfg: &'a kaalang_svg::Target,
+    edition_2015: bool,
     /// The files being read, outermost first; a `#[path]` loop stops here.
     open: Vec<PathBuf>,
     modules: Vec<Module>,
     types: Vec<TypeEntry>,
     skipped: Vec<String>,
+}
+
+impl<'a> Walk<'a> {
+    fn new(cfg: &'a kaalang_svg::Target, edition: cargo_metadata::Edition) -> Self {
+        Self {
+            cfg,
+            edition_2015: edition == cargo_metadata::Edition::E2015,
+            open: Vec::new(),
+            modules: Vec::new(),
+            types: Vec::new(),
+            skipped: Vec::new(),
+        }
+    }
 }
 
 /// Reads the file of the module at `path` and follows its `mod` declarations,
@@ -783,6 +817,16 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Pa
             | Item::Enum(syn::ItemEnum { vis, ident, .. })
             | Item::Union(syn::ItemUnion { vis, ident, .. })
             | Item::Type(syn::ItemType { vis, ident, .. }) => {
+                if let Item::Struct(declaration) = item
+                    && let Some(visible) =
+                        constructor_visibility(&walk.modules, module, declaration)
+                {
+                    walk.modules[module].scope.values.push((
+                        name(ident),
+                        "a struct constructor",
+                        visible,
+                    ));
+                }
                 let outer = &walk.modules[module];
                 walk.types.push(TypeEntry {
                     module,
@@ -829,6 +873,7 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Pa
                     &declaration.tree,
                     &mut Vec::new(),
                     declaration.leading_colon.is_some(),
+                    walk.edition_2015,
                     visibility,
                     &mut walk.modules[module].scope,
                 );
@@ -850,6 +895,29 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Pa
     }
 }
 
+fn constructor_visibility(
+    modules: &[Module],
+    module: usize,
+    declaration: &syn::ItemStruct,
+) -> Option<Visibility> {
+    let declared = visibility(modules, module, &declaration.vis);
+    let fields = match &declaration.fields {
+        syn::Fields::Unit => return Some(declared),
+        syn::Fields::Unnamed(fields) => &fields.unnamed,
+        syn::Fields::Named(_) => return None,
+    };
+    // The constructor is as private as its most restricted field. Restricted
+    // scopes are ancestors of this module and are listed before their children.
+    fields
+        .iter()
+        .map(|field| visibility(modules, module, &field.vis))
+        .chain(iter::once(declared))
+        .max_by_key(|visible| match visible {
+            Visibility::Public => None,
+            Visibility::Within(module) => Some(*module),
+        })
+}
+
 /// Where an item of `module` with `vis` may be used from. A restricted
 /// visibility names an ancestor of the module.
 fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visibility {
@@ -858,7 +926,17 @@ fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visib
         syn::Visibility::Inherited => return Visibility::Within(module),
         syn::Visibility::Restricted(restricted) => restricted,
     };
-    let mut within = module;
+    // Rust 2015 also permits a crate-relative path without `crate`.
+    let mut within = if restricted
+        .path
+        .segments
+        .first()
+        .is_some_and(|segment| segment.ident == "self" || segment.ident == "super")
+    {
+        module
+    } else {
+        0
+    };
     for segment in &restricted.path.segments {
         within = match segment.ident.to_string().as_str() {
             "crate" => 0,
@@ -927,6 +1005,7 @@ fn imports(
     tree: &UseTree,
     prefix: &mut Vec<String>,
     global: bool,
+    edition_2015: bool,
     visibility: Visibility,
     scope: &mut Scope,
 ) {
@@ -936,12 +1015,19 @@ fn imports(
         if last != "self" {
             segments.push(last.unraw().to_string());
         }
-        UsePath { global, segments }
+        import_path(segments, global, edition_2015)
     };
     match tree {
         UseTree::Path(nested) => {
             prefix.push(nested.ident.unraw().to_string());
-            imports(&nested.tree, prefix, global, visibility, scope);
+            imports(
+                &nested.tree,
+                prefix,
+                global,
+                edition_2015,
+                visibility,
+                scope,
+            );
             prefix.pop();
         }
         UseTree::Name(name) => {
@@ -958,14 +1044,29 @@ fn imports(
         }
         UseTree::Rename(_) => {}
         UseTree::Glob(_) => {
-            let segments = prefix.clone();
-            scope.globs.push((UsePath { global, segments }, visibility));
+            let path = import_path(prefix.clone(), global, edition_2015);
+            scope.globs.push((path, visibility));
         }
         UseTree::Group(group) => {
             for tree in &group.items {
-                imports(tree, prefix, global, visibility, scope);
+                imports(tree, prefix, global, edition_2015, visibility, scope);
             }
         }
+    }
+}
+
+/// Rust 2015 imports start at the crate root unless explicitly qualified.
+fn import_path(mut segments: Vec<String>, global: bool, edition_2015: bool) -> UsePath {
+    if edition_2015
+        && !segments
+            .first()
+            .is_some_and(|first| matches!(first.as_str(), "crate" | "self" | "super"))
+    {
+        segments.insert(0, "crate".to_owned());
+    }
+    UsePath {
+        global: global && !edition_2015,
+        segments,
     }
 }
 
@@ -1015,24 +1116,20 @@ fn target_label(target: &Target) -> String {
 pub(super) fn library(package: &str, source: &str) -> Crate {
     let parsed = syn::parse_file(source).expect("the test source parses");
     let cfg = kaalang_svg::Target::default();
-    let mut walk = Walk {
-        cfg: &cfg,
-        open: Vec::new(),
-        modules: vec![Module {
-            path: String::new(),
-            parent: None,
-            file: Rc::new(File {
-                path: PathBuf::from("src/lib.rs"),
-                canonical: PathBuf::from(format!("/{package}/src/lib.rs")),
-                source: source.to_owned(),
-                items: parsed.items.clone(),
-            }),
-            in_file: String::new(),
-            scope: Scope::default(),
-        }],
-        types: Vec::new(),
-        skipped: Vec::new(),
-    };
+    let edition = cargo_metadata::Edition::E2024;
+    let mut walk = Walk::new(&cfg, edition);
+    walk.modules.push(Module {
+        path: String::new(),
+        parent: None,
+        file: Rc::new(File {
+            path: PathBuf::from("src/lib.rs"),
+            canonical: PathBuf::from(format!("/{package}/src/lib.rs")),
+            source: source.to_owned(),
+            items: parsed.items.clone(),
+        }),
+        in_file: String::new(),
+        scope: Scope::default(),
+    });
     walk_items(
         &mut walk,
         &parsed.items,
@@ -1044,6 +1141,7 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         package: package.to_owned(),
         package_id: package.to_owned(),
         name: package.replace('-', "_"),
+        edition,
         target: format!("lib `{package}`"),
         group: 0,
         library: true,
@@ -1055,5 +1153,74 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         types: walk.types,
         skipped: walk.skipped,
         cfg,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Scope, Visibility, imports, library, visibility};
+
+    #[test]
+    fn rust_2015_imports_start_at_the_root_unless_qualified() {
+        for (source, expected) in [
+            ("use model::Member as Person;", "crate::model::Member"),
+            ("use ::model::Member;", "crate::model::Member"),
+            (
+                "use model::{nested::Member};",
+                "crate::model::nested::Member",
+            ),
+            ("use self::Member;", "self::Member"),
+            ("use super::Member;", "super::Member"),
+            ("use crate::Member;", "crate::Member"),
+            ("use model::*;", "crate::model"),
+        ] {
+            let item: syn::ItemUse = syn::parse_str(source).expect("the import parses");
+            let mut scope = Scope::default();
+            imports(
+                &item.tree,
+                &mut Vec::new(),
+                item.leading_colon.is_some(),
+                true,
+                Visibility::Public,
+                &mut scope,
+            );
+            let paths = scope
+                .imports
+                .iter()
+                .map(|(_, path, _)| path)
+                .chain(scope.globs.iter().map(|(path, _)| path));
+            for path in paths {
+                assert!(!path.global, "{source}");
+                assert_eq!(path.segments.join("::"), expected, "{source}");
+            }
+            assert_eq!(scope.imports.len() + scope.globs.len(), 1, "{source}");
+        }
+    }
+
+    #[test]
+    fn rust_2015_named_visibility_starts_at_the_root() {
+        let krate = library("app", "mod outer { mod inner {} }");
+        let find = |path| {
+            krate
+                .modules
+                .iter()
+                .position(|module| module.path == path)
+                .expect("the module exists")
+        };
+        let outer = find("outer::");
+        let inner = find("outer::inner::");
+        for (source, expected) in [
+            ("pub(in outer)", outer),
+            ("pub(in outer::inner)", inner),
+            ("pub(self)", inner),
+            ("pub(super)", outer),
+        ] {
+            let vis = syn::parse_str(source).expect("the visibility parses");
+            assert_eq!(
+                visibility(&krate.modules, inner, &vis),
+                Visibility::Within(expected),
+                "{source}"
+            );
+        }
     }
 }

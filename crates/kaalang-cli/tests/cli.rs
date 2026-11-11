@@ -278,6 +278,53 @@ fn a_re_exported_item_is_selected_through_its_re_export() {
 }
 
 #[test]
+fn rust_2015_imports_and_absolute_queries_start_at_the_crate_root() {
+    let directory = package(
+        "cli-rust-2015-imports",
+        "pub mod model { pub struct Member; }
+         pub mod outer { pub use model::Member; }",
+    );
+    write(
+        &directory,
+        "Cargo.toml",
+        &format!(
+            "{}\n[workspace]\n",
+            manifest("cli-rust-2015-imports").replace("2024", "2015")
+        ),
+    );
+    let rendered = run(&directory, "diagram --type ::outer::Member");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(directory.join("Member.svg").is_file());
+}
+
+#[test]
+fn ambiguous_globs_do_not_select_a_type_or_flow() {
+    let source = SOURCE.replace("fn route", "pub fn route");
+    let directory = package(
+        "cli-ambiguous-globs",
+        &format!(
+            "mod left {{ pub struct Member; {source} }}
+                  mod right {{ pub struct Member; {source} }}
+                  use left::*;
+                  use right::*;"
+        ),
+    );
+    for (path, output) in [
+        ("--type Member", "Member.svg"),
+        ("--flow route", "route.svg"),
+    ] {
+        let failed = run(&directory, &format!("diagram {path}"));
+        assert!(!failed.status.success(), "{path}");
+        let stderr = String::from_utf8_lossy(&failed.stderr);
+        assert!(
+            stderr.contains("ambiguous through glob imports"),
+            "{stderr}"
+        );
+        assert!(!directory.join(output).exists());
+    }
+}
+
+#[test]
 fn a_flow_re_exported_beside_its_module_of_the_same_name_is_selected() {
     let directory = package(
         "cli-flow-named-like-its-module",

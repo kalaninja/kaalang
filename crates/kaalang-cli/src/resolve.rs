@@ -29,21 +29,28 @@ pub(super) enum Resolution {
     /// A name from outside the workspace: a primitive, the standard library,
     /// or a dependency.
     Outside,
+    /// Several distinct declarations are visible through glob imports.
+    Ambiguous,
     /// The source alone cannot tell, for the reason given.
     Unknown(&'static str),
 }
 
 /// What a path resolves to.
+#[derive(Clone, PartialEq, Eq)]
 pub(super) enum Def {
     Type(TypeRef),
     Module(usize, usize),
     /// A trait: its crate, its module, and its name.
     Trait(usize, usize, String),
+    /// An enum variant: its enum and name.
+    Variant(TypeRef, String),
     /// A function, constant, or static: its crate, its module, its name, and
     /// what it is.
     Value(usize, usize, String, &'static str),
     NotAType(&'static str),
     Outside,
+    /// Competing bindings in the same namespace, with their visibility in the scope.
+    Ambiguous(Vec<(Def, Visibility)>),
     /// A module the walk read in full does not declare the name.
     Missing,
     Unknown(&'static str),
@@ -119,8 +126,10 @@ impl<'a> Resolver<'a> {
             Def::Type(found) => Resolution::Type(found),
             Def::Module(..) => Resolution::NotAType("a module"),
             Def::Trait(..) => Resolution::NotAType("a trait"),
+            Def::Variant(..) => Resolution::NotAType("an enum variant"),
             Def::Value(.., what) | Def::NotAType(what) => Resolution::NotAType(what),
             Def::Outside => Resolution::Outside,
+            Def::Ambiguous(_) => Resolution::Ambiguous,
             // rustc found it, so the walk missed it.
             Def::Missing => Resolution::Unknown("its module does not declare it as read"),
             Def::Unknown(reason) => Resolution::Unknown(reason),
@@ -134,12 +143,13 @@ impl<'a> Resolver<'a> {
 
     /// A query has not been checked by rustc: a bare missing name cannot use
     /// the fallback for external types unless its scope could provide it.
-    pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> bool {
-        match self.find(krate, module, path) {
+    pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
+        Some(match self.find(krate, module, path) {
+            Def::Ambiguous(_) => return None,
             Def::Type(_) | Def::Unknown(_) => true,
             Def::Outside => {
                 let Some(first) = path.segments.first() else {
-                    return false;
+                    return Some(false);
                 };
                 let name = first.ident.unraw().to_string();
                 let external = matches!(name.as_str(), "std" | "core" | "alloc")
@@ -148,10 +158,10 @@ impl<'a> Resolver<'a> {
                         .iter()
                         .any(|(dependency, _)| dependency == &name);
                 if path.segments.len() > 1 && external {
-                    return true;
+                    return Some(true);
                 }
                 if path.leading_colon.is_some() {
-                    return false;
+                    return Some(false);
                 }
                 let builtin = path.segments.len() == 1
                     && matches!(
@@ -183,7 +193,7 @@ impl<'a> Resolver<'a> {
                     );
                 builtin
                     || self
-                        .member(krate, module, &name, false, &mut Vec::new())
+                        .member(krate, module, &name, false, &mut Lookup::default())
                         .is_some()
                     || self.crates[krate].modules[module]
                         .scope
@@ -191,13 +201,13 @@ impl<'a> Resolver<'a> {
                         .iter()
                         .any(|glob| {
                             matches!(
-                                self.path(krate, module, &glob.0, false, &mut Vec::new()),
+                                self.path(krate, module, &glob.0, false, &mut Lookup::default()),
                                 Def::Outside
                             )
                         })
             }
             _ => false,
-        }
+        })
     }
 
     /// What `path` names among functions, constants, and statics: its last
@@ -282,7 +292,7 @@ impl<'a> Resolver<'a> {
                 .map(|segment| segment.ident.unraw().to_string())
                 .collect(),
         };
-        self.path(krate, module, &path, value, &mut Vec::new())
+        self.path(krate, module, &path, value, &mut Lookup::default())
     }
 
     /// Resolves a path as written in `module`: its first segment from the
@@ -294,13 +304,18 @@ impl<'a> Resolver<'a> {
         module: usize,
         path: &UsePath,
         value: bool,
-        visiting: &mut Visiting,
+        visiting: &mut Lookup,
     ) -> Def {
         let Some((first, rest)) = path.segments.split_first() else {
             return Def::Unknown("the path is empty");
         };
         let mut current = if path.global {
-            self.extern_crate(krate, first)
+            if self.crates[krate].edition_2015() {
+                self.member(krate, 0, first, value && rest.is_empty(), visiting)
+                    .map_or(Def::Missing, |(found, _)| found)
+            } else {
+                self.extern_crate(krate, first)
+            }
         } else {
             match first.as_str() {
                 "crate" => Def::Module(krate, 0),
@@ -319,14 +334,42 @@ impl<'a> Resolver<'a> {
                         .member(krate, module, segment, value, visiting)
                         .map_or(Def::Missing, |(found, _)| found),
                 },
-                // An enum variant or an associated item.
-                Def::Type(_) | Def::Trait(..) | Def::Value(..) | Def::NotAType(_) => {
+                Def::Type(ty) => self.variant(ty, segment, value).map_or_else(
+                    || {
+                        if value {
+                            Def::Missing
+                        } else {
+                            Def::NotAType("an associated item")
+                        }
+                    },
+                    |(def, _)| def,
+                ),
+                Def::Trait(..) | Def::Value(..) | Def::Variant(..) | Def::NotAType(_) => {
                     Def::NotAType("an associated item")
                 }
                 outside_or_unknown => return outside_or_unknown,
             };
         }
         current
+    }
+
+    fn variant(&self, ty: TypeRef, name: &str, value: bool) -> Option<(Def, Visibility)> {
+        let krate = &self.crates[ty.krate];
+        let entry = &krate.types[ty.id];
+        let syn::Item::Enum(enumeration) = &entry.item else {
+            return None;
+        };
+        let variant = enumeration
+            .variants
+            .iter()
+            .find(|variant| variant.ident.unraw() == name)?;
+        if value && matches!(variant.fields, syn::Fields::Named(_)) {
+            return None;
+        }
+        let (_, _, visibility) = krate.modules[entry.module].scope.declared.iter().find(
+            |(_, declaration, _)| matches!(declaration, Declared::Type(id) if *id == ty.id),
+        )?;
+        Some((Def::Variant(ty, name.to_owned()), *visibility))
     }
 
     /// A relative path's first segment: a name in the module's scope, a
@@ -337,19 +380,25 @@ impl<'a> Resolver<'a> {
         module: usize,
         name: &str,
         value: bool,
-        visiting: &mut Visiting,
+        visiting: &mut Lookup,
     ) -> Def {
+        let library = || {
+            if self.crates[krate].edition_2015() {
+                None
+            } else {
+                self.library(krate, name)
+            }
+        };
         match self
             .member(krate, module, name, value, visiting)
             .map(|(found, _)| found)
         {
             // A glob the walk could not follow may declare it, but a workspace
             // library of that name is what the path most likely means.
-            Some(unknown @ (Def::Unknown(_) | Def::Missing)) => {
-                self.library(krate, name).unwrap_or(unknown)
-            }
+            Some(unknown @ (Def::Unknown(_) | Def::Missing)) => library().unwrap_or(unknown),
+            Some(found @ Def::Value(..)) if !value => library().unwrap_or(found),
             Some(found) => found,
-            None => self.library(krate, name).unwrap_or(Def::Outside),
+            None => library().unwrap_or(Def::Outside),
         }
     }
 
@@ -387,7 +436,7 @@ impl<'a> Resolver<'a> {
         module: usize,
         name: &str,
         value: bool,
-        visiting: &mut Visiting,
+        visiting: &mut Lookup,
     ) -> Option<(Def, Visibility)> {
         let scope = &self.crates[krate].modules[module].scope;
         // A declared name is found even inside the `use` that imports a value
@@ -406,14 +455,28 @@ impl<'a> Resolver<'a> {
             };
             return Some((found, *visibility));
         }
-        // A `use` cycle, such as two globs importing each other, ends here.
-        let key = (krate, module, name.to_owned());
-        if visiting.contains(&key) {
+        let key = (krate, module, name.to_owned(), value);
+        if let Some(found) = visiting.complete.get(&key) {
+            return found.clone();
+        }
+        // Results truncated by a cycle depend on where the lookup started.
+        if visiting.active.contains(&key) {
+            visiting.cyclic = true;
             return None;
         }
-        visiting.push(key);
-        let found = self.member_unguarded(krate, module, name, value, visiting);
-        visiting.pop();
+        let cyclic = std::mem::take(&mut visiting.cyclic);
+        visiting.active.push(key.clone());
+        let found = self
+            .member_unguarded(krate, module, name, value, visiting)
+            .or_else(|| {
+                (self.crates[krate].edition_2015() && module == 0 && matches!(name, "std" | "core"))
+                    .then_some((Def::Outside, Visibility::Public))
+            });
+        visiting.active.pop();
+        if !visiting.cyclic {
+            visiting.complete.insert(key, found.clone());
+        }
+        visiting.cyclic |= cyclic;
         found
     }
 
@@ -423,55 +486,91 @@ impl<'a> Resolver<'a> {
         module: usize,
         name: &str,
         value: bool,
-        visiting: &mut Visiting,
+        visiting: &mut Lookup,
     ) -> Option<(Def, Visibility)> {
         let scope = &self.crates[krate].modules[module].scope;
+        let mut local_value =
+            scope
+                .values
+                .iter()
+                .find(|(value, ..)| value == name)
+                .map(|(_, what, visibility)| {
+                    (
+                        Def::Value(krate, module, name.to_owned(), what),
+                        *visibility,
+                    )
+                });
+        if value && local_value.is_some() {
+            return local_value;
+        }
         for (_, imported, visibility) in scope.imports.iter().filter(|(bound, ..)| bound == name) {
-            let found = self.path(krate, module, imported, value, visiting);
-            // An import may bind the name only as a module or a type.
-            if !(value && matches!(found, Def::Missing)) {
-                return Some((found, *visibility));
+            match self.path(krate, module, imported, value, visiting) {
+                // An import may bind the name only in the other namespace.
+                Def::Missing if value => {}
+                found @ Def::Value(..) if !value => {
+                    local_value.get_or_insert((found, *visibility));
+                }
+                found => return Some((found, *visibility)),
             }
         }
-        if let Some((_, what, visibility)) = scope.values.iter().find(|(value, ..)| value == name) {
-            return Some((
-                Def::Value(krate, module, name.to_owned(), what),
-                *visibility,
-            ));
-        }
         let mut unknown = None;
+        let mut types = Vec::new();
+        let mut values = Vec::new();
         for (glob, through) in &scope.globs {
-            match self.path(krate, module, glob, false, visiting) {
+            let (source, binding) = match self.path(krate, module, glob, false, visiting) {
                 Def::Module(source, inner) => {
-                    // A glob imports only the names its module may use, and
-                    // binds them no wider than the glob itself.
-                    match self.member(source, inner, name, value, visiting) {
-                        // An unknown name must not hide one a later glob imports.
-                        Some((found @ (Def::Unknown(_) | Def::Missing), _)) => {
-                            unknown = Some(found);
-                        }
-                        Some((found, Visibility::Public)) => return Some((found, *through)),
-                        Some((found, Visibility::Within(outer)))
-                            if source == krate && self.inside(krate, module, outer) =>
-                        {
-                            let narrower = match *through {
-                                Visibility::Within(glob) if self.inside(krate, glob, outer) => glob,
-                                _ => outer,
-                            };
-                            return Some((found, Visibility::Within(narrower)));
-                        }
-                        _ => {}
-                    }
+                    (source, self.member(source, inner, name, value, visiting))
                 }
-                found @ (Def::Unknown(_) | Def::Missing) => unknown = Some(found),
-                // A name a dependency's glob imports is outside the workspace,
-                // as a name found nowhere is; a glob over an enum's variants
-                // imports no type.
-                Def::Outside
-                | Def::Type(_)
-                | Def::Trait(..)
-                | Def::Value(..)
-                | Def::NotAType(_) => {}
+                Def::Type(ty) => (ty.krate, self.variant(ty, name, value)),
+                found @ (Def::Unknown(_) | Def::Missing) => {
+                    unknown = Some(found);
+                    continue;
+                }
+                _ => continue,
+            };
+            // A glob imports only the names its module may use, and
+            // binds them no wider than the glob itself.
+            let mut add = |(found, visible)| {
+                let visible = match visible {
+                    Visibility::Public => *through,
+                    Visibility::Within(outer)
+                        if source == krate && self.inside(krate, module, outer) =>
+                    {
+                        match *through {
+                            Visibility::Within(glob) if self.inside(krate, glob, outer) => *through,
+                            _ => visible,
+                        }
+                    }
+                    Visibility::Within(_) => return,
+                };
+                if matches!(found, Def::Unknown(_) | Def::Missing) {
+                    unknown = Some(found);
+                    return;
+                }
+                let bindings = if value || matches!(found, Def::Value(..)) {
+                    &mut values
+                } else {
+                    &mut types
+                };
+                // Two paths to one declaration are one binding, with
+                // the wider of their visibilities.
+                if let Some((_, existing)) = bindings.iter_mut().find(|(def, _)| *def == found) {
+                    if let Visibility::Within(narrower) = *existing
+                        && match visible {
+                            Visibility::Public => true,
+                            Visibility::Within(wider) => self.inside(krate, narrower, wider),
+                        }
+                    {
+                        *existing = visible;
+                    }
+                } else {
+                    bindings.push((found, visible));
+                }
+            };
+            match binding {
+                Some((Def::Ambiguous(bindings), _)) => bindings.into_iter().for_each(add),
+                Some(binding) => add(binding),
+                None => {}
             }
         }
         // The source is read unexpanded, so a name an item macro may declare is
@@ -481,7 +580,15 @@ impl<'a> Resolver<'a> {
                 "its module may declare it through an item macro or a file that was not read",
             ));
         }
-        unknown.map(|unknown| (unknown, Visibility::Public))
+        let binding = |mut bindings: Vec<_>| match bindings.len() {
+            0 => None,
+            1 => bindings.pop(),
+            _ => Some((Def::Ambiguous(bindings), Visibility::Public)),
+        };
+        binding(types)
+            .or(local_value)
+            .or_else(|| binding(values))
+            .or_else(|| unknown.map(|unknown| (unknown, Visibility::Public)))
     }
 
     /// Whether module `inner` of `krate` is `outer` or nested in it.
@@ -492,7 +599,15 @@ impl<'a> Resolver<'a> {
     }
 }
 
-type Visiting = Vec<(usize, usize, String)>;
+type MemberKey = (usize, usize, String, bool);
+
+/// Per lookup, so a shared glob re-export is read once even through many paths.
+#[derive(Default)]
+struct Lookup {
+    active: Vec<MemberKey>,
+    complete: BTreeMap<MemberKey, Option<(Def, Visibility)>>,
+    cyclic: bool,
+}
 
 struct Normalize<'a, 'b> {
     resolver: &'a Resolver<'b>,
@@ -649,7 +764,11 @@ impl VisitMut for Normalize<'_, '_> {
             Def::Trait(krate, module, name) => Some(format!("trait_{krate}_{module}_{name}")),
             Def::Value(krate, module, name, _) => Some(format!("value_{krate}_{module}_{name}")),
             Def::Unknown(_) => Some("unknown".into()),
-            Def::Missing | Def::Module(..) | Def::NotAType(_) => Some("missing".into()),
+            Def::Missing
+            | Def::Module(..)
+            | Def::Variant(..)
+            | Def::NotAType(_)
+            | Def::Ambiguous(_) => Some("missing".into()),
             Def::Outside => None,
         };
         let Some(last) = path.segments.last().cloned() else {
@@ -738,7 +857,7 @@ mod tests {
         ] {
             assert_eq!(
                 resolver.is_type(0, 0, &syn::parse_str(path).unwrap()),
-                expected,
+                Some(expected),
                 "{path}"
             );
         }
@@ -747,7 +866,10 @@ mod tests {
             .iter()
             .position(|module| module.path == "glob::")
             .unwrap();
-        assert!(resolver.is_type(0, glob, &syn::parse_quote!(ImportedByGlob)));
+        assert_eq!(
+            resolver.is_type(0, glob, &syn::parse_quote!(ImportedByGlob)),
+            Some(true)
+        );
     }
 
     #[test]
@@ -854,6 +976,82 @@ mod tests {
             resolve(&crates, "", "left::Missing"),
             Resolution::Unknown(_)
         ));
+    }
+
+    #[test]
+    fn a_glob_deduplicates_re_exports_of_one_type() {
+        let crates = [library(
+            "app",
+            "mod model { pub struct Member; }
+             mod left { pub use crate::model::Member; }
+             mod right { pub use crate::model::Member; }
+             use left::*;
+             pub use right::*;
+             mod user { use crate::*; }",
+        )];
+        for module in ["", "user::"] {
+            assert_eq!(
+                resolve(&crates, module, "Member"),
+                named(&crates, 0, "model::Member")
+            );
+        }
+    }
+
+    #[test]
+    fn value_names_do_not_hide_a_type_from_a_glob() {
+        let crates = [library(
+            "app",
+            "mod model { pub struct Member { id: u8 } }
+             mod functions { pub fn Member() {} }
+             mod local { use crate::model::*; fn Member() {} }
+             mod imported { use crate::model::*; use crate::functions::Member; }",
+        )];
+        for (module, declared) in [("local::", "local::"), ("imported::", "functions::")] {
+            assert_eq!(
+                resolve(&crates, module, "Member"),
+                named(&crates, 0, "model::Member")
+            );
+            assert!(names_a_function(
+                &crates,
+                &format!("{module}Member"),
+                declared
+            ));
+        }
+    }
+
+    #[test]
+    fn visible_constructors_compete_with_functions_in_value_globs() {
+        let crates = [library(
+            "app",
+            "mod functions {
+                 pub fn Unit() {} pub fn Tuple() {} pub fn PrivateTuple() {}
+                 pub fn UnitVariant() {} pub fn NamedVariant() {} pub fn PrivateVariant() {}
+             }
+             mod constructors {
+                 pub struct Unit;
+                 pub struct Tuple(pub u8);
+                 pub struct PrivateTuple(u8);
+                 pub enum Shape { UnitVariant, NamedVariant { value: u8 } }
+                 pub use Shape::*;
+                 enum Private { PrivateVariant }
+                 pub use Private::*;
+             }
+             use functions::*;
+             use constructors::*;",
+        )];
+        let resolver = Resolver::new(&crates);
+        for name in ["Unit", "Tuple", "UnitVariant"] {
+            assert!(
+                matches!(
+                    resolver.find_value(0, 0, &syn::parse_str(name).unwrap()),
+                    Def::Ambiguous(_)
+                ),
+                "{name}"
+            );
+        }
+        for name in ["PrivateTuple", "NamedVariant", "PrivateVariant"] {
+            assert!(names_a_function(&crates, name, "functions::"), "{name}");
+        }
     }
 
     #[test]
@@ -991,7 +1189,7 @@ mod tests {
             ("model", "a module"),
             ("build", "a function"),
             ("LIMIT", "a constant"),
-            ("State::Open", "an associated item"),
+            ("State::Open", "an enum variant"),
         ] {
             assert_eq!(
                 resolve(&crates, "", target),
