@@ -542,11 +542,15 @@ pub fn types_match(
                     .collect::<Vec<_>>()
             };
             let (query, written) = (traits(&query.bounds), traits(&written.bounds));
-            query.len() == written.len()
-                && query
+            query.iter().all(|query| {
+                written
                     .iter()
-                    .zip(&written)
-                    .all(|(query, written)| paths_match(query, written, generics, same))
+                    .any(|written| paths_match(query, written, generics, same))
+            }) && written.iter().all(|written| {
+                query
+                    .iter()
+                    .any(|query| paths_match(query, written, generics, same))
+            })
         }
         (query, written) => self::written(query) == self::written(written),
     }
@@ -940,6 +944,30 @@ mod tests {
             assert_eq!(selected(source, &path).len(), 1, "{path}");
         }
         assert!(selected(source, "<&dyn Pair<Right = u8> as Run>::run").is_empty());
+    }
+
+    #[test]
+    fn trait_object_bounds_match_independently_of_order_and_repetition() {
+        let source = "
+            impl<T> Run for &(dyn Fn(T) + Send + Sync) { #[kaa] fn run() {} }
+            impl<T> Run for &(dyn Fn(T) + Send) { #[kaa] fn run() {} }
+        ";
+        for ty in [
+            "&(dyn Sync + Fn(u8) + Send)",
+            "&(dyn Fn(u8) + Send + Sync + Send)",
+        ] {
+            let path = format!("<{ty} as Run>::run");
+            assert_eq!(
+                selected(source, &path),
+                ["<&(dyn Fn(T) + Send + Sync) as Run>::run"],
+                "{path}",
+            );
+        }
+        assert_eq!(
+            selected(source, "<&(dyn Send + Fn(u8)) as Run>::run"),
+            ["<&(dyn Fn(T) + Send) as Run>::run"],
+        );
+        assert!(selected(source, "<&dyn Fn(u8) as Run>::run").is_empty());
     }
 
     #[test]
