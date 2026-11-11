@@ -1,4 +1,4 @@
-//! Draws every executable fixture beside its source, so a change to the model or
+//! Draws test fixtures beside their source, so a change to the model or
 //! the renderer shows up as a diagram diff instead of staying invisible.
 //!
 //! Geometry is reviewed in `git diff`. Every executable fixture must render;
@@ -45,6 +45,7 @@ unix
 "#;
 
 #[test]
+#[ignore = "run just rust svg to regenerate fixture diagrams"]
 fn draws_a_diagram_beside_every_executable_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
     let target: Target = TARGET.parse().expect("the fixture target is a cfg set");
@@ -91,26 +92,8 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 continue;
             }
 
-            // Gallery files may group related flows, starting with the file's
-            // namesake. Other fixtures keep exactly one flow with that name.
-            let gallery = directory.parent() == Some(tests.join("gallery").as_path());
-            if stem != "mod" || !gallery {
-                let expected = if stem == "mod" {
-                    directory.file_name().unwrap().to_str().unwrap()
-                } else {
-                    stem
-                };
-                if gallery {
-                    assert_eq!(
-                        names.first().copied(),
-                        Some(expected),
-                        "{}",
-                        fixture.display()
-                    );
-                } else {
-                    assert_eq!(names, [expected], "{}", fixture.display());
-                }
-            }
+            let expected = if stem == "mod" { module } else { stem };
+            assert_eq!(names, [expected], "{}", fixture.display());
 
             for (name, svg) in flow_diagrams(&source, fixture, stem, &names, &target) {
                 draw(&mut current, directory.join(format!("{name}.svg")), &svg);
@@ -287,7 +270,7 @@ fn card<'a>(
 
 /// Every module directory inside a test suite. `compile_fail` fixtures are
 /// handed to trybuild rather than compiled as modules, so they have no `mod.rs`
-/// and stay out of the gallery.
+/// and stay out of this list.
 fn fixture_directories(tests: &Path) -> Vec<PathBuf> {
     let mut directories: Vec<PathBuf> = read_directory(tests)
         .filter(|suite| suite.is_dir())

@@ -36,8 +36,13 @@ tests, commit messages, and pull request content.
   `cargo-kaalang` binary.
 - `crates/kaalang/` exports the public macro and owns its test suite. Behavior
   tests are executable examples; compile-fail tests document rejected forms. The
-  `.svg` beside each `flow/<feature>/<flow>.rs` is drawn by
-  `cargo test -p kaalang` and reviewed in the diff; never edit one by hand.
+  `.svg` beside each `flow/<feature>/<flow>.rs` is drawn by `just rust svg` and
+  reviewed in the diff. Never edit one by hand.
+- `crates/kaalang/examples/gallery/` holds the gallery modules and generated
+  SVGs. Run the gallery with `cargo run -p kaalang --example gallery` or
+  `cargo test -p kaalang --example gallery`. Draw its diagrams through the CLI
+  with `just rust gallery`. The fixture corpus is collected from
+  `crates/kaalang/tests/`.
 
 Do not restate the language contract in this guide or the root README. This
 guide links the relevant RFC instead. The README is an overview of the language:

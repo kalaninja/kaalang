@@ -335,8 +335,8 @@ mod tests {
 
     #[test]
     fn stage_transitions_keep_their_final_row_through_compaction() {
-        let mut model =
-            kaalang_compiler::build(&fixture!("gallery/sorting", "quick_sort")).unwrap();
+        let function = fixture!("flow/stage", "stage_cycle_alternative_outputs");
+        let mut model = kaalang_compiler::build(&function).unwrap();
         let mut stages = std::mem::take(&mut model.stages);
         for part in std::iter::once(&mut model).chain(stages.iter_mut()) {
             compact_arrangement(part);

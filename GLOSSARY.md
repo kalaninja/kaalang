@@ -217,9 +217,9 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 ### Tests
 
 - **fixture**: a test source file of flows or types. A flow fixture holds one
-  executable flow, a type fixture the types of one case, a gallery file may
-  group several, a stress fixture is a heavy hand-written flow, and a
-  compile-fail fixture is a rejected program with its diagnostic.
+  executable flow, a type fixture the types of one case, a stress fixture is a
+  heavy hand-written flow, and a compile-fail fixture is a rejected program with
+  its diagnostic.
 - **corpus**: the flows of every executable fixture; compile-fail fixtures stay
   out.
 - **suite**: a corpus selection: ordinary, stress, or all (`Suite`).

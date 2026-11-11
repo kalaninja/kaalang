@@ -61,9 +61,9 @@ fn fizzbuzz(number: u32) -> String {
 }
 ```
 
-[![Diagram of the FizzBuzz flow](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/fizzbuzz/fizzbuzz.svg)
+[![Diagram of the FizzBuzz flow](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/fizzbuzz/fizzbuzz.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/fizzbuzz/fizzbuzz.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/fizzbuzz/mod.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/fizzbuzz/mod.rs)
 
 ## Reading the flow
 
@@ -250,9 +250,9 @@ fn binary_search(values: &[i32], target: i32) -> Option<usize> {
 }
 ```
 
-[![Diagram of binary search in kaalang](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/binary_search/binary_search.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/binary_search.svg)
+[![Diagram of binary search in kaalang](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/binary_search/binary_search.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/binary_search/binary_search.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/mod.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/binary_search/mod.rs)
 
 The cycle's blocks capture the surrounding `left` and `right`, declared `mut` so
 the `less` and `greater` branches can update them. Both then produce `stepped`,
@@ -264,22 +264,23 @@ returns it.
 <details>
 <summary>See the same flow with its cycle collapsed</summary>
 
-[![Binary search with its cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/binary_search/binary_search_collapsed.svg)
+[![Binary search with its cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/binary_search/binary_search_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/binary_search/binary_search_collapsed.svg)
 
 The cycle's description and interface remain visible while its body is hidden.
 
 </details>
 
 Both examples are
-[executable gallery tests](https://github.com/kalaninja/kaalang/tree/main/crates/kaalang/tests/gallery),
-with SVGs generated from their source. The gallery also includes
-[swap](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/swap/mod.rs),
+[gallery examples](https://github.com/kalaninja/kaalang/tree/main/crates/kaalang/examples/gallery),
+with SVGs generated from their source through `cargo kaalang`. The gallery also
+includes
+[swap](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/swap/mod.rs),
 a flow that returns its inputs without a computational block,
-[bubble sort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/bubble_sort.rs),
+[bubble sort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/sorting/bubble_sort.rs),
 with nested cycles,
-[quicksort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.rs),
+[quicksort](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/sorting/quick_sort.rs),
 with stages for in-place partitioning and recursion, and
-[KMP search](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/kmp_search/mod.rs),
+[KMP search](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/kmp_search/mod.rs),
 with stages for comparison, advancement, and prefix fallback.
 
 ## Stages
@@ -417,11 +418,11 @@ logarithmic.
 
 With the partitioning cycle collapsed, the four stages are easier to see:
 
-[![Quicksort with its partitioning cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort_collapsed.svg)
+[![Quicksort with its partitioning cycle collapsed](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/sorting/quick_sort_collapsed.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/sorting/quick_sort_collapsed.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/sorting/quick_sort.rs)
 ·
-[Expanded diagram](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/sorting/quick_sort.svg)
+[Expanded diagram](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/sorting/quick_sort.svg)
 
 ## Types
 
@@ -457,9 +458,9 @@ not change the Rust declaration, and Rust checks that each target exists.
 
 A type's diagram draws it under every type that refers to it:
 
-[![Diagram of the Order type under the types that refer to it](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/tests/gallery/order/order.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/order/order.svg)
+[![Diagram of the Order type under the types that refer to it](https://raw.githubusercontent.com/kalaninja/kaalang/main/crates/kaalang/examples/gallery/order/order.svg)](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/order/order.svg)
 
-[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/gallery/order/mod.rs)
+[Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/order/mod.rs)
 
 A type's name and its fields, like a flow's name in its start node, carry a UML
 visibility marker: `+` for `pub`, `~` for `pub(crate)` and other restricted
@@ -485,7 +486,13 @@ Or install the version from the current repository checkout:
 cargo install --path crates/kaalang-cli
 ```
 
-From a repository checkout, draw the `FizzBuzz` example:
+Run the gallery and its checks from a repository checkout.
+
+```sh
+cargo run -p kaalang --example gallery
+```
+
+Draw the `FizzBuzz` diagram through the CLI.
 
 ```sh
 cargo kaalang diagram --flow fizzbuzz::fizzbuzz -o fizzbuzz.svg

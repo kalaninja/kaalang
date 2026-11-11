@@ -22,3 +22,8 @@ trybuild = { workspace = true }
 
 [lints]
 workspace = true
+
+[[example]]
+name = "gallery"
+test = true
+harness = false

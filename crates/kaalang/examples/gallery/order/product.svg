@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="798" height="738" viewBox="0 0 798 738" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for order::Product</title>
+  <desc id="kaalang-description">Type order::Product with incoming types order::Line, order::Hold.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">order::Line</title>
+      <rect class="card-shape" x="32" y="32" width="299" height="262"/>
+      <path class="card-rules" d="M 32 120 L 331 120 M 32 176 L 331 176 M 32 224 L 331 224"/>
+      <rect class="card-outline" x="32" y="32" width="299" height="262"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> order::Line</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="317" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">One product in an order, with its </tspan><tspan x="46" dy="18">quantity.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="140.28" text-anchor="middle">−</text>
+        <text x="58" y="141" text-anchor="start" xml:space="preserve"> product</text>
+      </g>
+      <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">Sku</tspan></text>
+      <text class="description" y="143" xml:space="preserve"><tspan x="140" dy="0">The product ordered.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="317" dy="0">▸ <tspan class="md-code">Product</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="196.28" text-anchor="middle">−</text>
+        <text x="58" y="197" text-anchor="start" xml:space="preserve"> quantity</text>
+      </g>
+      <text class="field-type" y="213" xml:space="preserve"><tspan x="46" dy="0">u32</tspan></text>
+      <text class="description" y="199" xml:space="preserve"><tspan x="140" dy="0">How many units.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="244.28" text-anchor="middle">−</text>
+        <text x="58" y="245" text-anchor="start" xml:space="preserve"> price</text>
+      </g>
+      <text class="field-type" y="261" xml:space="preserve"><tspan x="46" dy="0">Money</tspan></text>
+      <text class="description" y="247" xml:space="preserve"><tspan x="140" dy="0">The price of one unit </tspan><tspan x="140" dy="18">when the order was </tspan><tspan x="140" dy="18">placed.</tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">order::Hold</title>
+      <rect class="card-shape" x="363" y="32" width="375" height="466"/>
+      <path class="card-rules" d="M 363 102 L 738 102 M 379 136 L 738 136 M 363 192 L 738 192 M 379 244 L 738 244 M 379 300 L 738 300 M 363 356 L 738 356 M 379 390 L 738 390 M 379 446 L 738 446"/>
+      <rect class="card-outline" x="363" y="32" width="375" height="466"/>
+      <g class="type-name">
+        <text class="md-badge" x="386" y="62.92" text-anchor="middle">−</text>
+        <text x="395" y="64" text-anchor="start" xml:space="preserve"> order::Hold</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="724" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="377" dy="0">Why an order is not on its way yet.</tspan></text>
+      <text class="variant-name" y="125" xml:space="preserve"><tspan x="377" dy="0">AwaitingPayment</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="519" dy="0">The payment has not arrived.</tspan></text>
+      <text class="field-name" y="157" xml:space="preserve"><tspan x="393" dy="0">order</tspan></text>
+      <text class="field-type" y="173" xml:space="preserve"><tspan x="393" dy="0">OrderNumber</tspan></text>
+      <text class="description" y="159" xml:space="preserve"><tspan x="490" dy="0">The unpaid order.</tspan></text>
+      <text class="target" text-anchor="end" y="181" xml:space="preserve"><tspan x="724" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>
+      <text class="variant-name" y="215" xml:space="preserve"><tspan x="377" dy="0">OutOfStock</tspan></text>
+      <text class="description" y="215" xml:space="preserve"><tspan x="475" dy="0">The shop has fewer units than the </tspan><tspan x="475" dy="18">order needs.</tspan></text>
+      <text class="field-name" y="265" xml:space="preserve"><tspan x="393" dy="0">order</tspan></text>
+      <text class="field-type" y="281" xml:space="preserve"><tspan x="393" dy="0">OrderNumber</tspan></text>
+      <text class="description" y="267" xml:space="preserve"><tspan x="490" dy="0">The order that waits.</tspan></text>
+      <text class="target" text-anchor="end" y="289" xml:space="preserve"><tspan x="724" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>
+      <text class="field-name" y="321" xml:space="preserve"><tspan x="393" dy="0">product</tspan></text>
+      <text class="field-type" y="337" xml:space="preserve"><tspan x="393" dy="0">Sku</tspan></text>
+      <text class="description" y="323" xml:space="preserve"><tspan x="490" dy="0">The product that ran out.</tspan></text>
+      <text class="target" text-anchor="end" y="345" xml:space="preserve"><tspan x="724" dy="0">▸ <tspan class="md-code">Product</tspan></tspan></text>
+      <text class="variant-name" y="379" xml:space="preserve"><tspan x="377" dy="0">Cancelled</tspan></text>
+      <text class="description" y="379" xml:space="preserve"><tspan x="467" dy="0">The customer asked to cancel.</tspan></text>
+      <text class="field-name" y="411" xml:space="preserve"><tspan x="393" dy="0">order</tspan></text>
+      <text class="field-type" y="427" xml:space="preserve"><tspan x="393" dy="0">OrderNumber</tspan></text>
+      <text class="description" y="413" xml:space="preserve"><tspan x="490" dy="0">The cancelled order.</tspan></text>
+      <text class="target" text-anchor="end" y="435" xml:space="preserve"><tspan x="724" dy="0">▸ <tspan class="md-code">Order</tspan></tspan></text>
+      <text class="field-name" y="467" xml:space="preserve"><tspan x="393" dy="0">reason</tspan></text>
+      <text class="field-type" y="483" xml:space="preserve"><tspan x="393" dy="0">String</tspan></text>
+      <text class="description" y="469" xml:space="preserve"><tspan x="490" dy="0">The customer&apos;s reason, in their </tspan><tspan x="490" dy="18">words.</tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">order::Product</title>
+      <rect class="card-shape" x="32" y="546" width="734" height="160"/>
+      <path class="card-rules" d="M 32 616 L 766 616 M 199 616 L 199 706 M 397 616 L 397 706 M 595 616 L 595 706"/>
+      <rect class="card-outline" x="32" y="546" width="734" height="160"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="576.92" text-anchor="middle">−</text>
+        <text x="64" y="578" text-anchor="start" xml:space="preserve"> order::Product</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="578" xml:space="preserve"><tspan x="752" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="description" y="601" xml:space="preserve"><tspan x="46" dy="0">A product the shop sells.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="636.28" text-anchor="middle">−</text>
+        <text x="58" y="637" text-anchor="start" xml:space="preserve"> sku</text>
+      </g>
+      <text class="field-type" y="653" xml:space="preserve"><tspan x="46" dy="0">Sku</tspan></text>
+      <text class="description" y="677" xml:space="preserve"><tspan x="46" dy="0">The product&apos;s key.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="219" y="636.28" text-anchor="middle">−</text>
+        <text x="225" y="637" text-anchor="start" xml:space="preserve"> name</text>
+      </g>
+      <text class="field-type" y="653" xml:space="preserve"><tspan x="213" dy="0">String</tspan></text>
+      <text class="description" y="677" xml:space="preserve"><tspan x="213" dy="0">The name shown in the </tspan><tspan x="213" dy="18">catalog.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="417" y="636.28" text-anchor="middle">−</text>
+        <text x="423" y="637" text-anchor="start" xml:space="preserve"> price</text>
+      </g>
+      <text class="field-type" y="653" xml:space="preserve"><tspan x="411" dy="0">Money</tspan></text>
+      <text class="description" y="677" xml:space="preserve"><tspan x="411" dy="0">The price of one unit </tspan><tspan x="411" dy="18">today.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="615" y="636.28" text-anchor="middle">−</text>
+        <text x="621" y="637" text-anchor="start" xml:space="preserve"> stocked</text>
+      </g>
+      <text class="field-type" y="653" xml:space="preserve"><tspan x="609" dy="0">u32</tspan></text>
+      <text class="description" y="677" xml:space="preserve"><tspan x="609" dy="0">Units on the shelf.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">order::Line → order::Product</title>
+      <path class="relationship" d="M 331 160 L 345 160 L 345 546" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="331" cy="160" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">order::Hold → order::Product</title>
+      <path class="relationship" d="M 738 340 L 752 340 L 752 546" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="738" cy="340" r="4"/>
+    </g>
+  </g>
+</svg>

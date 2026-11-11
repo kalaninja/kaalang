@@ -1009,10 +1009,10 @@ fn enclosing_back_edges_leave_a_lane_beside_nested_boundaries() {
 
 #[test]
 fn a_cycle_contains_the_wrapped_label_of_its_final_merge() {
-    let source = include_str!("../../../../kaalang/tests/gallery/binary_search/mod.rs");
+    let (source, name) = fixture!("flow/cycle", "merged_exit");
     for repeats in [2, 8] {
-        let source = source.replace("result", &"a_long_result_wire_name".repeat(repeats));
-        let scene = drawn((&source, "binary_search"));
+        let source = source.replace("leave", &"a_long_result_wire_name".repeat(repeats));
+        let scene = drawn((&source, name));
         let result = scene.topology.cycle_boundaries[0].results[0];
         let label = scene
             .labels

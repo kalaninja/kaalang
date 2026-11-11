@@ -277,10 +277,7 @@ mod tests {
     fn cycle_examples_have_one_verified_body_per_authored_block() {
         for function in [
             fixture!("flow/cycle", "count_to"),
-            fixture(
-                include_str!("../../kaalang/tests/gallery/binary_search/mod.rs"),
-                "binary_search",
-            ),
+            fixture!("flow/cycle", "merged_exit"),
             fixture!("flow/cycle", "nested_search"),
             fixture!("flow/cycle", "empty_cycle"),
             fixture!("flow/cycle", "repeat_until_done"),

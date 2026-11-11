@@ -1,5 +1,5 @@
 //! Loads executable fixture flows from `crates/kaalang/tests`, keeping the
-//! performance corpus in sync with flow fixtures, gallery examples, and stress fixtures.
+//! performance corpus in sync with flow fixtures and stress fixtures.
 
 use std::{
     fs,
@@ -11,7 +11,7 @@ use syn::ItemFn;
 /// Fixture suites to load.
 #[derive(Clone, Copy)]
 pub enum Suite {
-    /// Flow fixtures and gallery examples outside the stress suite.
+    /// Flow fixtures outside the stress suite.
     Ordinary,
     /// Hand-written stress fixtures.
     Stress,

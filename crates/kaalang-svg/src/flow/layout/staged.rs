@@ -366,7 +366,7 @@ mod tests {
     #[allow(clippy::too_many_lines)] // Checks several direct-entry layouts against the same geometry.
     fn direct_inputs_share_the_first_stage_column() {
         for source in [
-            include_str!("../../../../kaalang/tests/gallery/sorting/quick_sort.rs"),
+            include_str!("../../../../kaalang/tests/flow/stage/stage_cycle_alternative_outputs.rs"),
             r#"
                     #[kaa]
                     fn example(go: (), a_very_long_parameter_name: u8,
@@ -517,11 +517,17 @@ mod tests {
 
     #[test]
     fn staged_diagram_aligns_entries_and_transitions_and_connects_the_outer_contour() {
-        let source = include_str!("../../../../kaalang/tests/gallery/kmp_search/mod.rs");
+        let source =
+            include_str!("../../../../kaalang/tests/flow/stage/prepared_initial_selection.rs");
         for collapsed in [false, true] {
             let (model, parameters) = compacted(source, collapsed);
-            let diagram =
-                layout_staged(&model, "kmp_search", &parameters, "Option<usize>").unwrap();
+            let diagram = layout_staged(
+                &model,
+                "prepared_initial_selection",
+                &parameters,
+                "(usize, usize)",
+            )
+            .unwrap();
             let return_route = diagram.return_route.as_ref().unwrap();
             let mut entries = BTreeSet::new();
             let mut transitions = BTreeSet::new();
@@ -584,7 +590,10 @@ mod tests {
                 assert!(placement.y + Scene::bounds(stage.node(NodeId::Start)).1 <= body_top);
             }
             assert_eq!(prefix.topology.node(NodeId::Start).kind, NodeKind::Start);
-            assert_eq!(prefix.captions.label(NodeId::Start).as_ref(), "kmp_search");
+            assert_eq!(
+                prefix.captions.label(NodeId::Start).as_ref(),
+                "prepared_initial_selection"
+            );
             assert_eq!(return_route[1].x, MARGIN);
             assert_eq!(return_route[2].x, MARGIN);
             assert!(diagram.parts.iter().all(|(_, part)| part.x > MARGIN));
@@ -596,7 +605,7 @@ mod tests {
             assert!(prefix_placement.y + prefix.node(NodeId::Start).y < return_route[3].y);
             assert!(prefix.parameters.is_some());
             let without_parameters =
-                layout_staged(&model, "kmp_search", &[], "Option<usize>").unwrap();
+                layout_staged(&model, "prepared_initial_selection", &[], "(usize, usize)").unwrap();
             assert_eq!(
                 diagram.parts[1].1.x, without_parameters.parts[1].1.x,
                 "the parameter panel must not reserve an extra body column"
