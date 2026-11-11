@@ -849,7 +849,7 @@ fn a_type_is_drawn_with_the_types_that_refer_to_it() {
     let rendered = run(&directory, "diagram --type model::Member");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    positions(&svg, &["review::Report", "model::Member"]);
+    positions(&svg, &[">review::Report</title>", ">model::Member</title>"]);
     assert!(svg.contains("relationship-route"));
 }
 
@@ -867,7 +867,166 @@ fn a_type_in_an_inline_module_of_a_file_module_is_drawn_by_its_path() {
     let rendered = run(&directory, "diagram --type model::inner::Member");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    positions(&svg, &["Report", "model::inner::Member"]);
+    positions(&svg, &[">Report</title>", ">model::inner::Member</title>"]);
+}
+
+#[test]
+fn type_headers_shorten_each_path_against_the_focus_module() {
+    let directory = package(
+        "cli-type-short-headers",
+        r#"
+pub mod shop {
+    pub mod orders {
+        #[kaa]
+        pub struct Order {
+            #[kaa::refer(Self, "The previous order.")]
+            previous: Option<Box<Self>>,
+        }
+        #[kaa]
+        pub struct Line {
+            #[kaa::refer(Order, "The order.")]
+            order: u32,
+        }
+        pub mod archive {
+            #[kaa]
+            pub struct Entry<T> {
+                #[kaa::refer(super::Order, "The archived order.")]
+                order: u32,
+                payload: T,
+            }
+        }
+    }
+    pub mod payments {
+        #[kaa]
+        pub struct Payment {
+            #[kaa::refer(super::orders::Order, "The paid order.")]
+            order: u32,
+        }
+    }
+    pub mod ordering {
+        #[kaa]
+        pub struct Note {
+            #[kaa::refer(super::orders::Order, "The order.")]
+            order: u32,
+        }
+    }
+    #[kaa]
+    pub struct Summary {
+        #[kaa::refer(orders::Order, "The order.")]
+        order: u32,
+    }
+}
+pub mod shopping {
+    #[kaa]
+    pub struct Receipt {
+        #[kaa::refer(crate::shop::orders::Order, "The order.")]
+        order: u32,
+    }
+}
+"#,
+    );
+    let rendered = run(&directory, "diagram --type shop::orders::Order");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Order.svg")).unwrap();
+    positions(
+        &svg,
+        &[
+            ">shop::orders::Order</title>",
+            ">Line</title>",
+            ">archive::Entry&lt;T&gt;</title>",
+            ">payments::Payment</title>",
+            ">ordering::Note</title>",
+            ">Summary</title>",
+            ">shopping::Receipt</title>",
+            ">shop::orders::Order → shop::orders::Order</title>",
+        ],
+    );
+    assert!(svg.contains("crate::shop::orders::Order"), "{svg}");
+}
+
+#[test]
+fn type_headers_restore_module_segments_until_collisions_are_resolved() {
+    let directory = workspace(
+        "cli-type-header-collisions",
+        &[
+            (
+                "app",
+                r#"
+pub mod shop {
+    pub mod orders {
+        pub struct Order;
+        #[kaa]
+        pub struct Payment {
+            #[kaa::refer(Order, "The order.")]
+            order: u32,
+        }
+        pub mod external {
+            #[kaa]
+            pub struct Payment {
+                #[kaa::refer(super::Order, "The order.")]
+                order: u32,
+            }
+        }
+        pub mod shop {
+            pub mod orders {
+                #[kaa]
+                pub struct Order {
+                    #[kaa::refer(crate::shop::orders::Order, "The original order.")]
+                    original: u32,
+                }
+            }
+        }
+    }
+    #[kaa]
+    pub struct Payment {
+        #[kaa::refer(orders::Order, "The order.")]
+        order: u32,
+    }
+}
+pub mod orders {
+    #[kaa]
+    pub struct Payment {
+        #[kaa::refer(crate::shop::orders::Order, "The order.")]
+        order: u32,
+    }
+}
+#[kaa]
+pub struct Payment {
+    #[kaa::refer(shop::orders::Order, "The order.")]
+    order: u32,
+}
+"#,
+            ),
+            (
+                "external",
+                "#[kaa] pub struct Payment { #[kaa::refer(app::shop::orders::Order, \"The order.\")] order: u32 }",
+            ),
+        ],
+    );
+    write(
+        &directory,
+        "external/Cargo.toml",
+        &format!(
+            "{}[dependencies]\napp = {{ path = \"../app\" }}\n",
+            manifest("external")
+        ),
+    );
+    let rendered = run(&directory, "diagram --type shop::orders::Order -p app");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("Order.svg")).unwrap();
+    for header in [
+        "shop::orders::Order",
+        "shop::orders::Payment",
+        "orders::external::Payment",
+        "orders::shop::orders::Order",
+        "shop::Payment",
+        "orders::Payment",
+        "Payment",
+        "external::Payment",
+    ] {
+        let title = format!("<title xml:space=\"preserve\">{header}</title>");
+        assert_eq!(svg.matches(&title).count(), 1, "{header}: {svg}");
+    }
 }
 
 const LINUX: &str = "x86_64-unknown-linux-gnu";
@@ -1425,9 +1584,9 @@ fn a_renamed_dependency_names_its_package_in_a_target() {
         &[
             (
                 "app",
-                "#[kaa]\nstruct FromApp {\n    #[kaa::refer(people::Member, \"m\")]\n    m: u8,\n}\n",
+                "mod model {\n#[kaa]\nstruct FromApp {\n    #[kaa::refer(people::model::Member, \"m\")]\n    m: u8,\n}\n}\n",
             ),
-            ("model-types", "pub struct Member;\n"),
+            ("model-types", "pub mod model { pub struct Member; }\n"),
         ],
     );
     write(
@@ -1438,10 +1597,13 @@ fn a_renamed_dependency_names_its_package_in_a_target() {
             manifest("app")
         ),
     );
-    let rendered = run(&directory, "diagram --type Member -p model-types");
+    let rendered = run(&directory, "diagram --type model::Member -p model-types");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    positions(&svg, &["app::FromApp", "Member"]);
+    positions(
+        &svg,
+        &[">app::model::FromApp</title>", ">model::Member</title>"],
+    );
 }
 
 #[test]
@@ -1494,10 +1656,18 @@ fn a_plain_type_may_be_the_focus() {
 
 #[test]
 fn the_default_output_is_named_without_generic_arguments() {
-    let directory = package("cli-generic-output", "pub struct Attachment<T>(T);\n");
-    let rendered = run(&directory, "diagram --type Attachment<crate::Payload>");
+    let directory = package(
+        "cli-generic-output",
+        "pub mod model { pub struct Attachment<T>(T); }\n",
+    );
+    let rendered = run(
+        &directory,
+        "diagram --type model::Attachment<crate::Payload>",
+    );
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     assert!(directory.join("Attachment.svg").is_file());
+    let svg = fs::read_to_string(directory.join("Attachment.svg")).unwrap();
+    assert!(svg.contains(">model::Attachment&lt;T&gt;</title>"), "{svg}");
 }
 
 #[test]

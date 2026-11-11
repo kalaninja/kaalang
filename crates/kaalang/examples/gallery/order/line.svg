@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="571" height="745" viewBox="0 0 571 745" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang type diagram for order::Line</title>
-  <desc id="kaalang-description">Type order::Line with incoming types order::Order.</desc>
+  <desc id="kaalang-description">Type order::Line with incoming types Order.</desc>
   <defs>
     <style>
       svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
@@ -46,13 +46,13 @@
   <rect width="100%" height="100%" fill="#ffffff"/>
   <g class="cards">
     <g class="card">
-      <title xml:space="preserve">order::Order</title>
+      <title xml:space="preserve">Order</title>
       <rect class="card-shape" x="32" y="32" width="345" height="455"/>
       <path class="card-rules" d="M 32 120 L 377 120 M 32 172 L 377 172 M 32 228 L 377 228 M 32 303 L 377 303 M 32 395 L 377 395"/>
       <rect class="card-outline" x="32" y="32" width="345" height="455"/>
       <g class="type-name">
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
-        <text x="64" y="64" text-anchor="start" xml:space="preserve"> order::Order</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Order</text>
       </g>
       <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">struct · repr(Rust)</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A <tspan class="md-bold">shop order</tspan>, with its revision history and </tspan><tspan x="46" dy="18">split shipments.</tspan></text>
@@ -140,7 +140,7 @@
   </g>
   <g class="relationships">
     <g class="relationship-route">
-      <title xml:space="preserve">order::Order → order::Line</title>
+      <title xml:space="preserve">Order → order::Line</title>
       <path class="relationship" d="M 377 287 L 391 287 L 391 535" marker-end="url(#relationship-arrow)"/>
       <circle class="relationship-source" cx="377" cy="287" r="4"/>
     </g>
