@@ -4,7 +4,8 @@
 use std::str::FromStr;
 
 use cargo_platform::{Cfg, CfgExpr};
-use proc_macro2::TokenStream;
+use proc_macro2::{Delimiter, TokenStream, TokenTree};
+use syn::Lit;
 
 /// The cfg set of one compilation target, as `rustc --print cfg` prints it:
 /// one `name` or `key="value"` per line, such as `unix` or `target_os="linux"`,
@@ -21,12 +22,11 @@ impl Target {
 
     /// Whether `predicate`, the tokens inside `cfg(...)`, holds for the set,
     /// as cargo decides one: a name the set lacks does not hold, nor does a
-    /// predicate cargo cannot read.
-    // shortcut: cargo cannot read a raw string such as `feature = r"audit"`,
-    // which rustc accepts, so it does not hold; unescape literals if one shows up.
+    /// predicate cargo cannot read. A string literal stands for its value, as
+    /// rustc reads one, raw or escaped.
     #[must_use]
     pub fn holds(&self, predicate: &TokenStream) -> bool {
-        CfgExpr::from_str(&predicate.to_string())
+        CfgExpr::from_str(&cargo_text(predicate.clone()))
             .is_ok_and(|expression| expression.matches(&self.cfgs))
     }
 
@@ -35,6 +35,26 @@ impl Target {
     pub fn configure(&self, file: &mut syn::File) {
         kaalang_compiler::configure(file, &mut |predicate| self.holds(predicate));
     }
+}
+
+/// `predicate` as text cargo reads. Cargo takes the text between a string's
+/// quotes for its value, so each string literal is spelled by its value:
+/// `r"audit"` as `"audit"`.
+fn cargo_text(predicate: TokenStream) -> String {
+    let parts: Vec<String> = predicate
+        .into_iter()
+        .map(|token| match token {
+            TokenTree::Group(group) if group.delimiter() == Delimiter::Parenthesis => {
+                format!("({})", cargo_text(group.stream()))
+            }
+            TokenTree::Literal(literal) => match Lit::new(literal.clone()) {
+                Lit::Str(string) => format!("\"{}\"", string.value()),
+                _ => literal.to_string(),
+            },
+            token => token.to_string(),
+        })
+        .collect();
+    parts.join(" ")
 }
 
 impl FromStr for Target {
@@ -84,6 +104,20 @@ mod tests {
         ] {
             assert!(!target.holds(&predicate), "{predicate}");
         }
+    }
+
+    #[test]
+    fn a_string_literal_holds_by_its_value() {
+        let target: Target = "feature=\"audit\"".parse().unwrap();
+        for predicate in [
+            quote!(feature = r"audit"),
+            quote!(feature = r#"audit"#),
+            quote!(feature = "aud\x69t"),
+            quote!(any(windows, feature = r"audit")),
+        ] {
+            assert!(target.holds(&predicate), "{predicate}");
+        }
+        assert!(!target.holds(&quote!(feature = r"other")));
     }
 
     #[test]
