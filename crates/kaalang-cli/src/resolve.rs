@@ -314,7 +314,7 @@ impl<'a> Resolver<'a> {
                 self.member(krate, 0, first, value && rest.is_empty(), visiting)
                     .map_or(Def::Missing, |(found, _)| found)
             } else {
-                self.extern_crate(krate, first)
+                self.prelude(krate, first).unwrap_or(Def::Outside)
             }
         } else {
             match first.as_str() {
@@ -386,7 +386,7 @@ impl<'a> Resolver<'a> {
             if self.crates[krate].edition_2015() {
                 None
             } else {
-                self.library(krate, name)
+                self.prelude(krate, name)
             }
         };
         match self
@@ -402,7 +402,24 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    /// The crate root `name` stands for in a `::` path or `extern crate`.
+    /// What `name` stands for in the extern prelude past Rust 2015, where
+    /// every module may name it: the crate a root `extern crate` binds to it,
+    /// or a workspace library.
+    fn prelude(&self, krate: usize, name: &str) -> Option<Def> {
+        self.crates[krate].modules[0]
+            .scope
+            .declared
+            .iter()
+            .find_map(|(bound, declared, _)| match declared {
+                Declared::ExternCrate(named) if bound == name => {
+                    Some(self.extern_crate(krate, named))
+                }
+                _ => None,
+            })
+            .or_else(|| self.library(krate, name))
+    }
+
+    /// The crate root an `extern crate name` declaration names.
     fn extern_crate(&self, krate: usize, name: &str) -> Def {
         if name == "self" || name == "crate" {
             return Def::Module(krate, 0);
@@ -816,6 +833,27 @@ mod tests {
             .position(|entry| entry.path == path)
             .expect("the type exists");
         Resolution::Type(TypeRef { krate, id })
+    }
+
+    #[test]
+    fn a_root_extern_crate_is_named_from_every_module() {
+        let mut app = library(
+            "app",
+            "extern crate self as this;
+             extern crate model as domain;
+             pub struct Report;
+             mod review {}",
+        );
+        app.dependencies.push(("model".into(), "model".into()));
+        let crates = [app, library("model", "pub struct Member;")];
+
+        for (target, expected) in [
+            ("this::Report", named(&crates, 0, "Report")),
+            ("domain::Member", named(&crates, 1, "Member")),
+            ("::domain::Member", named(&crates, 1, "Member")),
+        ] {
+            assert_eq!(resolve(&crates, "review::", target), expected, "{target}");
+        }
     }
 
     #[test]
