@@ -310,12 +310,7 @@ impl<'a> Resolver<'a> {
             return Def::Unknown("the path is empty");
         };
         let mut current = if path.global {
-            if self.crates[krate].edition_2015() {
-                self.member(krate, 0, first, value && rest.is_empty(), visiting)
-                    .map_or(Def::Missing, |(found, _)| found)
-            } else {
-                self.prelude(krate, first).unwrap_or(Def::Outside)
-            }
+            self.prelude(krate, first).unwrap_or(Def::Outside)
         } else {
             match first.as_str() {
                 "crate" => Def::Module(krate, 0),
@@ -382,13 +377,7 @@ impl<'a> Resolver<'a> {
         value: bool,
         visiting: &mut Lookup,
     ) -> Def {
-        let library = || {
-            if self.crates[krate].edition_2015() {
-                None
-            } else {
-                self.prelude(krate, name)
-            }
-        };
+        let library = || self.prelude(krate, name);
         match self
             .member(krate, module, name, value, visiting)
             .map(|(found, _)| found)
@@ -402,9 +391,9 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    /// What `name` stands for in the extern prelude past Rust 2015, where
-    /// every module may name it: the crate a root `extern crate` binds to it,
-    /// or a workspace library.
+    /// What `name` stands for in the extern prelude, which every module may
+    /// name: the crate a root `extern crate` binds to it, or a workspace
+    /// library.
     fn prelude(&self, krate: usize, name: &str) -> Option<Def> {
         self.crates[krate].modules[0]
             .scope
@@ -483,12 +472,7 @@ impl<'a> Resolver<'a> {
         }
         let cyclic = std::mem::take(&mut visiting.cyclic);
         visiting.active.push(key.clone());
-        let found = self
-            .member_unguarded(krate, module, name, value, visiting)
-            .or_else(|| {
-                (self.crates[krate].edition_2015() && module == 0 && matches!(name, "std" | "core"))
-                    .then_some((Def::Outside, Visibility::Public))
-            });
+        let found = self.member_unguarded(krate, module, name, value, visiting);
         visiting.active.pop();
         if !visiting.cyclic {
             visiting.complete.insert(key, found.clone());

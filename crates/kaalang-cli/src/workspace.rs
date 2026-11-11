@@ -54,8 +54,6 @@ pub(super) struct Crate {
     pub(super) package_id: String,
     /// The name its code and other crates use for it.
     pub(super) name: String,
-    /// Rust 2015 resolves imports and absolute paths from the crate root.
-    pub(super) edition: cargo_metadata::Edition,
     /// The target as errors list it: `` lib `app` ``.
     pub(super) target: String,
     /// Where it stands among its package's crates: its library and binaries
@@ -84,10 +82,6 @@ impl Crate {
     /// The crate as an error lists it: its package and target.
     pub(super) fn label(&self) -> String {
         format!("{}: {}", self.package, self.target)
-    }
-
-    pub(super) fn edition_2015(&self) -> bool {
-        self.edition == cargo_metadata::Edition::E2015
     }
 }
 
@@ -226,7 +220,7 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 .map(|node| node.features.iter().map(ToString::to_string).collect())
                 .unwrap_or_default();
             let cfg = cfg_set(target, printed, &features)?;
-            let mut walk = Walk::new(&cfg, target.edition);
+            let mut walk = Walk::new(&cfg);
             walk_file(
                 &mut walk,
                 target.src_path.as_std_path(),
@@ -239,7 +233,6 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 package: package.name.to_string(),
                 package_id: package.id.to_string(),
                 name: target.name.replace('-', "_"),
-                edition: target.edition,
                 target: target_label(target),
                 group,
                 library: group == 0 && !target.is_bin(),
@@ -706,7 +699,6 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
 struct Walk<'a> {
     /// The cfg set the crate's files are read for.
     cfg: &'a kaalang_svg::Target,
-    edition_2015: bool,
     /// The files being read, outermost first; a `#[path]` loop stops here.
     open: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -715,10 +707,9 @@ struct Walk<'a> {
 }
 
 impl<'a> Walk<'a> {
-    fn new(cfg: &'a kaalang_svg::Target, edition: cargo_metadata::Edition) -> Self {
+    fn new(cfg: &'a kaalang_svg::Target) -> Self {
         Self {
             cfg,
-            edition_2015: edition == cargo_metadata::Edition::E2015,
             open: Vec::new(),
             modules: Vec::new(),
             types: Vec::new(),
@@ -873,7 +864,6 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Pa
                     &declaration.tree,
                     &mut Vec::new(),
                     declaration.leading_colon.is_some(),
-                    walk.edition_2015,
                     visibility,
                     &mut walk.modules[module].scope,
                 );
@@ -926,17 +916,7 @@ fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visib
         syn::Visibility::Inherited => return Visibility::Within(module),
         syn::Visibility::Restricted(restricted) => restricted,
     };
-    // Rust 2015 also permits a crate-relative path without `crate`.
-    let mut within = if restricted
-        .path
-        .segments
-        .first()
-        .is_some_and(|segment| segment.ident == "self" || segment.ident == "super")
-    {
-        module
-    } else {
-        0
-    };
+    let mut within = module;
     for segment in &restricted.path.segments {
         within = match segment.ident.to_string().as_str() {
             "crate" => 0,
@@ -1005,7 +985,6 @@ fn imports(
     tree: &UseTree,
     prefix: &mut Vec<String>,
     global: bool,
-    edition_2015: bool,
     visibility: Visibility,
     scope: &mut Scope,
 ) {
@@ -1015,19 +994,12 @@ fn imports(
         if last != "self" {
             segments.push(last.unraw().to_string());
         }
-        import_path(segments, global, edition_2015)
+        UsePath { global, segments }
     };
     match tree {
         UseTree::Path(nested) => {
             prefix.push(nested.ident.unraw().to_string());
-            imports(
-                &nested.tree,
-                prefix,
-                global,
-                edition_2015,
-                visibility,
-                scope,
-            );
+            imports(&nested.tree, prefix, global, visibility, scope);
             prefix.pop();
         }
         UseTree::Name(name) => {
@@ -1044,29 +1016,14 @@ fn imports(
         }
         UseTree::Rename(_) => {}
         UseTree::Glob(_) => {
-            let path = import_path(prefix.clone(), global, edition_2015);
-            scope.globs.push((path, visibility));
+            let segments = prefix.clone();
+            scope.globs.push((UsePath { global, segments }, visibility));
         }
         UseTree::Group(group) => {
             for tree in &group.items {
-                imports(tree, prefix, global, edition_2015, visibility, scope);
+                imports(tree, prefix, global, visibility, scope);
             }
         }
-    }
-}
-
-/// Rust 2015 imports start at the crate root unless explicitly qualified.
-fn import_path(mut segments: Vec<String>, global: bool, edition_2015: bool) -> UsePath {
-    if edition_2015
-        && !segments
-            .first()
-            .is_some_and(|first| matches!(first.as_str(), "crate" | "self" | "super"))
-    {
-        segments.insert(0, "crate".to_owned());
-    }
-    UsePath {
-        global: global && !edition_2015,
-        segments,
     }
 }
 
@@ -1116,8 +1073,7 @@ fn target_label(target: &Target) -> String {
 pub(super) fn library(package: &str, source: &str) -> Crate {
     let parsed = syn::parse_file(source).expect("the test source parses");
     let cfg = kaalang_svg::Target::default();
-    let edition = cargo_metadata::Edition::E2024;
-    let mut walk = Walk::new(&cfg, edition);
+    let mut walk = Walk::new(&cfg);
     walk.modules.push(Module {
         path: String::new(),
         parent: None,
@@ -1141,7 +1097,6 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         package: package.to_owned(),
         package_id: package.to_owned(),
         name: package.replace('-', "_"),
-        edition,
         target: format!("lib `{package}`"),
         group: 0,
         library: true,
@@ -1153,74 +1108,5 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         types: walk.types,
         skipped: walk.skipped,
         cfg,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Scope, Visibility, imports, library, visibility};
-
-    #[test]
-    fn rust_2015_imports_start_at_the_root_unless_qualified() {
-        for (source, expected) in [
-            ("use model::Member as Person;", "crate::model::Member"),
-            ("use ::model::Member;", "crate::model::Member"),
-            (
-                "use model::{nested::Member};",
-                "crate::model::nested::Member",
-            ),
-            ("use self::Member;", "self::Member"),
-            ("use super::Member;", "super::Member"),
-            ("use crate::Member;", "crate::Member"),
-            ("use model::*;", "crate::model"),
-        ] {
-            let item: syn::ItemUse = syn::parse_str(source).expect("the import parses");
-            let mut scope = Scope::default();
-            imports(
-                &item.tree,
-                &mut Vec::new(),
-                item.leading_colon.is_some(),
-                true,
-                Visibility::Public,
-                &mut scope,
-            );
-            let paths = scope
-                .imports
-                .iter()
-                .map(|(_, path, _)| path)
-                .chain(scope.globs.iter().map(|(path, _)| path));
-            for path in paths {
-                assert!(!path.global, "{source}");
-                assert_eq!(path.segments.join("::"), expected, "{source}");
-            }
-            assert_eq!(scope.imports.len() + scope.globs.len(), 1, "{source}");
-        }
-    }
-
-    #[test]
-    fn rust_2015_named_visibility_starts_at_the_root() {
-        let krate = library("app", "mod outer { mod inner {} }");
-        let find = |path| {
-            krate
-                .modules
-                .iter()
-                .position(|module| module.path == path)
-                .expect("the module exists")
-        };
-        let outer = find("outer::");
-        let inner = find("outer::inner::");
-        for (source, expected) in [
-            ("pub(in outer)", outer),
-            ("pub(in outer::inner)", inner),
-            ("pub(self)", inner),
-            ("pub(super)", outer),
-        ] {
-            let vis = syn::parse_str(source).expect("the visibility parses");
-            assert_eq!(
-                visibility(&krate.modules, inner, &vis),
-                Visibility::Within(expected),
-                "{source}"
-            );
-        }
     }
 }

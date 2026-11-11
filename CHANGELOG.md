@@ -28,6 +28,8 @@
   instead of `#[kaalang]`, and block attributes take its namespace:
   `#[kaa::action("...")]` instead of `#[action("...")]`. See
   [RFC 0009](docs/rfcs/0009-types.md).
+- Only crates on Rust 2024 are supported: the macro generates, and the CLI
+  resolves, code by the rules of that edition.
 
 ### Added
 

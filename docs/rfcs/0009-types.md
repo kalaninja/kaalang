@@ -532,3 +532,7 @@ attribute emits the declaration unchanged, removing only its `value`, `refer`,
 and `case` annotations; derives, representation attributes, and conditional
 compilation pass through. Cards show no traits, methods, or behavior, and
 whole-domain diagrams are outside this RFC's scope.
+
+kaalang supports crates on Rust 2024 only. A crate on an earlier edition is not
+supported: the attribute generates, and the command-line interface resolves,
+code by the rules of Rust 2024.
