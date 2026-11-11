@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="411" height="246" viewBox="0 0 411 246" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="382" height="246" viewBox="0 0 382 246" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang type diagram for directory::Team</title>
   <desc id="kaalang-description">Type directory::Team.</desc>
   <defs>
@@ -27,14 +27,14 @@
   <g class="cards">
     <g class="card focus">
       <title xml:space="preserve">directory::Team</title>
-      <rect class="card-shape" x="32" y="32" width="347" height="182"/>
-      <path class="card-rules" d="M 32 102 L 379 102 M 176 102 L 176 214"/>
-      <rect class="card-outline" x="32" y="32" width="347" height="182"/>
+      <rect class="card-shape" x="32" y="32" width="318" height="182"/>
+      <path class="card-rules" d="M 32 102 L 350 102 M 162 102 L 162 214"/>
+      <rect class="card-outline" x="32" y="32" width="318" height="182"/>
       <g class="type-name">
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">~</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> directory::Team</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="365" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="336" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A team led by one member.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="122.28" text-anchor="middle">~</text>
@@ -42,14 +42,14 @@
       </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">MemberId</tspan></text>
       <text class="description" y="163" xml:space="preserve"><tspan x="46" dy="0">The team lead.</tspan></text>
-      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="162" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="148" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
       <g class="field-name">
-        <text class="md-badge" x="196" y="122.28" text-anchor="middle">~</text>
-        <text x="202" y="123" text-anchor="start" xml:space="preserve"> others</text>
+        <text class="md-badge" x="182" y="122.28" text-anchor="middle">~</text>
+        <text x="188" y="123" text-anchor="start" xml:space="preserve"> others</text>
       </g>
-      <text class="field-type" y="139" xml:space="preserve"><tspan x="190" dy="0">Vec&lt;MemberId&gt;</tspan></text>
-      <text class="description" y="163" xml:space="preserve"><tspan x="190" dy="0">The keys of the other </tspan><tspan x="190" dy="18">members.</tspan></text>
-      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="365" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="176" dy="0">Vec&lt;MemberId&gt;</tspan></text>
+      <text class="description" y="163" xml:space="preserve"><tspan x="176" dy="0">The keys of the other </tspan><tspan x="176" dy="18">members.</tspan></text>
+      <text class="target" text-anchor="end" y="203" xml:space="preserve"><tspan x="336" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
     </g>
   </g>
   <g class="relationships">

@@ -37,7 +37,7 @@
         <text class="md-badge" x="55" y="86.92" text-anchor="middle">−</text>
         <text x="64" y="88" text-anchor="start" xml:space="preserve"> Query</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="88" xml:space="preserve"><tspan x="415" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="88" xml:space="preserve"><tspan x="415" dy="0">enum</tspan></text>
       <text class="description" y="111" xml:space="preserve"><tspan x="46" dy="0">A query that selects sections by their headings.</tspan></text>
       <text class="variant-name" y="149" xml:space="preserve"><tspan x="46" dy="0">Both</tspan></text>
       <text class="description" y="149" xml:space="preserve"><tspan x="92" dy="0">Sections both queries select.</tspan></text>

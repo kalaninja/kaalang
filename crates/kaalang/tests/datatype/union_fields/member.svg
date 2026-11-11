@@ -34,7 +34,7 @@
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Lookup</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="281" dy="0">union · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="281" dy="0">union</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A member key or its raw </tspan><tspan x="46" dy="18">number, in shared storage.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="140.28" text-anchor="middle">−</text>
@@ -59,7 +59,7 @@
         <text class="md-badge" x="55" y="320.92" text-anchor="middle">−</text>
         <text x="64" y="322" text-anchor="start" xml:space="preserve"> Member</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="322" xml:space="preserve"><tspan x="309" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="322" xml:space="preserve"><tspan x="309" dy="0">struct</tspan></text>
       <text class="description" y="345" xml:space="preserve"><tspan x="46" dy="0">A member of the directory.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="380.28" text-anchor="middle">−</text>

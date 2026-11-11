@@ -34,7 +34,7 @@
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Approval&lt;&apos;a&gt;</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="371" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="371" dy="0">enum</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">Who may approve a change.</tspan></text>
       <text class="variant-name" y="125" xml:space="preserve"><tspan x="46" dy="0">Open</tspan></text>
       <text class="description" y="125" xml:space="preserve"><tspan x="92" dy="0">Anyone may approve.</tspan></text>
@@ -66,7 +66,7 @@
         <text class="md-badge" x="55" y="534.92" text-anchor="middle">−</text>
         <text x="64" y="536" text-anchor="start" xml:space="preserve"> Member</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="536" xml:space="preserve"><tspan x="399" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="536" xml:space="preserve"><tspan x="399" dy="0">struct</tspan></text>
       <text class="description" y="559" xml:space="preserve"><tspan x="46" dy="0">A member who may approve a change.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="594.28" text-anchor="middle">−</text>

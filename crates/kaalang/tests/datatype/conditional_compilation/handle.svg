@@ -27,14 +27,14 @@
   <g class="cards">
     <g class="card">
       <title xml:space="preserve">Session</title>
-      <rect class="card-shape" x="32" y="32" width="265" height="200"/>
-      <path class="card-rules" d="M 32 120 L 297 120 M 32 176 L 297 176"/>
-      <rect class="card-outline" x="32" y="32" width="265" height="200"/>
+      <rect class="card-shape" x="32" y="32" width="255" height="200"/>
+      <path class="card-rules" d="M 32 120 L 287 120 M 32 176 L 287 176"/>
+      <rect class="card-outline" x="32" y="32" width="255" height="200"/>
       <g class="type-name">
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Session</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="283" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="273" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A session that holds a device </tspan><tspan x="46" dy="18">open.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="140.28" text-anchor="middle">+</text>
@@ -42,14 +42,14 @@
       </g>
       <text class="field-type" y="157" xml:space="preserve"><tspan x="46" dy="0">Handle</tspan></text>
       <text class="description" y="143" xml:space="preserve"><tspan x="126" dy="0">The open device.</tspan></text>
-      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="283" dy="0">▸ <tspan class="md-code">Handle</tspan></tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="273" dy="0">▸ <tspan class="md-code">Handle</tspan></tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="196.28" text-anchor="middle">+</text>
         <text x="58" y="197" text-anchor="start" xml:space="preserve"> log</text>
       </g>
       <text class="field-type" y="213" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
       <text class="description" y="199" xml:space="preserve"><tspan x="126" dy="0">The device it logs to.</tspan></text>
-      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="283" dy="0">▸ <tspan class="md-code">Device</tspan></tspan></text>
+      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="273" dy="0">▸ <tspan class="md-code">Device</tspan></tspan></text>
     </g>
     <g class="card focus">
       <title xml:space="preserve">Handle</title>
@@ -80,8 +80,8 @@
   <g class="relationships">
     <g class="relationship-route">
       <title xml:space="preserve">Session → Handle</title>
-      <path class="relationship" d="M 297 160 L 311 160 L 311 280" marker-end="url(#relationship-arrow)"/>
-      <circle class="relationship-source" cx="297" cy="160" r="4"/>
+      <path class="relationship" d="M 287 160 L 301 160 L 301 280" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="287" cy="160" r="4"/>
     </g>
   </g>
 </svg>

@@ -248,9 +248,10 @@ fn visibility(item: &Item) -> &Visibility {
     }
 }
 
-/// `struct · repr(Rust)`: the form, and the representation Rust's `repr`
-/// attributes give it, or its default. A `repr` under a `cfg_attr` that holds
-/// is one of them, since configuring the source expanded it.
+/// `struct · repr(C)`: the form, and the representation Rust's `repr`
+/// attributes give it, or the form alone for the default. A `repr` under a
+/// `cfg_attr` that holds is one of them, since configuring the source expanded
+/// it.
 fn kind(source: &str, item: &Item) -> String {
     let (form, attributes) = match item {
         Item::Struct(declaration) => ("struct", &declaration.attrs),
@@ -274,12 +275,10 @@ fn kind(source: &str, item: &Item) -> String {
         // An empty `repr()` leaves the default, as Rust reads it.
         .filter(|representation| !representation.is_empty())
         .collect();
-    let representation = if representations.is_empty() {
-        "Rust".to_owned()
-    } else {
-        representations.join(", ")
-    };
-    format!("{form} · repr({representation})")
+    if representations.is_empty() {
+        return form.to_owned();
+    }
+    format!("{form} · repr({})", representations.join(", "))
 }
 
 /// Checks every text the card shows for characters XML 1.0 cannot represent.

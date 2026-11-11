@@ -351,7 +351,7 @@ reserve space for omitted target cards.
 
 ## 5. Representation labels
 
-Read representation from Rust's `repr` attributes. Show `repr(Rust)` when a
+Read representation from Rust's `repr` attributes. Show no representation when a
 nominal type uses the default, and preserve explicit representations and
 modifiers, including `C`, `transparent`, integer enum representations, `align`,
 and `packed`. Rust decides which combinations are valid. Several `repr`
@@ -359,8 +359,8 @@ attributes combine into one label, those under a `cfg_attr` that holds for the
 compilation target included. An alias has no independent representation label.
 
 Representation does not specify a relationship kind. `repr(C)` on one type does
-not change the representation of its field types, and a `repr(Rust)` struct need
-not store fields in source order.
+not change the representation of its field types, and a struct with the default
+representation need not store fields in source order.
 [Rust Reference: representations](https://doc.rust-lang.org/reference/type-layout.html#representations).
 
 ## 6. Command-line interface
@@ -480,43 +480,43 @@ assume that an attribute invocation can discover it alone.
 
 Acceptance scenarios:
 
-| Scenario                                                | Required result                                                          |
-| ------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Named, tuple, and unit structs; enums; unions; aliases  | Preserve the Rust declaration form.                                      |
-| Bare `#[kaa]` on a type                                 | Draw the card without a description line.                                |
-| Unequal enum variant field counts                       | Draw each variant's own product.                                         |
-| `case` on a unit variant                                | Draw the description beside the variant's name.                          |
-| `value` and an unannotated field                        | Show values without inferring relationships.                             |
-| `refer(Member)` on `MemberId`                           | Keep `Member` as the target.                                             |
-| Aliases sharing a right-hand side                       | Keep their authored names and descriptions.                              |
-| Declaration-level `refer` on `History`                  | Associate it with the alias, without inventing a field.                  |
-| `refer(Attachment)` on `Attachment<Payload>`            | Create exactly one relationship to `Attachment`.                         |
-| `refer(T)` inside `Attachment<T>`                       | Reject the type parameter as a target.                                   |
-| A field referring to the focus itself                   | Route the line around the card; draw no second card.                     |
-| Multiple fields referring to the focus                  | Draw the incoming type once and retain the separate relationships.       |
-| An unannotated container or a large array               | Keep one field tile, with no element expansion.                          |
-| Focus view                                              | Draw incoming types above it and omit target cards below.                |
-| The item path declared in two packages                  | Fail listing both packages; `-p` selects one.                            |
-| The item path declared in two crates of one package     | Fail listing both crates, even with `-p`.                                |
-| A re-exported item path                                 | Select the declaration it resolves to.                                   |
-| A method whose `impl` block is in another module        | Select it through its type's path.                                       |
-| `Report::approve` with inherent and trait methods       | Select the inherent method.                                              |
-| `Report::approve` provided by two traits only           | Fail listing both.                                                       |
-| `<Report as Approve>::approve` on an `impl` without it  | Select the trait's default method.                                       |
-| `<&Report as Approve>::approve`                         | Select the method of the `impl` for `&Report`.                           |
-| Incoming types from two crates                          | Order the focus type's crate first, then its package, then others.       |
-| More incoming types than fit one row                    | Wrap them into rows in source order, each target group from a new one.   |
-| A focus type without `#[kaa]`                           | Draw its Rust structure without descriptions.                            |
-| `refer` to a plain type of the workspace                | Draw the relationship as to any other type.                              |
-| `refer` to `String`, a trait, or a module               | Fail naming the relationship and its target.                             |
-| A type under `cfg(unix)` and again under `cfg(windows)` | Draw the declaration the compilation target compiles.                    |
-| A field under a `cfg` that does not hold                | Draw no tile for it.                                                     |
-| `cfg_attr(unix, path = "unix.rs")` on a module          | Read `unix.rs` for a Unix compilation target.                            |
-| `repr(C)` under `cfg_attr(unix, …)`                     | Show `repr(C)` for a Unix compilation target and `repr(Rust)` otherwise. |
-| `cfg_attr(unix, kaa::refer(Device, …))` on a field      | Check and draw the relationship only where the predicate holds.          |
-| `cfg(feature = "audit")`                                | Hold with `audit` enabled by default or through `--features`.            |
-| `cfg(test)`                                             | Hold in test and bench targets only.                                     |
-| An unknown `--target`                                   | Fail.                                                                    |
+| Scenario                                                | Required result                                                        |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Named, tuple, and unit structs; enums; unions; aliases  | Preserve the Rust declaration form.                                    |
+| Bare `#[kaa]` on a type                                 | Draw the card without a description line.                              |
+| Unequal enum variant field counts                       | Draw each variant's own product.                                       |
+| `case` on a unit variant                                | Draw the description beside the variant's name.                        |
+| `value` and an unannotated field                        | Show values without inferring relationships.                           |
+| `refer(Member)` on `MemberId`                           | Keep `Member` as the target.                                           |
+| Aliases sharing a right-hand side                       | Keep their authored names and descriptions.                            |
+| Declaration-level `refer` on `History`                  | Associate it with the alias, without inventing a field.                |
+| `refer(Attachment)` on `Attachment<Payload>`            | Create exactly one relationship to `Attachment`.                       |
+| `refer(T)` inside `Attachment<T>`                       | Reject the type parameter as a target.                                 |
+| A field referring to the focus itself                   | Route the line around the card; draw no second card.                   |
+| Multiple fields referring to the focus                  | Draw the incoming type once and retain the separate relationships.     |
+| An unannotated container or a large array               | Keep one field tile, with no element expansion.                        |
+| Focus view                                              | Draw incoming types above it and omit target cards below.              |
+| The item path declared in two packages                  | Fail listing both packages; `-p` selects one.                          |
+| The item path declared in two crates of one package     | Fail listing both crates, even with `-p`.                              |
+| A re-exported item path                                 | Select the declaration it resolves to.                                 |
+| A method whose `impl` block is in another module        | Select it through its type's path.                                     |
+| `Report::approve` with inherent and trait methods       | Select the inherent method.                                            |
+| `Report::approve` provided by two traits only           | Fail listing both.                                                     |
+| `<Report as Approve>::approve` on an `impl` without it  | Select the trait's default method.                                     |
+| `<&Report as Approve>::approve`                         | Select the method of the `impl` for `&Report`.                         |
+| Incoming types from two crates                          | Order the focus type's crate first, then its package, then others.     |
+| More incoming types than fit one row                    | Wrap them into rows in source order, each target group from a new one. |
+| A focus type without `#[kaa]`                           | Draw its Rust structure without descriptions.                          |
+| `refer` to a plain type of the workspace                | Draw the relationship as to any other type.                            |
+| `refer` to `String`, a trait, or a module               | Fail naming the relationship and its target.                           |
+| A type under `cfg(unix)` and again under `cfg(windows)` | Draw the declaration the compilation target compiles.                  |
+| A field under a `cfg` that does not hold                | Draw no tile for it.                                                   |
+| `cfg_attr(unix, path = "unix.rs")` on a module          | Read `unix.rs` for a Unix compilation target.                          |
+| `repr(C)` under `cfg_attr(unix, …)`                     | Show `repr(C)` for a Unix compilation target and no `repr` otherwise.  |
+| `cfg_attr(unix, kaa::refer(Device, …))` on a field      | Check and draw the relationship only where the predicate holds.        |
+| `cfg(feature = "audit")`                                | Hold with `audit` enabled by default or through `--features`.          |
+| `cfg(test)`                                             | Hold in test and bench targets only.                                   |
+| An unknown `--target`                                   | Fail.                                                                  |
 
 ## 8. Compatibility and exclusions
 

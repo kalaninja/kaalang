@@ -27,14 +27,14 @@
   <g class="cards">
     <g class="card">
       <title xml:space="preserve">Document</title>
-      <rect class="card-shape" x="32" y="32" width="287" height="210"/>
-      <path class="card-rules" d="M 32 120 L 319 120 M 32 168 L 319 168"/>
-      <rect class="card-outline" x="32" y="32" width="287" height="210"/>
+      <rect class="card-shape" x="32" y="32" width="260" height="210"/>
+      <path class="card-rules" d="M 32 120 L 292 120 M 32 168 L 292 168"/>
+      <rect class="card-outline" x="32" y="32" width="260" height="210"/>
       <g class="type-name">
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Document</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="305" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="278" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A document with its publication </tspan><tspan x="46" dy="18">state.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="140.28" text-anchor="middle">−</text>
@@ -47,8 +47,8 @@
         <text x="58" y="189" text-anchor="start" xml:space="preserve"> state</text>
       </g>
       <text class="field-type" y="205" xml:space="preserve"><tspan x="46" dy="0">State</tspan></text>
-      <text class="description" y="191" xml:space="preserve"><tspan x="118" dy="0">The current publication </tspan><tspan x="118" dy="18">state.</tspan></text>
-      <text class="target" text-anchor="end" y="231" xml:space="preserve"><tspan x="305" dy="0">▸ <tspan class="md-code">State</tspan></tspan></text>
+      <text class="description" y="191" xml:space="preserve"><tspan x="118" dy="0">The current </tspan><tspan x="118" dy="18">publication state.</tspan></text>
+      <text class="target" text-anchor="end" y="231" xml:space="preserve"><tspan x="278" dy="0">▸ <tspan class="md-code">State</tspan></tspan></text>
     </g>
     <g class="card focus">
       <title xml:space="preserve">State</title>
@@ -81,8 +81,8 @@
   <g class="relationships">
     <g class="relationship-route">
       <title xml:space="preserve">Document → State</title>
-      <path class="relationship" d="M 319 226 L 333 226 L 333 290" marker-end="url(#relationship-arrow)"/>
-      <circle class="relationship-source" cx="319" cy="226" r="4"/>
+      <path class="relationship" d="M 292 226 L 306 226 L 306 290" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="292" cy="226" r="4"/>
     </g>
   </g>
 </svg>

@@ -54,7 +54,7 @@
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Order</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A <tspan class="md-bold">shop order</tspan>, with its revision history and </tspan><tspan x="46" dy="18">split shipments.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="140.28" text-anchor="middle">+</text>
@@ -115,7 +115,7 @@
         <text class="md-badge" x="55" y="565.92" text-anchor="middle">−</text>
         <text x="64" y="567" text-anchor="start" xml:space="preserve"> order::Line</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="567" xml:space="preserve"><tspan x="525" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="567" xml:space="preserve"><tspan x="525" dy="0">struct</tspan></text>
       <text class="description" y="590" xml:space="preserve"><tspan x="46" dy="0">One product in an order, with its quantity.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="625.28" text-anchor="middle">−</text>

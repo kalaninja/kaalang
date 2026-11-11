@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1163" height="686" viewBox="0 0 1163 686" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="1116" height="686" viewBox="0 0 1116 686" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang type diagram for Member</title>
   <desc id="kaalang-description">Type Member with incoming types MemberRef&lt;&apos;a&gt;, Report&lt;&apos;a&gt; (4 relationships), directory::Team.</desc>
   <defs>
@@ -49,7 +49,7 @@
         <text class="md-badge" x="424" y="62.92" text-anchor="middle">−</text>
         <text x="433" y="64" text-anchor="start" xml:space="preserve"> Report&lt;&apos;a&gt;</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="710" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="710" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="415" dy="0">A report with its assigned participants.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="421" y="122.28" text-anchor="middle">−</text>
@@ -88,14 +88,14 @@
     </g>
     <g class="card">
       <title xml:space="preserve">directory::Team</title>
-      <rect class="card-shape" x="756" y="32" width="347" height="200"/>
-      <path class="card-rules" d="M 756 102 L 1103 102 M 756 158 L 1103 158"/>
-      <rect class="card-outline" x="756" y="32" width="347" height="200"/>
+      <rect class="card-shape" x="756" y="32" width="300" height="200"/>
+      <path class="card-rules" d="M 756 102 L 1056 102 M 756 158 L 1056 158"/>
+      <rect class="card-outline" x="756" y="32" width="300" height="200"/>
       <g class="type-name">
         <text class="md-badge" x="779" y="62.92" text-anchor="middle">~</text>
         <text x="788" y="64" text-anchor="start" xml:space="preserve"> directory::Team</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1089" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="1042" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="770" dy="0">A team led by one member.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="776" y="122.28" text-anchor="middle">~</text>
@@ -103,25 +103,25 @@
       </g>
       <text class="field-type" y="139" xml:space="preserve"><tspan x="770" dy="0">MemberId</tspan></text>
       <text class="description" y="125" xml:space="preserve"><tspan x="882" dy="0">The team lead.</tspan></text>
-      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1089" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="target" text-anchor="end" y="147" xml:space="preserve"><tspan x="1042" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
       <g class="field-name">
         <text class="md-badge" x="776" y="178.28" text-anchor="middle">~</text>
         <text x="782" y="179" text-anchor="start" xml:space="preserve"> others</text>
       </g>
       <text class="field-type" y="195" xml:space="preserve"><tspan x="770" dy="0">Vec&lt;MemberId&gt;</tspan></text>
       <text class="description" y="181" xml:space="preserve"><tspan x="882" dy="0">The keys of the other </tspan><tspan x="882" dy="18">members.</tspan></text>
-      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="1089" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
+      <text class="target" text-anchor="end" y="221" xml:space="preserve"><tspan x="1042" dy="0">▸ <tspan class="md-code">super::MemberId</tspan></tspan></text>
     </g>
     <g class="card focus">
       <title xml:space="preserve">Member</title>
-      <rect class="card-shape" x="32" y="512" width="1099" height="142"/>
-      <path class="card-rules" d="M 32 582 L 1131 582"/>
-      <rect class="card-outline" x="32" y="512" width="1099" height="142"/>
+      <rect class="card-shape" x="32" y="512" width="1052" height="142"/>
+      <path class="card-rules" d="M 32 582 L 1084 582"/>
+      <rect class="card-outline" x="32" y="512" width="1052" height="142"/>
       <g class="type-name">
         <text class="md-badge" x="55" y="542.92" text-anchor="middle">−</text>
         <text x="64" y="544" text-anchor="start" xml:space="preserve"> Member</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="544" xml:space="preserve"><tspan x="1117" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="544" xml:space="preserve"><tspan x="1070" dy="0">struct</tspan></text>
       <text class="description" y="567" xml:space="preserve"><tspan x="46" dy="0">A member that can appear in several roles.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="602.28" text-anchor="middle">−</text>
@@ -159,8 +159,8 @@
     </g>
     <g class="relationship-route">
       <title xml:space="preserve">directory::Team → Member</title>
-      <path class="relationship" d="M 1103 142 L 1117 142 L 1117 512" marker-end="url(#relationship-arrow)"/>
-      <circle class="relationship-source" cx="1103" cy="142" r="4"/>
+      <path class="relationship" d="M 1056 142 L 1070 142 L 1070 512" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="1056" cy="142" r="4"/>
     </g>
   </g>
 </svg>

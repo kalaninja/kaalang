@@ -34,7 +34,7 @@
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> order::Receipt&lt;&apos;a&gt;</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="394" dy="0">struct · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="394" dy="0">struct</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A receipt, printed from the order it lists.</tspan></text>
       <g class="field-name">
         <text class="md-badge" x="52" y="122.28" text-anchor="middle">−</text>

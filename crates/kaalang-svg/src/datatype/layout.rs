@@ -1105,7 +1105,7 @@ mod tests {
         Card {
             name: name.to_owned(),
             marker: '+',
-            kind: "struct · repr(Rust)".to_owned(),
+            kind: "struct".to_owned(),
             description: Some("A card.".to_owned()),
             structure,
         }

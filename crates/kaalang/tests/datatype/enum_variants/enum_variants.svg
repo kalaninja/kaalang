@@ -37,7 +37,7 @@
         <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
         <text x="64" y="64" text-anchor="start" xml:space="preserve"> Approval&lt;&apos;a&gt;</text>
       </g>
-      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">enum · repr(Rust)</tspan></text>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">enum</tspan></text>
       <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">Who may approve a change.</tspan></text>
       <text class="variant-name" y="125" xml:space="preserve"><tspan x="46" dy="0">Open</tspan></text>
       <text class="description" y="125" xml:space="preserve"><tspan x="92" dy="0">Anyone may approve.</tspan></text>

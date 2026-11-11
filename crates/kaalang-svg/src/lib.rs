@@ -403,7 +403,7 @@ mod tests {
         let read = svg(&unix).unwrap();
         assert!(read.contains(">u8</tspan>"), "{read}");
         assert!(!read.contains("isize"), "{read}");
-        assert!(read.contains(">struct · repr(Rust)</tspan>"), "{read}");
+        assert!(read.contains(">struct</tspan>"), "{read}");
         let other = svg(Target::EMPTY).unwrap();
         assert!(other.contains(">u16</tspan>"), "{other}");
         assert_eq!(
@@ -460,7 +460,7 @@ mod tests {
 
         assert!(svg("Combined", Target::EMPTY).contains(">struct · repr(C, align(8))</tspan>"));
         assert!(svg("Conditional", &unix).contains(">struct · repr(C)</tspan>"));
-        assert!(svg("Conditional", Target::EMPTY).contains(">struct · repr(Rust)</tspan>"));
+        assert!(svg("Conditional", Target::EMPTY).contains(">struct</tspan>"));
     }
 
     /// Renders the flow at `path` within `source`, read for no target.
