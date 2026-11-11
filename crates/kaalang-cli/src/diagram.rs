@@ -20,7 +20,7 @@ pub(super) struct Diagram {
     #[arg(long, value_parser = NonEmptyStringValueParser::new())]
     flow: Option<String>,
     /// Rust path of the type from its crate root
-    #[arg(long = "type", id = "type", value_parser = NonEmptyStringValueParser::new())]
+    #[arg(long = "type", id = "type", value_name = "TYPE", value_parser = NonEmptyStringValueParser::new())]
     ty: Option<String>,
     #[arg(
         short,
