@@ -8,8 +8,9 @@ use proc_macro2::Span;
 use syn::{Item, Meta, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
-    RenderError, Target, TypeCard, collapsed, collapsed_text, location, parse_configured,
-    parser_source, validate_description, validate_label, visibility_marker, with_visibility,
+    RenderError, Target, TypeCard, collapsed, collapsed_text, generics_text, location,
+    parse_configured, parser_source, validate_description, validate_label, visibility_marker,
+    with_visibility,
 };
 
 mod layout;
@@ -145,15 +146,12 @@ fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, R
         card.relationships
     );
 
-    let generics = &declaration.generics;
-    let generics = match (&generics.lt_token, &generics.gt_token) {
-        (Some(open), Some(close)) => {
-            collapsed_text(&source[open.span.byte_range().start..close.span.byte_range().end])
-        }
-        _ => String::new(),
-    };
     let read = Card {
-        name: format!("{}{generics}", card.header),
+        name: format!(
+            "{}{}",
+            card.header,
+            generics_text(source, &declaration.generics)
+        ),
         marker: visibility_marker(visibility(item)),
         kind: kind(source, item),
         description: declaration.description,

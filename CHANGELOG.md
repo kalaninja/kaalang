@@ -43,8 +43,9 @@
   `--features`, `--all-features`, and `--no-default-features`. A `cfg` holds as
   cargo decides one for that target, from `rustc --print cfg`, `RUSTFLAGS`, and
   the resolved features, and what does not hold is left out, from modules and
-  items to fields and variants. A `cfg_attr` that holds counts, a `repr` or a
-  module's `path` under one included. See [RFC 0009](docs/rfcs/0009-types.md).
+  items to fields, variants, and parameters. A `cfg_attr` that holds counts, a
+  `repr` or a module's `path` under one included. See
+  [RFC 0009](docs/rfcs/0009-types.md).
 - `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
   optional description. Fields take `kaa::value` or `kaa::refer` annotations,
   enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.

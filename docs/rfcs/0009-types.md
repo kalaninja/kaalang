@@ -243,12 +243,12 @@ separate cards below it. There are no lines from the focus to other cards. An
 incoming type with several relationships to the focus is drawn once; each
 relationship keeps its own source field or alias.
 
-A declaration, field, or variant under a `cfg` that does not hold for the
-compilation target is not part of the source the diagram reads, and a `cfg_attr`
-whose predicate holds stands for the attributes it carries. A crate may declare
-one path under exclusive `cfg`s, such as `#[cfg(unix)]` and `#[cfg(windows)]`,
-on the declarations or on the modules around them; the diagram draws the
-declaration the compilation target compiles.
+A declaration, field, variant, or generic parameter under a `cfg` that does not
+hold for the compilation target is not part of the source the diagram reads, and
+a `cfg_attr` whose predicate holds stands for the attributes it carries. A crate
+may declare one path under exclusive `cfg`s, such as `#[cfg(unix)]` and
+`#[cfg(windows)]`, on the declarations or on the modules around them; the
+diagram draws the declaration the compilation target compiles.
 
 ### 4.2 Structure
 
@@ -429,11 +429,11 @@ script sets included. Cargo's configuration files are not read, so their
 failure.
 
 Before reading a file, the command removes what does not hold, as rustc does:
-items, `impl` and trait items, fields, and variants under a `cfg` that fails,
-and the whole file when its inner `cfg` fails. It replaces each `cfg_attr` whose
-predicate holds with the attributes it carries, so
-`#[cfg_attr(unix, path = "unix.rs")]` names a module's file for a Unix
-compilation target.
+items, `impl` and trait items, fields, variants, and generic and function
+parameters under a `cfg` that fails, and the whole file when its inner `cfg`
+fails. It replaces each `cfg_attr` whose predicate holds with the attributes it
+carries, so `#[cfg_attr(unix, path = "unix.rs")]` names a module's file for a
+Unix compilation target.
 
 The command reads each crate from its root through its `mod` declarations, as
 Rust does, and resolves by Rust's path rules the item from the crate root and a

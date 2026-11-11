@@ -5,7 +5,7 @@
 use std::{error::Error, fmt, num::NonZeroUsize};
 
 use proc_macro2::Span;
-use syn::{File, Visibility};
+use syn::{File, Generics, Visibility, spanned::Spanned};
 
 pub use self::target::Target;
 
@@ -298,6 +298,20 @@ fn collapsed(source: &str, span: Span) -> String {
     collapsed_text(&source[span.byte_range()])
 }
 
+/// The generic parameters a declaration keeps for its target, each as
+/// authored, between angle brackets, or nothing when it keeps none.
+fn generics_text(source: &str, generics: &Generics) -> String {
+    if generics.params.is_empty() {
+        return String::new();
+    }
+    let parameters: Vec<String> = generics
+        .params
+        .iter()
+        .map(|parameter| collapsed(source, parameter.span()))
+        .collect();
+    format!("<{}>", parameters.join(", "))
+}
+
 /// The UML visibility marker: `+` for `pub`, `~` for a restricted form such as
 /// `pub(crate)`, and `-` for private.
 fn visibility_marker(visibility: &Visibility) -> char {
@@ -461,6 +475,33 @@ mod tests {
         assert!(svg("Combined", Target::EMPTY).contains(">struct · repr(C, align(8))</tspan>"));
         assert!(svg("Conditional", &unix).contains(">struct · repr(C)</tspan>"));
         assert!(svg("Conditional", Target::EMPTY).contains(">struct</tspan>"));
+    }
+
+    #[test]
+    fn a_card_lists_the_generic_parameters_its_target_compiles() {
+        let source = "struct Handle<#[cfg(windows)] W, #[cfg(unix)] U>(u8);\n";
+        let unix: Target = "unix".parse().unwrap();
+        let svg = |target| {
+            render_type(&card(source, "Handle", target), &[], TypeOptions::default()).unwrap()
+        };
+
+        assert!(svg(&unix).contains(" Handle&lt;U&gt;</text>"));
+        assert!(svg(Target::EMPTY).contains(" Handle</text>"));
+    }
+
+    #[test]
+    fn a_flow_lists_the_parameters_its_target_compiles() {
+        let source = "#[kaa]\nfn copy<#[cfg(windows)] W, #[cfg(unix)] U>(#[cfg(windows)] raw: W, #[cfg(unix)] input: U) -> U {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
+        let unix: Target = "unix".parse().unwrap();
+        let options = RenderOptions {
+            target: &unix,
+            ..RenderOptions::default()
+        };
+
+        let svg = render_path(source, "copy", options).unwrap();
+        assert!(svg.contains("copy&lt;U&gt;"), "{svg}");
+        assert!(svg.contains("input: U"), "{svg}");
+        assert!(!svg.contains("raw") && !svg.contains("cfg"), "{svg}");
     }
 
     /// Renders the flow at `path` within `source`, read for no target.

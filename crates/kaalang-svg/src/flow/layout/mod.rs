@@ -24,6 +24,7 @@ pub(crate) use self::{
 use crate::{
     collapsed, collapsed_text,
     flow::captions::Captions,
+    generics_text,
     markup::{DOT_RADIUS, MARGIN},
     text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
     with_visibility,
@@ -330,11 +331,16 @@ pub(crate) fn start_text(
     visibility: Option<&Visibility>,
 ) -> String {
     let start = signature.span().byte_range().start;
-    let end = signature.paren_token.span.open().byte_range().start;
+    // The generics follow from the parameters the target keeps.
+    let end = signature.generics.lt_token.map_or_else(
+        || signature.paren_token.span.open().byte_range().start,
+        |open| open.span.byte_range().start,
+    );
     let keyword = signature.fn_token.span.byte_range();
     let mut header = source[start..end].to_owned();
     header.replace_range(keyword.start - start..keyword.end - start, "");
     let mut authored = collapsed_text(&header);
+    authored.push_str(&generics_text(source, &signature.generics));
     if let Some(where_clause) = &signature.generics.where_clause {
         authored.push(' ');
         authored.push_str(&collapsed(source, where_clause.span()));

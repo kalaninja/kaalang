@@ -3,19 +3,20 @@
 
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
-use syn::{Attribute, Fields, File, ImplItem, Item, Meta, TraitItem, punctuated::Punctuated};
+use syn::{
+    Attribute, Fields, File, FnArg, GenericParam, Generics, ImplItem, Item, Meta, Signature,
+    TraitItem, punctuated::Punctuated,
+};
 
 /// Answers whether a `cfg` predicate, the tokens inside `cfg(...)`, holds.
 type Holds<'a> = dyn FnMut(&TokenStream) -> bool + 'a;
 
 /// Removes from `file` what does not hold for a target: items, `impl` and trait
-/// items, fields, and variants under a `cfg` whose predicate fails, and every
-/// item when the file's inner `cfg` fails. Each `cfg_attr` whose predicate
-/// holds is replaced with the attributes it carries, and one that fails is
-/// removed, so what remains reads as the target compiles it. The `cfg`s that
-/// hold are removed too.
-// shortcut: generic and function parameters keep their `cfg`s, so a card or a
-// parameter panel shows them as written; strip them too once a diagram needs it.
+/// items, fields, variants, and the generic and function parameters of those
+/// under a `cfg` whose predicate fails, and every item when the file's inner
+/// `cfg` fails. Each `cfg_attr` whose predicate holds is replaced with the
+/// attributes it carries, and one that fails is removed, so what remains reads
+/// as the target compiles it. The `cfg`s that hold are removed too.
 pub fn configure(file: &mut File, holds: &mut dyn FnMut(&TokenStream) -> bool) {
     if active(&mut file.attrs, holds) {
         items(&mut file.items, holds);
@@ -35,22 +36,40 @@ fn items(items: &mut Vec<Item>, holds: &mut Holds<'_>) {
                     self::items(inner, holds);
                 }
             }
-            Item::Impl(block) => block.items.retain_mut(|item| match item {
-                ImplItem::Const(item) => active(&mut item.attrs, holds),
-                ImplItem::Fn(item) => active(&mut item.attrs, holds),
-                ImplItem::Type(item) => active(&mut item.attrs, holds),
-                ImplItem::Macro(item) => active(&mut item.attrs, holds),
-                _ => true,
-            }),
-            Item::Trait(declaration) => declaration.items.retain_mut(|item| match item {
-                TraitItem::Const(item) => active(&mut item.attrs, holds),
-                TraitItem::Fn(item) => active(&mut item.attrs, holds),
-                TraitItem::Type(item) => active(&mut item.attrs, holds),
-                TraitItem::Macro(item) => active(&mut item.attrs, holds),
-                _ => true,
-            }),
-            Item::Struct(declaration) => fields(&mut declaration.fields, holds),
+            Item::Fn(function) => signature(&mut function.sig, holds),
+            Item::Impl(block) => {
+                generics(&mut block.generics, holds);
+                block.items.retain_mut(|item| match item {
+                    ImplItem::Const(item) => active(&mut item.attrs, holds),
+                    ImplItem::Fn(item) => {
+                        signature(&mut item.sig, holds);
+                        active(&mut item.attrs, holds)
+                    }
+                    ImplItem::Type(item) => active(&mut item.attrs, holds),
+                    ImplItem::Macro(item) => active(&mut item.attrs, holds),
+                    _ => true,
+                });
+            }
+            Item::Trait(declaration) => {
+                generics(&mut declaration.generics, holds);
+                declaration.items.retain_mut(|item| match item {
+                    TraitItem::Const(item) => active(&mut item.attrs, holds),
+                    TraitItem::Fn(item) => {
+                        signature(&mut item.sig, holds);
+                        active(&mut item.attrs, holds)
+                    }
+                    TraitItem::Type(item) => active(&mut item.attrs, holds),
+                    TraitItem::Macro(item) => active(&mut item.attrs, holds),
+                    _ => true,
+                });
+            }
+            Item::Type(alias) => generics(&mut alias.generics, holds),
+            Item::Struct(declaration) => {
+                generics(&mut declaration.generics, holds);
+                fields(&mut declaration.fields, holds);
+            }
             Item::Enum(declaration) => {
+                generics(&mut declaration.generics, holds);
                 declaration.variants = std::mem::take(&mut declaration.variants)
                     .into_iter()
                     .filter_map(|mut variant| {
@@ -61,7 +80,10 @@ fn items(items: &mut Vec<Item>, holds: &mut Holds<'_>) {
                     })
                     .collect();
             }
-            Item::Union(declaration) => kept(&mut declaration.fields.named, holds),
+            Item::Union(declaration) => {
+                generics(&mut declaration.generics, holds);
+                kept(&mut declaration.fields.named, holds, field_attributes);
+            }
             _ => {}
         }
         true
@@ -92,16 +114,42 @@ fn attributes(item: &mut Item) -> Option<&mut Vec<Attribute>> {
 
 fn fields(fields: &mut Fields, holds: &mut Holds<'_>) {
     match fields {
-        Fields::Named(named) => kept(&mut named.named, holds),
-        Fields::Unnamed(unnamed) => kept(&mut unnamed.unnamed, holds),
+        Fields::Named(named) => kept(&mut named.named, holds, field_attributes),
+        Fields::Unnamed(unnamed) => kept(&mut unnamed.unnamed, holds, field_attributes),
         Fields::Unit => {}
     }
 }
 
-fn kept<P: Default>(fields: &mut Punctuated<syn::Field, P>, holds: &mut Holds<'_>) {
-    *fields = std::mem::take(fields)
+fn field_attributes(field: &mut syn::Field) -> &mut Vec<Attribute> {
+    &mut field.attrs
+}
+
+/// Keeps a function's generic and value parameters that hold.
+fn signature(signature: &mut Signature, holds: &mut Holds<'_>) {
+    generics(&mut signature.generics, holds);
+    kept(&mut signature.inputs, holds, |parameter| match parameter {
+        FnArg::Receiver(receiver) => &mut receiver.attrs,
+        FnArg::Typed(parameter) => &mut parameter.attrs,
+    });
+}
+
+fn generics(generics: &mut Generics, holds: &mut Holds<'_>) {
+    kept(&mut generics.params, holds, |parameter| match parameter {
+        GenericParam::Lifetime(parameter) => &mut parameter.attrs,
+        GenericParam::Type(parameter) => &mut parameter.attrs,
+        GenericParam::Const(parameter) => &mut parameter.attrs,
+    });
+}
+
+/// Keeps the elements of `list` whose attributes hold.
+fn kept<T, P: Default>(
+    list: &mut Punctuated<T, P>,
+    holds: &mut Holds<'_>,
+    attributes: impl Fn(&mut T) -> &mut Vec<Attribute>,
+) {
+    *list = std::mem::take(list)
         .into_iter()
-        .filter_map(|mut field| active(&mut field.attrs, holds).then_some(field))
+        .filter_map(|mut element| active(attributes(&mut element), holds).then_some(element))
         .collect();
 }
 
@@ -209,6 +257,28 @@ mod tests {
             "impl Report { fn fd () { } } trait Review { fn fd () ; } \
              struct Named { fd : i32 } struct Tuple (i32) ; \
              enum Handle { Fd (i32) } union Bits { fd : i32 }"
+        );
+    }
+
+    #[test]
+    fn generic_and_function_parameters_under_a_failing_cfg_are_removed() {
+        let source = "
+            struct Pair<#[cfg(windows)] W, #[cfg(unix)] U>(U);
+            enum Either<#[cfg(windows)] W, #[cfg(unix)] U> { Only(U) }
+            union Bits<#[cfg(windows)] W, #[cfg(unix)] U> { fd: U }
+            type Alias<#[cfg(windows)] W, #[cfg(unix)] U> = Pair<U>;
+            fn open<#[cfg(windows)] W, #[cfg(unix)] U>(#[cfg(windows)] raw: W, #[cfg(unix)] fd: U) {}
+            impl<#[cfg(windows)] W, #[cfg(unix)] U> Pair<U> {
+                fn close<#[cfg(windows)] 'w>(#[cfg(windows)] self, #[cfg(unix)] fd: U) {}
+            }
+            trait Review<#[cfg(windows)] W> { fn check(&self, #[cfg(windows)] raw: isize); }
+        ";
+        assert_eq!(
+            configured(source, &["unix"]),
+            "struct Pair < U > (U) ; enum Either < U > { Only (U) } \
+             union Bits < U > { fd : U } type Alias < U > = Pair < U > ; \
+             fn open < U > (fd : U) { } impl < U > Pair < U > { fn close (fd : U) { } } \
+             trait Review { fn check (& self) ; }"
         );
     }
 
