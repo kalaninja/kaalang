@@ -374,8 +374,8 @@ cargo kaalang diagram [-p <package>] [<compilation options>] --type <item> [--co
 
 The item is a Rust path from the crate root, which the command resolves as the
 compiler resolves a path in an expression: `model::Member`, `review::route`, or
-a re-export of either. A method is named through its type or its trait, wherever
-the crate declares the `impl` block:
+a re-export of either. A method is named through its type or its trait, in
+whichever module the crate declares the `impl` block:
 
 | Path                                     | Selects                                                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -388,7 +388,9 @@ Matching a type against an `impl` block ignores lifetimes, and the block's type
 parameters, `_`, and omitted generic arguments match any type:
 `<Vec<u8> as Approve>::approve` matches `impl<T> Approve for Vec<T>`. A type or
 trait the workspace does not declare is compared by its last segment, since the
-source alone cannot resolve it.
+source alone cannot resolve it. A flow is not selected from an `impl` block
+inside a function body or another block, or from one whose self type is an
+associated type, as `impl Step for <A as Iterator>::Item`.
 
 The command runs inside a cargo workspace and searches every member crate, for
 the item and for incoming types. When the path exists in several packages, `-p`
