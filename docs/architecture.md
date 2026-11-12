@@ -1,9 +1,6 @@
 # Compiler and SVG Pipeline
 
-This is an implementation map. The language and algorithm contracts live in
-[the RFCs](rfcs/), including [stages](rfcs/0006-stages.md),
-[language refinements](rfcs/0007-language-refinements.md),
-[cycle forms](rfcs/0008-cycle-forms.md), and [types](rfcs/0009-types.md).
+The language and algorithm contracts live in [the RFCs](rfcs/).
 
 ## Crate boundaries
 
@@ -15,7 +12,7 @@ This is an implementation map. The language and algorithm contracts live in
 | [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                                                                           |
 | [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, lay out type diagrams, and serialize standalone SVG.                                                                                                                   |
 | [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read the cargo workspace as cargo compiles it for one compilation target, find the selected flow or type there, resolve every `refer` target to find the type's incoming types, call the SVG entry point, and write the completed diagram. |
-| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness. This crate is unpublished and used only by tests.                                                                                            |
+| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                      |
 
 ```mermaid
 flowchart TD
@@ -44,16 +41,15 @@ flowchart TD
 | Plan    | [`plan/`](../crates/kaalang-compiler/src/plan/mod.rs), [`symbolic/plan/`](../crates/kaalang-compiler/src/symbolic/plan/mod.rs)                   | Build a nested branch/join plan; independently replay it over the complete execution domain using the selected representation.                                                                               | `ExecutionPlan`, packaged with preceding artifacts as `Analysis`.                                |
 | Project | [`topology/`](../crates/kaalang-compiler/src/topology/mod.rs), [`symbolic/projection.rs`](../crates/kaalang-compiler/src/symbolic/projection.rs) | Build nodes, exits, junctions, cycle boundaries, for-entry and for-end nodes, connections, back edges, and placement-only order. Preserve per-history transitive reduction when taking the connection union. | `Topology`.                                                                                      |
 | Arrange | [`construct/`](../crates/kaalang-compiler/src/construct/mod.rs)                                                                                  | Find abstract ranks, columns, corridors, lanes, and cycle contours; independently verify the witness.                                                                                                        | Verified `Arrangement`; `build` packages it with `Analysis` and `Topology` as a `SemanticModel`. |
-| Lower   | [`codegen/`](../crates/kaalang-compiler/src/codegen/mod.rs)                                                                                      | Emit hygienic Rust from the verified execution plan. Diagram realizability is checked first, although code generation discards the arrangement.                                                              | Lowered `ItemFn`.                                                                                |
+| Lower   | [`codegen/`](../crates/kaalang-compiler/src/codegen/mod.rs)                                                                                      | Emit hygienic Rust from the verified execution plan.                                                                                                                                                         | Lowered `ItemFn`.                                                                                |
 
 [`analyze`](../crates/kaalang-compiler/src/lib.rs) returns an `Analysis` with a
-verified plan but does not check diagram realizability. `build` adds topology
-and arrangement; `expand` checks the expanded diagram before emitting Rust and
-discards its arrangement. Macro expansion does not run compaction or SVG layout.
+verified plan without checking diagram realizability. `expand` checks the
+expanded diagram before emitting Rust, then discards its arrangement; macro
+expansion runs no compaction or SVG layout.
 
-For each local flow, `build_with_options` always constructs the expanded
-projection first. A collapsed SVG request constructs a second, collapsed
-projection only after the expanded one succeeds.
+For each local flow, `build_with_options` constructs the expanded projection
+first, and a requested collapsed one only after it succeeds.
 
 ## Execution representation
 
@@ -72,15 +68,14 @@ producer occurrences, capture dependencies, and final outcomes. Cycles,
 preparation, and stage transitions use this same representation without
 unfolding iterations or visits. Validation, plan verification, and connection
 reduction query the whole domain; concrete witnesses supply only union facts.
-The algorithm is specified in
-[RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis); its
-threshold is the implementation constant `ENUMERATED_HISTORY_LIMIT`.
+[RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis)
+specifies the algorithm.
 
 [`Executions`](../crates/kaalang-compiler/src/executions.rs) hides the storage
-choice. `len()` counts without materializing summaries. Access through its `Vec`
-interface enumerates and caches the complete list. Explicit enumeration can
-still be exponential. The ordinary implementation also serves as the reference
-for [`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
+choice. `len()` counts without materializing summaries; its `Vec` interface
+enumerates and caches the complete list, which can still be exponential. The
+ordinary implementation is the reference for
+[`symbolic/tests.rs`](../crates/kaalang-compiler/src/symbolic/tests.rs).
 
 ## Staged flows
 
@@ -123,11 +118,11 @@ is a test oracle, not a runtime fallback.
 `datatype/`, over the text measurement in `text.rs` and the SVG markup in
 `markup.rs` that both share.
 
-Structural compaction belongs to `kaalang-render` and retains a replacement only
-after [`ArrangementVerifier`](../crates/kaalang-render/src/verify/mod.rs) checks
-it with the compiler's shared arrangement checks and cycle-boundary checks.
-`kaalang-svg` assigns dimensions and spacing to that compacted arrangement; the
-recorded rows, columns, and corridors remain its structural input.
+`kaalang-render`'s
+[`ArrangementVerifier`](../crates/kaalang-render/src/verify/mod.rs) checks each
+compaction candidate with the compiler's shared arrangement checks and the
+cycle-boundary checks. `kaalang-svg` assigns dimensions and spacing to the
+compacted arrangement; its rows, columns, and corridors stay fixed.
 
 | Step                                                                                                             | Primary path                                                                                                                                                                                         | Artifact                           | Fallback                                                                                                                                                                            |
 | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -137,11 +132,11 @@ recorded rows, columns, and corridors remain its structural input.
 | [Verification](../crates/kaalang-svg/src/flow/layout/mod.rs)                                                     | Check route geometry and arrangement correspondence, then labels, cycle boundaries, canvas bounds, and correspondence again after final translation. Verify staged composition before serialization. | Verified `Scene` or `StagedScene`. | None: an unverified scene is never serialized.                                                                                                                                      |
 | [Serialization](../crates/kaalang-svg/src/flow/svg/mod.rs), [markup](../crates/kaalang-svg/src/markup.rs)        | Write escaped Unicode, embedded CSS, accessible text, nodes, boundaries, and paths to one standalone SVG string.                                                                                     | Standalone SVG `String`.           | None.                                                                                                                                                                               |
 
-The SVG entry point is [`render_flow`](../crates/kaalang-svg/src/lib.rs), which
-hands the flow to [`flow::render`](../crates/kaalang-svg/src/flow/mod.rs): parse
-the Rust file, remove what the options' compilation target does not compile,
-take the flow at the position the caller selected, build the model, compact it,
-validate labels, lay it out, verify it, and serialize it.
+Before these steps, the entry point
+[`render_flow`](../crates/kaalang-svg/src/lib.rs), through
+[`flow::render`](../crates/kaalang-svg/src/flow/mod.rs), parses the Rust file,
+removes what the options' compilation target does not compile, takes the flow at
+the position the caller selected, and builds its model.
 
 ## Type diagrams
 

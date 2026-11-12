@@ -13,20 +13,15 @@ and how its parts fit together. Inspired by DRAKON, it makes the structure of an
 algorithm explicit in code.
 
 You write an algorithm as described steps, decisions, and cycles, with explicit
-inputs and outputs. Rust expressions implement the computations inside those
+inputs and outputs, and Rust expressions implement the computations inside those
 blocks. The same validated flow becomes ordinary Rust code and a readable
-diagram.
-
-Whether written by a person or AI, the code keeps its decisions and dependencies
-explicit, while descriptions explain each step's purpose. That makes the flow
-easier to read, explain, change, and review.
+diagram, whether a person or AI wrote it.
 
 _Work in progress._
 
 ## A first flow: `FizzBuzz`
 
-A flow is a Rust function marked with `#[kaa]`. Here, it chooses what to say
-based on whether a number is divisible by three, five, both, or neither.
+A flow is a Rust function marked with `#[kaa]`.
 
 ```rust
 use kaalang::kaa;
@@ -84,11 +79,8 @@ output names appear as labels along those paths.
 
 The `#[kaa]` macro translates the capture notation into ordinary Rust bindings
 and control flow. Blocks execute in source order along the selected path. Rust
-checks types, ownership, borrowing, and lifetimes.
-
-The diagram is generated from the same validated model used to produce the Rust
-code. kaalang checks that the flow admits a diagram under its visual rules
-before compiling it.
+checks types, ownership, borrowing, and lifetimes. kaalang checks that the flow
+admits a diagram under its visual rules before compiling it.
 
 ## Anatomy of a block
 
@@ -138,8 +130,7 @@ Captures express how an action accesses a wire:
 
 ## Formatting descriptions
 
-Descriptions accept a small inline notation, so a label can stress a condition,
-name a piece of code, or show a formula:
+Descriptions accept a small inline notation:
 
 | Write                                                            | Shows                                                                           |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -162,10 +153,6 @@ and
 [literal fallbacks](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/syntax/render_markup_fallbacks.svg).
 
 ## Block kinds
-
-`FizzBuzz` uses `choice`, `action`, and `return`. The other kinds let a flow ask
-a yes/no question, call an existing function, repeat a sequence, or organize
-work into named stages:
 
 | Kind       | Role in a flow                                                               |
 | ---------- | ---------------------------------------------------------------------------- |
@@ -193,10 +180,6 @@ iteration ends at a for-end node below it, which repeats the description and
 from which the flow continues once the items run out.
 
 ### Putting it together: binary search
-
-Searching a sorted slice adds state and repetition. Each iteration checks
-whether any candidates remain, compares the middle value with the target, and
-either narrows the range or finishes with `Some(index)` or `None`.
 
 ```rust
 use std::cmp::Ordering;
@@ -304,14 +287,9 @@ current state:
 
 [Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine_without_stages.rs)
 
-After each state update, control returns to the choice. Selecting `Finish`
-leaves the cycle and reaches the return. Both versions follow the same path.
+Both versions follow the same path.
 
 ### Stages in practice: quicksort
-
-Quicksort sorts a slice in place. Its stages check whether work remains,
-partition the range around a pivot, sort the smaller group recursively, and
-finish:
 
 ```rust
 use core::cmp::Ordering;
@@ -411,9 +389,8 @@ pub(crate) fn quick_sort<T: Ord>(values: &mut [T]) {
 }
 ```
 
-The partitioning cycle groups values below, equal to, and above the pivot. Only
-the smaller outer group is sorted recursively. The `values` signal sends the
-larger group back to the first stage, keeping the recursive call stack
+Only the smaller outer group is sorted recursively. The `values` signal sends
+the larger group back to the first stage, keeping the recursive call stack
 logarithmic.
 
 With the partitioning cycle collapsed, the four stages are easier to see:
@@ -467,10 +444,9 @@ A type's diagram draws it under every type that refers to it:
 
 [Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/examples/gallery/order/mod.rs)
 
-The gallery follows a split order and keeps its previous revision. The diagram
-combines self-references, a tuple identifier with `repr(transparent)`, generic
-events, a borrowed receipt, an enum with `repr(u8)` and both tuple and named
-fields, and an alias.
+The diagram combines self-references, a tuple identifier with
+`repr(transparent)`, generic events, a borrowed receipt, an enum with `repr(u8)`
+and both tuple and named fields, and an alias.
 
 A type's name and its fields, like a flow's name in its start node, carry a UML
 visibility marker: `+` for `pub`, `~` for `pub(crate)` and other restricted
@@ -508,9 +484,9 @@ Draw the `FizzBuzz` diagram through the CLI.
 cargo kaalang diagram --flow fizzbuzz::fizzbuzz -o fizzbuzz.svg
 ```
 
-Open `fizzbuzz.svg` in a browser. Replace the flow's path from its crate root to
-render another example; add `--collapse-cycles` for the compact cycle view shown
-above. The output is a standalone SVG with no external rendering tools required.
+The flow is named by its path from the crate root; `--collapse-cycles` draws the
+collapsed cycle view. The output is a standalone SVG that needs no external
+rendering tools.
 
 Draw the `Order` type the same way, by its path:
 

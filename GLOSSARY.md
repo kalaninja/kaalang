@@ -1,7 +1,5 @@
 # kaalang Glossary
 
-The names used across kaalang's documentation, crates, diagnostics, and tests.
-
 ## Language
 
 - **flow**: one function marked `#[kaa]`; its **flow inputs** are its parameters
@@ -186,8 +184,7 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
   plus its exit offset (`Arrangement::exit_column`).
 - **contour**: the side, column boundary, and lane of a straight back-edge climb
   (`Contour`); a **back route** records the runs of a bent climb.
-- **witness**: an arrangement a search returns; it is accepted only after the
-  independent checks pass.
+- **witness**: an unverified arrangement a search returns.
 - **preferred search**: the conflict-guided first search.
 - **deciding sweep**: the fallback search, with straight then flexible back
   edges.
@@ -224,8 +221,7 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
   out.
 - **suite**: a corpus selection: ordinary, stress, or all (`Suite`).
 - **fixture diagram**: the `.svg` drawn beside its source for each flow, or each
-  type, of an executable fixture, redrawn by the test suite and reviewed in the
-  diff, never edited by hand.
+  type, of an executable fixture.
 - **probe**: a generated flow of a chosen size for the performance budgets.
 - **shape**: a generated small flow from a family enumerated exhaustively to
   compare searches and renders; unrelated to corridor shapes.

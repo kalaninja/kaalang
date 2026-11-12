@@ -12,22 +12,20 @@
 ## Sources of truth
 
 RFCs in `docs/rfcs/` define kaalang syntax and semantics. Implementation code,
-Rust documentation, diagnostics, test names, and test fixtures use the same
-terminology as the relevant RFC. Do not duplicate the language contract in other
+Rust documentation, diagnostics, test names, and test fixtures use the
+terminology of the relevant RFC. Do not duplicate the language contract in other
 documentation.
 
 RFCs describe syntax, semantics, observable behavior, and design decisions.
 Algorithms, transformation steps, their rationale, and correctness arguments
-belong in the RFC covering that subject. Keep crate choices, library versions,
-and concrete build or runtime configuration in code or development
-documentation.
+belong in the RFC covering that subject. Crate choices, library versions, and
+build or runtime configuration belong in code or development documentation.
 
-Accepted RFCs are immutable. Change an accepted decision through a new RFC that
-explicitly identifies the earlier provisions it supersedes. The new accepted RFC
-takes precedence for those provisions; the earlier RFC text stays unchanged.
+Accepted RFCs are immutable. A new RFC changes an accepted decision by naming
+the provisions it supersedes, and takes precedence for them.
 
-Keep comments and Rust documentation concise: explain contracts and non-obvious
-decisions, avoid restating code, and link to RFCs for detailed rationale.
+Comments and Rust documentation explain contracts and non-obvious decisions,
+never what the code shows, and link to RFCs for detailed rationale.
 
 Always write the language name as `kaalang`, including at the start of a
 sentence and in headings.
@@ -39,61 +37,44 @@ document rejected programs and their diagnostics.
 
 ### Block kind modules
 
-Put behavior that is specific to one block kind in a module named for that kind
-within each implementation phase that needs it, such as `parse/action.rs`,
-`analyze/question.rs`, or `codegen/choice.rs`. Parent phase modules own shared
-data flow, structural traversal, cross-kind invariants, and thin exhaustive
-dispatch only. An exhaustive dispatch delegates authored block variants to their
-corresponding modules. Structural plan variants remain in the parent; no match
-arm accumulates a block kind's parsing, validation, layout, or generation logic.
-
-When adding a block kind, add its module to every phase that needs kind-specific
-behavior. Keep genuinely shared algorithms in the parent phase instead of
-duplicating them across kind modules.
+Put behavior specific to one block kind in a module named for that kind, in
+every phase that needs it, such as `parse/action.rs`, `analyze/question.rs`, or
+`codegen/choice.rs`. The parent phase module keeps only shared data flow and
+algorithms, structural traversal, cross-kind invariants, structural plan
+variants, and an exhaustive dispatch that hands each authored block variant to
+its module.
 
 ## Dependencies
 
 Every dependency is declared once, in `[workspace.dependencies]` in the root
-`Cargo.toml`. The table holds two groups separated by a blank line: local
-workspace crates (declared by `path`) first, then external crates. Entries
-within each group are alphabetical.
-
-Member crates inherit with `{ workspace = true }` and never state a version or a
-path of their own. A member may add features on top of an inherited dependency
-(`{ workspace = true, features = [...] }`) when only that crate needs them.
-
-Adding a dependency means adding it to the root table first, in its group and in
-alphabetical position.
+`Cargo.toml`: local workspace crates, declared by `path`, first, then a blank
+line and external crates, each group alphabetical. Member crates inherit with
+`{ workspace = true }`, never with a version or path of their own, and may add
+features only they need.
 
 ## Change workflow
 
-Use `git mv`, not plain `mv`, when moving or renaming tracked files and
-directories so the rename is staged immediately and remains clear in review.
+Move and rename tracked files with `git mv`, so review shows the rename.
 
 For syntax or semantic changes:
 
 1. Read the relevant RFC, implementation, and tests.
 2. State the design problem and chosen tradeoff.
-3. Add a new RFC or update a proposed RFC together with the implementation;
-   never edit an accepted RFC.
+3. Add a new RFC, or update a proposed one, together with the implementation.
 4. Add behavior and compile-fail coverage as appropriate.
 5. Check terminology against `GLOSSARY.md` across documentation, Rust
    documentation, diagnostics, identifiers, and test names.
 
 ## Validation
 
-Recipes live in `justfile` and the `just/` modules and run from the repository
-root with [just](https://just.systems). The Rust and Markdown recipes run in
-Docker images built from `Dockerfile`, so building and testing need only just
-and Docker on the host. The release recipes still run cargo on the host, since
-publishing uses its crates.io credentials. The images install the tools pinned
-in `mise/` with [mise](https://mise.jdx.dev). The `rust` image builds and tests
-with the Rust release in `mise/config.toml`. The `fmt` image formats with the
-nightly rustfmt and the Node.js for Prettier in `mise/config.fmt.toml`; the
-nightly is what applies the import options in `rustfmt.toml`. A recipe rebuilds
-its image when those files change; `just tooling build <rust|fmt>` does it
-alone. Downloaded crates and npm packages stay in the ignored `.cache/`
-directory.
+Recipes live in `justfile` and `just/` and run from the repository root with
+[just](https://just.systems). The Rust and Markdown recipes run in Docker images
+built from `Dockerfile`, so the host needs only just and Docker; the release
+recipes run cargo on the host for its crates.io credentials. The images install
+the tools pinned in `mise/` with [mise](https://mise.jdx.dev). The nightly
+rustfmt in the `fmt` image applies the import options in `rustfmt.toml`. A
+recipe rebuilds its image when those files change. Downloaded crates and npm
+packages stay in the ignored `.cache/`.
 
 Format sources:
 
@@ -101,9 +82,8 @@ Format sources:
 just fmt
 ```
 
-That formats Markdown with [Prettier](https://prettier.io/docs/cli), which
-respects `.gitignore`, then Rust with the pinned nightly `cargo fmt`. The pinned
-Prettier version lives in `just/docs.just`; CI uses the same one.
+It runs [Prettier](https://prettier.io/docs/cli), pinned in `just/docs.just`, on
+Markdown and the nightly `cargo fmt` on Rust.
 
 Run the full baseline before committing:
 
@@ -111,11 +91,11 @@ Run the full baseline before committing:
 just ci run
 ```
 
-It checks Markdown and Rust formatting, then runs `cargo clippy` with warnings
-denied, `cargo test`, `just rust svg`, and `git diff --check`. `just rust` and
-`just docs` list the per-step recipes for running one of them alone.
+It checks formatting, then runs `cargo clippy` with warnings denied,
+`cargo test`, `just rust svg`, and `git diff --check`. `just rust` and
+`just docs` list the per-step recipes.
 
-One comparison is too slow for that baseline and sits behind `#[ignore]`:
+One comparison is too slow for the baseline and sits behind `#[ignore]`:
 
 ```sh
 just rust test-exhaustive
@@ -123,59 +103,51 @@ just rust test-exhaustive
 
 It takes about half a minute. It compares the construction with the independent
 procedure over the whole declared domain, and the two analysis paths over every
-generated cycle shape. Run it before committing a change to `construct/`, to
-`analyze/` or `symbolic/`, to the shapes in `kaalang-testing`, or to any rule
-those answers rest on. Nothing else runs it, and it is the only check that
-reaches the nested cycle shapes in bulk.
+generated cycle shape; no other check reaches the nested cycle shapes in bulk.
+Run it before committing a change to `construct/`, `analyze/`, `symbolic/`, the
+shapes in `kaalang-testing`, or any rule those answers rest on.
+
+`just rust svg` redraws every generated diagram and shows the diff; review it
+before committing. The diagram generator is an ignored test, so `cargo test`
+leaves the SVG files untouched.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
-feature. Each holds one flow per file, named for the flow it declares, with that
-flow's diagram beside it, and its `compile_fail/` holds the programs the feature
-rejects. Run `just rust svg` to redraw the diagrams and inspect the diff before
-committing. The diagram generator is an ignored test, so an ordinary
-`cargo test` leaves the SVG files untouched.
+feature and one flow per file, named for its flow, with its diagram beside it. A
+feature's `compile_fail/` holds the programs it rejects.
 
 Gallery modules and their SVGs live in `crates/kaalang/examples/gallery/`. Its
-`main.rs` calls each module's checks. Run the gallery with
-`cargo run -p kaalang --example gallery`. The gallery's `[[example]]` entry also
-runs its `main()` during `cargo test`. The `loops` module checks the finite
-flows and includes the endless flow for its diagram. The fixture corpus is
-collected from `crates/kaalang/tests/`.
-
-Draw the whole gallery through the CLI with `just rust gallery` (also included
-in `just rust svg`). `scripts/draw-gallery.sh` lists the flows, types, and
-collapsed views to draw with `--target x86_64-unknown-linux-gnu`. Keep that list
-in step when adding or removing examples, and review the generated SVG diff.
+`main.rs` runs each module's checks, under
+`cargo run -p kaalang --example gallery` and during `cargo test`.
+`just rust gallery` draws it through the CLI from the flows, types, and
+collapsed views listed in `scripts/draw-gallery.sh`; keep that list in step with
+the examples.
 
 Type fixtures live in `crates/kaalang/tests/datatype/`, one directory per case,
-named for the case, so that the directory listing is the list of cases. Each
-declares only the types its case needs and a test of their behavior. A fixture
-without flows draws a diagram into its directory for every type its `mod.rs`
-declares, datatype or plain type, named after the type in snake case. The first
-type it declares is the case's subject, and its diagram is named after the
-directory instead, as `many_incoming_types/many_incoming_types.svg`, so that the
-diagram to look at first is obvious. A type's incoming types there are those in
-the same file that refer to it by its bare name. Every fixture is read for one
-fixed compilation target, 64-bit Linux, written out in `tests/diagrams.rs`, so
-that the diagrams do not depend on the machine that draws them.
+named for the case. Each declares only the types its case needs and a test of
+their behavior. A fixture without flows draws a diagram into its directory for
+every type its `mod.rs` declares, datatype or plain type, named after the type
+in snake case. The first type is the case's subject, and its diagram is named
+after the directory instead, as `many_incoming_types/many_incoming_types.svg`. A
+type's incoming types there are those in the same file that refer to it by its
+bare name. Every fixture is read for 64-bit Linux, fixed in `tests/diagrams.rs`,
+so the diagrams do not depend on the machine that draws them.
 
-Hand-written stress fixtures live in
-`crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
-diagrams. They exercise heavy combinations of language features and receive the
-stress-fixture tier of the corpus budgets.
+Hand-written stress fixtures live in `crates/kaalang/tests/stress/<flow>/mod.rs`
+with their tests and diagrams. They combine language features heavily and get
+the stress tier of the corpus budgets.
 
 ### Packaging a release
 
 Set the version in the root `Cargo.toml`, in `[workspace.package]` and in each
 path crate's entry in `[workspace.dependencies]`, and date its section in
-`CHANGELOG.md`. Then verify the publishable workspace packages together:
+`CHANGELOG.md`. Then verify the publishable packages together:
 
 ```sh
 just release package
 ```
 
-Commit the version and the changelog date; the publishing recipes refuse an
-uncommitted tree. Preview the complete publication without uploading:
+Commit the version and the date; the publishing recipes refuse an uncommitted
+tree. Preview the publication without uploading:
 
 ```sh
 just release publish-dry-run
@@ -190,10 +162,9 @@ just release publish
 To resume a partial release, publish one crate at a time with
 `just release publish-crate <crate>`, in dependency order: `kaalang-compiler`,
 `kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
-`kaalang-cli`. `kaalang-testing` is a repository-only fixture harness and
-remains unpublished.
+`kaalang-cli`. `kaalang-testing` is never published.
 
-After publishing, tag the released commit and push the tag:
+Then tag the released commit and push the tag:
 
 ```sh
 git tag -a v<version> -m "kaalang <version>"
@@ -202,68 +173,51 @@ git push origin v<version>
 
 ## Performance budgets
 
-Each crate bounds the stages it owns: `kaalang-compiler` for analysis, topology
-construction and lowering to Rust, `kaalang-render` for structural compaction,
-and `kaalang-svg` for measurement and serialization. They share fixture sources
-and generated probes through `kaalang-testing`. The compiler and SVG fixture
-corpus budgets also use one performance harness, which owns warm-up,
-measurement, summary statistics, and aggregate and per-item budget checks. Keep
-them sharing these inputs: a budget stated over its own corpus, probes, or
-statistic stops comparing with the others.
+Each crate bounds the stages it owns: `kaalang-compiler` analysis, topology
+construction, and lowering to Rust; `kaalang-render` structural compaction; and
+`kaalang-svg` measurement and serialization. They share fixture sources and
+generated probes through `kaalang-testing`, and the compiler and SVG corpus
+budgets share one harness for warm-up, measurement, statistics, and the
+aggregate and per-item checks. Keep it that way: a budget over its own corpus,
+probes, or statistic stops comparing with the others.
 
 The fixture corpus is read from the checked-in test fixtures, so it grows with
-the language instead of being kept in step by hand. Ordinary fixtures and stress
-fixtures run in separate corpus tests, each with an aggregate budget of
-`count * allowance` and its own per-item limit. The allowances are smaller than
-the per-item limits, so each aggregate check still catches distributed
-regressions. Compiler passes include every fixture flow once; SVG passes include
-expanded and collapsed diagrams for cycle fixtures. Each flow or diagram also
-has a per-item budget selected by its fixture tier. The render crate's generated
-probes isolate large compaction shapes outside those aggregate passes.
+the language. Ordinary and stress fixtures run in separate corpus tests, each
+with an aggregate budget of `count * allowance` and its own per-item limit. The
+allowance is below the per-item limit, so the aggregate still catches
+distributed regressions. Compiler passes take every fixture flow once; SVG
+passes take expanded and collapsed diagrams of cycle fixtures. The render
+crate's generated probes cover large compaction shapes outside the corpus.
 
-The bounds are wall-clock in the unoptimized dev profile, which is the profile a
-macro expansion runs in. They are stated over a recorded median with enough
-headroom to survive a loaded machine, because they exist to catch a large
-regression rather than drift. Record the measured median beside any constant you
-change, and run the suite twice: a budget that only passes once is not a gate.
+The bounds are wall-clock time in the unoptimized dev profile, the profile a
+macro expansion runs in. They sit over a recorded median with headroom for a
+loaded machine: they catch a large regression, not drift. Record the measured
+median beside any constant you change, and run the suite twice: a budget that
+only passes once is not a gate.
 
-`just rust perf` runs the three crates one at a time, serially, and prints what
-they measured as a table. Prefer its numbers to the ones `cargo test` prints:
-that runs the budgets beside each other, so it measures contention as well as
-work.
-
-Each run prints the distribution behind its verdict, not just the number it
-asserts on. A p100 several times the p50 means the machine was busy, not that
+`just rust perf` runs the three crates serially and prints a table. Prefer its
+numbers to those of `cargo test`, which runs the budgets side by side and so
+measures contention as well as work. Each run prints the distribution behind its
+verdict; a p100 several times the p50 means the machine was busy, not that
 something got slower.
 
 ### Refactoring against the budgets
 
-Comparable performance is a successful result for a refactoring; a measurable
-speedup is not required. Do not land one with a reproducible slowdown, however
-few lines it saves.
+A refactoring may land with comparable performance, never with a reproducible
+slowdown, however few lines it saves. The budgets cannot tell: their headroom
+lets a change halve the margin and still pass. When a refactoring touches a hot
+path, compare both sides:
 
-The budgets do not answer this on their own. They carry deliberate headroom and
-exist to catch a large regression, so a change can halve the margin and still
-pass every one of them. Passing is not evidence of no regression; only a
-before-and-after comparison is.
+1. Record `just rust perf` twice on the unchanged tree.
+2. Apply the change and record it twice again.
+3. Compare the same named lines, heaviest shapes first: the largest generated
+   probes and the stress fixtures separate two implementations long before the
+   corpus medians do.
 
-So when a refactoring touches a hot path, measure both sides:
-
-1. Record `just rust perf` on the unchanged tree first. Two runs, as above.
-2. Apply the change and record it again, the same way.
-3. Compare the same named lines, and prefer the heaviest shapes: the largest
-   generated probes and the stress fixtures separate two implementations long
-   before the corpus medians do.
-
-`cargo test --test performance` is not a substitute at this step. It runs the
-budgets beside each other, so its numbers move with contention and hide
-differences this size.
-
-Overlapping measurements can be consistent with unchanged performance; overlap
-alone is not a reason to reject a refactoring. Report comparable performance
-without claiming a speedup. If noise or inconsistent runs leave a suspected
-slowdown unresolved, improve measurement conditions and repeat the comparison.
-Report only differences the samples support.
+Overlapping measurements are consistent with unchanged performance and no reason
+to reject a refactoring. Report only differences the samples support, and no
+speedup for comparable results. If noise leaves a suspected slowdown unresolved,
+improve the conditions and repeat.
 
 ## Commits
 
@@ -273,11 +227,10 @@ Use Conventional Commits:
 <type>: <concise imperative summary>
 ```
 
-Use `feat`, `fix`, `refactor`, `test`, `docs`, or `chore` as the type. Add a
-scope only when it makes the subject clearer. Keep one logical change per
-commit. Before committing, inspect both the staged diff and recent commit
-subjects.
+The type is `feat`, `fix`, `refactor`, `test`, `docs`, or `chore`; add a scope
+only when it makes the subject clearer. Keep one logical change per commit, and
+inspect the staged diff and recent subjects before committing.
 
-Do not describe validation results in the commit message. Do not add
-`Co-Authored-By` or other AI-attribution trailers. Rewrite an existing commit
-only when explicitly requested.
+Do not describe validation results in the message or add `Co-Authored-By` or
+other AI-attribution trailers. Rewrite an existing commit only when explicitly
+requested.

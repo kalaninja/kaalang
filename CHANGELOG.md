@@ -4,112 +4,70 @@
 
 ### Breaking
 
-- `cargo kaalang diagram` selects a flow by its Rust path from the crate root,
-  resolved as the compiler resolves it, as `--flow review::Report::approve` or
-  `--flow '<&Report as Approve>::approve'`, instead of a source file and a bare
-  name. It searches every crate of the cargo workspace, and `-p` names the
-  package when the path exists in several. The default output is named after the
-  last path segment. See [RFC 0009](docs/rfcs/0009-types.md).
-- `kaalang-svg`'s `render_source` and `render_source_with_options` are removed:
-  `render_flow` renders the flow at a position among those `flow_names` lists,
-  which the caller selects. `flow_names` lists each flow by its path within the
-  file, including flows in inline modules. A method's path goes through its type
-  or trait, and a trait's method in an `impl` block takes the qualified form, as
-  `<Report as Approve>::approve`.
-- `kaalang-svg`'s `RenderOptions` gains `target`, and `flow_names` takes a
-  `Target`: the file is read as compiled for that target's cfg set, which is
-  empty by default.
-- `kaalang-compiler`'s `flows` returns each flow as a `FlowItem`, with its path
-  within the file, its inline modules, what declares it, and whether a trait
-  declares it, and descends into inline modules.
-- `kaalang-compiler`'s `is_flow_attribute` is renamed `is_kaalang_attribute`.
-- `kaalang-svg`'s `RenderError` gains `TypeNotFound` and `InvalidType`.
-- The attribute is `#[kaa]`, or `#[kaalang::kaa]` through the crate path,
-  instead of `#[kaalang]`, and block attributes take its namespace:
-  `#[kaa::action("...")]` instead of `#[action("...")]`. See
-  [RFC 0009](docs/rfcs/0009-types.md).
-- Only crates on Rust 2024 are supported: the macro generates, and the CLI
-  resolves, code by the rules of that edition.
+- The attribute is `#[kaa]`, or `#[kaalang::kaa]`, instead of `#[kaalang]`, and
+  block attributes take its namespace: `#[kaa::action("...")]` instead of
+  `#[action("...")]`. See [RFC 0009](docs/rfcs/0009-types.md).
+- `cargo kaalang diagram --flow` takes the flow's Rust path from the crate root,
+  as `review::Report::approve` or `'<&Report as Approve>::approve'`, instead of
+  a source file and a bare name, and searches the whole cargo workspace; `-p`
+  picks the package. The default output is named after the last path segment.
+- Only Rust 2024 crates are supported.
+- `kaalang-svg`: `render_source` and `render_source_with_options` are removed;
+  `render_flow` renders the flow at a position from `flow_names`, which lists
+  flows by their path within the file and takes a `Target`. `RenderOptions`
+  gains `target`, and `RenderError` gains `TypeNotFound` and `InvalidType`.
+- `kaalang-compiler`: `flows` returns `FlowItem`s with their paths and descends
+  into inline modules; `is_flow_attribute` is renamed `is_kaalang_attribute`.
 
 ### Added
 
-- `cargo kaalang diagram --type <path>` draws a type diagram: the type that Rust
-  path resolves to from its crate root, under every datatype of the workspace
-  that refers to it. It resolves each `refer` target by Rust's path rules and
-  fails on a target that is not a type of the workspace. See
-  [RFC 0009](docs/rfcs/0009-types.md). The incoming types stand in rows as wide
-  as a Full HD screen, each target group from a new row, and `--columns` sets
-  how many a row holds.
-- `cargo kaalang diagram` reads the workspace as cargo compiles it for one
-  compilation target: `--target <triple>`, the host by default, with
-  `--features`, `--all-features`, and `--no-default-features`. A `cfg` holds as
-  cargo decides one for that target, from `rustc --print cfg`, `RUSTFLAGS`, and
-  the resolved features, and what does not hold is left out, from modules and
-  items to fields, variants, and parameters. A `cfg_attr` that holds counts, a
-  `repr` or a module's `path` under one included. See
+- Type diagrams. `#[kaa]` marks structs, enums, unions, and type aliases as
+  datatypes; fields take `kaa::value` or `kaa::refer`, variants `kaa::case`.
+  `cargo kaalang diagram --type <path>` draws a type under every datatype that
+  refers to it, and `--columns` sets the cards per row. See
   [RFC 0009](docs/rfcs/0009-types.md).
-- `#[kaa]` marks structs, enums, unions, and type aliases as datatypes, with an
-  optional description. Fields take `kaa::value` or `kaa::refer` annotations,
-  enum variants take `kaa::case`, and an alias may carry its own `kaa::refer`.
-  Rust resolves each `refer` target as the field's module sees it, and `Self` as
-  the declaring type, under the field's `cfg`. A plain type, without `#[kaa]`,
-  may be a target too and has a diagram. See
-  [RFC 0009](docs/rfcs/0009-types.md).
-- `kaalang-compiler`'s `declarations`, `FlowPath`, and `select` find the flows a
-  path selects as the compiler resolves it.
-- `kaalang-svg`'s `render_type` draws a type diagram from a `TypeCard` for the
-  focus and one for each incoming type, each read for its `Target`, in groups
-  that each start a row, with `TypeOptions` for the number of cards a row holds:
-  the focus card under the incoming cards, with a line for each relationship
-  they draw into it. `Target` holds a target's cfg set, read from the lines of
-  `rustc --print cfg` and the enabled features.
-- `kaalang-compiler` reads type declarations: `type_items` collects them,
-  datatypes and plain types alike, with their paths within the file,
-  `type_declaration` parses one into a `TypeDeclaration` with its `TypeForm`,
-  its `Field`s and `Variant`s with their `Annotation`s, and its `Relationship`s,
-  and `expand_type` expands it for the macro. `configure` removes from a parsed
-  file what does not hold for a cfg set, as rustc does.
+- `cargo kaalang diagram` reads the workspace for one compilation target:
+  `--target`, the host by default, and cargo's feature flags decide which `cfg`
+  and `cfg_attr` hold.
 - Diagrams mark visibility before a name as UML does: `+` for `pub`, `~` for a
-  restricted form such as `pub(crate)`, and `-` for private, on a flow's start
-  label, a type card's name, and each field tile outside an enum variant. A
-  trait's method and a variant's field take their owner's visibility and carry
-  none. `Field` keeps the declared `visibility`.
+  restricted form, `-` for private.
+- `kaalang-compiler`: `declarations`, `FlowPath`, and `select` resolve a flow
+  path; `type_items`, `type_declaration`, and `expand_type` read and expand type
+  declarations; `configure` removes what a cfg set excludes.
+- `kaalang-svg`: `render_type` draws a type diagram from `TypeCard`s with
+  `TypeOptions`; `Target` holds a target's cfg set.
 
 ### Changed
 
-- Flow diagrams draw cycle nodes and cycle boundaries with the same stroke width
-  as every other outline and line.
-- Flow diagrams set Rust source in a monospace font, as type diagrams do: the
-  flow's name and return type, an undescribed call's path, wire labels, and the
-  parameter panel.
+- Flow diagrams draw cycles with the same stroke width as every other line, and
+  set Rust source in a monospace font, as type diagrams do.
 
 ### Fixed
 
-- A branch that could not descend in its merge column no longer takes a step
-  sideways right below its brancher; it leaves in the column it descends.
+- A branch that cannot descend in its merge column no longer steps sideways
+  right below its brancher.
 
 ## 0.2.0 - 2026-10-05
 
 ### Breaking
 
-- A loop cycle no longer completes with a structural `break` or repeats at the
-  end of its body, and the body is written as `loop { ... }` instead of a bare
-  brace block. It declares named outputs, each produced by a same-named wire in
-  its body, and repeats only through an explicit `continue`. Its header names at
-  most one plain gate wire instead of a capture list, and inner blocks capture
-  outer wires directly. A tuple of outputs now declares alternative exits, one
-  completing per route, instead of simultaneous results. See
+- A loop cycle is written `loop { ... }` and repeats only at `continue`; it no
+  longer completes with `break` or at the end of its body. It declares named
+  outputs, each produced by a same-named wire in its body, and a tuple of
+  outputs declares alternative exits instead of simultaneous results. Its header
+  names at most one gate wire instead of a capture list, and inner blocks
+  capture outer wires directly. See
   [RFC 0007](docs/rfcs/0007-language-refinements.md) and
   [RFC 0008](docs/rfcs/0008-cycle-forms.md).
 - A block body can no longer read or assign a flow parameter it does not
-  capture. 0.1.0 accepted this by mistake.
+  capture.
 - The `--collapse-loops` option and `kaalang-svg`'s
   `RenderOptions::collapse_loops` are renamed `--collapse-cycles` and
   `collapse_cycles`.
-- Descriptions are interpreted as restricted Markdown, so existing `*`, `_`,
-  `` ` ``, `~`, `^`, `$`, supported tags, a leading `>`, backslash escapes, and
-  `&...;` character references render as notation. Escape a marker with a
-  backslash to keep it literal. See [RFC 0005](docs/rfcs/0005-markdown.md).
+- Descriptions are restricted Markdown: existing `*`, `_`, `` ` ``, `~`, `^`,
+  `$`, supported tags, a leading `>`, backslash escapes, and `&...;` character
+  references render as notation unless escaped with a backslash. See
+  [RFC 0005](docs/rfcs/0005-markdown.md).
 - In SVG output, a collapsed cycle node has the `cycle` class instead of `loop`,
   and the back-edge arrow marker is `back-edge-arrow` instead of `loop-arrow`.
 - The public types of `kaalang-compiler` follow the cycle terminology and the
@@ -138,8 +96,8 @@
 
 ### Changed
 
-- Nodes on the same row share the height of the tallest one, so a diagram of an
-  unchanged 0.1.0 source can differ by a few pixels.
+- Nodes on the same row share the height of the tallest one, so 0.1.0 diagrams
+  can shift by a few pixels.
 - Convergence groups are compared by route, so one case of a question or choice
   may feed different merges when a nested selection splits it.
 - Flows with many independent questions and choices are analyzed without
