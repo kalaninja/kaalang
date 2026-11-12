@@ -1723,7 +1723,8 @@ fn targets_that_are_not_types_of_the_workspace_fail_listing_each() {
     );
     let failed = run(&directory, "diagram --type Member");
     assert!(!failed.status.success());
-    let stderr = String::from_utf8_lossy(&failed.stderr);
+    // Windows separates the listed paths with backslashes.
+    let stderr = String::from_utf8_lossy(&failed.stderr).replace('\\', "/");
     for listed in [
         "src/lib.rs:7:18: `String` is not a type of this workspace",
         "src/lib.rs:9:18: `Named` is a trait, not a type",
