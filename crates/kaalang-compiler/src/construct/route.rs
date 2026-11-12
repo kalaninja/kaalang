@@ -196,9 +196,8 @@ fn own_columns(
     let mut columns = BTreeMap::new();
     for (_, index, top, bottom) in own {
         let (.., start, end, _) = spans[index];
-        // The search sent an Aside route out of another's way, so it leaves the
-        // diagram on the side it is already heading: a run that turned back
-        // across every column would swallow the runs it was avoiding.
+        // An Aside route that turned back across every column would swallow
+        // the runs the search sent it clear of.
         let inside = shapes[index] != Shape::Aside;
         let lanes = if inside { &mut claimed } else { &mut aside };
         let mut lane = if inside {
@@ -311,9 +310,8 @@ fn requirements(
                 continue;
             };
             let b = groups[b];
-            // Passing over another run's descent means lying below it;
-            // passing over its arrival means lying above it. If both ends
-            // lie inside this run's span, the other route must leave it.
+            // If both ends lie inside this run's span, the other route must
+            // leave it.
             if over_descent && over_arrival {
                 return Err(Blocked {
                     connection: mover(topology, other.connection, run.connection),
@@ -442,8 +440,8 @@ fn order(above: &[Vec<usize>], movable: &dyn Fn(usize) -> bool) -> Result<Vec<us
 }
 
 /// Whether the search may move this connection. A select's distributor fans out
-/// to its cases as one shared horizontal; sending one of those
-/// runs down a column of its own would take the case row apart.
+/// to its cases as one shared horizontal; sending one of those runs down a
+/// column of its own would take the case row apart.
 fn movable(topology: &Topology, connection: usize) -> bool {
     !matches!(
         topology.connections[connection].destination,

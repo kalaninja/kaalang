@@ -1,8 +1,8 @@
 use kaalang::kaa;
 
-/// A consumer can capture several merged wires. Two independent
-/// questions each converge their own wire, and one block captures both, so the
-/// two junctions land on the main line in turn rather than beside each other.
+/// Two independent questions each converge their own wire, and one block
+/// captures both, so the two junctions land on the main line in turn rather
+/// than beside each other.
 #[kaa]
 fn two_merges_reach_one_consumer(scale: bool, offset: bool) -> u32 {
     #[kaa::question("Scale the value?")]

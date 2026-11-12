@@ -80,7 +80,6 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
     );
 }
 
-/// In both presentations a cycle fixture is drawn in.
 #[test]
 fn the_ordinary_fixture_corpus_renderer_stays_inside_its_budgets() {
     check_renderer_corpus_budgets(

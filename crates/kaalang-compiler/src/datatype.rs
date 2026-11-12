@@ -182,8 +182,8 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
 }
 
 /// Collects the type declarations from these items, datatypes and plain types
-/// alike, in source order, each with its path among them: `Member`, or `directory::Team` inside
-/// an inline module.
+/// alike, in source order, each with its path among them: `Member`, or
+/// `directory::Team` inside an inline module.
 #[must_use]
 pub fn type_items(items: &[Item]) -> Vec<(String, Item)> {
     let mut types = Vec::new();

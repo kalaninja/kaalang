@@ -1,6 +1,3 @@
-//! Renders one flow: derive its captions, lay out its compacted arrangement,
-//! and serialize the scene.
-
 use std::rc::Rc;
 
 use kaalang_compiler::FlowItem;
@@ -15,7 +12,6 @@ mod captions;
 pub(crate) mod layout;
 mod svg;
 
-/// Renders the flow at `position` among the file's flows.
 pub(crate) fn render(
     source: &str,
     position: usize,

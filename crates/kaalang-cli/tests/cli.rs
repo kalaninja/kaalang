@@ -75,7 +75,6 @@ fn manifest(name: &str) -> String {
     format!("[package]\nname = \"{name}\"\nversion = \"0.0.0\"\nedition = \"2024\"\n")
 }
 
-/// Writes `contents` at `path` inside `directory`, creating its parents.
 fn write(directory: &Path, path: &str, contents: &str) {
     let path = directory.join(path);
     fs::create_dir_all(path.parent().expect("the path is inside the directory"))
@@ -83,13 +82,13 @@ fn write(directory: &Path, path: &str, contents: &str) {
     fs::write(path, contents).expect("the test directory is writable");
 }
 
-/// Runs the binary from `directory` with a command line of plain words, with
-/// color off so assertions see plain text.
+/// Runs the binary from `directory` with a command line of plain words.
 fn run(directory: &Path, line: &str) -> Output {
     run_with(directory, &line.split_whitespace().collect::<Vec<_>>())
 }
 
-/// Runs the binary from `directory` with these arguments, with color off.
+/// Runs the binary from `directory` with color off, so assertions see plain
+/// text.
 fn run_with(directory: &Path, arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cargo-kaalang"))
         .current_dir(directory)
@@ -1026,8 +1025,7 @@ fn drawn(directory: &Path, item: &str, target: &str) -> String {
     fs::read_to_string(directory.join("drawn.svg")).expect("the diagram was written")
 }
 
-/// Asserts that drawing `item` from `directory` fails, finding no such type
-/// or flow.
+/// Asserts that running `line` from `directory` finds no such type or flow.
 fn not_found(directory: &Path, line: &str) {
     let failed = run(directory, line);
     assert!(!failed.status.success(), "{line}");

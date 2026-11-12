@@ -101,7 +101,7 @@ fn close_paths(paths: &mut [Vec<bool>]) {
 /// reorder or re-route anything recorded here.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Arrangement {
-    /// Abstract row of every vertex, checked against the diagram rules.
+    /// Abstract row of every vertex.
     pub rank: BTreeMap<Vertex, usize>,
     /// One past the deepest rank in use.
     pub ranks: usize,
@@ -123,8 +123,7 @@ pub struct Arrangement {
 }
 
 impl Arrangement {
-    /// The default branch column the exit owns: the node's column plus the
-    /// exit's offset.
+    /// The default branch column the exit owns.
     #[must_use]
     pub fn exit_column(&self, exit: ExitId) -> i32 {
         self.column[&Vertex::Node(exit.node)] + self.exit_offset[&exit]
@@ -135,7 +134,7 @@ impl Arrangement {
         self.routes.iter().chain(self.back_routes.values())
     }
 
-    /// Every mutable corridor: each connection's route, then each recorded back edge's.
+    /// Mutable [`Self::all_routes`].
     pub fn all_routes_mut(&mut self) -> impl Iterator<Item = &mut Route> {
         self.routes.iter_mut().chain(self.back_routes.values_mut())
     }
@@ -152,7 +151,6 @@ pub struct ArrangementChecks<'a> {
 }
 
 impl<'a> ArrangementChecks<'a> {
-    /// Prepares the common arrangement checks for one flow and topology.
     #[must_use]
     pub fn new(flow: &'a Flow, topology: &'a Topology) -> Self {
         Self {
@@ -165,8 +163,7 @@ impl<'a> ArrangementChecks<'a> {
     /// Checks a complete construction result against the diagram rules.
     ///
     /// Missing or inconsistent arrangement references produce an error rather
-    /// than being indexed. The flow and topology supplied to [`Self::new`] must
-    /// still be corresponding compiler outputs.
+    /// than being indexed.
     ///
     /// # Errors
     ///
@@ -266,7 +263,7 @@ pub enum RunLine {
     Lane { gap: usize, lane: usize },
 }
 
-/// One sideways run of a corridor, on a rank or a lane between ranks.
+/// One sideways run of a corridor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Run {
     pub line: RunLine,
@@ -396,8 +393,8 @@ fn disagreed(reason: &str) {
     let _ = reason;
 }
 
-/// Conflict-guided search of the preferred shapes.
-/// Exhaustion requires a sweep; inconsistency indicates a projection defect.
+/// Conflict-guided search of the preferred shapes. Inconsistency indicates a
+/// projection defect.
 fn preferred(
     flow: &Flow,
     merges: &[WireMerge],
@@ -410,7 +407,6 @@ fn preferred(
         .iter()
         .map(|cycle| Vertex::Junction(cycle.tail))
         .collect::<Vec<_>>();
-    // Start with the preferred contour.
     let sides = topology
         .cycles
         .iter()
@@ -528,7 +524,8 @@ fn corridors(
         };
         let mut arrangement = assemble(topology, placement.clone(), &plan);
         // Crossings that gap ordering alone cannot see, over the complete
-        // polylines of the assembled arrangement.
+        // polylines including side departures on node rows. Shared
+        // destinations allow collinear bundles, not arbitrary crossings.
         let (_, lines) = verify::drawing(topology, &arrangement);
         if let Some((left, right)) = verify::crossing(topology, &lines) {
             blocked.get_or_insert_with(|| {
@@ -543,9 +540,7 @@ fn corridors(
                     ),
                 )
             });
-            // Shared destinations allow collinear bundles, not arbitrary
-            // crossings. Check complete routes, including side departures on
-            // node rows, before choosing contours. Either participant may move.
+            // Either participant may move.
             for connection in [right, left] {
                 widen(&mut pending, &shapes, connection);
             }

@@ -1,5 +1,4 @@
-//! The SVG markup every diagram shares: text and formulas, the common style
-//! values, and the arrowhead.
+//! The SVG markup every diagram shares.
 
 use std::fmt::Write;
 

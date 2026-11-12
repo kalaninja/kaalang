@@ -1,4 +1,3 @@
-//! Serializes an action node.
 use std::fmt::Write;
 
 use super::{Node, write_start_label};

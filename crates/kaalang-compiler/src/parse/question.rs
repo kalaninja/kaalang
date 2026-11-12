@@ -5,7 +5,6 @@ use syn::{Attribute, Error, Meta, Result};
 use super::{BlockSyntax, description};
 use crate::model::{Block, QuestionBranch};
 
-/// Reports an answer attribute that appears before its question declaration.
 pub(super) fn answer_before_question(attribute: &Attribute) -> Error {
     Error::new_spanned(
         attribute,

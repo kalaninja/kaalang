@@ -9,7 +9,6 @@ use crate::{
     model::Block,
 };
 
-/// Reports a case attribute that appears before its choice declaration.
 pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
     Error::new_spanned(
         attribute,
@@ -44,7 +43,6 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     Ok(syntax.into_block(Some(block_description), case_descriptions))
 }
 
-/// Checks the restricted whole-body syntax accepted for choices.
 fn validate_body(body: &Expr, outputs: &[Ident]) -> Result<()> {
     if is_todo_body(body) {
         return Ok(());

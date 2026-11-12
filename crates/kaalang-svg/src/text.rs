@@ -1712,14 +1712,12 @@ mod tests {
                 "{numerator}/{denominator}"
             );
         }
-        // Too small for four digits, so the exact expansion stands rather than a
-        // zero side that would blank the formula it measures.
+        // Too small for four digits, so the exact expansion stands.
         let tiny = svg_dimension(&Dim::ratio(1, 100_000));
         assert_ne!(tiny, "0");
         assert_eq!(Dim::parse(&tiny), Dim::ratio(1, 100_000));
     }
 
-    /// Long words split only at grapheme boundaries, even below one cluster's width.
     #[test]
     fn wrapping_splits_between_graphemes_and_never_inside_one() {
         let word = "encyclopædia";

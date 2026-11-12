@@ -95,7 +95,6 @@ pub(super) fn branch_sets(
         .collect()
 }
 
-/// Where one branch of a brancher begins.
 fn branch_heads(topology: &Topology, flow: &Flow, block: usize, branch: usize) -> Vec<Vertex> {
     match flow.blocks[block].kind {
         BlockKind::Choice => vec![Vertex::Node(NodeId::Case {
@@ -143,8 +142,7 @@ pub(super) fn footprint_vertices(
         .collect()
 }
 
-/// One convergence group of a brancher: the branches that meet, and
-/// everything those branches draw.
+/// One convergence group of a brancher.
 pub(super) struct Group {
     /// The branches that reach a common vertex, in authored order.
     pub(super) members: BTreeSet<usize>,
@@ -176,8 +174,7 @@ fn groups(branches: &[BTreeSet<Vertex>], own: &BTreeSet<Vertex>) -> Vec<Group> {
         .collect()
 }
 
-/// What one selection carves out of the topology: what each branch leads to,
-/// which of that it draws, and which branches converge where.
+/// What one selection carves out of the topology.
 pub(super) struct Regions {
     /// What each branch leads to, in authored order.
     pub(super) branches: Vec<BTreeSet<Vertex>>,

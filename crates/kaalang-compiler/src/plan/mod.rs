@@ -300,10 +300,6 @@ impl Builder<'_> {
         })
     }
 
-    /// The branches of one branching block and its joins: exclusive
-    /// computation inside each branch, shared computation once after the join
-    /// its branches yield into. Returns the yields passing on outward and every
-    /// block the branches and joins emit.
     pub(super) fn continuations<'e>(
         &mut self,
         block: usize,

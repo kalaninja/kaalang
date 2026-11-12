@@ -1,6 +1,6 @@
 //! Verifies a candidate independently of its search by rebuilding its routes
-//! on an abstract grid and checking diagram geometry. Rejecting a candidate says nothing
-//! about whether another arrangement exists.
+//! on an abstract grid and checking diagram geometry. Rejecting a candidate
+//! says nothing about whether another arrangement exists.
 
 use std::collections::BTreeSet;
 
@@ -105,13 +105,11 @@ impl Grid {
         }
     }
 
-    /// The position of one column.
     pub(super) const fn column(&self, column: i32) -> i32 {
         column * self.scale
     }
 
-    /// The position of one contour lane beside a column. Lane 0 sits
-    /// immediately outside the column; later lanes step further out.
+    /// The position of one contour lane beside a column.
     pub(super) const fn contour(&self, contour: super::Contour) -> i32 {
         let offset = contour.lane as i32 + 1;
         match contour.side {
@@ -141,7 +139,6 @@ impl Grid {
     }
 }
 
-/// One connection's route as an orthogonal polyline, in drawing order.
 /// The abstract grid of an arrangement and the complete polyline of every
 /// connection on it.
 pub(super) fn drawing(topology: &Topology, arrangement: &Arrangement) -> (Grid, Vec<Vec<Point>>) {
@@ -152,6 +149,7 @@ pub(super) fn drawing(topology: &Topology, arrangement: &Arrangement) -> (Grid, 
     (grid, lines)
 }
 
+/// One connection's route as an orthogonal polyline, in drawing order.
 pub(super) fn polyline(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -212,11 +210,11 @@ pub(super) fn back_edge_polyline(
 
 /// Where two routes are allowed to meet, and whether they may share a run.
 ///
-/// Connections leaving one exit or reaching one destination may
-/// share a collinear segment and split or join where they touch. The side
-/// exits of one node fan out along one row the same way.
-/// Otherwise only the incoming and outgoing routes of one junction may meet,
-/// and only at that junction's own point.
+/// Connections leaving one exit or reaching one destination may share a
+/// collinear segment and split or join where they touch. The side exits of one
+/// node fan out along one row the same way. Otherwise only the incoming and
+/// outgoing routes of one junction may meet, and only at that junction's own
+/// point.
 pub(super) fn meetings(
     left: (Source, Destination),
     left_line: &[Point],
@@ -248,7 +246,6 @@ pub(super) fn meetings(
     (shared, points)
 }
 
-/// The pair of ends one connection joins.
 pub(super) fn ends(topology: &Topology, index: usize) -> (Source, Destination) {
     let wire = topology.connections[index];
     (wire.source, wire.destination)
@@ -508,9 +505,8 @@ pub(super) fn coverage(topology: &Topology, arrangement: &Arrangement) -> Result
                 if let Some(case) = super::choice::case_destination(wire.source, wire.destination) {
                     route.departure == arrangement.column[&Vertex::Node(case)]
                 } else {
-                    // A later question branch may join its merge column at
-                    // once, which means turning towards it: the merge is left
-                    // of the branch's own column, never right of it.
+                    // Joining the merge at once turns towards it: the merge is
+                    // left of the branch's own column, never right of it.
                     let merge = arrangement.column[&wire.destination];
                     let shortcut = matches!(wire.destination, Destination::Junction(_))
                         && exit.branch.is_some_and(|branch| branch > 0)
@@ -637,8 +633,7 @@ fn order(
     Ok(())
 }
 
-/// A sole arrival continues the current column. A case may be reached by a
-/// distributor detour; a tail may finish at either end of its arrival rail.
+/// A sole arrival continues the current column.
 pub(super) fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> Result<(), String> {
     for caps in topology
         .cycle_boundaries
@@ -682,9 +677,10 @@ pub(super) fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> 
     Ok(())
 }
 
-/// A selection's branches leave it left to right in authored order, its shared
-/// continuations sit in the column their group's first branch reached, and
-/// each convergence group keeps the columns it reserves.
+/// A selection's branches leave it left to right in authored order, the first
+/// in its own column; its shared continuations sit in the column their group's
+/// first branch reached, and each convergence group keeps the columns it
+/// reserves.
 fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Result<(), String> {
     for brancher in &shape.branchers {
         let block = brancher.block;
@@ -700,9 +696,6 @@ fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Resu
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        // The first answer or case continues the current column
-        // and the rest appear to its right, in authored order. A choice lives
-        // in its case nodes' columns, a question in its exits' branch columns.
         if !starts.windows(2).all(|pair| pair[0] < pair[1]) {
             return Err(format!(
                 "block {} draws its branches out of authored order: {starts:?}",
@@ -761,7 +754,6 @@ fn reserved_columns(arrangement: &Arrangement, brancher: &Brancher) -> Result<()
     Ok(())
 }
 
-/// Every vertex as a point of the grid.
 fn vertex_points(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -833,8 +825,6 @@ fn routes(topology: &Topology, geometry: &ArrangementGeometry) -> Result<(), Str
                 return Err(format!("connection {} moves upward", index + 1));
             }
         }
-        // An incoming side route must not turn down over the
-        // continuation the junction's outgoing connection owns.
         if matches!(wire.destination, Destination::Junction(_)) && turns_downward(points) {
             return Err(format!(
                 "connection {} turns downward before its merge",
@@ -880,8 +870,8 @@ pub(super) fn crossing(topology: &Topology, lines: &[Vec<Point>]) -> Option<(usi
     None
 }
 
-/// Each iteration back edge climbs outside its body, on the side its contour names, and
-/// crosses nothing.
+/// Each iteration back edge climbs outside its body, on the side its contour
+/// names, and crosses nothing.
 fn back_edges(
     flow: &Flow,
     topology: &Topology,

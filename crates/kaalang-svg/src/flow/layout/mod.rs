@@ -1,6 +1,3 @@
-//! Places the visual topology on rows and columns, routes its connections, and
-//! positions the labels its exits and nodes own.
-
 use std::{
     collections::{BTreeMap, BTreeSet},
     rc::Rc,
@@ -68,7 +65,7 @@ pub(crate) const CYCLE_CAPTION_FONT: i32 = 12;
 pub(crate) const CYCLE_CAPTION_LINE_HEIGHT: i32 = 14;
 pub(crate) const CYCLE_CAPTION_PADDING_X: i32 = 12;
 pub(crate) const CYCLE_CAPTION_BASELINE: i32 = 14;
-/// Font size of a connection label, written into the stylesheet the same way.
+/// Font size of a connection label, also written into the stylesheet.
 pub(crate) const CONNECTION_LABEL_FONT: i32 = SECONDARY_FONT;
 /// Font size of an authored question-branch description.
 pub(crate) const BRANCH_LABEL_FONT: i32 = 14;
@@ -651,7 +648,6 @@ fn attempt(
     scene
         .connections
         .extend(route::back_edges(&scene, model, &rows));
-    // Check pixel geometry and its correspondence to the verified arrangement.
     if let Some(reason) = route::verify(&scene).or_else(|| correspondence(&scene)) {
         return Err(Blocked::Refused(reason));
     }

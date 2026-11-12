@@ -267,10 +267,8 @@ fn mutations() -> Vec<Mutation> {
         (
             "a contour one lane past the last a topology offers",
             |arrangement: &mut Arrangement| {
-                // Each cycle takes a lane for its back edge and the next one
-                // out for the boundary around it, so a topology offers twice
-                // its cycle count. This probe has one cycle, so lane 2 is
-                // already one too many.
+                // A topology offers two lanes per cycle, and this probe has
+                // one cycle, so lane 2 is already one too many.
                 if let Some(contour) = arrangement.contours.first_mut() {
                     contour.lane += 2;
                 }
@@ -332,7 +330,6 @@ fn descriptions_do_not_change_the_arrangement() {
     }
 }
 
-/// The same topology keeps the same arrangement however often it is built.
 #[test]
 fn the_construction_is_deterministic() {
     let source = cycle_routes(&["repeat", "repeat", "leave"]);
@@ -360,8 +357,7 @@ fn nested_exit_routes_merge_without_crossing_side_departures() {
     assert!(model.arrangement.routes[outer_exit].runs.is_empty());
 }
 
-/// Exercises the sweep directly on accepted fixtures, bypassing the preferred
-/// search. Every result must pass independent verification.
+/// Every result must pass independent verification.
 #[test]
 fn the_sweep_alone_draws_every_executable_fixture() {
     use kaalang_testing::corpus::{self, Suite};
@@ -440,8 +436,8 @@ fn no_generated_cycle_shape_reaches_an_internal_error() {
     assert!(drawn > 100, "too few of the generated shapes were drawn");
 }
 
-/// Exercises the sweep directly on accepted generated cycles, including nested
-/// back edges with disjoint row spans. Every result must pass verification.
+/// Includes nested back edges with disjoint row spans. Every result must pass
+/// verification.
 #[test]
 fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
     let mut checked = 0;
@@ -602,10 +598,8 @@ fn the_construction_agrees_with_an_independent_procedure() {
     );
 }
 
-/// Exhaustive comparison, excluded from default runs due to its cost.
-///
-/// Run it with `just rust test-exhaustive`, which CONTRIBUTING.md asks for
-/// before a commit that touches this decision.
+/// CONTRIBUTING.md asks for `just rust test-exhaustive` before a commit that
+/// touches this decision.
 #[test]
 #[ignore = "exhaustive; run it with `just rust test-exhaustive`"]
 fn the_declared_domain_agrees_with_the_independent_procedure() {

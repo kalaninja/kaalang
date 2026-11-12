@@ -545,7 +545,7 @@ pub(crate) fn captured(flow: &Flow, mut captured: impl FnMut(ProducerId) -> bool
 }
 
 /// Requires the first consumer whenever a branch output is selected. Later
-/// consumers may be conditional. Repeated names are consumed by their merge.
+/// consumers may be conditional.
 fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Result<()> {
     // A repeated name is consumed by its implicit merge. Downstream captures
     // refer to the merged value, not to a raw question or choice output.

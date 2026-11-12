@@ -11,9 +11,7 @@ use crate::{construct::Arrangement, executions::Executions, topology::Topology};
 pub struct Analysis {
     /// The authored flow function name.
     pub name: Ident,
-    /// The authored flow parameters.
     pub parameters: Vec<FnArg>,
-    /// The authored flow return type.
     pub return_type: ReturnType,
     /// The resolved blocks and wires, ending with the implicit completion boundary.
     pub flow: Flow,
@@ -43,9 +41,7 @@ pub struct StageAnalysis {
 
 /// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
 pub struct SemanticModel {
-    /// Everything the analysis established, before any diagram.
     pub analysis: Analysis,
-    /// Structural topology of the flow.
     pub topology: Topology,
     /// Verified arrangement for the renderer to realize.
     pub arrangement: Arrangement,
@@ -232,7 +228,6 @@ const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
 pub struct QuestionBranch {
     /// Whether a true question body selects this branch.
     pub is_yes: bool,
-    /// Its optional authored description.
     pub description: Option<String>,
 }
 
@@ -456,7 +451,6 @@ impl Flow {
             .span
     }
 
-    /// The wire one producer occurrence provides.
     #[must_use]
     pub fn wire(&self, producer: ProducerId) -> &Ident {
         match producer {
@@ -486,7 +480,7 @@ pub enum ProducerId {
     BlockOutput { block: usize, output: usize },
 }
 
-/// One block input, identified by the block and the input position.
+/// One block input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CaptureId {
     pub block: usize,
@@ -517,7 +511,6 @@ pub struct Execution {
     pub branches: Vec<BranchSelection>,
     pub blocks: Vec<usize>,
     pub dependencies: Vec<CaptureDependency>,
-    /// Whether this finite summary finishes the flow or repeats a cycle.
     pub outcome: ExecutionOutcome,
 }
 

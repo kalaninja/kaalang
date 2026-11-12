@@ -34,8 +34,8 @@ fn a_generated_serial_probe_compacts_inside_its_budget() {
     );
 }
 
-/// Too slow to sample the way the corpus budgets do, so it takes the fastest of
-/// three runs: the one least disturbed by whatever else the machine was doing.
+/// Too slow to sample like the corpus budgets, so it takes the fastest of three
+/// runs, the one least disturbed by other load.
 #[test]
 fn a_generated_nested_side_tail_probe_builds_and_compacts_inside_its_budget() {
     let function = flow(&nested_cycles(8, 40, true));

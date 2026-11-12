@@ -1,5 +1,3 @@
-//! Arrangement compaction shared by kaalang renderers.
-
 use kaalang_compiler::{
     Arrangement, Run, RunLine, SemanticModel, Side,
     topology::{Source, Topology, Vertex},

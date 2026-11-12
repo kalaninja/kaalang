@@ -1,6 +1,3 @@
-//! Renders a type diagram: read each card's type, lay out the cards
-//! and their routes, and serialize the scene.
-
 use std::num::NonZeroUsize;
 
 use kaalang_compiler::{Annotation, Field, TypeForm};
@@ -21,7 +18,6 @@ pub(crate) fn render(
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
-    // A file that declares several cards is parsed once for each target.
     let mut parsed = Vec::new();
     let groups = incoming
         .iter()
@@ -37,7 +33,7 @@ pub(crate) fn render(
     Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
 }
 
-/// A card's source file, parsed once for every card it declares.
+/// A card's source file, parsed once per target for every card it declares.
 struct Parsed<'a> {
     source: &'a str,
     target: &'a Target,

@@ -211,8 +211,7 @@ fn symbolic_analysis_matches_the_generated_variants() {
     compare_generated(&sources);
 }
 
-/// The bulk of the generated cycle shapes, excluded from default runs due to
-/// its cost.
+/// The bulk of the generated cycle shapes.
 #[test]
 #[ignore = "exhaustive; run it with `just rust test-exhaustive`"]
 fn symbolic_analysis_matches_every_generated_cycle_shape() {

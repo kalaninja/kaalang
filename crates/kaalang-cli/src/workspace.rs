@@ -79,7 +79,7 @@ pub(super) struct Crate {
 }
 
 impl Crate {
-    /// The crate as an error lists it: its package and target.
+    /// The crate as an error lists it.
     pub(super) fn label(&self) -> String {
         format!("{}: {}", self.package, self.target)
     }
@@ -676,7 +676,6 @@ pub(super) fn skipped<'a>(crates: impl IntoIterator<Item = &'a Crate>) -> BTreeS
         .collect()
 }
 
-/// Warns that `path` may also be declared in a file that was skipped.
 pub(super) fn warn_skipped(path: &str, skipped: &BTreeSet<String>) {
     if !skipped.is_empty() {
         let warning = format!("warning: `{path}` may also be declared in a file that was skipped");
@@ -684,7 +683,6 @@ pub(super) fn warn_skipped(path: &str, skipped: &BTreeSet<String>) {
     }
 }
 
-/// Appends the files the walk could not search to `message`.
 pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> String {
     if !skipped.is_empty() {
         message.push_str("\nthese files and their submodules could not be searched:");
@@ -1034,7 +1032,6 @@ fn path_attribute(attributes: &[Attribute]) -> Option<String> {
         .find_map(|attribute| path_value(&attribute.meta))
 }
 
-/// The string of a `path = "…"` attribute.
 fn path_value(meta: &Meta) -> Option<String> {
     match meta {
         Meta::NameValue(pair) if pair.path.is_ident("path") => match &pair.value {
@@ -1048,7 +1045,7 @@ fn path_value(meta: &Meta) -> Option<String> {
     }
 }
 
-/// The target's diagram group: library/binaries, tests, examples, then benches.
+/// The target's diagram group.
 fn target_group(target: &Target) -> u8 {
     if target.is_test() {
         1

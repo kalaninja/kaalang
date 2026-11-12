@@ -52,7 +52,6 @@ pub struct Declarations {
     pub impls: Vec<Impl>,
 }
 
-/// Collects the flows and `impl` blocks among these items.
 #[must_use]
 pub fn declarations(items: &[Item]) -> Declarations {
     let mut found = Declarations {

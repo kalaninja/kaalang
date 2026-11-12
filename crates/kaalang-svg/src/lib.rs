@@ -9,7 +9,7 @@ use syn::{File, Generics, Visibility, spanned::Spanned};
 
 pub use self::target::Target;
 
-/// Appends one line to the SVG. Writing to a `String` cannot fail.
+/// Appends one line to the SVG.
 macro_rules! emit {
     ($svg:expr, $($argument:tt)*) => {
         writeln!($svg, $($argument)*).expect("writing to a String cannot fail")
@@ -31,8 +31,7 @@ mod markup;
 mod target;
 mod text;
 
-/// Options for one rendered flow: its presentation, and the compilation target
-/// its file is read for.
+/// Options for one rendered flow.
 #[derive(Clone, Copy)]
 pub struct RenderOptions<'a> {
     /// Replace every validated cycle region with one described cycle node.
@@ -221,8 +220,7 @@ pub fn flow_names(source: &str, target: &Target) -> Result<Vec<String>, RenderEr
     )
 }
 
-/// One card of a type diagram: a type, the name its header shows,
-/// and its relationships drawn as lines into the focus.
+/// One card of a type diagram.
 #[derive(Clone, Copy, Debug)]
 pub struct TypeCard<'a> {
     /// The UTF-8 Rust source file that declares the type.
@@ -312,8 +310,7 @@ fn generics_text(source: &str, generics: &Generics) -> String {
     format!("<{}>", parameters.join(", "))
 }
 
-/// The UML visibility marker: `+` for `pub`, `~` for a restricted form such as
-/// `pub(crate)`, and `-` for private.
+/// The UML visibility marker.
 fn visibility_marker(visibility: &Visibility) -> char {
     match visibility {
         Visibility::Public(_) => '+',

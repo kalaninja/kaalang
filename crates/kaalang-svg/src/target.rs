@@ -1,6 +1,3 @@
-//! The cfg set of one compilation target, which decides the `cfg`s of the
-//! source a diagram reads.
-
 use std::str::FromStr;
 
 use cargo_platform::{Cfg, CfgExpr};
@@ -10,7 +7,7 @@ use syn::Lit;
 /// The cfg set of one compilation target, as `rustc --print cfg` prints it:
 /// one `name` or `key="value"` per line, such as `unix` or `target_os="linux"`,
 /// with a `feature="…"` line for each enabled feature. A diagram reads its
-/// source as that target compiles it. The default set is empty.
+/// source as that target compiles it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Target {
     cfgs: Vec<Cfg>,

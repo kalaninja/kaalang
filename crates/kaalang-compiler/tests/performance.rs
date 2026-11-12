@@ -15,7 +15,6 @@ use kaalang_testing::{
 };
 use syn::ItemFn;
 
-/// The diagram-decision cost for one flow, and whether construction succeeded.
 struct Cost {
     /// Whether the construction found a conforming arrangement. A refusal is
     /// a potential worst case: it exhausts the conflict-guided search.

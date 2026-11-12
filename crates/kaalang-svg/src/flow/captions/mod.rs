@@ -1,4 +1,3 @@
-//! Derives captions and shared-label decisions from the authored flow.
 //! Exits own hand-overs; nodes own captures.
 
 use std::collections::{BTreeMap, BTreeSet};

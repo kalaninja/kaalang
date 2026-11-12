@@ -1,6 +1,5 @@
-//! Measures cycle bodies and chooses back-edge contours.
-//! The preferred search tries lanes beside the body on the caller's chosen side,
-//! nearest first. Failure leaves other sides and the complete sweep available.
+//! Measures cycle bodies and chooses back-edge contours on the caller's chosen
+//! side. Failure leaves other sides and the complete sweep available.
 
 use std::collections::BTreeSet;
 
@@ -66,7 +65,7 @@ pub(super) fn outside(
 }
 
 /// Tries lanes beside `edge`, the body's outermost column on `side`, nearest
-/// first. On failure, reports the nearest candidate's obstruction and any
+/// first. On failure, reports the outermost lane's obstruction and any
 /// blocking connection.
 #[allow(clippy::too_many_arguments)]
 fn climb(
@@ -126,8 +125,8 @@ fn climb(
     Err((blocked, culprit))
 }
 
-/// Chooses a contour for every cycle, innermost first, or reports that one of
-/// them has none on the side it was given.
+/// Chooses a contour for every cycle, or reports that one of them has none on
+/// the side it was given.
 ///
 /// A contour is searched outward from the body's own edge, lane by lane.
 /// Moving out lengthens the two horizontal runs, so a nearer lane is

@@ -2,8 +2,8 @@
 //! production search, this keeps a sparse difference-constraint graph with a
 //! new coordinate for every forward route and back edge on every event row.
 //! Strong components and a DAG longest-path pass solve it; no production
-//! index, transition, state key, numbering, or route
-//! expansion is used. The shared verifier checks the resulting witness.
+//! index, transition, state key, numbering, or route expansion is used. The
+//! shared verifier checks the resulting witness.
 
 use std::collections::{BTreeMap, BTreeSet};
 

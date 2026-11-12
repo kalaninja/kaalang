@@ -1,5 +1,3 @@
-//! Sizes a call node.
-
 use super::{CALL_BAR_INSET, NODE_LABEL_PADDING_X, NODE_MIN_HEIGHT, NODE_WIDTH, block_dimensions};
 use crate::text::RichText;
 

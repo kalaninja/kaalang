@@ -413,7 +413,6 @@ pub fn cycle_shapes() -> Vec<String> {
 /// The same outcomes carried by ordered question ports, rather than a shared
 /// distributor exit. Both forms must respect authored branch order, while
 /// their different ports and endpoints exercise different constructions.
-///
 #[must_use]
 pub fn question_shapes() -> Vec<String> {
     const QUESTIONS: &str = r#"        #[kaa::question("Take the first route?")]

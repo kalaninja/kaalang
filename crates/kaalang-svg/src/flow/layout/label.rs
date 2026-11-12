@@ -1,5 +1,5 @@
-//! Measures and places wire labels. Shared connection labels
-//! use the capture position; identical alternatives share their merge's label.
+//! Shared connection labels use the capture position; identical alternatives
+//! share their merge's label.
 
 use std::collections::BTreeSet;
 

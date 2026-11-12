@@ -1,8 +1,8 @@
 //! What selections each block sees. To its containing sequence a cycle with
 //! several outputs is a branching block whose body is a black box: only the
 //! output it exported leaves that body, and the route taken inside it only
-//! tells executions apart at the cycle. Inside the body its own selection does not exist yet, since
-//! the body's routes are what make it.
+//! tells executions apart at the cycle. Inside the body its own selection does
+//! not exist yet, since the body's routes are what make it.
 
 use std::{borrow::Cow, collections::BTreeMap};
 

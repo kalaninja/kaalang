@@ -1087,7 +1087,6 @@ fn an_exit_between_repeating_cases_is_rejected_before_layout() {
     assert!(message.contains("must be adjacent"), "{message}");
 }
 
-/// Pulling a back edge over its body is rejected by the final geometry check.
 #[test]
 fn a_back_edge_inside_its_body_is_caught_by_the_geometry_check() {
     let fixture = fixture!("flow/cycle", "trailing_inner_cycle");
@@ -1154,7 +1153,6 @@ fn a_misplaced_end_is_caught_by_the_geometry_check() {
         end::verify(&raised).is_some(),
         "a node below end should be caught"
     );
-    // Final geometry verification also checks end placement.
     assert_eq!(
         route::verify(&raised).as_deref(),
         Some("end must be below every other node and iteration back edge"),
@@ -1390,7 +1388,6 @@ fn a_back_edge_beyond_its_body_is_drawn_where_the_arrangement_put_it() {
     }
 }
 
-/// A sole tail arrival also keeps a separately recorded far contour.
 /// The model test checks the same farther contour as a witness.
 #[test]
 fn a_sole_tail_arrival_keeps_its_recorded_far_contour() {
@@ -1495,8 +1492,6 @@ fn four_nested_back_edges_are_drawn_in_four_lanes() {
     );
 }
 
-/// Every generated cycle the model accepts also renders. Extends coverage
-/// beyond authored fixtures.
 #[test]
 fn every_generated_shape_the_model_accepts_also_renders() {
     let sources = kaalang_testing::shapes::cycle_shapes()

@@ -28,7 +28,6 @@ mod question;
 mod return_block;
 mod stage;
 
-/// Parses a flow function into its named flow inputs and blocks.
 pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     let flow = Flow {
         flow_inputs: flow_inputs(function)?,
@@ -355,7 +354,6 @@ fn forward(kind: BlockKind, alias: &Ident) -> Block {
     block
 }
 
-/// Parses one statement and hands it to its kind's parser.
 fn parse_block(statement: &Stmt) -> Result<Block> {
     let (attributes, output_pattern, closure) = block_statement(statement)?;
     let closure = closure.as_deref();
@@ -422,7 +420,6 @@ impl<'a> BlockSyntax<'a> {
             .collect()
     }
 
-    /// Rejects every companion attribute, for a kind that accepts none.
     pub(crate) fn reject_companions(&self) -> Result<()> {
         match self.companions.first() {
             Some(companion) => Err(unexpected_companion(companion)),
@@ -430,7 +427,6 @@ impl<'a> BlockSyntax<'a> {
         }
     }
 
-    /// Rejects an empty input list, for a kind that requires one.
     pub(crate) fn require_inputs(&self, name: &str) -> Result<()> {
         if self.inputs.is_empty() {
             return Err(Error::new(
@@ -679,7 +675,6 @@ enum Role {
     Comment,
 }
 
-/// Classifies one attribute written on a kaalang block.
 fn attribute_role(attribute: &Attribute) -> Result<Role> {
     if attribute.path().is_ident("doc") {
         return Ok(Role::Comment);
@@ -755,7 +750,6 @@ fn block_closure(closure: &ExprClosure) -> Result<(Vec<Input>, Expr)> {
     Ok((inputs, body))
 }
 
-/// Parses one consuming or borrowing block input.
 fn block_input(pattern: &Pat) -> Result<Input> {
     match pattern {
         Pat::Ident(binding) => Ok(input(
@@ -793,9 +787,9 @@ pub(super) fn captured(inputs: &[Input], name: &Ident) -> bool {
         .any(|input| input.alias.unraw() == name.unraw())
 }
 
-/// Rejects transfers out of the body's own control-flow
-/// scope. A nested closure, async block, or item owns its control flow, and macro
-/// token streams are opaque, so the walk stops at each of those.
+/// Rejects transfers out of the body's own control-flow scope. A nested
+/// closure, async block, or item owns its control flow, and macro token streams
+/// are opaque, so the walk stops at each of those.
 fn reject_control_transfers(body: &Expr) -> Result<()> {
     #[derive(Default)]
     struct FirstTransfer {

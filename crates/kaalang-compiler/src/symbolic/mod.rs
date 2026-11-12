@@ -128,7 +128,6 @@ impl Executions {
         self.outcomes.get(&repeat).copied().unwrap_or(NEVER)
     }
 
-    /// Where any of `blocks` runs.
     fn any_run(&mut self, blocks: impl IntoIterator<Item = usize>) -> Condition {
         blocks.into_iter().fold(NEVER, |sum, block| {
             self.conditions.or(sum, self.runs[block])

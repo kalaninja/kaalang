@@ -1,4 +1,3 @@
-//! Serializes a call node.
 use std::fmt::Write;
 
 use super::{Node, TextAnchor, write_label};

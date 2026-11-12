@@ -1,10 +1,9 @@
 //! Draws test fixtures beside their source, so a change to the model or
-//! the renderer shows up as a diagram diff instead of staying invisible.
+//! the renderer shows up as a diagram diff.
 //!
-//! Geometry is reviewed in `git diff`. Every executable fixture must render;
-//! a routing failure cannot silently delete a working diagram.
-//! Fixtures must be declared by their module and carry a test unless their
-//! flows never finish.
+//! Every executable fixture must render; a routing failure cannot silently
+//! delete a working diagram. Fixtures must be declared by their module and
+//! carry a test unless their flows never finish.
 
 use std::{
     fs,

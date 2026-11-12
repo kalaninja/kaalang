@@ -1,6 +1,3 @@
-//! Lays out a type diagram: rows of incoming cards above the focus card, and
-//! a route for each relationship drawn into the focus.
-//!
 //! Routes never cross, and run inside a card only along a groove. An incoming
 //! card lists its tiles one under another, so each reaches the card's right
 //! side: a line starts there, level with its target, and joins its column's
@@ -194,7 +191,6 @@ impl Text {
         }
     }
 
-    /// Wraps a text a tile may lack; an absent text has no lines.
     fn wrap_optional(self, text: Option<&RichText>, budget: i32) -> Vec<RichText> {
         text.map_or_else(Vec::new, |text| self.wrap(text, budget))
     }
@@ -371,8 +367,7 @@ fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
     row
 }
 
-/// Where each incoming card goes: each group from a new row, and within it
-/// the `index`th card in column `index % columns`.
+/// Where each incoming card goes.
 struct Grid {
     /// Each card's row and column.
     cells: Vec<(usize, usize)>,

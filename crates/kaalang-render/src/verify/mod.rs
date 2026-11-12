@@ -1,5 +1,3 @@
-//! Verification of renderer-proposed arrangements.
-
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::{
@@ -9,10 +7,11 @@ use kaalang_compiler::{
 
 mod cycle;
 
-/// Reusable verification context for renderer-proposed arrangements.
+/// Verifies renderer-proposed arrangements for one flow, caching the facts
+/// every candidate shares.
 ///
 /// The flow and topology must come from the same compiler analysis and
-/// projection. Construction caches facts shared by every candidate.
+/// projection.
 pub struct ArrangementVerifier<'a> {
     checks: ArrangementChecks<'a>,
     topology: &'a Topology,
@@ -21,7 +20,6 @@ pub struct ArrangementVerifier<'a> {
 }
 
 impl<'a> ArrangementVerifier<'a> {
-    /// Prepares to verify arrangements for one analyzed and projected flow.
     #[must_use]
     pub fn new(flow: &'a Flow, topology: &'a Topology) -> Self {
         let body_vertices = topology

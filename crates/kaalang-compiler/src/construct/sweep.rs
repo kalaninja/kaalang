@@ -579,7 +579,6 @@ impl<'a> Sweep<'a> {
         })
     }
 
-    /// The state before any event: nothing placed, nothing live.
     fn start(&self) -> State {
         State {
             placed: vec![false; self.topology.vertices.len()],

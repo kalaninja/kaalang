@@ -104,19 +104,17 @@ pub enum Source {
 }
 
 /// Where a connection ends: a node, or the junction a producer branch enters.
-/// Every destination is a vertex of the precedence graph, so it is that type.
 pub type Destination = Vertex;
 
-/// A connection is identified by its source exit and destination,
-/// so connections leaving distinct exits of one node stay distinct even when
-/// they join the same pair of nodes.
+/// Connections leaving distinct exits of one node stay distinct even when they
+/// join the same pair of nodes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Connection {
     pub source: Source,
     pub destination: Destination,
 }
 
-/// Node identity and visual role. Captions and captures are derived from the flow.
+/// Captions and captures are not stored: they derive from the flow.
 #[derive(Clone)]
 pub struct Node {
     pub id: NodeId,
@@ -127,7 +125,7 @@ pub struct Node {
 #[derive(Clone)]
 pub struct Exit {
     pub id: ExitId,
-    /// The occurrences this exit provides, in declaration order.
+    /// In declaration order.
     pub provides: Vec<ProducerId>,
 }
 
@@ -142,16 +140,15 @@ pub struct Junction {
     pub is_cycle_result: bool,
 }
 
-/// The visual topology of one flow: every drawn vertex, the connections between
-/// them, the placement-only precedence they carry, and the cycles' back edges.
+/// The visual topology of one flow.
 #[derive(Clone, Default)]
 pub struct Topology {
     pub nodes: Vec<Node>,
     pub exits: Vec<Exit>,
     pub junctions: Vec<Junction>,
     pub connections: Vec<Connection>,
-    /// Every node and junction, in authored order, as the connections address
-    /// them. Sorted, so a lookup is a binary search.
+    /// Every node and junction, sorted in authored order, so a lookup is a
+    /// binary search.
     pub vertices: Vec<Vertex>,
     /// Placement-only precedence, never drawn as execution: iteration ends before
     /// what follows them, a cycle body before its result or for-end, and every
@@ -334,8 +331,8 @@ impl Topology {
             .expect("every drawn node is projected")
     }
 
-    /// Indexes the connections by their ends. Every change to `connections`
-    /// has to be followed by this, which is why the index is private.
+    /// Every change to `connections` has to be followed by this, which is why
+    /// the index is private.
     fn index(&mut self) {
         self.arrivals.clear();
         self.departures.clear();
@@ -378,7 +375,6 @@ impl Topology {
             .expect("every addressed exit is projected")
     }
 
-    /// The connections arriving at one vertex.
     pub fn incoming(&self, vertex: Vertex) -> impl Iterator<Item = &Connection> {
         self.at(self.arrivals.get(&vertex))
     }
@@ -440,7 +436,6 @@ pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     }];
     let mut exits = vec![Exit {
         id: ExitId::of(NodeId::Start),
-        // Every named flow input appears as an output of start.
         provides: (0..model.flow.flow_inputs.len())
             .map(ProducerId::FlowInput)
             .collect(),
@@ -656,9 +651,6 @@ fn precedes(model: &Analyzed<'_>) -> Vec<BTreeSet<usize>> {
     later
 }
 
-/// One exit per branch output, each handing over the single output it carries.
-/// `exit` names the id the kind gives one branch, which is the only part that
-/// differs between a question and a choice.
 /// One branch's exit of a node drawn once for all its branches, a question or
 /// a collapsed cycle with several outputs: the branch is named in the exit
 /// rather than in the node.
@@ -669,6 +661,9 @@ const fn drawn_branch_exit(index: usize, branch: usize) -> ExitId {
     }
 }
 
+/// One exit per branch output, each handing over only that output. `exit`, the
+/// id of one branch, is the only part that differs between a question and a
+/// choice.
 fn branch_exits(
     index: usize,
     block: &Block,
@@ -727,7 +722,6 @@ fn sequential_exit(index: usize, block: &Block) -> Exit {
     }
 }
 
-/// The node common to every flow block.
 const fn block_node(index: usize, kind: NodeKind) -> Node {
     Node {
         id: NodeId::Block(index),
@@ -1133,8 +1127,8 @@ fn vertices(nodes: &[Node], junctions: usize) -> Vec<Vertex> {
     vertices
 }
 
-/// Transitive reduction using successor bitsets built deepest first.
-/// Removes an edge only when a path of two or more edges reaches its destination.
+/// Transitive reduction using successor bitsets. Removes an edge only when a
+/// path of two or more edges reaches its destination.
 fn reduce(direct: &BTreeSet<Connection>, vertices: &[Vertex]) -> Vec<Connection> {
     let count = vertices.len();
     let index = |vertex: Vertex| {
@@ -1273,8 +1267,7 @@ pub(crate) fn exit(model: &Analyzed<'_>, block: usize, output: usize) -> Source 
     })
 }
 
-/// Repeating loop cycle with entry and tail junctions and a preferred back-edge
-/// side.
+/// A repeating loop cycle.
 #[derive(Clone, Copy)]
 pub struct Cycle {
     pub header: usize,

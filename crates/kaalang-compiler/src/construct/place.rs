@@ -272,8 +272,8 @@ fn preferred(
     }
 
     // Branches appear in authored order from left to right, so a branch's
-    // own column decides where its successor goes; only a node no branch
-    // reaches falls back to its leftmost predecessor, and a root to column 0.
+    // own column decides where its successor goes; other predecessors count
+    // only for a node no branch reaches.
     let arrival = |connection| arrives_from(topology, columns, footprints, connection);
     let branches = topology
         .incoming(Vertex::Node(node))

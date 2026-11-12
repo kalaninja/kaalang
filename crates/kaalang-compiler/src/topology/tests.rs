@@ -325,8 +325,8 @@ fn every_node_and_exit_has_one_identity() {
         }
     "#,
     );
-    // Every named flow input is an output of start; the
-    // wildcard provides nothing.
+    // Every named flow input is an output of start; the wildcard provides
+    // nothing.
     assert_eq!(
         topology.exit(ExitId::of(NodeId::Start)).provides,
         [ProducerId::FlowInput(0), ProducerId::FlowInput(1)]

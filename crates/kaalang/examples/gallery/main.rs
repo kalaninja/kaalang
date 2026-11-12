@@ -1,5 +1,3 @@
-//! Run the gallery examples and check their results.
-
 mod binary_search;
 mod fizzbuzz;
 mod kmp_search;

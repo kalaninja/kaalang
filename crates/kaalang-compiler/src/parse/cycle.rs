@@ -165,10 +165,10 @@ fn unnamed(stem: &str, span: Span, names: &mut BTreeSet<Ident>) -> Ident {
 }
 
 /// Appends one hidden boundary consumer per declared output to the body that
-/// ends at `blocks.len()`, in declaration order. A consumer
-/// captures its body-local output; the route that reaches it with that output
-/// exports it after all of its remaining work. A for cycle's body first ends
-/// in a hidden `continue`, which every route with an item reaches.
+/// ends at `blocks.len()`, in declaration order. A consumer captures its
+/// body-local output; the route that reaches it with that output exports it
+/// after all of its remaining work. A for cycle's body first ends in a hidden
+/// `continue`, which every route with an item reaches.
 pub(super) fn exports(blocks: &mut Vec<Block>, header: usize) -> Result<()> {
     let cycle = &blocks[header];
     for (position, output) in cycle.outputs.iter().enumerate() {
