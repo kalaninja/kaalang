@@ -6,13 +6,13 @@
 
 ## 1. Overview
 
-The kaalang SVG renderer implements the visual language defined by RFC 0002. It
-consumes the validated semantic model also used for execution lowering and does
-not independently reinterpret the authored source.
+The kaalang SVG renderer implements the visual language of RFC 0002. It consumes
+the validated semantic model that execution lowering also uses and does not
+independently reinterpret the authored source.
 
 ## 2. Layout
 
-The validated model supplies both the topology and its arrangement.
+The validated model supplies the topology and its arrangement.
 `kaalang_compiler::build` validates the complete expanded topology and
 independently checks its arrangement against RFC 0002 before it returns. For a
 collapsed view, the model layer projects each validated cycle boundary to one
@@ -25,22 +25,20 @@ arrangement. Sections 2.1–2.4 describe construction and verification of RFC
 
 ### 2.1 The decision procedure
 
-Construction first tries the finite family of compact arrangements described in
-§2.5. Exhausting that family, or a candidate failing independent verification,
-invokes the deciding sweep. Within the sweep, straight iteration back edge
-climbs are tried first; exhaustion invokes the same search with variable back
-edge positions. Only exhaustion of this last search establishes impossibility.
-Each successful candidate is checked by an independent arrangement verifier
-before `build` stores it. None of these searches uses a time, retry, coordinate,
-or bend limit to reject a topology.
+Construction first tries the finite family of compact arrangements in §2.5.
+Exhausting that family, or a candidate failing independent verification, invokes
+the deciding sweep. The sweep tries straight iteration back edge climbs first;
+exhaustion invokes the same search with variable back edge positions. Only
+exhaustion of this last search establishes impossibility. No search uses a time,
+retry, coordinate, or bend limit to reject a topology.
 
 #### Events and persistent constraints
 
 Reverse each cycle back edge from entry to tail. Forward connections, reversed
-back edges, and placement-only precedence form a DAG. In particular, precedence
-puts end after every other vertex. A **lifeline** is a connection or reversed
-back edge crossing a horizontal cut. A **frontier** lists those lifelines from
-left to right; it does not assign them permanent columns.
+back edges, and placement-only precedence form a DAG; precedence puts end after
+every other vertex. A **lifeline** is a connection or reversed back edge
+crossing a horizontal cut. A **frontier** lists those lifelines from left to
+right; it does not assign them permanent columns.
 
 The persistent horizontal variables are vertex columns, exit columns, and two
 bounds for each back edge's climb. Mandatory column identities are unified
@@ -58,14 +56,13 @@ climb uses. On the left, its upper bound is strictly less than every body column
 and the lower bound of every nested back edge. On the right, its lower bound is
 strictly greater than every body column and the upper bounds of nested back
 edges. Body membership includes junctions and is independent of ranks. The
-first, straight back edge pass equates the bounds; the deciding pass does not.
-The deciding pass therefore includes back edges with bends.
+first, straight back edge pass equates the bounds; the deciding pass does not,
+so it includes back edges with bends.
 
 A state consists of the placed vertex set, frontier, chosen back edge sides, and
-the full transitive closure of weak and strict inequalities accumulated so far.
-A strict cycle refuses the state; a cycle of weak inequalities identifies equal
-coordinates. Global constraints remain in the state after their lifelines have
-ended.
+the transitive closure of weak and strict inequalities accumulated so far. A
+strict cycle refuses the state; a cycle of weak inequalities identifies equal
+coordinates. Global constraints remain in the state after their lifelines end.
 
 There are three kinds of event:
 
@@ -122,7 +119,7 @@ start at a single distributor, and none ends before that row. An unrelated
 lifeline cannot enter the group without crossing one of them: it has neither
 their source nor their destination. At their common row the group's order is the
 authored case-column order. Thus the case-row transition includes every
-conforming placement, and grouping the cases removes no conforming drawing.
+conforming placement.
 
 When two routes change their left-to-right order, they must meet. RFC 0002
 permits this away from a common vertex only on a shared collinear segment of
@@ -139,9 +136,9 @@ vertex and exit columns satisfy the static constraints. The minimum and maximum
 x of each back edge's climb supply its bounds, including whole-body and
 nested-edge clearance. The drawing's row positions satisfy every projected
 anchor inequality. Its first-branch approach attaining each shared-entry minimum
-is among the enumerated equalities. Thus this path is never refused by the
-column solver. It reaches a complete state in the deciding pass, even if its
-back edges need bends or its distributor routes descend out of case order.
+is among the enumerated equalities. Thus the column solver never refuses this
+path. It reaches a complete state in the deciding pass, even if its back edges
+need bends or its distributor routes descend out of case order.
 
 #### Soundness: a finished search path gives a drawing
 
@@ -160,16 +157,16 @@ already occupy its column. A tail's arrivals stand on the side opposite its back
 edge, so the back edge leaves along a rail which overlaps no incoming segment
 beyond the tail.
 
-Between events, the lifelines have the same order. Split common-source bundles
-on a first horizontal lane. Move leftward paths from left to right, then
-rightward paths from right to left, using one lane per move. A path cannot hit a
-neighbour: an earlier leftward path has already moved, and a later one starts to
-its right; the rightward case is symmetric. This applies to back edges as well
-as forward paths. A back edge moves between two points in its interval, so every
-horizontal segment stays inside that interval and outside its whole body. Merge
-the next event's consumed forward paths on a final common rail. For an exchange
-event, its two forward paths use that final rail in opposite directions, as
-allowed by their common source or destination.
+Between events, lifelines keep their order. Split common-source bundles on a
+first horizontal lane. Move leftward paths from left to right, then rightward
+paths from right to left, one lane per move. A path cannot hit a neighbour: an
+earlier leftward path has already moved, and a later one starts to its right;
+the rightward case is symmetric. This applies to back edges as well as forward
+paths. A back edge moves between two points in its interval, so every horizontal
+segment stays inside that interval and outside its whole body. Merge the next
+event's consumed forward paths on a final common rail. An exchange event's two
+forward paths use that final rail in opposite directions, as allowed by their
+common source or destination.
 
 Node, port, arrival and back edge rails span only their own contiguous group; no
 other lifeline or vertex lies between their ends. Every route is monotone and
@@ -201,9 +198,9 @@ Future eligibility reads only the placed set and frontier. Back edge sides,
 identities, minima and accumulated column inequalities determine every future
 constraint. Local coordinates of earlier rows have been eliminated exactly; they
 constrain the future only through the retained closure. Any completion of one
-prefix with this state is consequently a completion of any other such prefix:
-number their common constraints and reconstruct each prefix's strips. A memoized
-refusal is therefore exact, including a refusal of the final minimum equalities.
+prefix with this state thus completes any other such prefix: number their common
+constraints and reconstruct each prefix's strips. A memoized refusal is
+therefore exact, including a refusal of the final minimum equalities.
 
 The other reduction detects a necessary separator obstruction. For an unplaced
 vertex `v`, suppose a live path `b` cannot reach `v` but reaches a vertex
@@ -246,14 +243,14 @@ one exchange orbit per vertex, and minimum equalities. If `S` denotes the state
 count above and `G` the number of minimum clauses, a loose space bound including
 memoization is `O(S * (M² + N + W + L) + N * W! * W + N² + G * M²)`. The terms
 account for stored keys, active exchange queues and witness rows, reachability,
-and recursive minimum settlement. The actual cache threshold reduces retained
-keys; termination and these upper bounds do not depend on it.
+and recursive minimum settlement. The cache threshold reduces retained keys;
+these upper bounds do not depend on it.
 
 ### 2.2 Branch and case placement
 
-The reservation rule constrains later siblings to remain beyond the vertices
-that their convergence group draws and they do not. Earlier or enclosed siblings
-may finish before a group vertex is placed.
+The reservation rule keeps later siblings beyond the vertices that their
+convergence group draws and they do not. Earlier or enclosed siblings may finish
+before a group vertex is placed.
 
 Routes from a common distributor may exchange positions on shared rails, but all
 cases must occupy one row in authored order. A detour cannot lower an enclosed
@@ -335,10 +332,9 @@ The independent checks cover:
 
 ### 2.4 Why every checked arrangement has a realization
 
-Measurement assigns pixels to the checked arrangement without changing its
-structure. One strictly increasing `column_x` map positions every node,
-junction, route, and back edge. Nodes sharing a column share an x coordinate;
-branch order and reserved areas retain their horizontal order.
+One strictly increasing `column_x` map positions every node, junction, route,
+and back edge. Nodes sharing a column share an x coordinate; branch order and
+reserved areas retain their horizontal order.
 
 Each column gap is large enough for its content, the contours that enter that
 gap from either side, a separating lane, and any label-clearance slack. A deep
@@ -354,11 +350,11 @@ correspondence checks, standard spacing realizes the same arrangement. Drawings
 with bent back edges use standard spacing except where their recorded contours
 need a wider gap.
 
-A label and a straight back edge can compete for the same column gap. The
-renderer widens that gap in finite steps. Wrapped label widths and node sizes
-are fixed, so the maximum necessary slack is bounded by the widest label plus
-the contours' reach and one lane. A conflict beyond that bound is a renderer
-defect, not an invalid topology.
+When a label and a straight back edge compete for one column gap, the renderer
+widens that gap in finite steps. Wrapped label widths and node sizes are fixed,
+so the maximum necessary slack is bounded by the widest label plus the contours'
+reach and one lane. A conflict beyond that bound is a renderer defect, not an
+invalid topology.
 
 Bent back edges use a common map from column, side, and lane to pixels. It
 reserves node and label width before the first contour lane, with room for both
@@ -387,7 +383,7 @@ preferred back edge sides, unsunk iteration tails, and direct routes into
 destination columns. On a conflict, it varies three finite choices: which tails
 sink below otherwise independent vertices, which side each back edge takes, and
 whether a forward route turns near its source, near its destination, or outside
-the intervening content. Exhausting these choices invokes §2.1's sweep.
+the intervening content.
 
 A convergence group's **footprint** comprises the columns of its branches and
 shared continuation. Shared continuation blocks run sequentially in source order
@@ -395,16 +391,15 @@ in the column reached by the group's first branch. A nested selection can make
 that approach differ from the branch's initial column. Later siblings stay to
 the right of reserved vertices under §2.2; footprints need not be contiguous.
 
-At a wire merge, earlier producers descend to the junction's row. A later
-branch's side exit may reach it horizontally on that same row. Side arrivals end
-at the merge marker; only the outgoing connection continues below it. End has a
-separate arrival rail and remains below every other vertex and back edge.
+At a wire merge, earlier producers descend to the junction's row. Side arrivals
+end at the merge marker; only the outgoing connection continues below it. End
+has a separate arrival rail and remains below every other vertex and back edge.
 
 Iteration tails initially occupy separate rows. Checked compaction may align a
 tail with its sole side arrival, or a cycle result with its tail when their
 routes are disjoint. It may also remove unused rows, columns, and routing lanes.
 Compaction preserves complete nested cycle envelopes as well as individual
-routes. Measurement retains the resulting rows and columns.
+routes.
 
 Carry a completed region's tail precedence through its result and continuation
 to the first wire merge or end. These boundaries stay below the body, while
@@ -433,10 +428,10 @@ arrowhead belongs to the horizontal arrival at the entry junction.
 
 The renderer produces standalone SVG with embedded styles and no JavaScript,
 external fonts, or external rendering programs. It lightly tints nodes, mostly
-by block kind, while retaining shape and labels as independent type indicators.
-An action and a call share one tint; their shapes tell them apart. The
-presentation choices left open by RFC 0002 are internal to the renderer and may
-change without changing the visual language.
+by block kind; shape and labels remain independent type indicators. An action
+and a call share one tint; their shapes tell them apart. The presentation
+choices left open by RFC 0002 are internal to the renderer and may change
+without changing the visual language.
 
 Serialize forward connections as subpaths of one SVG path, so shared
 distributors and merge rails are stroked once without darkening their
@@ -464,8 +459,8 @@ when space permits, but no repeated input or output list. A `<title>` on each
 cycle boundary group preserves its complete authored description as a tooltip,
 including when the caption is shortened or omitted. A collapsed cycle emits the
 same marker and description on its node and its external capture and hand-over
-labels. Break capture junctions have no duplicate labels. End shows the value of
-the flow's structural return beside its receiving edge.
+labels. End shows the value of the flow's structural return beside its receiving
+edge.
 
 ## 4. Library interface
 
@@ -508,9 +503,8 @@ descriptions, source-derived signature labels, and default call captions
 containing characters that XML 1.0 cannot represent.
 `RenderError::UnroutableTopology` reports a renderer defect in geometry, labels
 or witness correspondence for the selected projection after assigning dimensions
-and spacing. Optional arrangement compaction retains the original witness when a
-candidate fails verification. Final route, label and correspondence checks
-remain necessary after measurement.
+and spacing. Final route, label and correspondence checks remain necessary after
+measurement.
 
 ## 5. Command-line interface
 

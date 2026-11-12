@@ -9,9 +9,8 @@
 
 A flow describes one function. Types need a corresponding view that explains one
 type's structure and its relationships without drawing an entire domain model. A
-field's Rust type explains how it stores a value, but does not always identify
-the domain concept it refers to. A member key and a borrowed member can both
-refer to the same domain concept.
+field's Rust type explains how it stores a value, not always the domain concept
+it refers to: a member key and a borrowed member can both refer to the same one.
 
 This RFC proposes annotations for Rust structs, enums, unions, and type aliases,
 and a diagram centered on one selected declaration. Descriptions and
@@ -34,8 +33,7 @@ ownership, borrowing, and type checking.
 - A **tile** is the drawing of one component of a card's structure: a field, an
   enum variant, or an alias's right-hand side.
 
-These terms describe type diagrams. A relationship is neither a flow wire nor a
-control-flow connection.
+A relationship is neither a flow wire nor a control-flow connection.
 
 ## 2. Annotations
 
@@ -49,13 +47,12 @@ struct Member {
 }
 ```
 
-`#[kaa]` marks a type declaration as a datatype. On a type it may carry one
-description, a nonempty Rust string literal, as `#[kaa("description")]`; a type
-without one is described by its name. The attribute applies to named, tuple, and
-unit structs, enums, unions, and type aliases. Generic parameters and lifetimes
-remain part of the Rust declaration. A plain type also has a card and may be a
-relationship target: the annotation adds descriptions and relationships to what
-Rust declares.
+On a type, `#[kaa]` may carry one description, a nonempty Rust string literal,
+as `#[kaa("description")]`; a type without one is described by its name. The
+attribute applies to named, tuple, and unit structs, enums, unions, and type
+aliases. Generic parameters and lifetimes remain part of the Rust declaration. A
+plain type also has a card and may be a relationship target: the annotation adds
+descriptions and relationships to what Rust declares.
 
 The Rust identifier supplies the name; a card header qualifies it with its
 module path (§4.2). There is no separate display-name argument. Descriptions
@@ -67,7 +64,7 @@ Descriptions use the restricted Markdown of [RFC 0005](0005-markdown.md), as
 block descriptions do. Field names, positions, Rust types, and target names are
 source-derived labels and stay literal.
 
-The attribute has the same behavior for all supported declaration forms. Rust's
+The attribute behaves the same on every supported declaration form; Rust's
 declaration form supplies the structural distinction.
 
 ### 2.2 Fields
@@ -105,8 +102,7 @@ An enum variant may carry `#[kaa::case("description")]`, like a choice branch in
 a flow. It describes the variant as a whole; a unit variant has no field to
 annotate, so `case` is its only description.
 
-A field cannot have both `value` and `refer`, or repeat either annotation. One
-field does not declare multiple targets in this RFC.
+A field cannot have both `value` and `refer`, or repeat either annotation.
 
 ### 2.3 Aliases
 
@@ -125,16 +121,15 @@ type RevisionDetails = Details;
 type History = Vec<RevisionDetails>;
 ```
 
-An alias has no field on which to put its relationship. An optional `refer`
-therefore belongs directly to the alias, alongside `#[kaa]`. It describes the
-aliased value as a whole. The alias's structure shows its right-hand-side Rust
-type and, when present, the relationship description and target.
+An alias has no field to carry its relationship, so an optional `refer` belongs
+directly to the alias, alongside `#[kaa]`, and describes the aliased value as a
+whole. The alias's structure shows its right-hand-side Rust type and, when
+present, the relationship description and target.
 
 Aliases remain distinct authored declarations in diagrams: `CurrentDetails` and
 `RevisionDetails` retain their names even though both name `Details`. No
 implicit relationship is inferred from an alias's right-hand side, and the
-renderer does not copy the underlying declaration's fields into the alias. An
-alias without `refer` has no outgoing relationships.
+renderer does not copy the underlying declaration's fields into the alias.
 
 This is a distinction in the diagram, not additional Rust type identity. Rust
 aliases name an existing type rather than define a new one.
@@ -151,8 +146,7 @@ struct Attachment<T> {
 ```
 
 A type parameter is not a relationship target: `refer(T, ...)` is rejected,
-since there is no declaration for the relationship to point at. The field keeps
-its Rust type `Box<T>` and a `value` description.
+since there is no declaration for the relationship to point at.
 
 A field using this generic declaration writes:
 
@@ -210,11 +204,10 @@ to kaalang, and one it does not define is rejected, on a type as in a flow.
 | `Option<MemberId>` | `Member`            | An optional member resolved through a directory.     |
 | `Vec<MemberId>`    | `Member`            | Members resolved from an ordered collection of keys. |
 
-The same annotation covers these cases. It generates no lookup, allocation,
-borrow, ownership transfer, or integrity check. A target need not equal the
-field's Rust type, and a matching Rust type alone does not create a
-relationship. There are no separate ownership, direct-reference, or lookup
-relationship kinds in this RFC.
+`refer` generates no lookup, allocation, borrow, ownership transfer, or
+integrity check. A target need not equal the field's Rust type, and a matching
+Rust type alone does not create a relationship. There are no separate ownership,
+direct-reference, or lookup relationship kinds in this RFC.
 
 A registry may store `HashMap<EntryKey, Document<'a>>` and explicitly refer to
 `Document`. The key stays a separate Rust type, and kaalang does not infer
@@ -243,10 +236,7 @@ separate cards below it. There are no lines from the focus to other cards. An
 incoming type with several relationships to the focus is drawn once; each
 relationship keeps its own source field or alias.
 
-A declaration, field, variant, or generic parameter under a `cfg` that does not
-hold for the compilation target is not part of the source the diagram reads, and
-a `cfg_attr` whose predicate holds stands for the attributes it carries. A crate
-may declare one path under exclusive `cfg`s, such as `#[cfg(unix)]` and
+A crate may declare one path under exclusive `cfg`s, such as `#[cfg(unix)]` and
 `#[cfg(windows)]`, on the declarations or on the modules around them; the
 diagram draws the declaration the compilation target compiles.
 
@@ -272,9 +262,9 @@ listed tile shows its name and type in one column and its description and target
 in the next; a variant's tiles are listed under its name and description, set in
 from it.
 
-A union presents its fields as overlapping storage alternatives, vertically. It
-is not drawn as a tagged enum. An alias shows its definition as described in
-§2.3. Unit structs and variants show their names without invented components.
+A union presents its fields vertically, as overlapping storage alternatives, not
+as a tagged enum. An alias shows its definition as described in §2.3. Unit
+structs and variants show their names without invented components.
 
 Only the workspace's own type declarations have cards, datatypes and plain types
 alike; the card of a plain type shows its Rust structure without descriptions.
@@ -522,11 +512,10 @@ Acceptance scenarios:
 
 ## 8. Compatibility and exclusions
 
-This RFC adds a proposed type view alongside flows. Beyond the provisions §2.5,
-§4.2, and §6 name, it does not supersede the execution, lowering, or
-control-flow drawing rules in the accepted RFCs. Their flow terms retain their
-existing meanings. A type relationship is not evidence of execution order or of
-a value being moved or borrowed.
+Beyond the provisions §2.5, §4.2, and §6 name, this RFC does not supersede the
+execution, lowering, or control-flow drawing rules in the accepted RFCs. Their
+flow terms retain their existing meanings. A type relationship is not evidence
+of execution order or of a value being moved or borrowed.
 
 The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The
@@ -535,6 +524,5 @@ and `case` annotations; derives, representation attributes, and conditional
 compilation pass through. Cards show no traits, methods, or behavior, and
 whole-domain diagrams are outside this RFC's scope.
 
-kaalang supports crates on Rust 2024 only. A crate on an earlier edition is not
-supported: the attribute generates, and the command-line interface resolves,
-code by the rules of Rust 2024.
+kaalang supports crates on Rust 2024 only: the attribute generates, and the
+command-line interface resolves, code by the rules of Rust 2024.

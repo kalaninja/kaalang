@@ -7,11 +7,11 @@
 
 Types beside the focus often repeat its module path in every card. A diagram of
 `order::Order`, for example, repeats `order::` before `Payment` and `Shipment`.
-Keep the full path on the focus as context and shorten each incoming card's path
-relative to it.
+Keep the focus's full path from its crate root as context and shorten each
+incoming card's path relative to it.
 
 This supersedes the crate-root path rule for incoming card headers in RFC 0009
-§4.2. The focus keeps its path from its crate root.
+§4.2.
 
 ## 2. Displayed paths
 

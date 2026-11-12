@@ -12,8 +12,8 @@
 
 Visiting every item of a collection is already expressible: an action builds a
 cursor, a choice asks it for the next item, and `continue` repeats. The idiom
-draws two nodes that only manage the iteration, and its reader has to recognize
-the pattern before seeing the work done for each item.
+draws two nodes that only manage the iteration, and the reader must recognize
+the pattern before seeing the per-item work.
 
 This RFC names the two forms a cycle can take. A **loop cycle** is the cycle of
 RFC 0007, now spelled with Rust's `loop` keyword. A **for cycle** runs its body
@@ -24,10 +24,6 @@ The for cycle is deliberately compact. It cannot stop early, export a value, or
 repeat through `continue`; a search or an early exit stays a loop cycle. In
 return its body is a plain sequence that every item passes through, and its
 diagram needs no back edge.
-
-This RFC defines syntax, execution, validation, Rust lowering, and the visual
-representation of both forms. Section 8 identifies the earlier provisions it
-supersedes. Earlier released RFC texts remain unchanged.
 
 ### 1.1 Terms
 
@@ -132,10 +128,10 @@ once, before the first iteration. Unlike a loop cycle's gate, they are real
 captures with Rust value operations. The `in` expression is evaluated once over
 those aliases and iterated through `IntoIterator`. The aliases end with the
 scope that evaluates the expression, before iteration. A value capture moves or
-copies its wire into the `in` expression. Iterating a collection by reference
-therefore needs a borrowing capture, as in
-`|&values| for value in values.iter()`. A borrowing capture keeps its wire
-borrowed for as long as the iterator holds the borrow.
+copies its wire into the `in` expression, so iterating a collection by reference
+needs a borrowing capture, as in `|&values| for value in values.iter()`. A
+borrowing capture keeps its wire borrowed as long as the iterator holds the
+borrow.
 
 Each iteration binds the item pattern to the next item. Item wires are
 iteration-local: they are fresh on every iteration, inner blocks capture them
@@ -167,17 +163,16 @@ body continues.
 ### 3.3 Completion
 
 A for cycle completes when its iterator yields no further item, including before
-the first iteration. Completion is therefore always reachable: a for cycle has a
-normal continuation even when every body route diverges, because its iterator
-may be empty.
+the first iteration. Completion is therefore always reachable, and the cycle has
+a normal continuation even when every body route diverges.
 
-When the cycle declares an output, that output is a unit wire produced by the
-cycle at completion. It behaves like a completed loop cycle's single output: it
-becomes available to the containing sequence and may gate later blocks, merge
-with same-named wires on other branches, or become a stage transition when the
-enclosing stage declares that output. A for cycle with no declared output is
-placed by source order, like an action without outputs, and later blocks that
-capture the outer state its body changed run after it.
+A declared output is a unit wire the cycle produces at completion. Like a
+completed loop cycle's single output, it becomes available to the containing
+sequence and may gate later blocks, merge with same-named wires on other
+branches, or become a stage transition when the enclosing stage declares that
+output. A for cycle with no declared output is placed by source order, like an
+action without outputs, and later blocks that capture the outer state its body
+changed run after it.
 
 A value computed inside the body reaches the containing sequence only through
 outer state: create an owner before the cycle, mutate it through an inner `&mut`
@@ -212,11 +207,11 @@ A loop cycle lowers as RFC 0007 §5.2 describes; the keyword changes nothing.
 A for cycle lowers through `IntoIterator::into_iter` and `Iterator::next`, as
 Rust lowers its own `for`. Its header captures bind as an action's capture
 aliases do, in authored order, inside a scope that evaluates the `in` expression
-and ends before the loop, so the body never sees the aliases. Without captures,
-the expression needs no inner scope. An outer `match` on
-`IntoIterator::into_iter` retains its scrutinee's temporaries through the loop.
-The capture scope still follows Rust's ordinary lifetime rules: an iterator
-cannot escape it while borrowing an owner created inside it.
+and ends before the loop. Without captures, the expression needs no inner scope.
+An outer `match` on `IntoIterator::into_iter` retains its scrutinee's
+temporaries through the loop. The capture scope still follows Rust's ordinary
+lifetime rules: an iterator cannot escape it while borrowing an owner created
+inside it.
 
 Each iteration calls `Iterator::next` explicitly, so an iterator's inherent
 `next` method cannot change its behavior. With an item, it binds the item wire
@@ -273,8 +268,7 @@ Analysis records one representative iteration, as for a loop cycle. An iteration
 either takes an item, runs the body and repeats, or finds none and completes.
 Every block of the body runs only on the first of those routes, so the cycle
 completes whenever it is entered. Rust checks the iterator type, moves, borrows,
-and drop order. Whether a `for` loop is allowed in a `const fn` is decided by
-Rust.
+and drop order, and decides whether a `for` loop is allowed in a `const fn`.
 
 ## 6. Visual representation
 
@@ -306,8 +300,7 @@ route passes through the area the body occupies between them, and no body route
 leaves it except through the for-end. A body route that never ends its
 iteration, such as one inside an endless loop cycle, still stays above the
 for-end. Outer data captured inside the body follows the existing control routes
-through the for-entry, as it follows a loop cycle's entry. The repetition is
-carried by the two caps; no line returns from the for-end to the for-entry.
+through the for-entry, as it follows a loop cycle's entry.
 
 A nested loop cycle inside a for body keeps its boundary within the body. A for
 cycle nested in a loop cycle's body keeps its caps within that cycle's boundary.
@@ -351,8 +344,8 @@ fn total_of(values: &[i64], twice: bool) -> i64 {
 }
 ```
 
-Each branch runs its own for cycle. Their `counted` outputs merge by the
-ordinary rules, so the return follows whichever cycle ran.
+The two `counted` outputs merge by the ordinary rules, so the return follows
+whichever cycle ran.
 
 ### 7.2 Ranges and destructured items
 

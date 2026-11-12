@@ -13,10 +13,10 @@ a formula, or call out a phrase. Before this RFC, every character was displayed
 literally. Add bold, italic, strikethrough, code, superscript, subscript, quoted
 text, rendered TeX formulas, underline, highlight, and palette text colors.
 
-This restricted notation does not turn descriptions into Markdown documents. It
-adds no headings, tables, lists, fenced code blocks, links, images, general
-HTML, arbitrary font size, or arbitrary CSS. Formatting changes presentation
-only; it cannot affect execution, wire identity, branching, or diagram topology.
+The notation adds no headings, tables, lists, fenced code blocks, links, images,
+general HTML, arbitrary font size, or arbitrary CSS. Formatting changes
+presentation only; it cannot affect execution, wire identity, branching, or
+diagram topology.
 
 For example:
 
@@ -31,18 +31,17 @@ fn clamp_negative(value: i32) -> i32 {
 ```
 
 The action displays those four phrases with their respective effects, without
-the surrounding delimiters. The generated Rust is the same as with a plain
-description.
+the surrounding delimiters.
 
 ## 2. Where formatting applies
 
 Interpret the supported Markdown notation in descriptions wherever they are
 displayed. Source-derived and generated labels remain literal.
 
-Descriptions remain ordinary Rust string literals. First decode the Rust
-literal; then interpret its value as inline text. Ordinary and raw literals with
+Descriptions remain ordinary Rust string literals. Decode the Rust literal
+first, then interpret its value as inline text. Ordinary and raw literals with
 the same value produce the same display. No attribute, renderer option, or CLI
-flag enables the feature: it applies to descriptions by default.
+flag enables the feature; it applies to descriptions by default.
 
 ## 3. Notation
 
@@ -76,7 +75,7 @@ stays literal.
 For example, `x^2^` displays as x² and `H~2~O` displays as H₂O. These effects
 raise or lower the authored text; they do not change letter case or substitute
 Unicode superscript and subscript characters. They work with text, not only
-digits. Single tildes delimit subscripts; double tildes delimit strikethrough.
+digits.
 
 A quoted line drops its `>` marker and displays its contents in italic between
 typographic quotation marks. Formatting inside the quote remains active. A quote
@@ -108,15 +107,13 @@ denote text effects, not HTML content.
 Supported effects may combine. For example, `***text***` is bold italic, and
 `**very *important* text**` adds italic to the bold word `important`.
 Underscores follow Markdown emphasis rules, which leave `some_identifier`
-literal. Source-derived labels remain outside Markdown interpretation
-altogether.
+literal.
 
 For nested superscripts or subscripts, the innermost position wins; nesting does
 not repeatedly shrink the font or accumulate baseline shifts.
 
 Unmatched delimiters remain text. Invalid TeX and formatting introduce no syntax
-errors in otherwise valid descriptions. Unsupported constructs are preserved
-literally under §3.3.
+errors in otherwise valid descriptions.
 
 ### 3.2 Escapes, code, and formulas
 
@@ -155,8 +152,8 @@ newlines. Automatic wrapping does not introduce another parsing boundary.
 Formatting applies to an ordinary CommonMark paragraph or a single block quote
 around one paragraph. If a line instead forms other document structure, display
 that entire line literally. For example, `# **Warning**` stays exactly
-`# **Warning**`, without becoming a heading. A nonempty authored line must not
-disappear; a link reference definition, for example, stays literal.
+`# **Warning**`. A nonempty authored line must not disappear; a link reference
+definition, for example, stays literal.
 
 Within a paragraph, links and images are literal source spans. Copy the complete
 original span once, including its contents, punctuation, and delimiters, rather
@@ -212,24 +209,23 @@ weight, including labels that already use heavier text. Italic changes font
 style, strikethrough draws a line through the text, and code uses a semibold
 system monospace stack without a separate box or background. Superscripts and
 subscripts use a smaller font and shift above or below the surrounding baseline.
-Their exact scale and offset are renderer presentation choices. Quoted text uses
-the same italic effect with visible quotation marks. Underline adds a line
-beneath the text, and highlight paints a pale background behind its measured
-span without changing the text color. Palette colors use fixed, dark SVG colors
-chosen to remain legible on white, the node fills, and the highlight background.
-These effects may surround formulas: their paths take the selected text color,
-highlight and underline are drawn around the formula's measured bounds, and
-strikethrough runs across them. Bold strokes its glyph outlines, and italic or
-quoted text slants it. An explicit TeX color overrides a surrounding palette
-color within its math scope; uncolored formula content inherits the surrounding
-color. Inside a superscript or subscript, a formula takes that script's size and
-baseline shift. Elsewhere, formulas use the description's base font size and
-align their math baseline with surrounding text. Subsequent plain text returns
-to the base size, weight, and baseline. Use the existing line height as a
-minimum and grow it from formula metrics when required. A formula wider than its
-label's wrapping width is clipped so that its visible part and a trailing
-ellipsis fill that width; the plain-text projection keeps its complete TeX.
-Effects must not make text escape its measured bounds or overlap adjacent
+Their exact scale and offset are renderer presentation choices. Underline adds a
+line beneath the text, and highlight paints a pale background behind its
+measured span without changing the text color. Palette colors use fixed, dark
+SVG colors chosen to remain legible on white, the node fills, and the highlight
+background. These effects may surround formulas: their paths take the selected
+text color, highlight and underline are drawn around the formula's measured
+bounds, and strikethrough runs across them. Bold strokes its glyph outlines, and
+italic or quoted text slants it. An explicit TeX color overrides a surrounding
+palette color within its math scope; uncolored formula content inherits the
+surrounding color. Inside a superscript or subscript, a formula takes that
+script's size and baseline shift. Elsewhere, formulas use the description's base
+font size and align their math baseline with surrounding text. Subsequent plain
+text returns to the base size, weight, and baseline. Use the existing line
+height as a minimum and grow it from formula metrics when required. A formula
+wider than its label's wrapping width is clipped so that its visible part and a
+trailing ellipsis fill that width; the plain-text projection keeps its complete
+TeX. Effects must not make text escape its measured bounds or overlap adjacent
 content.
 
 Formatting may change pixel dimensions and spacing. It must not change the
@@ -251,9 +247,8 @@ retaining their contents. Represent superscripts as `^(text)` and subscripts as
 `_(text)` so their position is not lost: `x^2^` becomes `x^(2)`, and `H~2~O`
 becomes `H_(2)O`. Keep struck-out words, typographic quotation marks, and the
 TeX body of each rendered formula in that projection. It must remain complete
-even when a cycle caption is shortened or omitted. Styling has no execution
-meaning and must not be the only way an author communicates a condition or a
-branch's meaning.
+even when a cycle caption is shortened or omitted. Styling must not be the only
+way an author communicates a condition or a branch's meaning.
 
 SVG output remains deterministic and standalone. Serialize effects with
 renderer-owned styles on `<tspan>` elements and formulas as nested SVG
@@ -267,11 +262,11 @@ characters introduced by numeric references, before serializing it.
 ## 5. Semantic and processing boundary
 
 Keep the original decoded descriptions for nonempty-description checks,
-diagnostics, arrangement checks, and Rust lowering. Formatting applies only to
-presentation and introduces no new compiler error. A formula that cannot be
-parsed or laid out, has no positive width, has a size whose exact fraction needs
-a denominator above 2^32, uses unsupported features, or requires unavailable
-glyphs remains literal as defined in §3, rather than causing a renderer error.
+diagnostics, arrangement checks, and Rust lowering. Formatting introduces no new
+compiler error. A formula that cannot be parsed or laid out, has no positive
+width, has a size whose exact fraction needs a denominator above 2^32, uses
+unsupported features, or requires unavailable glyphs remains literal as defined
+in §3, rather than causing a renderer error.
 
 Interpret each authored line into styled spans for text, code, formulas, and the
 three paired style tags. Track active effects across balanced delimiters and
@@ -280,9 +275,9 @@ fallback and spacing. Apply the intraword-index exception in §3.1 only to
 remaining plain spans. Do not generate HTML as an intermediate format.
 
 Parse and lay out each valid formula once. Keep its box metrics and rendered
-output with its span, and keep that span atomic during wrapping. Scale the
-formula to the label's font size during SVG serialization; position adjacent
-text using measured advances without browser scripting.
+output with its span. Scale the formula to the label's font size during SVG
+serialization; position adjacent text using measured advances without browser
+scripting.
 
 Preserve description provenance so source-derived and generated labels remain
 literal. Derive visible text and its full plain-text projection from the same
@@ -298,7 +293,7 @@ marker pairs, escapes, or character references. For example, a description
 containing `**urgent**` previously showed asterisks and will now show bold text.
 Escape those markers to keep them visible. Raw Rust strings bypass Rust escapes,
 not this notation. Descriptions without recognized notation keep their existing
-presentation. Source-derived labels and generated Rust remain unchanged.
+presentation.
 
 Earlier accepted RFCs remain unchanged. This RFC supersedes the following
 provisions only within the scope of description formatting:

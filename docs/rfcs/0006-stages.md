@@ -10,36 +10,24 @@
 ## 1. Motivation and scope
 
 An algorithm with several repeatable steps can already be expressed through a
-cycle, a choice, and an explicitly maintained state that selects the next step.
-A kaalang **stage** makes those steps explicit and lets the compiler generate
-the dispatcher. The flow first prepares its data, then enters one stage at a
-time through named control signals.
+cycle, a choice, and explicit state that selects the next step. A kaalang
+**stage** makes those steps explicit and lets the compiler generate the
+dispatcher, with each stage as one of its branches. The flow first prepares its
+data, then enters one stage at a time through named control signals. Stage
+bodies use the ordinary cycle, capture, and convergence rules in
+[RFC 0001](0001-language.md), with the stage-specific extensions defined here.
 
-A stage behaves as a branch of that common dispatcher. Its entry signal selects
-one visit and can carry a value into it. A completing visit selects one of the
-stage's declared alternative exits, or the terminal stage completes the flow
-with its structural return. A stage may instead diverge in a nested cycle.
-Stages share the outer data scope established by preparation; their internal
-blocks capture the entry value and other data they use.
-
-This RFC defines stage syntax, execution, validation, Rust lowering, and
-diagrams for staged flows. Stage bodies use the ordinary cycle, capture, and
-convergence rules in [RFC 0001](0001-language.md), with the stage-specific
-extensions defined here.
-
-A transition's name selects its destination, and its value becomes that stage's
-input. Ordinary functions transfer these values under Rust's ownership and
+Ordinary functions transfer transition values under Rust's ownership and
 lifetime rules, including non-`Copy` owners. In a `const fn`, transition values
 must implement `Copy`: this keeps the generated dispatch state free of
 destructors even with generic payloads. The restriction follows the function's
 `const` qualifier, including when it is called at runtime. Authored computations
-still obey Rust's constant-evaluation rules. Data shared across visits can
-remain in outer storage and be accessed through explicit captures.
+still obey Rust's constant-evaluation rules.
 
 ### 1.1 Terms
 
-This RFC uses RFC 0001's wire, producer, capture, branch, and merge terms, with
-the following additions:
+RFC 0001's wire, producer, capture, branch, and merge terms apply, with these
+additions:
 
 - A **stage** is a named kaalang sequence entered through one incoming signal.
 - A **visit** is one execution of a stage body, with fresh local wires.
@@ -74,8 +62,7 @@ A flow containing stages has two consecutive sections:
 
 The first stage declaration ends preparation. Every later root statement must
 also be a stage declaration. Preparation follows the ordinary source-order,
-branch, merge, and cycle rules. Every preparation route that reaches the stage
-section must supply exactly one entry signal.
+branch, merge, and cycle rules.
 
 A declaration has exactly one `#[stage("description")]` attribute containing a
 nonempty Rust string literal, a header `|entry|` with one plain identifier, and
@@ -106,9 +93,8 @@ receiver, first produce a named preparation wire such as
 
 Entry names are unique across the flow. Raw and ordinary spellings identify the
 same name. The names in these headers identify the flow's transition signals.
-Each such signal has a Rust type, with a `Copy` bound in a `const fn`. All
-producers targeting one entry, including initial producers in preparation or the
-function inputs, must agree on its Rust type. Different entries can have
+All producers targeting one entry, including initial producers in preparation or
+the function inputs, must agree on its Rust type. Different entries can have
 different types. Each declared stage output resolves to an entry, including the
 stage's own entry for a self-transition. All headers and output declarations are
 resolved before executable sequences are analyzed, so a transition can target an
@@ -129,8 +115,7 @@ tuple of bindings, or `()`. A stage output binding cannot carry `mut`; duplicate
 names are invalid. Each destination receives an immutable entry, regardless of
 the source wire's mutability. A tuple lists alternative exits rather than
 destructuring one result: `(output,)` and `output` declare the same single exit
-and transfer its whole value. The preparation statements of a staged flow are
-subject to §4's completion rules. Section 5 describes cycles inside stages.
+and transfer its whole value.
 
 ## 3. Data scope and signals
 
@@ -138,19 +123,19 @@ subject to §4's completion rules. Section 5 describes cycles inside stages.
 
 Function inputs and preparation outputs establish the common outer data scope.
 Preparation must make every outer wire used by a stage available at the stage
-section's entry through ordinary branch and merge rules. A branch-local
-preparation value must reach that common scope through its wire's merge before
-stages can use it. Initial transition signals provide the selected entry; the
-common outer data scope contains the remaining wires. A stage sees its current
-entry value, not the preparation signal from an earlier visit.
+section's entry through ordinary branch and merge rules; a branch-local
+preparation value must first reach that scope through its wire's merge. Initial
+transition signals provide the selected entry; the common outer data scope
+contains the remaining wires. A stage sees its current entry value, not the
+preparation signal from an earlier visit.
 
 Each stage body can use those outer data wires, its current entry, and its own
 earlier local outputs. Each computational block or transfer explicitly captures
 the wires it reads, using the existing `name`, `mut name`, `&name`, and
 `&mut name` forms. For example, an action inside `|processing|` may capture
 `|&mut values|`, where `values` was declared during preparation. Mutation
-through a permitted mutable capture updates the shared wire for subsequent work
-and subsequent stage visits.
+through a permitted mutable capture updates the shared wire for later work and
+later visits.
 
 The received entry binding cannot be captured with `&mut`. A value capture
 `mut entry` remains valid wherever that capture form is supported: it moves or
@@ -169,24 +154,21 @@ under RFC 0001 §4.5 (§5 here); its inner blocks capture those cycle bindings o
 earlier iteration-local outputs. A `mut entry` cycle capture creates separate
 mutable working storage without making the received stage entry mutable.
 
-Stage-local wires are fresh on every visit. A declared output transfers its
-selected value to the next stage by an ordinary Rust move or copy. Other local
-values remain in the current stage; preserve them in outer state through a
-mutable capture when needed by later visits. A stage-local producer cannot reuse
-a name inherited from common outer data or the current entry, except for the
-self-transition defined in §3.2. Different stages may reuse local names in their
-separate scopes.
+A declared output transfers its selected value to the next stage by an ordinary
+Rust move or copy. Other local values remain in the current stage; preserve them
+in outer state through a mutable capture when needed by later visits. A
+stage-local producer cannot reuse a name inherited from common outer data or the
+current entry, except for the self-transition defined in §3.2. Different stages
+may reuse local names in their separate scopes.
 
 ### 3.2 Entry and outgoing signals
 
-A stage's entry signal activates one visit. Inside the body, captures resolve to
-the visible entry, common outer data, or outputs of that visit. Each declared
-stage output selects the same-named local wire produced directly in the body's
-sequence. The declaration and the internal wire belong to separate scopes; the
-declaration does not provide a wire inside the body. A matching internal
-producer must exist, and each declared exit must be reachable. The incoming
-entry alone does not supply a declared output; a transition requires a local
-producer.
+Each declared stage output selects the same-named local wire produced directly
+in the body's sequence. The declaration and the internal wire belong to separate
+scopes; the declaration does not provide a wire inside the body. A matching
+internal producer must exist, and each declared exit must be reachable. The
+incoming entry alone does not supply a declared output; a transition requires a
+local producer.
 
 A question can select unit signals directly; a choice can provide different
 values for its cases; an action, call, or completed cycle can produce a signal
@@ -196,10 +178,9 @@ entry remains local when it is not listed. Its ordinary consumers and type
 determine its local meaning.
 
 A direct local output may reuse the stage's own entry name when that name is
-also a declared output. This is the only exception to the prohibition on
-shadowing an inherited wire. Captures before that first local declaration,
-including captures of the declaring block, resolve to the entry. The declaration
-then introduces a new body-local wire: in `let go = |go| ...`, the input is the
+also a declared output. Captures before that first local declaration, including
+captures of the declaring block, resolve to the entry. The declaration then
+introduces a new body-local wire: in `let go = |go| ...`, the input is the
 current entry and the output is the new local producer. Later captures resolve
 to that local wire, with no fallback to the entry on another branch. The local
 producer retains its ordinary `mut` permission; exporting its value still
@@ -213,8 +194,7 @@ first declaration that shadows it. A nested cycle may read the visible wire but
 cannot shadow an outer entry itself.
 
 Exporting the new `go` requests another visit, whose header receives that value.
-This also permits mutual transitions between stages. Every continuing visit must
-explicitly select its successor.
+This also permits mutual transitions between stages.
 
 A **transition boundary** is the end of a completing preparation or stage route,
 where the selected signal is exported to its destination. A signal may be
@@ -223,40 +203,34 @@ order before the transition.
 
 A **boundary consumer** is the implicit by-value use of a wire selected for
 export. It is not an authored block. At a transition boundary it consumes the
-selected signal and supplies the destination's entry. In a `const fn`, that
-value's type must implement `Copy`. Boundary consumers participate in the
-ordinary scope, producer, branch, and merge checks. A branch-local signal cannot
-be used after a merge has closed its branch. Alternative internal producers
-retain their ordinary type and mutability agreement; the receiving stage binds
-the exported value immutably.
+selected signal and supplies the destination's entry. Boundary consumers
+participate in the ordinary scope, producer, branch, and merge checks. A
+branch-local signal cannot be used after a merge has closed its branch.
 
 Preparation selects its initial destination from its direct outputs or named
 flow inputs matching stage entries. Such a name designates a transition signal,
-including when it carries data; it is not also a common outer data wire. Rust
-checks agreement with the destination's other incoming values and, in a
-`const fn`, its `Copy` bound. The initial signal must remain available by value
-until preparation's transition boundary, just like an outgoing stage signal. For
-a non-`Copy` `go`, an action with `|go| go.clone()` moves the original into its
-capture alias before cloning, so the initial signal is no longer available.
-Borrowing forms such as `|&go| go.len()` or `|&go| go.clone()` preserve it; the
-action's result follows the ordinary output and usage rules.
+including when it carries data; it is not also a common outer data wire. The
+initial signal must remain available by value until preparation's transition
+boundary, just like an outgoing stage signal. For a non-`Copy` `go`, an action
+with `|go| go.clone()` moves the original into its capture alias before cloning,
+so the initial signal is no longer available. Borrowing forms such as
+`|&go| go.len()` or `|&go| go.clone()` preserve it; the action's result follows
+the ordinary output and usage rules.
 
-Inside a stage, only its declared outputs request transitions. A wire inside a
-nested cycle must first leave it as a break value bound in the containing
-sequence, then be exported by the stage, to request a transition.
+A wire inside a nested cycle must first leave it as a break value bound in the
+containing sequence, then be exported by the stage, to request a transition.
 
 ### 3.3 Merge and source order
 
 The ordinary rule remains in force for data: every producer is authored before
-every consumer of its wire. Shared data is established before the stage section;
-local producers precede local consumers. A mutable capture changes a stored
-value under Rust's rules while keeping its original producer identity.
+every consumer of its wire. A mutable capture changes a stored value under
+Rust's rules while keeping its original producer identity.
 
-Within preparation or one stage, same-named output producers must be mutually
-exclusive and merge before any consumer. This includes signal outputs. All work
-that the merge waits for must precede its consumers, and alternative producers
-must agree on type and mutability. Branch adjacency and convergence nesting
-retain their existing rules.
+Within preparation or one stage, same-named output producers, including signal
+outputs, must be mutually exclusive and merge before any consumer. All work that
+the merge waits for must precede its consumers, and alternative producers must
+agree on type and mutability. Branch adjacency and convergence nesting retain
+their existing rules.
 
 A signal connection between stages has execution order across visits. Its
 producer completes in one visit, then the receiving stage begins a fresh visit.
@@ -268,8 +242,8 @@ acyclic local data-dependency order.
 ## 4. Execution and completion
 
 Preparation executes once and leaves its shared data alive for the stage
-section. Its initial signal determines the first stage. Each visit executes the
-selected stage's body according to its verified local source and branch order.
+section. Each visit executes the selected stage's body according to its verified
+local source and branch order.
 
 At every route that reaches the end of preparation or a nonterminal stage:
 
@@ -282,18 +256,16 @@ At every route that reaches the end of preparation or a nonterminal stage:
    after the route's remaining work, finish the visit's local scope, and enter
    the stage with the matching entry name.
 
-The rule is checked separately for each feasible route. A stage can have several
-possible exits, like a select, while each completed visit chooses one. Export
-consumes the internal producer, and the destination header consumes the exported
-signal; both count toward ordinary usage and branch participation requirements.
-A signal emitted during preparation is used only for the initial entry. Every
-later transition uses a freshly produced signal.
+The rule is checked separately for each feasible route. Export consumes the
+internal producer, and the destination header consumes the exported signal; both
+count toward ordinary usage and branch participation requirements. A signal
+emitted during preparation is used only for the initial entry. Every later
+transition uses a freshly produced signal.
 
 Every route of a nonterminal stage either exports one declared signal or
-diverges in a nested cycle. A stage whose every route diverges declares no
-outputs. Reaching the end of the body requires a successor signal, including for
-a transition back to the same stage. Divergence is structural under §6.1; an
-opaque Rust expression does not establish it.
+diverges in a nested cycle. Reaching the end of the body requires a successor
+signal, including for a transition back to the same stage. Divergence is
+structural under §6.1; an opaque Rust expression does not establish it.
 
 ### 4.1 Terminal stage
 
@@ -303,12 +275,8 @@ stage reaches that return. It may perform ordinary computations, selections,
 merges, and cycles before returning. The return completes the enclosing
 function, and Rust checks its value against the function's declared result type.
 
-In a staged flow the structural return belongs to this terminal stage.
-Completing preparation and nonterminal-stage routes hand control onward through
-signals. The author must declare the terminal stage last in the stage section.
-Declaring another stage after it is a compile-time error. An empty stage is
-invalid. A flow that diverges through transitions or cycles may omit the
-terminal stage.
+An empty stage is invalid. A flow that diverges through transitions or cycles
+may omit the terminal stage.
 
 A cycle inside a stage completes through its declared outputs under
 [RFC 0001 §§4.5–4.6](0001-language.md#45-cycle). The containing stage then
@@ -326,8 +294,7 @@ A continuing stage must leave outer data usable by subsequent executions. Rust
 checks ownership in the generated dispatcher loop, including repeated moves and
 borrows. Persistent owned values are normally borrowed or updated through
 mutable captures. Storing a value in outer state moves it into that state's
-ownership; remaining stage-local values leave scope before the next stage
-begins.
+ownership.
 
 References stored in outer state must have referents that live long enough. A
 reference to a departing stage's owned local cannot survive the transition.
@@ -352,15 +319,9 @@ incoming entry through its local producer into the next visit.
 ## 5. Cycles inside stages
 
 A cycle in preparation or a stage follows
-[RFC 0001 §§4.5–4.6](0001-language.md#45-cycle). Its capture interface,
-structural break, result bindings, and implicit repetition have the same meaning
-as in a flow without stages.
+[RFC 0001 §§4.5–4.6](0001-language.md#45-cycle).
 
 A cycle and a stage both contain a kaalang sequence with its own local wires.
-The cycle creates persistent input bindings from its header captures and returns
-its break value to the containing sequence. A stage receives its selected entry
-value, accesses common outer data through inner captures, and exports one of its
-declared signals at visit completion.
 
 | Property                                  | Cycle                                                           | Stage                                                  |
 | ----------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------ |
@@ -373,14 +334,9 @@ declared signals at visit completion.
 | End reached without an output or transfer | Starts another iteration                                        | Invalid                                                |
 
 When a stage receives `go` and a nested cycle captures `|go|`, that capture
-moves or copies the entry into the cycle's persistent input binding. Inner
-captures resolve to that binding. Borrowing captures instead borrow the stage's
-data for the lifetime of the cycle; a mutable value capture creates the cycle's
-own working state.
-
-A cycle result requests a stage transition only when its binding supplies one of
-the stage's declared outputs. Examples in §§8.3 and 8.5 show owned values
-crossing both boundaries.
+moves or copies the entry into the cycle's persistent input binding. Borrowing
+captures instead borrow the stage's data for the lifetime of the cycle. Examples
+in §§8.3 and 8.5 show owned values crossing both boundaries.
 
 ## 6. Validation and lowering
 
@@ -389,10 +345,10 @@ crossing both boundaries.
 Resolve stage entry and declared output names, then split a staged root into
 preparation and stages. Analyze each sequence using the ordinary local branch,
 capture, merge, and source-order rules in
-[RFC 0001 §7](0001-language.md#7-execution-and-implicit-convergence). Each stage
-receives the common outer data and its current entry value. Stage-level captures
-establish dependencies to those producers; nested cycles resolve captures
-through their own input bindings.
+[RFC 0001 §7](0001-language.md#7-execution-and-implicit-convergence).
+Stage-level captures establish dependencies to the common outer producers and
+the current entry; nested cycles resolve captures through their own input
+bindings.
 
 Determine preparation's common data from the bindings in its outer plan scope
 that are available on every completing route. Follow shared continuations and
@@ -401,7 +357,6 @@ local even when all other preparation branches diverge.
 
 Insert a boundary consumer for each declared output and each possible initial
 signal from preparation. Validate its producer, scope, type, and merge order.
-Stage output bindings reject `mut`, and received stage entries are immutable.
 Nested cycles contribute their finite summaries under
 [RFC 0004 §7](0004-rust-lowering.md#7-cycles).
 
@@ -413,13 +368,10 @@ and unreachable executable blocks.
 
 Validate one entry per stage, one selected signal per completing nonterminal
 route, the terminal-stage rules, and producer usage across the reachable model.
-Reject a terminal stage that is not the last declaration. The header's position
-imposes diagram order and back-transition markers; signal connections determine
-inter-stage reachability. Reject `&mut` captures of a stage's received entry;
-cycle-local working bindings retain their own mutability permissions. Rust
-checks type agreement of all values targeting each stage, data operations and
-captures in generated scopes, and `Copy` bounds on stage entry signals in a
-`const fn`.
+Reject `&mut` captures of a stage's received entry; cycle-local working bindings
+retain their own mutability permissions. Rust checks type agreement of all
+values targeting each stage, data operations and captures in generated scopes,
+and `Copy` bounds on stage entry signals in a `const fn`.
 
 As in RFC 0001, computational Rust bodies are opaque. Validation considers all
 question answers and choice cases possible and does not prove termination or
@@ -453,8 +405,7 @@ infers the payload types from incoming values, and all constructors for one
 destination must agree on its type. In a `const fn`, each transition checks its
 payload through a `const` identity function with a `core::marker::Copy` bound.
 That helper lives only inside the generated boundary expression, after the
-payload has been evaluated, so it cannot shadow authored code. Ordinary
-functions need no such bound.
+payload has been evaluated, so it cannot shadow authored code.
 
 A mutable state binding records the selected stage and its value. Each match arm
 binds that entry immutably and executes the stage's local plan. Direct captures
@@ -465,16 +416,15 @@ wire. Common outer wires remain available through ordinary generated capture
 aliases.
 
 At a completed transition boundary, construct the destination variant with the
-selected value and finish the current arm's local scopes. Construction checks
-the destination type and, in a `const fn`, the value's `Copy` bound. The
-constructor and its value argument retain the source location of the binding
-that declares the signal: the stage's output declaration for an outgoing signal,
-and for an initial signal preparation's last root-level producer of that name or
-the function parameter that supplies it. Generated identifiers retain their
-hygiene. Type and bound diagnostics point at that binding. The destination is
-known from the resolved output name; choosing it requires no extra join label.
-Ordinary merges of alternative producers still use RFC 0004's labeled blocks and
-shared continuations. The next dispatch iteration enters the selected stage. The
+selected value and finish the current arm's local scopes. The constructor and
+its value argument retain the source location of the binding that declares the
+signal: the stage's output declaration for an outgoing signal, and for an
+initial signal preparation's last root-level producer of that name or the
+function parameter that supplies it. Generated identifiers retain their hygiene.
+Type and bound diagnostics point at that binding. The destination is known from
+the resolved output name; choosing it requires no extra join label. Ordinary
+merges of alternative producers still use RFC 0004's labeled blocks and shared
+continuations. The next dispatch iteration enters the selected stage. The
 terminal arm returns directly from the enclosing function. A wholly diverging
 arm remains in its nested cycle and produces no next state. When a transition
 boundary continues the dispatcher from inside generated labeled blocks, its
@@ -482,9 +432,9 @@ native `continue` names the hygienic dispatch-loop label. Cycle breaks and
 implicit repeats target that cycle's own generated label under
 [RFC 0004 §7](0004-rust-lowering.md#7-cycles).
 
-For example, the counting flow in §8.1 has this illustrative lowering. As in RFC
-0004, hygiene, parameter withdrawal, and lint details are omitted; the mutable
-capture is shown explicitly:
+An illustrative lowering of the counting flow in §8.1, omitting hygiene,
+parameter withdrawal, and lint details as in RFC 0004 and showing the mutable
+capture explicitly:
 
 ```rust
 fn count_to(limit: usize) -> usize {
@@ -510,11 +460,10 @@ fn count_to(limit: usize) -> usize {
 }
 ```
 
-For a `const fn`, the lowering checks `Copy` at each transition. Here two
-alternative producers merge into one outgoing `finish` value. The ordinary merge
-closes their branches before constructing the next state. The example shows the
-identity helper once for readability; generated boundary expressions each keep
-it in their own scope:
+In this `const fn`, two alternative producers merge into one outgoing `finish`
+value, and the merge closes their branches before the next state is constructed.
+The example shows the identity helper once for readability; generated boundary
+expressions each keep it in their own scope:
 
 ```rust
 const fn select_value<T: Copy>(take_left: bool, left: T, right: T) -> T {
@@ -541,21 +490,18 @@ const fn select_value<T: Copy>(take_left: bool, left: T, right: T) -> T {
 }
 ```
 
-In a `const fn`, `Copy` excludes destructors from the generated state, including
-for inferred generic payloads. This deliberately rejects even concrete
-non-`Copy` transition types without destructors. The bound applies only to
-transmitted entry values: common outer data may have arbitrary Rust types.
-Ordinary functions use the same dispatcher without payload bounds; matching the
-current variant moves its owned entry into the visit, and the next variant takes
-ownership of its outgoing value. Authored operations and escaping borrows retain
-ordinary Rust checks, including constant-evaluation restrictions in a
-`const fn`.
+The `const fn` bound deliberately rejects even concrete non-`Copy` transition
+types without destructors. It applies only to transmitted entry values: common
+outer data may have arbitrary Rust types. Ordinary functions use the same
+dispatcher without payload bounds; matching the current variant moves its owned
+entry into the visit, and the next variant takes ownership of its outgoing
+value. Authored operations and escaping borrows retain ordinary Rust checks.
 
 Preserve each block's capture scope and all remaining route work before updating
 the state. Keep storage accessible only through generated capture aliases as RFC
 0004 requires. Ordinary branch lowering and the cycle lowering in
-[RFC 0004 §7](0004-rust-lowering.md#7-cycles) apply inside each arm, including
-merges of alternative outgoing producers. Shared continuations are emitted once.
+[RFC 0004 §7](0004-rust-lowering.md#7-cycles) apply inside each arm. Shared
+continuations are emitted once.
 
 The dispatcher preserves the enclosing generic and receiver context. Its stack
 usage is independent of the number of transitions. It stores one active variant
@@ -566,22 +512,17 @@ Correctness follows one visit at a time: preparation establishes the common data
 and first entry; the local plan preserves each stage's effects; the selected
 output supplies both the next arm and its entry value; and that arm observes the
 surviving outer data with fresh local wires. These steps preserve both
-completing and indefinitely repeating executions. The diagram uses the same
-local plans and transition graph.
+completing and indefinitely repeating executions.
 
 ## 7. Visual representation
-
-In a staged flow's diagram, a common upper rail connects stage entries,
-transition nodes end their routes on a common lower row, and a lower rail
-returns along the left edge of the whole diagram to the upper rail.
 
 A **part** is the diagram area assigned to preparation or one stage, with its
 own horizontal range. Preparation is the ordinary flow in the leftmost part: the
 start capsule and its parameter panel lead into the authored blocks, which
-compute the initial stage signal. It has no stage header. Stages occupy parts to
-its right from left to right in declaration order. The terminal stage is
-declared last, so its part is rightmost. Each part is sized for its local
-arrangement, labels, and cycle boundaries.
+compute the initial stage signal. Stages occupy parts to its right from left to
+right in declaration order. The terminal stage is declared last, so its part is
+rightmost. Each part is sized for its local arrangement, labels, and cycle
+boundaries.
 
 The initial flow starts above the stage headers and runs directly into its
 authored blocks, without a synthetic preparation header. The common upper rail
@@ -591,12 +532,11 @@ vertical connection in its place. The rail is a symbolic link between transition
 nodes and stage entries; it does not execute preparation again or add an
 executable choice or entry to the middle of a stage.
 
-When preparation contains no authored blocks, the input selects the first
-declared stage directly. Omit the preparation part and its synthetic transition
-node. Place the start capsule and parameter panel above that stage, with a
-straight connection through the upper rail to its entry. Stages retain their
-declaration order; the first occupies the leftmost part. Empty preparation
-reserves no width.
+When preparation contains no authored blocks, omit its part and its synthetic
+transition node. Place the start capsule and parameter panel above the first
+declared stage, with a straight connection through the upper rail to its entry.
+Stages retain their declaration order; the first occupies the leftmost part.
+Empty preparation reserves no width.
 
 ### 7.1 Stage entry
 
@@ -648,8 +588,7 @@ stage still name the data they use.
 A transition node is a synthetic projection of the transition boundary, like a
 merge or end node. Alternative local producers merge before a shared boundary
 consumer under the ordinary rules. Distinct terminal routes remain distinct
-unless local convergence already joins them. Preparation ends its continuing
-routes with these same transition nodes.
+unless local convergence already joins them.
 
 ### 7.3 Backward and self-transition markers
 
@@ -672,10 +611,9 @@ Mark the two ends of every backward or self-transition:
 
 An entry receives one marker if at least one backward or self-transition targets
 it. Each outgoing transition is classified independently: a forward transition
-to a marked entry retains an unmarked tip. The classification depends on stage
-declaration order. Transitions to the terminal stage are always forward because
-it is declared last. The classification is the same in expanded and collapsed
-cycle views.
+to a marked entry retains an unmarked tip. Transitions to the terminal stage are
+always forward because it is declared last. The classification is the same in
+expanded and collapsed cycle views.
 
 For example, with stages `check`, `update`, and `finish` in that order:
 
@@ -686,29 +624,23 @@ For example, with stages `check`, `update`, and `finish` in that order:
 | `update` → `check`    | Marked         | Marked                                          |
 | `check` → `finish`    | Unmarked       | Unmarked                                        |
 
-A self-transition marks both its own outgoing node and its stage's entry.
-
 ### 7.4 Composition and completion
 
-The entry signal links each transition node to its unique destination. The model
-records outer-wire provenance and the derived back-transition markers. Within a
-part, branch order, wire routing, and merges follow the ordinary visual
+The model records outer-wire provenance and the derived back-transition markers.
+Within a part, branch order, wire routing, and merges follow the ordinary visual
 language; cycles use the projection in
 [RFC 0002 §4.8](0002-visual-language.md#48-cycle).
 
 Each transition node's flat bottom connects vertically to a common lower rail,
 including the initial transitions in preparation. A return line rises from that
 rail outside the leftmost part, reaches the upper rail, and ends with a
-right-pointing arrow at the leftmost part's entry axis. The target name on the
-transition node selects the receiving stage. These contour segments carry no
-wire captions and create no new data dependencies.
+right-pointing arrow at the leftmost part's entry axis. These contour segments
+carry no wire captions and create no new data dependencies.
 
 Check and arrange preparation and stages locally, then compose their verified
-arrangements with preparation on the left and stages to its right in declaration
-order. Empty preparation contributes only its measured function header above the
-receiving stage. Inter-part links establish reachability and data provenance;
-local arrangements supply the drawn routes. The shared model owns these
-decisions, and rendering consumes the same stage graph as lowering.
+arrangements. Inter-part links establish reachability and data provenance; local
+arrangements supply the drawn routes. The shared model owns these decisions, and
+rendering consumes the same stage graph as lowering.
 
 The upper rail clears the measured start node, parameter panel, and outgoing
 wire labels, including their text halo. Check the composed rails against each
@@ -729,11 +661,10 @@ offset. Local routes and labels are recalculated and checked using those
 measured rows. No node is moved after verification.
 
 For empty preparation, retain the verified start geometry and parameter panel as
-a header-only projection. Its sole transition is represented by the direct
-connection to the receiving stage. Place that header above the stages and check
-the composed rails and bounds normally. This presentation does not change the
-shared stage graph or its local stage arrangements. If no part, including
-preparation, has a transition node, omit the lower return rail.
+a header-only projection, and check the composed rails and bounds normally. This
+presentation does not change the shared stage graph or its local stage
+arrangements. If no part, including preparation, has a transition node, omit the
+lower return rail.
 
 Composition reserves preparation's start and parameter panel, both horizontal
 rails, and the return line outside the leftmost part when computing the canvas.
@@ -785,8 +716,7 @@ fn count_to(limit: usize) -> usize {
 
 `counter` is produced once during preparation. Each visit reads and may mutate
 that same wire. The `count` output chooses another visit, while `finish` selects
-the terminal stage. The header's signal activates all blocks participating in
-that visit; each inner block captures its own data and branch dependencies.
+the terminal stage.
 
 ### 8.2 Mutual transitions followed by a terminal stage
 
@@ -835,10 +765,9 @@ fn is_even(mut remaining: usize) -> bool {
 }
 ```
 
-The `remaining` and `result` wires outlive the stage visits. Each producing
-stage selects `finish` on its own completing route. The declarations and diagram
-use the same order: `even`, `odd`, `finish`. Both transitions to `finish` are
-forward; the transition from `odd` to `even` is backward.
+The `remaining` and `result` wires outlive the stage visits. The declarations
+and diagram use the same order: `even`, `odd`, `finish`. Both transitions to
+`finish` are forward; the transition from `odd` to `even` is backward.
 
 ### 8.3 A cycle inside a stage
 

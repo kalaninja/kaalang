@@ -22,17 +22,12 @@ specifies the corresponding diagram rules. These changes apply throughout the
 language, including preparation and stage bodies introduced by
 [RFC 0006](0006-stages.md).
 
-It also corrects parameter isolation during Rust lowering to enforce the
-existing explicit capture rules.
-
-This RFC defines syntax, execution, validation, Rust lowering, and the affected
-visual representation. Section 7 identifies the earlier provisions it
-supersedes. Earlier released RFC texts remain unchanged.
+It also corrects parameter isolation in Rust lowering to enforce the existing
+explicit capture rules.
 
 ### 1.1 Terms
 
-This RFC uses RFC 0001's wire, producer, capture, branch, and merge terms, with
-the following additions:
+This RFC adds to RFC 0001's wire, producer, capture, branch, and merge terms:
 
 - A **gate** is a wire whose availability establishes a block's or transfer's
   participation in a route. A cycle header may name one gate.
@@ -59,31 +54,28 @@ source and branch rules. A header `|start|` additionally gates that entry on the
 signal; subsequent iterations are selected by `continue`. The header establishes
 a capture dependency for producer usage and branch validation, but performs no
 Rust move, copy, or borrow. Its gate may have any Rust type, including in a
-`const fn`. The gate remains an ordinary outer wire available to explicit inner
-captures. The header creates no separate data alias and does not remove that
-wire from scope. Modified captures and multiple header names are invalid for
-cycle headers.
+`const fn`. The header creates no data alias: the gate remains an ordinary outer
+wire in scope for explicit inner captures. Multiple header names and modified
+header captures are invalid.
 
 A cycle inherits outer data visible at its declaration. Every outer wire used
 inside must be available whenever that cycle is entered; inner captures do not
 silently make cycle entry conditional. Their dependencies are recorded against
-the original producers, including through nested cycles. They must respect
+the original producers, including through nested cycles, and must respect
 ordinary producer order and branch ancestry. The cycle's declared outputs are
 provided only after it completes and are not outer inputs to its own body. Local
 cycle producers cannot shadow visible outer wires, including the gate. The
-cycle's own declared outputs are the exception: its body does not see outer
-wires under those names, so a local producer of a declared output may share its
-name with a visible outer wire, as when the cycle is a later alternative
-producer of that wire. Inside the body such a name refers only to the local
-wire, and capturing it before its local producer is invalid. Separate cycle
-bodies may reuse their local names.
+cycle's own declared outputs are the exception: inside the body such a name
+refers only to the local wire, so a local producer of a declared output may
+share its name with a visible outer wire, as when the cycle is a later
+alternative producer of that wire. Capturing such a name before its local
+producer is invalid. Separate cycle bodies may reuse their local names.
 
 Borrowing, copying, and moving data happen at the inner block that captures it.
-A cycle header does not create data aliases or hold data borrows across the
-entire cycle. Create persistent local state explicitly before the cycle; nested
-cycles can use state created earlier in their containing sequence. Those owners
-retain their surrounding scope, while each iteration creates fresh body-local
-wires. Uncaptured data reads inside a computational body remain invalid.
+Create persistent local state explicitly before the cycle; nested cycles can use
+state created earlier in their containing sequence. Those owners retain their
+surrounding scope, while each iteration creates fresh body-local wires.
+Uncaptured data reads inside a computational body remain invalid.
 
 ### 2.2 Alternative outputs
 
@@ -92,24 +84,21 @@ on output bindings. One name exposes the whole selected value. A tuple of names
 declares alternative exits, in declaration order. A singleton `(found,)` is
 equivalent to `found`: neither form destructures the selected value. Whenever
 the cycle completes, it provides exactly one of them. Each declared output must
-have a reachable same-named local producer. The cycle's **result boundary** is
-where its selected output leaves the body and becomes available to the
-containing sequence. Its boundary consumer consumes that local value after all
-remaining work on the route, under the ordinary scope and merge rules.
-Alternative internal producers must agree on type and mutability, while the
-declaration sets the exported binding's mutability permission. Raw spellings
-identify the same logical name.
+have a reachable same-named local producer. The selected output's boundary
+consumer consumes it after all remaining work on the route, under the ordinary
+scope and merge rules. Alternative internal producers must agree on type and
+mutability, while the declaration sets the exported binding's mutability
+permission. Raw spellings identify the same logical name.
 
 Cycle outputs may carry data, and different exits may have different Rust types.
 To carry several values together, produce one tuple-valued wire and declare it
-as one output. A later action can destructure that tuple. Cycle outputs retain
-ordinary moves and can carry non-`Copy` owners even in a `const fn`.
+as one output; a later action can destructure it. Cycle outputs retain ordinary
+moves and can carry non-`Copy` owners even in a `const fn`.
 
 In the containing sequence, the selected cycle output has the cycle as its
 producer. Multiple cycle outputs are alternative branch outputs, with the same
 first-consumer, branch ancestry, adjacency, and convergence rules as choice
-outputs. A single output is an ordinary completed-cycle result. Exporting one
-output does not provide any of its sibling outputs.
+outputs. A single output is an ordinary completed-cycle result.
 
 A completed cycle with no data to transfer declares a unit-valued output such as
 `finished`. A cycle declaring no outputs can only repeat explicitly or diverge
@@ -178,18 +167,16 @@ transfer is the smallest example. Reachability validation rejects work that can
 only follow a fully diverging cycle.
 
 A bare `continue;` or `|| continue;` participates wherever its containing cycle
-body is entered. It is valid only after any open selection has fully converged
-and when no declared output has been produced on that route. Source position
-does not attach it to one selected branch. A repeating branch uses a capture
-such as `|again| continue;` to establish its ancestry. An earlier block may
-already have captured the same unit branch output: `()` is `Copy`, so the later
-capture can reuse that wire under ordinary branch and scope rules.
+body is entered. It is valid only after any open selection has fully converged.
+Source position does not attach it to one selected branch. A repeating branch
+uses a capture such as `|again| continue;` to establish its ancestry. An earlier
+block may already have captured the same unit branch output: `()` is `Copy`, so
+the later capture can reuse that wire under ordinary branch and scope rules.
 
 When an earlier action consumes a non-`Copy` branch output, it can produce a
 unit wire for the continue: `let kept = |value, &mut out| out.push(value);`,
 followed by `|kept| continue;`. The unit wire preserves that branch's ancestry
-after `value` has moved. The continue needs that dependency, not a clone of the
-consumed value.
+after `value` has moved, so the continue needs no clone of the consumed value.
 
 An explicit continue lets the compiler distinguish intentional repetition from a
 forgotten exit. Its uniqueness keeps convergence visible: the author supplies
@@ -220,13 +207,8 @@ fn count_with_cycle(limit: usize) -> usize {
 }
 ```
 
-The cycle reads the surrounding `counter` and `limit` through its inner blocks.
-On the repeating route, the mutation finishes before continue. On the other
-route, the local `finish` wire becomes the cycle's declared unit output and the
-flow returns the shared counter. Each iteration creates fresh local wires.
 Branch-local owners drop before the merge continuation; remaining body-local
-owners drop when the iteration completes or repeats. Outer owners retain their
-surrounding scope.
+owners drop when the iteration completes or repeats.
 
 ### 2.5 Data exits and local ownership
 
@@ -262,13 +244,11 @@ fn pop_nonempty(mut items: Vec<String>) -> Option<String> {
 }
 ```
 
-Only one of `found: String` and `exhausted: ()` exists after completion. Their
-outer continuations produce alternative `result` wires that merge before return.
 A selected owned value moves out through its declared output; remaining locals
 drop at their ordinary scope exits. A reference may cross a cycle's result
-boundary only when its owner outlives that export. Exporting a reference does
-not extend a body-local owner's lifetime. The same-named inner and outer wires
-remain separate producer occurrences connected by the cycle's result boundary.
+boundary only when its owner outlives that export. The same-named inner and
+outer wires remain separate producer occurrences connected by the cycle's result
+boundary.
 
 ## 3. Block initializers without captures
 
@@ -294,7 +274,7 @@ A block statement's trailing semicolon is Rust's: kaalang reads a statement with
 or without it wherever Rust accepts both spellings, and gives the semicolon no
 meaning. This applies to all block kinds, including stages and structural
 transfers. The `";"` ending each statement production in this RFC and RFC 0001
-is Rust's terminator, optional wherever Rust allows a statement without it.
+is that Rust terminator.
 
 ## 4. Branch participation and convergence
 
@@ -336,18 +316,14 @@ context may still separate routes.
 ### 5.1 Finite cycle analysis
 
 Analyze a cycle's sequence using the ordinary local branch, capture, merge, and
-source-order rules, with the refinements in §§2–4. The cycle body receives its
-available outer data scope. Inner blocks establish explicit dependencies on the
-original producers; the entry gate and derived outer-data dependencies have
-distinct roles.
+source-order rules, with the refinements in §§2–4. Inner blocks establish
+explicit dependencies on the original producers; the entry gate and derived
+outer-data dependencies have distinct roles.
 
 Insert a boundary consumer for each declared output. Validate its producer,
-scope, type, and merge order. Preserve separately declared mutability for cycle
-output bindings. Validate every cycle route as one selected output, an explicit
-continue, or nested divergence. Check the single continue separately for each
-owning cycle. A finite cycle summary exposes its alternative exits to the
-containing sequence and keeps its repeat outcome within the cycle. Preserve the
-selected exit's identity in outer branch and convergence analysis.
+scope, type, and merge order. A finite cycle summary exposes its alternative
+exits to the containing sequence and keeps its repeat outcome within the cycle.
+Preserve the selected exit's identity in outer branch and convergence analysis.
 
 For structural reachability, computational Rust bodies remain opaque as in
 RFC 0001. Validation considers all question answers and choice cases possible
@@ -364,19 +340,18 @@ running block always participates in its own context. Compare the selections
 visible in that context's cycle frame.
 
 The explicit execution list can grow exponentially. Finite local flows also
-admit an exact representation by execution conditions. Give every question,
-choice, or cycle with alternative outputs one selection variable with its
-declared outcomes and an additional inactive outcome. Store Boolean conditions
-as an ordered, reduced decision graph: a node selects one variable, its outgoing
-edges select that variable's outcomes, equal suffixes share a node, and a node
-with identical successors disappears. This representation imposes no restriction
-on the number of inputs, captures, actions, calls, or choice cases, or on which
-earlier wires a block captures. Small flows may retain the ordinary enumeration
-when it costs less. Count the finite domain with a capped decision-graph query
-before choosing that strategy; the product of declared alternatives can greatly
-overestimate a cycle's actual histories. The count does not list them and does
-not overflow on a large domain. When the product is already within the
-enumeration limit, no count is needed.
+admit an exact representation by execution conditions. Give every selector one
+selection variable with its declared outcomes and an additional inactive
+outcome. Store Boolean conditions as an ordered, reduced decision graph: a node
+selects one variable, its outgoing edges select that variable's outcomes, equal
+suffixes share a node, and a node with identical successors disappears. This
+representation imposes no restriction on the number of inputs, captures,
+actions, calls, or choice cases, or on which earlier wires a block captures.
+Small flows may retain the ordinary enumeration when it costs less. Count the
+finite domain with a capped decision-graph query before choosing that strategy;
+the product of declared alternatives can greatly overestimate a cycle's actual
+histories. The count does not list them and does not overflow on a large domain.
+When the product is already within the enumeration limit, no count is needed.
 
 Walk source order once per finite cycle frame. A block runs where execution
 continues in its frame and all its captures are available. Each producer
@@ -397,7 +372,7 @@ outer scope, and produces that output under the same condition. Couple the
 cycle's selected output to its export condition. Restore no body-local wires in
 the continuation. A repeating route or one diverging in a nested cycle produces
 no cycle output and reaches no outer continuation. Keep their block and capture
-facts in the finite history; iterations are never unfolded.
+facts in the finite history.
 
 Transition boundaries check the same available scope for competing stage signals
 and required common wires. Preparation's common data must be available on every
@@ -418,26 +393,24 @@ To compare two executions, use two adjacent copies of each selection variable.
 Require both histories to have a final return, transition, or repeat outcome,
 both to run the selector being compared and to select different outcomes there.
 For every other selector, require equal outcomes only if both histories run it;
-an inactive selector takes no part in the comparison. In a cycle frame, compare
-only visible selections. A visible cycle is a black box: equality of its
-selection requires both its exported output and every selection in its body
-route to agree. Its unfinished routes have an additional outcome. Inside that
-cycle, its own selection is absent and the body's selections are visible. This
-preserves the ordinary frame's route identity without numbering or listing its
-body routes. The resulting relation is exactly the enumerated one: executions
-that disagree at exactly one selector they both run. Query producer differences
-and block participation within this relation to collect merge owners, all
-branch-local work, and block deciders without listing its satisfying pairs. For
-branch adjacency, project away selections that do not change the observed
-outcome and check whether a missing producer lies between the first and last
-producing traces. Choice and cycle routes retain their own selection and only
-the visible selections nested within the chosen case, including a visible nested
-cycle's body identity. Compare their projected route sets for adjacency and
-crossing convergence groups. Each group also has its own reaching condition: a
-repeat beyond its position can separate routes, while a repeat before it cannot.
-Summarize authored ordering by the first and last output, a missing interval,
-and any output-order reversal; equal remaining decision suffixes share that
-summary. Check cycle output order and repeating intervals in the same way.
+an inactive selector takes no part in the comparison. A visible cycle is a black
+box: equality of its selection requires both its exported output and every
+selection in its body route to agree. Its unfinished routes have an additional
+outcome. Inside that cycle, its own selection is absent and the body's
+selections are visible. This preserves the ordinary frame's route identity
+without numbering or listing its body routes. The resulting relation is exactly
+the enumerated one. Query producer differences and block participation within
+this relation to collect merge owners, all branch-local work, and block deciders
+without listing its satisfying pairs. For branch adjacency, project away
+selections that do not change the observed outcome and check whether a missing
+producer lies between the first and last producing traces. Choice and cycle
+routes retain their own selection and only the visible selections nested within
+the chosen case, including a visible nested cycle's body identity. Compare their
+projected route sets for adjacency and crossing convergence groups. Each group
+also has its own reaching condition. Summarize authored ordering by the first
+and last output, a missing interval, and any output-order reversal; equal
+remaining decision suffixes share that summary. Check cycle output order and
+repeating intervals in the same way.
 
 Lower sets of executions directly. A block can run in a plan scope when every
 execution in that scope participates and its capture producers and merge-local
@@ -447,8 +420,7 @@ throughout that combination. Shared computation is emitted once. Independently
 replay the plan with conditions: check each body's participation, original
 producer bindings, source order, completed merges, yielded values, lexical join
 targets, cycle entry and scope restoration, exports, and the final return or
-repeat against every history. This verification queries the entire execution
-domain, including histories never materialized.
+repeat against every history, including histories never materialized.
 
 Project connections with conditions as well. A connection survives in the union
 when some execution has its direct edge without an alternative path of two or
@@ -461,12 +433,10 @@ plan verification, or conditional connection reduction.
 
 This avoids the Cartesian product of independent earlier choices during
 analysis, lowering, and projection. The decision graph can still grow large for
-interacting conditions; no polynomial bound for all flows is claimed. Cycles and
-transition boundaries use the same exact conditional representation. Explicit
+interacting conditions; no polynomial bound for all flows is claimed. Explicit
 requests to list all execution summaries enumerate every history on demand,
-retaining the original ordering. Counting histories does not materialize them;
-mutable access to that list replaces the conditional representation so later
-projections observe the edited summaries.
+retaining the original ordering. Mutable access to that list replaces the
+conditional representation so later projections observe the edited summaries.
 
 ### 5.2 Rust lowering
 
@@ -522,18 +492,13 @@ const fn route_value<T>(value: T, mut remaining: usize, take_left: bool) -> T {
 ```
 
 Passing each value directly into its result binding preserves ordinary Rust
-ownership and constant evaluation. Remaining unexported owners drop on leaving
-their scopes before the outer continuation, and a reference cannot escape an
-owner dropped by that transfer.
+ownership and constant evaluation.
 
 A structural continue emits its capture aliases and a native `continue` to the
 directly containing cycle's generated label. Nesting uses distinct labels.
 Validation supplies an explicit outcome for every route; lowering generates no
 repeat from an unfinished body ending. Completing cycles, diverging cycles, and
 partial convergence retain the same finite local plans in execution and drawing.
-One iteration either transfers its chosen value outward, discards remaining
-locals and repeats, or stays in a nested divergent execution. This preserves the
-completion rules without unfolding repeated iterations.
 
 ### 5.3 Hygienic flow parameters
 
@@ -557,8 +522,7 @@ capture rules.
 
 Lowering stays in the authored function's body. A nested implementation function
 would hide the outer parameter names, but could not use `Self` or the generics
-of the surrounding `impl` without additional transformations. Hygienic parameter
-bindings preserve that Rust context without introducing another function.
+of the surrounding `impl` without additional transformations.
 
 Validate direct, unqualified parameter uses against the block's captures and
 explicit Rust local bindings, including single-segment paths with generic
@@ -625,23 +589,22 @@ boundary. All local producers of that output merge under the ordinary rules
 before export. Result exits preserve declaration order from left to right and
 retain their selected branch identity in the containing sequence. They hand over
 only the selected wire. Different output exits converge only through ordinary
-merges outside the cycle. A nested cycle's results first reach its immediate
-containing sequence. Validation therefore rejects a body whose routes cannot
-reach those exits without crossing: routes exporting a later output drawn left
-of routes exporting an earlier one, or a repeating route between routes
+merges outside the cycle. Validation therefore rejects a body whose routes
+cannot reach those exits without crossing: routes exporting a later output drawn
+left of routes exporting an earlier one, or a repeating route between routes
 exporting different outputs, which the back edge could not clear.
 
-A collapsed cycle retains its described cycle node and loop marker. With several
-declared outputs, it has one branch-specific exit per output, in declaration
-order: the first leaves the lower edge, and later exits fan out to the right
-using the existing ordered branch routing. A single output leaves through an
-ordinary non-branching exit, as in §2.2. Each exit is labeled with its output
-binding. A fully diverging cycle has no outgoing exit. Its receiving label lists
-the external wires used by the cycle: begin with the authored gate, when
-present, then walk the body in source order, including nested cycles, and append
-each captured outer wire on its first occurrence. Resolve and deduplicate by
-wire identity. Exclude wires produced inside this cycle, even when a nested
-cycle captures them. A gate also captured inside the body appears only once.
+A collapsed cycle retains its described cycle node. With several declared
+outputs, it has one branch-specific exit per output, in declaration order: the
+first leaves the lower edge, and later exits fan out to the right using the
+existing ordered branch routing. A single output leaves through an ordinary
+non-branching exit, as in §2.2. Each exit is labeled with its output binding. A
+fully diverging cycle has no outgoing exit. Its receiving label lists the
+external wires used by the cycle: begin with the authored gate, when present,
+then walk the body in source order, including nested cycles, and append each
+captured outer wire on its first occurrence. Resolve and deduplicate by wire
+identity. Exclude wires produced inside this cycle, even when a nested cycle
+captures them. A gate also captured inside the body appears only once.
 
 This derived list is the collapsed node's input label, in the ordinary receiving
 label position. Show literal names with their producer's `mut` permission and no
@@ -798,9 +761,7 @@ The selected output is exported only after its route's remaining work, so the
 migrated branch structure must make that work and the continue mutually
 exclusive.
 
-Flows without cycles still use the initializer, branch, parameter-isolation,
-node-height, and formula refinements where applicable. Concrete compiler and
-renderer types remain implementation choices.
+Concrete compiler and renderer types remain implementation choices.
 
 ## 8. Acceptance scenarios
 
