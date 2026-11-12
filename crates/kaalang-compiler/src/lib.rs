@@ -1,5 +1,5 @@
-//! Parses and validates kaalang flows, decides their diagram arrangement, and
-//! lowers them to Rust.
+//! Parses and validates kaalang flows and datatypes, decides flow
+//! diagram arrangements, and lowers flows to Rust.
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
 //! any minor release.
@@ -9,10 +9,19 @@ use syn::{Error, ItemFn, Result};
 pub(crate) use self::choice::{choice_match, is_todo_body};
 pub use self::{
     codegen::expand,
+    configure::configure,
     construct::{
         Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
     },
+    datatype::{
+        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
+        type_declaration, type_items,
+    },
     executions::Executions,
+    flows::{
+        Declarations, FlowItem, FlowPath, Impl, Owner, Place, Question, declarations, flows,
+        select, types_match,
+    },
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
         ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input,
@@ -24,8 +33,11 @@ pub use self::{
 mod analyze;
 mod choice;
 mod codegen;
+mod configure;
 mod construct;
+mod datatype;
 mod executions;
+mod flows;
 pub mod geometry;
 mod model;
 mod parse;
@@ -82,62 +94,15 @@ fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticM
     })
 }
 
-/// Collects `#[kaalang]` functions and methods from these items.
-/// Includes trait methods with default bodies; does not recurse into modules.
+/// Whether `attribute` is kaalang's own, written `#[kaa]` or through its
+/// crate path as `#[kaalang::kaa]`. Another crate's `kaa` is not.
 #[must_use]
-pub fn flows(items: &[syn::Item]) -> Vec<ItemFn> {
-    items
-        .iter()
-        .flat_map(|item| match item {
-            syn::Item::Fn(function) if declares_a_flow(&function.attrs) => vec![function.clone()],
-            syn::Item::Impl(block) => block
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    syn::ImplItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: method.vis.clone(),
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.block.clone()),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            syn::Item::Trait(declaration) => declaration
-                .items
-                .iter()
-                .filter_map(|item| match item {
-                    syn::TraitItem::Fn(method) if declares_a_flow(&method.attrs) => Some(ItemFn {
-                        attrs: method.attrs.clone(),
-                        vis: syn::Visibility::Inherited,
-                        modifiers: method.modifiers.clone(),
-                        sig: method.sig.clone(),
-                        block: Box::new(method.default.clone()?),
-                    }),
-                    _ => None,
-                })
-                .collect(),
-            _ => Vec::new(),
-        })
-        .collect()
-}
-
-fn declares_a_flow(attributes: &[syn::Attribute]) -> bool {
-    attributes.iter().any(is_flow_attribute)
-}
-
-/// Whether `attribute` is kaalang's own, written `#[kaalang]` or through its
-/// crate path as `#[kaalang::kaalang]`. Another crate's `kaalang` is not.
-#[must_use]
-pub fn is_flow_attribute(attribute: &syn::Attribute) -> bool {
+pub fn is_kaalang_attribute(attribute: &syn::Attribute) -> bool {
     let path = attribute.path();
-    path.is_ident("kaalang")
+    path.is_ident("kaa")
         || path.segments.len() == 2
-            && path
-                .segments
-                .iter()
-                .all(|segment| segment.ident == "kaalang")
+            && path.segments[0].ident == "kaalang"
+            && path.segments[1].ident == "kaa"
 }
 
 /// Parses and validates a flow and builds its lowering plan, without checking
@@ -311,16 +276,13 @@ mod tests {
     #[test]
     fn cycle_examples_have_one_verified_body_per_authored_block() {
         for function in [
-            fixture!("cycle/behavior", "count_to"),
-            fixture(
-                include_str!("../../kaalang/tests/gallery/binary_search/mod.rs"),
-                "binary_search",
-            ),
-            fixture!("cycle/behavior", "nested_search"),
-            fixture!("cycle/behavior", "empty_cycle"),
-            fixture!("cycle/behavior", "repeat_until_done"),
-            fixture!("cycle/behavior", "nested_cycles"),
-            fixture!("cycle/behavior", "nested_unconditional_cycles"),
+            fixture!("flow/cycle", "count_to"),
+            fixture!("flow/cycle", "merged_exit"),
+            fixture!("flow/cycle", "nested_search"),
+            fixture!("flow/cycle", "empty_cycle"),
+            fixture!("flow/cycle", "repeat_until_done"),
+            fixture!("flow/cycle", "nested_cycles"),
+            fixture!("flow/cycle", "nested_unconditional_cycles"),
         ] {
             let name = &function.sig.ident;
             let model = build(&function).unwrap_or_else(|error| panic!("{name}: {error}"));
@@ -364,7 +326,7 @@ mod tests {
     fn an_unconditional_cycle_may_repeat_without_reaching_end() {
         let function: ItemFn = parse_quote! {
             fn forever() -> usize {
-                #[cycle("Repeat forever")]
+                #[kaa::cycle("Repeat forever")]
                 loop {
                     continue;
                 };
@@ -383,7 +345,7 @@ mod tests {
                 if matches!(body.as_ref(), ExecutionPlan::Continue { index: 1 })
         ));
 
-        let model = build(&fixture!("cycle/behavior", "repeat_until_done"))
+        let model = build(&fixture!("flow/cycle", "repeat_until_done"))
             .expect("the cycle may either repeat or finish");
         assert_eq!(
             model
@@ -422,9 +384,9 @@ mod tests {
     fn preserves_authored_descriptions_and_case_order() {
         let function: ItemFn = parse_quote! {
             fn choose(input: usize) -> usize {
-                #[choice("  Choose a path  ")]
-                #[case("Первый")]
-                #[case("Second & final")]
+                #[kaa::choice("  Choose a path  ")]
+                #[kaa::case("Первый")]
+                #[kaa::case("Second & final")]
                 let (left, right) = |input| {
                     match input {
                         0 => input,
@@ -432,10 +394,10 @@ mod tests {
                     }
                 };
 
-                #[action("Use the first path")]
+                #[kaa::action("Use the first path")]
                 let result = |left| { left };
 
-                #[action("Use the second path")]
+                #[kaa::action("Use the second path")]
                 let result = |right| { right };
 
                 |result| return result;
@@ -478,13 +440,13 @@ mod tests {
     fn records_alternative_producers_against_each_execution() {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
-                #[question("Choose a value")]
+                #[kaa::question("Choose a value")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Build the yes value")]
+                #[kaa::action("Build the yes value")]
                 let selected = |yes| { 1 };
 
-                #[action("Build the no value")]
+                #[kaa::action("Build the no value")]
                 let selected = |no| { 2 };
 
                 |selected| return selected;
@@ -536,13 +498,13 @@ mod tests {
     fn records_one_shared_consumer_and_orders_join_wires_by_producer() {
         let function: ItemFn = parse_quote! {
             fn choose(condition: bool) -> (u32, u32) {
-                #[question("Choose values")]
+                #[kaa::question("Choose values")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Build the yes values")]
+                #[kaa::action("Build the yes values")]
                 let (first, second) = |yes| { (1, 2) };
 
-                #[action("Build the no values")]
+                #[kaa::action("Build the no values")]
                 let (first, second) = |no| { (3, 4) };
 
                 |second, first| return (first, second);
@@ -573,10 +535,10 @@ mod tests {
     fn blocks_sharing_no_wire_form_one_execution_in_source_order() {
         let function: ItemFn = parse_quote! {
             fn pair(input: u32) -> (u32, u32) {
-                #[action("Produce the first result")]
+                #[kaa::action("Produce the first result")]
                 let first = |&input| { *input };
 
-                #[action("Produce the second result")]
+                #[kaa::action("Produce the second result")]
                 let second = |&input| { *input + 1 };
 
                 |first, second| return (first, second);
@@ -598,7 +560,7 @@ mod tests {
     /// branches have merged, so both bodies are still emitted once.
     #[test]
     fn successive_questions_share_every_body() {
-        let function = fixture!("wire/behavior", "independent_questions");
+        let function = fixture!("flow/wire", "independent_questions");
         let model = build(&function).expect("the merged value precedes the second question");
         assert_eq!(model.analysis.executions.len(), 4);
         assert!(matches!(
@@ -614,16 +576,16 @@ mod tests {
     fn shared_computation_runs_where_it_is_written() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
-                #[action("Prepare a shared value")]
+                #[kaa::action("Prepare a shared value")]
                 let prepared = |seed| { seed };
 
-                #[question("Which way?")]
+                #[kaa::question("Which way?")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Use it on the yes branch")]
+                #[kaa::action("Use it on the yes branch")]
                 let result = |yes, &prepared| { *prepared };
 
-                #[action("Use it on the no branch")]
+                #[kaa::action("Use it on the no branch")]
                 let result = |no, prepared| { prepared + 1 };
 
                 |result| return result;
@@ -643,13 +605,13 @@ mod tests {
     fn records_nested_join_topology() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, value: usize) -> usize {
-                #[question("Take the branching path?")]
+                #[kaa::question("Take the branching path?")]
                 let (yes, no) = |condition, &value| { condition };
 
-                #[choice("Which branch?")]
-                #[case("First")]
-                #[case("Second")]
-                #[case("Third")]
+                #[kaa::choice("Which branch?")]
+                #[kaa::case("First")]
+                #[kaa::case("Second")]
+                #[kaa::case("Third")]
                 let (first, second, third) = |yes, value| {
                     match value {
                         0 => (),
@@ -658,19 +620,19 @@ mod tests {
                     }
                 };
 
-                #[action("Build the first value")]
+                #[kaa::action("Build the first value")]
                 let selected = |first| { 1 };
 
-                #[action("Build the second value")]
+                #[kaa::action("Build the second value")]
                 let selected = |second| { 2 };
 
-                #[action("Produce the third result")]
+                #[kaa::action("Produce the third result")]
                 let result = |third| { 3 };
 
-                #[action("Produce the selected result")]
+                #[kaa::action("Produce the selected result")]
                 let result = |selected| { selected };
 
-                #[action("Produce the no-branch result")]
+                #[kaa::action("Produce the no-branch result")]
                 let result = |no| { 0 };
 
                 |result| return result;
@@ -751,11 +713,11 @@ mod tests {
     fn rejects_a_conjunction_of_independent_branch_outputs() {
         let function: ItemFn = parse_quote! {
             fn both(left: bool, right: bool) -> u8 {
-                #[question("Left?")]
+                #[kaa::question("Left?")]
                 let (a, _b) = |left| { left };
-                #[question("Right?")]
+                #[kaa::question("Right?")]
                 let (c, _d) = |right| { right };
-                #[action("Both")]
+                #[kaa::action("Both")]
                 let result = |a, c| { 1 };
                 |result| return result;
             }
@@ -768,25 +730,25 @@ mod tests {
     fn rejects_branch_local_access_to_a_name_with_alternative_producers() {
         let function: ItemFn = parse_quote! {
             fn route(outer: bool, inner: bool) -> u8 {
-                #[question("Choose the source")]
+                #[kaa::question("Choose the source")]
                 let (yes, no) = |outer| { outer };
 
-                #[action("Prepare the nested branch")]
+                #[kaa::action("Prepare the nested branch")]
                 let (trigger, branch_gate) = |no| { ((), ()) };
 
-                #[question("Choose the control output")]
+                #[kaa::question("Choose the control output")]
                 let (shared, skip) = |trigger, inner| { inner };
 
-                #[action("Produce borrowable data")]
+                #[kaa::action("Produce borrowable data")]
                 let (shared, borrow_gate) = |yes| { ((), ()) };
 
-                #[action("Consume the nested control")]
+                #[kaa::action("Consume the nested control")]
                 let result = |shared, branch_gate| { 1 };
 
-                #[action("Consume the other nested control")]
+                #[kaa::action("Consume the other nested control")]
                 let result = |skip, branch_gate| { 2 };
 
-                #[action("Borrow only the action output")]
+                #[kaa::action("Borrow only the action output")]
                 let result = |&shared, borrow_gate| { 3 };
 
                 |result| return result;
@@ -803,12 +765,12 @@ mod tests {
     fn one_choice_may_own_disjoint_joins_inside_a_full_join() {
         let function: ItemFn = parse_quote! {
             fn route(value: u8) -> u8 {
-                #[choice("Which group?")]
-                #[case("First of the left group")]
-                #[case("Second of the left group")]
-                #[case("Direct result")]
-                #[case("First of the right group")]
-                #[case("Second of the right group")]
+                #[kaa::choice("Which group?")]
+                #[kaa::case("First of the left group")]
+                #[kaa::case("Second of the left group")]
+                #[kaa::case("Direct result")]
+                #[kaa::case("First of the right group")]
+                #[kaa::case("Second of the right group")]
                 let (a, b, done, c, d) = |value| {
                     match value {
                         0 => (),
@@ -819,25 +781,25 @@ mod tests {
                     }
                 };
 
-                #[action("Build the left value from a")]
+                #[kaa::action("Build the left value from a")]
                 let left = |a| { 1 };
 
-                #[action("Build the left value from b")]
+                #[kaa::action("Build the left value from b")]
                 let left = |b| { 2 };
 
-                #[action("Produce the direct result")]
+                #[kaa::action("Produce the direct result")]
                 let result = |done| { 3 };
 
-                #[action("Build the right value from c")]
+                #[kaa::action("Build the right value from c")]
                 let right = |c| { 4 };
 
-                #[action("Build the right value from d")]
+                #[kaa::action("Build the right value from d")]
                 let right = |d| { 5 };
 
-                #[action("Use the left value")]
+                #[kaa::action("Use the left value")]
                 let result = |left| { left };
 
-                #[action("Use the right value")]
+                #[kaa::action("Use the right value")]
                 let result = |right| { right };
 
                 |result| return result;
@@ -891,13 +853,13 @@ mod tests {
     #[test]
     fn a_partial_continuation_may_feed_a_wider_merge() {
         build(&fixture!(
-            "wire/behavior",
+            "flow/wire",
             "nested_branch_passes_a_question_join"
         ))
         .expect("all result producers meet at one valid merge");
 
         let source = include_str!(
-            "../../kaalang/tests/wire/compile_fail/nested_branch_passes_a_case_join.rs"
+            "../../kaalang/tests/flow/wire/compile_fail/nested_branch_passes_a_case_join.rs"
         )
         .replace("let (join, skip)", "let (skip, join)");
         build(&fixture(&source, "invalid"))
@@ -907,7 +869,7 @@ mod tests {
     #[test]
     fn a_shared_continuation_may_have_two_independent_entries() {
         assert_groups(
-            &fixture!("wire/behavior", "independent_entry_blocks"),
+            &fixture!("flow/wire", "independent_entry_blocks"),
             &[group(0, &[0, 1], &[3, 4, 5])],
         );
     }
@@ -916,13 +878,13 @@ mod tests {
     fn one_choice_may_own_two_disjoint_groups_around_independent_cases() {
         let function: ItemFn = parse_quote! {
             fn route(value: u8) -> u8 {
-                #[choice("Which group?")]
-                #[case("Independent before both groups")]
-                #[case("First of the left group")]
-                #[case("Second of the left group")]
-                #[case("Independent between the groups")]
-                #[case("First of the right group")]
-                #[case("Second of the right group")]
+                #[kaa::choice("Which group?")]
+                #[kaa::case("Independent before both groups")]
+                #[kaa::case("First of the left group")]
+                #[kaa::case("Second of the left group")]
+                #[kaa::case("Independent between the groups")]
+                #[kaa::case("First of the right group")]
+                #[kaa::case("Second of the right group")]
                 let (first, a, b, between, c, d) = |value| {
                     match value {
                         0 => (),
@@ -934,28 +896,28 @@ mod tests {
                     }
                 };
 
-                #[action("Produce the first independent result")]
+                #[kaa::action("Produce the first independent result")]
                 let result = |first| { 0 };
 
-                #[action("Build the left value from a")]
+                #[kaa::action("Build the left value from a")]
                 let left = |a| { 1 };
 
-                #[action("Build the left value from b")]
+                #[kaa::action("Build the left value from b")]
                 let left = |b| { 2 };
 
-                #[action("Produce the independent result between the groups")]
+                #[kaa::action("Produce the independent result between the groups")]
                 let result = |between| { 3 };
 
-                #[action("Build the right value from c")]
+                #[kaa::action("Build the right value from c")]
                 let right = |c| { 4 };
 
-                #[action("Build the right value from d")]
+                #[kaa::action("Build the right value from d")]
                 let right = |d| { 5 };
 
-                #[action("Use the left value")]
+                #[kaa::action("Use the left value")]
                 let result = |left| { left };
 
-                #[action("Use the right value")]
+                #[kaa::action("Use the right value")]
                 let result = |right| { right };
 
                 |result| return result;
@@ -975,7 +937,7 @@ mod tests {
     #[test]
     fn nested_questions_each_own_a_group_over_the_shared_consumer() {
         assert_groups(
-            &fixture!("wire/behavior", "nested_convergence"),
+            &fixture!("flow/wire", "nested_convergence"),
             &[group(0, &[0, 1], &[5, 6]), group(1, &[0, 1], &[5, 6])],
         );
     }
@@ -983,7 +945,7 @@ mod tests {
     #[test]
     fn branches_of_unequal_depth_have_one_shared_entry() {
         assert_groups(
-            &fixture!("wire/behavior", "uneven_depth"),
+            &fixture!("flow/wire", "uneven_depth"),
             &[group(0, &[0, 1], &[4, 5])],
         );
     }
@@ -993,7 +955,7 @@ mod tests {
     #[test]
     fn nested_questions_may_share_one_result_merge() {
         assert_groups(
-            &fixture!("wire/behavior", "effect_before_a_nested_terminal_branch"),
+            &fixture!("flow/wire", "effect_before_a_nested_terminal_branch"),
             &[group(1, &[0, 1], &[6, 7]), group(2, &[0, 1], &[7])],
         );
     }
@@ -1004,19 +966,19 @@ mod tests {
     fn a_setup_block_stays_outside_the_continuation_it_feeds() {
         let function: ItemFn = parse_quote! {
             fn route(condition: bool, seed: u32) -> u32 {
-                #[action("Prepare a shared value")]
+                #[kaa::action("Prepare a shared value")]
                 let prepared = |seed| { seed };
 
-                #[question("Which way?")]
+                #[kaa::question("Which way?")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Use it on the yes branch")]
+                #[kaa::action("Use it on the yes branch")]
                 let selected = |yes, &prepared| { *prepared };
 
-                #[action("Use it on the no branch")]
+                #[kaa::action("Use it on the no branch")]
                 let selected = |no, &prepared| { *prepared + 1 };
 
-                #[action("Combine the selected and prepared values")]
+                #[kaa::action("Combine the selected and prepared values")]
                 let result = |selected, prepared| { selected + prepared };
                 |result| return result;
             }
@@ -1028,7 +990,7 @@ mod tests {
     #[test]
     fn a_shared_block_preceded_by_another_is_not_an_entry() {
         assert_groups(
-            &fixture!("wire/behavior", "staged_convergence"),
+            &fixture!("flow/wire", "staged_convergence"),
             &[group(0, &[0, 1], &[3, 4])],
         );
     }
@@ -1036,7 +998,7 @@ mod tests {
     #[test]
     fn alternative_producers_captured_by_return_form_a_group() {
         assert_groups(
-            &fixture!("question/behavior", "run_question"),
+            &fixture!("flow/question", "run_question"),
             &[group(0, &[0, 1], &[3])],
         );
     }
@@ -1044,7 +1006,7 @@ mod tests {
     #[test]
     fn a_terminal_case_stays_outside_the_group_it_follows() {
         assert_groups(
-            &fixture!("wire/behavior", "convergence_before_a_terminal_case"),
+            &fixture!("flow/wire", "convergence_before_a_terminal_case"),
             &[group(0, &[0, 1], &[4]), group(0, &[0, 1, 2], &[5])],
         );
     }
@@ -1053,13 +1015,13 @@ mod tests {
     fn gates_alternative_producers_that_no_binding_unifies() {
         let unified: ItemFn = parse_quote! {
             fn choose(condition: bool) -> u32 {
-                #[question("Choose a value")]
+                #[kaa::question("Choose a value")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Build the yes value")]
+                #[kaa::action("Build the yes value")]
                 let (selected, _tag) = |yes| { (1, 1u8) };
 
-                #[action("Build the no value")]
+                #[kaa::action("Build the no value")]
                 let (selected, _tag) = |no| { (2, 2) };
 
                 |selected| return selected;
@@ -1076,18 +1038,18 @@ mod tests {
 
         let terminal: ItemFn = parse_quote! {
             fn choose(condition: bool) {
-                #[question("Choose a value")]
+                #[kaa::question("Choose a value")]
                 let (yes, no) = |condition| { condition };
 
-                #[action("Build the yes value")]
+                #[kaa::action("Build the yes value")]
                 let (result, _tag) = |yes| { ((), 1u8) };
 
                 |result| return result;
 
-                #[action("Build the no tag before diverging")]
+                #[kaa::action("Build the no tag before diverging")]
                 let (_tag, repeat) = |no| { (2u8, ()) };
 
-                #[cycle("Keep the other route open")]
+                #[kaa::cycle("Keep the other route open")]
                 |repeat| loop {
                     continue;
                 };
@@ -1108,7 +1070,7 @@ mod tests {
     #[test]
     fn a_body_selection_converges_only_inside_its_cycle() {
         let model =
-            build(&fixture!("cycle/behavior", "alternative_outputs")).expect("the flow is valid");
+            build(&fixture!("flow/cycle", "alternative_outputs")).expect("the flow is valid");
         let end = model.analysis.flow.blocks[0]
             .cycle_end
             .expect("the flow opens with its cycle");
@@ -1128,7 +1090,7 @@ mod tests {
     #[test]
     fn a_question_of_a_wider_group_may_follow_a_partial_merge() {
         assert_groups(
-            &fixture!("wire/behavior", "question_after_a_partial_merge"),
+            &fixture!("flow/wire", "question_after_a_partial_merge"),
             &[
                 group(0, &[0, 1], &[3]),
                 group(0, &[0, 1, 2], &[5, 6, 7, 8]),
@@ -1142,7 +1104,7 @@ mod tests {
     #[test]
     fn a_question_of_the_shared_continuation_may_follow_one_of_two_entries() {
         assert_groups(
-            &fixture!("wire/behavior", "question_after_one_entry_block"),
+            &fixture!("flow/wire", "question_after_one_entry_block"),
             &[
                 group(0, &[0, 1], &[3, 4, 5, 6, 7, 8]),
                 group(5, &[0, 1], &[8]),
@@ -1156,7 +1118,7 @@ mod tests {
     #[test]
     fn a_branch_may_capture_a_merged_value_of_a_shared_continuation() {
         assert_groups(
-            &fixture!("wire/behavior", "a_branch_captures_a_merged_value"),
+            &fixture!("flow/wire", "a_branch_captures_a_merged_value"),
             &[group(0, &[0, 1], &[4, 5, 6]), group(3, &[0, 1], &[6])],
         );
     }

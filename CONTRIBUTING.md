@@ -112,8 +112,8 @@ just ci run
 ```
 
 It checks Markdown and Rust formatting, then runs `cargo clippy` with warnings
-denied, `cargo test`, and `git diff --check`. `just rust` and `just docs` list
-the per-step recipes for running one of them alone.
+denied, `cargo test`, `just rust svg`, and `git diff --check`. `just rust` and
+`just docs` list the per-step recipes for running one of them alone.
 
 One comparison is too slow for that baseline and sits behind `#[ignore]`:
 
@@ -128,14 +128,36 @@ generated cycle shape. Run it before committing a change to `construct/`, to
 those answers rest on. Nothing else runs it, and it is the only check that
 reaches the nested cycle shapes in bulk.
 
-Each `crates/kaalang/tests/*/behavior/` holds one flow per file, named for the
-flow it declares, with that flow's diagram beside it. The diagrams redraw
-themselves during `cargo test`, so a renderer or model change arrives as a diff
-over them. `just rust svg` redraws them and shows that diff. Read it before
-committing: nothing else checks that the new diagrams still make sense.
+Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
+feature. Each holds one flow per file, named for the flow it declares, with that
+flow's diagram beside it, and its `compile_fail/` holds the programs the feature
+rejects. Run `just rust svg` to redraw the diagrams and inspect the diff before
+committing. The diagram generator is an ignored test, so an ordinary
+`cargo test` leaves the SVG files untouched.
 
-Gallery examples may group related flows in one source file and share a test.
-Each flow still gets its own `<flow>.svg` beside that file.
+Gallery modules and their SVGs live in `crates/kaalang/examples/gallery/`. Its
+`main.rs` calls each module's checks. Run the gallery with
+`cargo run -p kaalang --example gallery`. The gallery's `[[example]]` entry also
+runs its `main()` during `cargo test`. The `loops` module checks the finite
+flows and includes the endless flow for its diagram. The fixture corpus is
+collected from `crates/kaalang/tests/`.
+
+Draw the whole gallery through the CLI with `just rust gallery` (also included
+in `just rust svg`). `scripts/draw-gallery.sh` lists the flows, types, and
+collapsed views to draw with `--target x86_64-unknown-linux-gnu`. Keep that list
+in step when adding or removing examples, and review the generated SVG diff.
+
+Type fixtures live in `crates/kaalang/tests/datatype/`, one directory per case,
+named for the case, so that the directory listing is the list of cases. Each
+declares only the types its case needs and a test of their behavior. A fixture
+without flows draws a diagram into its directory for every type its `mod.rs`
+declares, datatype or plain type, named after the type in snake case. The first
+type it declares is the case's subject, and its diagram is named after the
+directory instead, as `many_incoming_types/many_incoming_types.svg`, so that the
+diagram to look at first is obvious. A type's incoming types there are those in
+the same file that refer to it by its bare name. Every fixture is read for one
+fixed compilation target, 64-bit Linux, written out in `tests/diagrams.rs`, so
+that the diagrams do not depend on the machine that draws them.
 
 Hand-written stress fixtures live in
 `crates/kaalang/tests/stress/<flow>/mod.rs`, with their tests and generated
@@ -189,9 +211,9 @@ measurement, summary statistics, and aggregate and per-item budget checks. Keep
 them sharing these inputs: a budget stated over its own corpus, probes, or
 statistic stops comparing with the others.
 
-The fixture corpus is read from the checked-in executable examples, so it grows
-with the language instead of being kept in step by hand. Ordinary fixtures and
-stress fixtures run in separate corpus tests, each with an aggregate budget of
+The fixture corpus is read from the checked-in test fixtures, so it grows with
+the language instead of being kept in step by hand. Ordinary fixtures and stress
+fixtures run in separate corpus tests, each with an aggregate budget of
 `count * allowance` and its own per-item limit. The allowances are smaller than
 the per-item limits, so each aggregate check still catches distributed
 regressions. Compiler passes include every fixture flow once; SVG passes include

@@ -342,7 +342,7 @@ fn the_construction_is_deterministic() {
 
 #[test]
 fn nested_exit_routes_merge_without_crossing_side_departures() {
-    let source = include_str!("../../../../kaalang/tests/cycle/behavior/nested_exit_routes.rs");
+    let source = include_str!("../../../../kaalang/tests/flow/cycle/nested_exit_routes.rs");
     let model = crate::build(&crate::tests::fixture(source, "nested_exit_routes")).unwrap();
     // The first exit reaches the shared wire merge in its own branch column.
     let outer_exit = model
@@ -410,7 +410,7 @@ fn every_accepted_staged_shape_constructs_each_part() {
     let mut accepted = 0;
     for source in staged_shapes() {
         let file = syn::parse_file(&source).expect("the staged shape parses");
-        let function = crate::flows(&file.items).remove(0);
+        let function = crate::flows(&file.items).remove(0).function;
         match crate::build(&function) {
             Ok(_) => accepted += 1,
             Err(error) => assert!(
@@ -471,19 +471,19 @@ fn the_sweep_alone_draws_every_generated_shape_the_model_accepts() {
 #[test]
 fn a_back_edge_clears_a_nested_back_edge_it_cannot_cross() {
     let source = "fn probe(mode: u8) {
-    #[cycle(\"Repeat the outer cycle.\")]
+    #[kaa::cycle(\"Repeat the outer cycle.\")]
     |mode| loop {
-        #[question(\"Repeat?\")]
+        #[kaa::question(\"Repeat?\")]
         let (again, enter) = |mode| mode == 0;
-        #[action(\"Repeat.\")]
+        #[kaa::action(\"Repeat.\")]
         |again| ();
-        #[action(\"First.\")]
+        #[kaa::action(\"First.\")]
         let first = |enter| ();
-        #[action(\"Second.\")]
+        #[kaa::action(\"Second.\")]
         let second = |first| ();
-        #[action(\"Third.\")]
+        #[kaa::action(\"Third.\")]
         let third = |second| ();
-        #[cycle(\"Diverge in the inner cycle.\")]
+        #[kaa::cycle(\"Diverge in the inner cycle.\")]
         |third| loop {
             continue;
         };
@@ -681,7 +681,7 @@ fn the_verifier_rejects_a_case_on_a_different_row() {
 #[test]
 fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
     let model = crate::build(&crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/cycle/behavior/for_each_value.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/for_each_value.rs"),
         "for_each_value",
     ))
     .expect("the fixture is valid");
@@ -698,7 +698,7 @@ fn the_verifier_rejects_a_bottom_cap_outside_its_top_caps_column() {
 #[test]
 fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
     let model = crate::build(&crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/cycle/behavior/for_merged_question.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/for_merged_question.rs"),
         "for_merged_question",
     ))
     .expect("the fixture is valid");
@@ -740,14 +740,14 @@ fn diagnostics_name_a_for_cycles_entry_end_and_tail() {
 fn diagnostics_name_a_stage_entry_and_transition() {
     let model = model(
         "fn probe(seed: u32) -> u32 {
-            #[action(\"Enter the stage.\")]
+            #[kaa::action(\"Enter the stage.\")]
             let go = || {};
-            #[stage(\"Forward the seed.\")]
+            #[kaa::stage(\"Forward the seed.\")]
             let finish = |go| {
-                #[action(\"Leave.\")]
+                #[kaa::action(\"Leave.\")]
                 let finish = || ();
             };
-            #[stage(\"Return the seed.\")]
+            #[kaa::stage(\"Return the seed.\")]
             |finish| {
                 |seed| return seed;
             };
@@ -799,13 +799,13 @@ fn body_columns_do_not_shrink_when_a_body_vertex_moves_below_the_tail() {
 fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
     let model = model(
         "fn probe(flag: bool) {
-            #[cycle(\"Repeat the outer cycle.\")]
+            #[kaa::cycle(\"Repeat the outer cycle.\")]
             |flag| loop {
-                #[cycle(\"Repeat or leave the inner cycle.\")]
+                #[kaa::cycle(\"Repeat or leave the inner cycle.\")]
                 let leave = |flag| loop {
-                    #[question(\"Repeat?\")]
+                    #[kaa::question(\"Repeat?\")]
                     let (again, leave) = |flag| flag;
-                    #[action(\"Repeat.\")]
+                    #[kaa::action(\"Repeat.\")]
                     |again| ();
                     |again| continue;
                 };
@@ -826,7 +826,7 @@ fn reaching_an_enclosing_tail_does_not_make_it_part_of_the_inner_body() {
 #[test]
 fn a_nested_result_and_its_continuation_belong_to_the_outer_body() {
     let function = crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/cycle/behavior/conditional_nested_cycle.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/conditional_nested_cycle.rs"),
         "conditional_nested_cycle",
     );
     let model = crate::build(&function).expect("the flow is valid");
@@ -855,7 +855,7 @@ fn a_nested_result_and_its_continuation_belong_to_the_outer_body() {
 #[test]
 fn a_diverging_branch_between_partial_merges_is_drawn() {
     let function = crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/cycle/behavior/diverging_middle_branch.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/diverging_middle_branch.rs"),
         "diverging_middle_branch",
     );
     let parts = parts_from(&function).expect("the flow passes the earlier rules");
@@ -899,7 +899,7 @@ fn a_back_edge_may_stand_beyond_the_body_it_clears() {
 #[test]
 fn a_back_edge_with_one_arrival_may_stand_beyond_its_body() {
     let function = crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/cycle/behavior/reversed_empty_cycle.rs"),
+        include_str!("../../../../kaalang/tests/flow/cycle/reversed_empty_cycle.rs"),
         "reversed_empty_cycle",
     );
     let mut model = crate::build(&function).expect("the fixture is valid");
@@ -954,7 +954,7 @@ fn value_producing_exit_routes_share_the_merge_before_the_result() {
 #[test]
 fn junction_arrivals_record_their_rank() {
     let merge = crate::tests::fixture(
-        include_str!("../../../../kaalang/tests/wire/behavior/two_merges_reach_one_consumer.rs"),
+        include_str!("../../../../kaalang/tests/flow/wire/two_merges_reach_one_consumer.rs"),
         "two_merges_reach_one_consumer",
     );
     for (function, minimum) in [
@@ -1054,7 +1054,7 @@ fn a_back_edge_can_bend_outside_its_body() {
 #[test]
 fn serial_nodes_do_not_need_artificial_side_steps() {
     let source = r#"fn straight(input: u8) -> u8 {
-        #[action("Read the value.")]
+        #[kaa::action("Read the value.")]
         let value = |input| input;
         |value| return value;
     }"#;

@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn transitions_share_the_final_row_in_branch_order_in_both_constructions() {
         let function = crate::tests::fixture(
-            include_str!("../../../kaalang/tests/stage/behavior/count_to.rs"),
+            include_str!("../../../kaalang/tests/flow/stage/count_to.rs"),
             "count_to",
         );
         let model = crate::build(&function).unwrap();
@@ -101,15 +101,15 @@ mod tests {
 
         let function = syn::parse_quote! {
             fn diverging_branch(repeat: bool) {
-                #[question("Repeat forever?")]
+                #[kaa::question("Repeat forever?")]
                 let (again, finish) = |repeat| repeat;
-                #[cycle("Repeat.")]
+                #[kaa::cycle("Repeat.")]
                 |again| loop {
-                    #[action("Work.")]
+                    #[kaa::action("Work.")]
                     || ();
                     continue;
                 };
-                #[stage("Finish.")]
+                #[kaa::stage("Finish.")]
                 |finish| { return; };
             }
         };

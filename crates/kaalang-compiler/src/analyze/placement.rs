@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn common_work_waits_for_branch_completion() {
         let source = include_str!(
-            "../../../kaalang/tests/wire/compile_fail/common_work_before_branch_completion.rs"
+            "../../../kaalang/tests/flow/wire/compile_fail/common_work_before_branch_completion.rs"
         );
         let mut function = fixture(source, "invalid");
         assert_eq!(

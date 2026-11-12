@@ -1,5 +1,0 @@
-error: branches in a kaalang choice convergence group must be adjacent
- --> tests/wire/compile_fail/separated_convergence_branches.rs:9:17
-  |
-9 |     let (first, done, second) = |value| {
-  |                 ^^^^

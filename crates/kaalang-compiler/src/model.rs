@@ -76,7 +76,7 @@ pub enum BlockKind {
 pub struct Block {
     pub kind: BlockKind,
     /// The exact authored description, absent for transfers, end, and a
-    /// `#[call]` without one.
+    /// `#[kaa::call]` without one.
     pub description: Option<String>,
     /// A question's two answers, paired with its outputs.
     pub question_branches: Vec<QuestionBranch>,
@@ -727,7 +727,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(left: i32, right: i32) -> i32 {
-                    #[call("Subtract.")]
+                    #[kaa::call("Subtract.")]
                     let end = |left, right| math::difference(left, right);
 
                     |end| return end;
@@ -742,7 +742,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(text: &str) -> u32 {
-                    #[call]
+                    #[kaa::call]
                     let end = |text| str::parse::<u32>(text);
 
                     |end| return end;
@@ -753,7 +753,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe() -> Map {
-                    #[call]
+                    #[kaa::call]
                     let end = || HashMap::<String, u32>::new();
 
                     |end| return end;
@@ -764,7 +764,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(f: F) -> u32 {
-                    #[call]
+                    #[kaa::call]
                     let end = |f| <F as ::core::ops::Fn<(u32,)>>::call(f);
 
                     |end| return end;
@@ -779,7 +779,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(text: &str) -> u32 {
-                    #[call]
+                    #[kaa::call]
                     let end = |text| <u32 as FromStr>::from_str(text);
 
                     |end| return end;
@@ -790,7 +790,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(bytes: Vec<u8>) -> &'static [u8] {
-                    #[call]
+                    #[kaa::call]
                     let end = |bytes| <Vec<u8> as AsRef<[u8]>>::as_ref(bytes);
 
                     |end| return end;
@@ -801,7 +801,7 @@ mod tests {
         assert_eq!(
             callee(&parse_quote! {
                 fn probe(text: &str) -> u32 {
-                    #[call]
+                    #[kaa::call]
                     let end = |text| <u32 as ::core::str::FromStr>::from_str(text);
 
                     |end| return end;
@@ -817,7 +817,7 @@ mod tests {
             callee(
                 &syn::parse_str(
                     "fn probe(a: u32) -> u32 {
-                        #[call]
+                        #[kaa::call]
                         let end = |a| math:: /* sneaky */ twice(a);
 
                         |end| return end;

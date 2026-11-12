@@ -1,0 +1,17 @@
+use kaalang::kaa;
+
+#[kaa]
+fn invalid(value: u32) -> u32 {
+    #[kaa::action("Double the value, propagating overflow with `?`.")]
+    let doubled = |value| {
+        if value > 0 {
+            value.checked_mul(2)?
+        } else {
+            0
+        }
+    };
+
+    |doubled| return doubled;
+}
+
+fn main() {}

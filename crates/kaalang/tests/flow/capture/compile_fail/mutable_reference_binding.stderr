@@ -1,0 +1,5 @@
+error: kaalang block inputs must use simple identifiers
+ --> tests/flow/capture/compile_fail/mutable_reference_binding.rs:6:21
+  |
+6 |     let end = |&mut mut value| { *value };
+  |                     ^^^^^^^^^

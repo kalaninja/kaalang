@@ -15,8 +15,15 @@ repository.workspace = true
 kaalang-macros = { workspace = true }
 
 [dev-dependencies]
+kaalang-compiler = { workspace = true }
 kaalang-svg = { workspace = true }
+syn = { workspace = true }
 trybuild = { workspace = true }
 
 [lints]
 workspace = true
+
+[[example]]
+name = "gallery"
+test = true
+harness = false

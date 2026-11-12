@@ -14,7 +14,7 @@ fn fixture(source: &str, name: &str) -> SemanticModel {
 fn the_public_checks_reject_broken_placement_and_references() {
     let model = model(
         "fn probe(value: u8) -> u8 {
-            #[action(\"Keep the value.\")]
+            #[kaa::action(\"Keep the value.\")]
             let kept = |value| value;
             |kept| return kept;
         }",
@@ -47,7 +47,7 @@ fn the_public_checks_reject_broken_placement_and_references() {
 #[test]
 fn the_public_geometry_check_rejects_a_crossed_corridor() {
     let model = fixture(
-        include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
+        include_str!("../../kaalang/tests/flow/wire/blocked_terminal_crossing.rs"),
         "blocked_terminal_crossing",
     );
     let checks = ArrangementChecks::new(&model.analysis.flow, &model.topology);

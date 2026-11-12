@@ -167,7 +167,7 @@ fn check_lowering_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
     );
 }
 
-/// What `#[kaalang]` pays at every call site, and the only step a user waits
+/// What `#[kaa]` pays at every call site, and the only step a user waits
 /// on while compiling.
 #[test]
 fn the_ordinary_fixture_corpus_lowering_stays_inside_its_budgets() {

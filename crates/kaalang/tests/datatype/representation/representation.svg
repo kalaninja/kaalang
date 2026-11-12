@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="748" height="522" viewBox="0 0 748 522" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Payload</title>
+  <desc id="kaalang-description">Type Payload with incoming types Selection, Handle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Selection</title>
+      <rect class="card-shape" x="32" y="32" width="327" height="144"/>
+      <path class="card-rules" d="M 32 102 L 359 102"/>
+      <rect class="card-outline" x="32" y="32" width="327" height="144"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Selection</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="345" dy="0">struct · repr(transparent)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A selected payload, by its index.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="122.28" text-anchor="middle">−</text>
+        <text x="58" y="123" text-anchor="start" xml:space="preserve"> index</text>
+      </g>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">usize</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="118" dy="0">The selected payload, resolved </tspan><tspan x="118" dy="18">by index.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="345" dy="0">▸ <tspan class="md-code">Payload</tspan></tspan></text>
+    </g>
+    <g class="card">
+      <title xml:space="preserve">Handle</title>
+      <rect class="card-shape" x="391" y="32" width="297" height="196"/>
+      <path class="card-rules" d="M 391 102 L 688 102 M 391 176 L 688 176"/>
+      <rect class="card-outline" x="391" y="32" width="297" height="196"/>
+      <g class="type-name">
+        <text class="md-badge" x="414" y="62.92" text-anchor="middle">−</text>
+        <text x="423" y="64" text-anchor="start" xml:space="preserve"> Handle</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="674" dy="0">struct · repr(C, packed)</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="405" dy="0">A compact handle to a payload.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="411" y="122.28" text-anchor="middle">−</text>
+        <text x="417" y="123" text-anchor="start" xml:space="preserve"> slot</text>
+      </g>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="405" dy="0">u16</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="514" dy="0">The payload in this </tspan><tspan x="514" dy="18">slot.</tspan></text>
+      <text class="target" text-anchor="end" y="165" xml:space="preserve"><tspan x="674" dy="0">▸ <tspan class="md-code">Payload</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="411" y="196.28" text-anchor="middle">−</text>
+        <text x="417" y="197" text-anchor="start" xml:space="preserve"> generation</text>
+      </g>
+      <text class="field-type" y="213" xml:space="preserve"><tspan x="405" dy="0">u8</tspan></text>
+      <text class="description" y="199" xml:space="preserve"><tspan x="514" dy="0">The generation of the </tspan><tspan x="514" dy="18">slot.</tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Payload</title>
+      <rect class="card-shape" x="32" y="276" width="684" height="214"/>
+      <path class="card-rules" d="M 32 346 L 716 346 M 32 418 L 716 418"/>
+      <rect class="card-outline" x="32" y="276" width="684" height="214"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="306.92" text-anchor="middle">−</text>
+        <text x="64" y="308" text-anchor="start" xml:space="preserve"> Payload</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="308" xml:space="preserve"><tspan x="702" dy="0">union · repr(C, align(16))</tspan></text>
+      <text class="description" y="331" xml:space="preserve"><tspan x="46" dy="0">Overlapping word and byte views of shared storage.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="366.28" text-anchor="middle">−</text>
+        <text x="58" y="367" text-anchor="start" xml:space="preserve"> word</text>
+      </g>
+      <text class="field-type" y="383" xml:space="preserve"><tspan x="46" dy="0">u64</tspan></text>
+      <text class="description" y="407" xml:space="preserve"><tspan x="46" dy="0">The payload as a word.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="438.28" text-anchor="middle">−</text>
+        <text x="58" y="439" text-anchor="start" xml:space="preserve"> bytes</text>
+      </g>
+      <text class="field-type" y="455" xml:space="preserve"><tspan x="46" dy="0">[u8; 8]</tspan></text>
+      <text class="description" y="479" xml:space="preserve"><tspan x="46" dy="0">The payload as bytes.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Selection → Payload</title>
+      <path class="relationship" d="M 359 160 L 373 160 L 373 276" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="359" cy="160" r="4"/>
+    </g>
+    <g class="relationship-route">
+      <title xml:space="preserve">Handle → Payload</title>
+      <path class="relationship" d="M 688 160 L 702 160 L 702 276" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="688" cy="160" r="4"/>
+    </g>
+  </g>
+</svg>

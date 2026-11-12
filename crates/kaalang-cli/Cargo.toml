@@ -1,6 +1,6 @@
 [package]
 name = "kaalang-cli"
-description = "Command-line SVG rendering for kaalang flows"
+description = "The cargo kaalang subcommand"
 readme = "../../README.md"
 keywords = ["code-visualization", "flowchart", "drakon", "cargo", "cli"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins", "visualization"]
@@ -11,9 +11,13 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cargo_metadata = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+kaalang-compiler = { workspace = true }
 kaalang-svg = { workspace = true }
+proc-macro2 = { workspace = true, features = ["span-locations"] }
 same-file = { workspace = true }
+syn = { workspace = true, features = ["visit-mut"] }
 
 [[bin]]
 name = "cargo-kaalang"

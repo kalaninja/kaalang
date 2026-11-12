@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="825" height="1232" viewBox="0 0 825 1232" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for for_with_a_diverging_branch</title>
+  <desc id="kaalang-description">Cycles: Add the values, spinning forever on a zero. with inputs values, mut total and outputs (); Spin forever. with inputs zero and outputs (). Nodes: Start: for_with_a_diverging_branch with parameters values: &amp;[u32] handing over values; Action: Start with a total of zero. capturing nothing handing over mut total; For entry: Add the values, spinning forever on a zero. capturing values handing over value; Question: Is the value zero? capturing value handing over zero / nonzero; Action: Add the value. capturing nonzero, value, &amp;mut total; Action: Wait. capturing nothing handing over waited; For end: Add the values, spinning forever on a zero.; End: u32 capturing total. Connections: Start: for_with_a_diverging_branch to Action: Start with a total of zero.; Action: Start with a total of zero. to For entry: Add the values, spinning forever on a zero.; For entry: Add the values, spinning forever on a zero. to Question: Is the value zero?; Question: Is the value zero? branch 1 to the entry of the cycle; Question: Is the value zero? branch 2 to Action: Add the value.; Action: Add the value. to For end: Add the values, spinning forever on a zero.; Action: Wait. to the iteration tail of the cycle; For end: Add the values, spinning forever on a zero. to End: u32; the entry of the cycle to Action: Wait.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .for-entry .node-shape, .for-end .node-shape { fill: #f0fdf4; }
+      .for-entry .label, .for-end .label { font-weight: 500; text-anchor: start; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Spin forever.</title>
+    <rect class="cycle-boundary" x="33" y="585" width="356" height="310" rx="12"/>
+    <text class="cycle-caption" x="377" y="599" text-anchor="end" xml:space="preserve"><tspan x="377" dy="0">Spin forever.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 221 98 L 221 170
+      M 221 234 L 221 306
+      M 221 372 L 221 444
+      M 221 516 L 221 620
+      M 361 480 L 581 480 L 581 588
+      M 581 652 L 581 932 L 221 932 L 221 1004
+      M 221 788 L 221 860
+      M 221 1070 L 221 1142
+      M 221 620 L 221 724
+    "/>
+    <path class="connection" d="
+      M 221 860 L 61 860 L 61 620 L 221 620
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label code" x="234" y="433" xml:space="preserve"><tspan x="234" dy="0">value</tspan></text>
+    <text class="connection-label code" x="234" y="116" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
+    <text class="connection-label code" x="234" y="252" xml:space="preserve"><tspan x="234" dy="0">mut total</tspan></text>
+    <text class="connection-label code" x="234" y="534" xml:space="preserve"><tspan x="234" dy="0">zero</tspan></text>
+    <text class="connection-label code" x="374" y="498" xml:space="preserve"><tspan x="374" dy="0">nonzero</tspan></text>
+    <text class="connection-label code" x="234" y="806" xml:space="preserve"><tspan x="234" dy="0">waited</tspan></text>
+    <text class="connection-label code" x="234" y="159" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
+    <text class="connection-label code" x="234" y="295" xml:space="preserve"><tspan x="234" dy="0">values</tspan></text>
+    <text class="connection-label code" x="594" y="577" xml:space="preserve"><tspan x="594" dy="0">nonzero, value, &amp;mut total</tspan></text>
+    <text class="connection-label code" x="234" y="713" xml:space="preserve"><tspan x="234" dy="0">()</tspan></text>
+    <text class="connection-label code" x="234" y="1131" xml:space="preserve"><tspan x="234" dy="0">total</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 361 65 L 457 65"/>
+    <g class="parameter-panel" transform="translate(577 65)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[u32]</tspan></text>
+    </g>
+    <g class="node start" transform="translate(221 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-95.48" y="-3.84" text-anchor="middle">−</text>
+        <text x="-88.48" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> for_with_a_diverging_</tspan></text>
+        <text x="-26.04" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">branch</tspan></text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(221 202)">
+      <title xml:space="preserve">Start with a total of zero.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Start with a total of zero.</tspan></text>
+    </g>
+    <g class="node for-entry" transform="translate(221 339)">
+      <title xml:space="preserve">Add the values, spinning forever on a zero.</title>
+      <polygon class="node-shape" points="-124,-33 124,-33 140,-17 140,33 -140,33 -140,-17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add the values, spinning forever </tspan><tspan x="-124" dy="18">on a zero.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(221 480)">
+      <title xml:space="preserve">Is the value zero?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the value zero?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(581 620)">
+      <title xml:space="preserve">Add the value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Add the value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(221 756)">
+      <title xml:space="preserve">Wait.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Wait.</tspan></text>
+    </g>
+    <g class="node for-end" transform="translate(221 1037)">
+      <title xml:space="preserve">Add the values, spinning forever on a zero.</title>
+      <polygon class="node-shape" points="-140,-33 140,-33 140,17 124,33 -124,33 -140,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Add the values, spinning forever </tspan><tspan x="-124" dy="18">on a zero.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(221 1171)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

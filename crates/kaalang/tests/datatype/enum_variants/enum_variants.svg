@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="409" height="520" viewBox="0 0 409 520" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Approval&lt;&apos;a&gt;</title>
+  <desc id="kaalang-description">Type Approval&lt;&apos;a&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card focus">
+      <title xml:space="preserve">Approval&lt;&apos;a&gt;</title>
+      <rect class="card-shape" x="32" y="32" width="345" height="456"/>
+      <rect class="card-groove" x="32" y="136" width="345" height="20"/>
+      <rect class="card-groove" x="32" y="302" width="345" height="20"/>
+      <rect class="card-groove" x="32" y="468" width="345" height="20"/>
+      <path class="card-rules" d="M 32 102 L 377 102 M 32 136 L 377 136 M 32 156 L 377 156 M 32 190 L 377 190 M 189 190 L 189 302 M 32 302 L 377 302 M 32 322 L 377 322 M 32 356 L 377 356 M 186 356 L 186 468 M 32 468 L 377 468"/>
+      <rect class="card-outline" x="32" y="32" width="345" height="456"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">−</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Approval&lt;&apos;a&gt;</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="363" dy="0">enum</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">Who may approve a change.</tspan></text>
+      <text class="variant-name" y="125" xml:space="preserve"><tspan x="46" dy="0">Open</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="92" dy="0">Anyone may approve.</tspan></text>
+      <text class="variant-name" y="179" xml:space="preserve"><tspan x="46" dy="0">Named</tspan></text>
+      <text class="field-name" y="211" xml:space="preserve"><tspan x="46" dy="0">0</tspan></text>
+      <text class="field-type" y="227" xml:space="preserve"><tspan x="46" dy="0">&amp;&apos;a Member</tspan></text>
+      <text class="description" y="251" xml:space="preserve"><tspan x="46" dy="0">The only approver.</tspan></text>
+      <text class="target" text-anchor="end" y="291" xml:space="preserve"><tspan x="175" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="field-name" y="211" xml:space="preserve"><tspan x="203" dy="0">1</tspan></text>
+      <text class="field-type" y="227" xml:space="preserve"><tspan x="203" dy="0">Option&lt;&amp;&apos;a Member&gt;</tspan></text>
+      <text class="description" y="251" xml:space="preserve"><tspan x="203" dy="0">A deputy who may </tspan><tspan x="203" dy="18">stand in.</tspan></text>
+      <text class="target" text-anchor="end" y="291" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+      <text class="variant-name" y="345" xml:space="preserve"><tspan x="46" dy="0">Quorum</tspan></text>
+      <text class="description" y="345" xml:space="preserve"><tspan x="110" dy="0">A number of members must agree.</tspan></text>
+      <text class="field-name" y="377" xml:space="preserve"><tspan x="46" dy="0">votes</tspan></text>
+      <text class="field-type" y="393" xml:space="preserve"><tspan x="46" dy="0">u8</tspan></text>
+      <text class="description" y="417" xml:space="preserve"><tspan x="46" dy="0">The votes needed.</tspan></text>
+      <text class="field-name" y="377" xml:space="preserve"><tspan x="200" dy="0">voters</tspan></text>
+      <text class="field-type" y="393" xml:space="preserve"><tspan x="200" dy="0">Vec&lt;&amp;&apos;a Member&gt;</tspan></text>
+      <text class="description" y="417" xml:space="preserve"><tspan x="200" dy="0">The members who </tspan><tspan x="200" dy="18">may vote.</tspan></text>
+      <text class="target" text-anchor="end" y="457" xml:space="preserve"><tspan x="363" dy="0">▸ <tspan class="md-code">Member</tspan></tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+  </g>
+</svg>

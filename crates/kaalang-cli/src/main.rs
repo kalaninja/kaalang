@@ -4,7 +4,10 @@ use clap::{Parser, Subcommand};
 
 use crate::diagram::Diagram;
 
+mod datatype;
 mod diagram;
+mod resolve;
+mod workspace;
 
 /// The binary's name from its `[[bin]]` entry.
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
@@ -18,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Render one flow as an SVG file
+    /// Render one flow or type as an SVG file
     Diagram(Diagram),
 }
 
@@ -58,8 +61,8 @@ mod tests {
     #[test]
     fn accepts_cargo_and_direct_invocation_shapes() {
         for line in [
-            "cargo-kaalang diagram flow.rs --flow decide",
-            "cargo-kaalang kaalang diagram flow.rs --flow decide",
+            "cargo-kaalang diagram --flow decide",
+            "cargo-kaalang kaalang diagram --flow decide",
         ] {
             let arguments = without_subcommand_name(line.split_whitespace().map(OsString::from));
             Cli::try_parse_from(arguments).unwrap();

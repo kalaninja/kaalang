@@ -1,5 +1,0 @@
-error: duplicate kaalang stage entry
-  --> tests/stage/compile_fail/raw_duplicate_stage_entry.rs:11:6
-   |
-11 |     |r#go| {
-   |      ^^^^

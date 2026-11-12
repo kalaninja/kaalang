@@ -1,5 +1,0 @@
-error: kaalang block statements do not support `move`, `async`, `const`, or lifetime modifiers
- --> tests/syntax/compile_fail/move_closure.rs:6:19
-  |
-6 |     let doubled = move |value| { value * 2 };
-  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^

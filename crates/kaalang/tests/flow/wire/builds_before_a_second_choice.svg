@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1264" viewBox="0 0 1064 1264" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for builds_before_a_second_choice</title>
+  <desc id="kaalang-description">Nodes: Start: builds_before_a_second_choice with parameters first: u8; second: u8 handing over first, second; Select: Which build? capturing first; Case: Build A. handing over a; Case: Build B. handing over b; Case: Build C. handing over c; Action: Build A. capturing a handing over value; Action: Build B. capturing b handing over value; Action: Build C. capturing c handing over value; Select: Which finish? capturing second; Case: Finish X. handing over x; Case: Finish Y. handing over y; Case: Finish Z. handing over z; Action: Finish X. capturing x, value handing over end; Action: Finish Y. capturing y, value handing over end; Action: Finish Z. capturing z, value handing over end; End: u8 capturing end; Merge: value; Merge: end. Connections: Start: builds_before_a_second_choice to Select: Which build?; Select: Which build? to Case: Build A.; Select: Which build? to Case: Build B.; Select: Which build? to Case: Build C.; Case: Build A. to Action: Build A.; Case: Build B. to Action: Build B.; Case: Build C. to Action: Build C.; Action: Build A. to the value merge; Action: Build B. to the value merge; Action: Build C. to the value merge; Select: Which finish? to Case: Finish X.; Select: Which finish? to Case: Finish Y.; Select: Which finish? to Case: Finish Z.; Case: Finish X. to Action: Finish X.; Case: Finish Y. to Action: Finish Y.; Case: Finish Z. to Action: Finish Z.; Action: Finish X. to the end merge; Action: Finish Y. to the end merge; Action: Finish Z. to the end merge; the value merge to Select: Which finish?; the end merge to End: u8.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 300 206 L 532 206 L 532 314
+      M 300 206 L 892 206 L 892 314
+      M 172 384 L 172 456
+      M 532 384 L 532 456
+      M 892 384 L 892 456
+      M 172 520 L 172 596
+      M 532 520 L 532 596 L 172 596
+      M 892 520 L 892 596 L 172 596
+      M 172 744 L 172 816
+      M 300 708 L 532 708 L 532 816
+      M 300 708 L 892 708 L 892 816
+      M 172 886 L 172 958
+      M 532 886 L 532 958
+      M 892 886 L 892 958
+      M 172 1022 L 172 1098
+      M 532 1022 L 532 1098 L 172 1098
+      M 892 1022 L 892 1098 L 172 1098
+      M 172 596 L 172 672
+      M 172 1098 L 172 1174
+    "/>
+    <text class="connection-label code" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="1116" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">a</tspan></text>
+    <text class="connection-label code" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">b</tspan></text>
+    <text class="connection-label code" x="905" y="445" xml:space="preserve"><tspan x="905" dy="0">c</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">first, second</tspan></text>
+    <text class="connection-label code" x="185" y="904" xml:space="preserve"><tspan x="185" dy="0">x</tspan></text>
+    <text class="connection-label code" x="545" y="904" xml:space="preserve"><tspan x="545" dy="0">y</tspan></text>
+    <text class="connection-label code" x="905" y="904" xml:space="preserve"><tspan x="905" dy="0">z</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="185" y="661" xml:space="preserve"><tspan x="185" dy="0">second</tspan></text>
+    <text class="connection-label code" x="185" y="947" xml:space="preserve"><tspan x="185" dy="0">x, value</tspan></text>
+    <text class="connection-label code" x="545" y="947" xml:space="preserve"><tspan x="545" dy="0">y, value</tspan></text>
+    <text class="connection-label code" x="905" y="947" xml:space="preserve"><tspan x="905" dy="0">z, value</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">first: u8</tspan><tspan x="-104" dy="18">second: u8</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 596)">
+      <title xml:space="preserve">the value merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 1098)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-104.16" y="-3.84" text-anchor="middle">−</text>
+        <text x="-97.16" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> builds_before_a_second_</tspan></text>
+        <text x="-26.04" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">choice</tspan></text>
+      </g>
+    </g>
+    <g class="node select" transform="translate(172 206)">
+      <title xml:space="preserve">Which build?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which build?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 349)">
+      <title xml:space="preserve">Build A.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build A.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 349)">
+      <title xml:space="preserve">Build B.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build B.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 349)">
+      <title xml:space="preserve">Build C.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Build C.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 488)">
+      <title xml:space="preserve">Build A.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build A.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 488)">
+      <title xml:space="preserve">Build B.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build B.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 488)">
+      <title xml:space="preserve">Build C.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build C.</tspan></text>
+    </g>
+    <g class="node select" transform="translate(172 708)">
+      <title xml:space="preserve">Which finish?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which finish?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 851)">
+      <title xml:space="preserve">Finish X.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish X.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 851)">
+      <title xml:space="preserve">Finish Y.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish Y.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(892 851)">
+      <title xml:space="preserve">Finish Z.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Finish Z.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 990)">
+      <title xml:space="preserve">Finish X.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish X.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 990)">
+      <title xml:space="preserve">Finish Y.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish Y.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 990)">
+      <title xml:space="preserve">Finish Z.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Finish Z.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1203)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u8</tspan></text>
+    </g>
+  </g>
+</svg>

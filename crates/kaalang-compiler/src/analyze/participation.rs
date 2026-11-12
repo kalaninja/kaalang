@@ -198,7 +198,7 @@ mod tests {
     /// the body's own selections stay inside it.
     #[test]
     fn a_cycle_with_several_outputs_decides_the_blocks_after_it() {
-        let source = include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs");
+        let source = include_str!("../../../kaalang/tests/flow/cycle/alternative_outputs.rs");
         let deciders = fixture(source, "alternative_outputs");
         assert_eq!(deciders[7], [0], "return the found item");
         assert_eq!(deciders[8], [0], "report exhaustion");
@@ -209,9 +209,8 @@ mod tests {
     /// executions run take part in the comparison.
     #[test]
     fn a_nested_terminal_branch_keeps_the_outer_question_as_a_decider() {
-        let source = include_str!(
-            "../../../kaalang/tests/wire/behavior/nested_terminal_branch_drops_a_wire.rs"
-        );
+        let source =
+            include_str!("../../../kaalang/tests/flow/wire/nested_terminal_branch_drops_a_wire.rs");
         assert_eq!(
             fixture(source, "nested_terminal_branch_drops_a_wire"),
             [
@@ -228,9 +227,8 @@ mod tests {
 
     #[test]
     fn a_converged_selection_does_not_decide_the_block_it_meets() {
-        let source = include_str!(
-            "../../../kaalang/tests/wire/behavior/converged_selection_meets_a_branch.rs"
-        );
+        let source =
+            include_str!("../../../kaalang/tests/flow/wire/converged_selection_meets_a_branch.rs");
         assert_eq!(
             fixture(source, "converged_selection_meets_a_branch"),
             [
@@ -243,7 +241,7 @@ mod tests {
                 vec![],  // return the merged result
             ]
         );
-        let source = include_str!("../../../kaalang/tests/wire/behavior/captured_in_one_branch.rs");
+        let source = include_str!("../../../kaalang/tests/flow/wire/captured_in_one_branch.rs");
         assert_eq!(
             fixture(source, "captured_in_one_branch"),
             [vec![], vec![0], vec![0], vec![]]

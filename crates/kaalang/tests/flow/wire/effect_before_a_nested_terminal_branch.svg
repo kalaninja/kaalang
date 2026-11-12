@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1064" height="1154" viewBox="0 0 1064 1154" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for effect_before_a_nested_terminal_branch</title>
+  <desc id="kaalang-description">Nodes: Start: effect_before_a_nested_terminal_branch with parameters outer: bool; inner: bool; log: &amp;mut Vec&lt;&amp;&apos;static str&gt; handing over outer, inner, log; Action: Record the effect before branching. capturing log handing over logged; Question: Take the nested branch? capturing outer, &amp;inner handing over nested / direct; Question: Finish early? capturing nested, inner handing over early / late; Action: Produce the early result. capturing early, logged handing over end; Action: Build the late value. capturing late handing over selected; Action: Build the direct value. capturing direct handing over selected; Action: Use the selected value. capturing selected, logged handing over end; End: u32 capturing end; Merge: end; Merge: selected. Connections: Start: effect_before_a_nested_terminal_branch to Action: Record the effect before branching.; Action: Record the effect before branching. to Question: Take the nested branch?; Question: Take the nested branch? branch 1 to Question: Finish early?; Question: Take the nested branch? branch 2 to Action: Build the direct value.; Question: Finish early? branch 1 to Action: Produce the early result.; Question: Finish early? branch 2 to Action: Build the late value.; Action: Produce the early result. to the end merge; Action: Build the late value. to the selected merge; Action: Build the direct value. to the selected merge; Action: Use the selected value. to the end merge; the end merge to End: u32; the selected merge to Action: Use the selected value..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 116 L 172 206
+      M 172 272 L 172 344
+      M 172 416 L 172 488
+      M 312 380 L 892 380 L 892 488
+      M 172 560 L 172 632
+      M 312 524 L 532 524 L 532 632
+      M 172 696 L 172 988
+      M 532 696 L 532 772
+      M 892 560 L 892 772 L 532 772
+      M 532 912 L 532 988 L 172 988
+      M 172 988 L 172 1064
+      M 532 772 L 532 848
+    "/>
+    <text class="connection-label code" x="185" y="1006" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="545" y="790" xml:space="preserve"><tspan x="545" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="905" y="477" xml:space="preserve"><tspan x="905" dy="0">direct</tspan></text>
+    <text class="connection-label code" x="545" y="621" xml:space="preserve"><tspan x="545" dy="0">late</tspan></text>
+    <text class="connection-label code" x="185" y="134" xml:space="preserve"><tspan x="185" dy="0">outer, inner, log</tspan></text>
+    <text class="connection-label code" x="185" y="290" xml:space="preserve"><tspan x="185" dy="0">logged</tspan></text>
+    <text class="connection-label code" x="185" y="434" xml:space="preserve"><tspan x="185" dy="0">nested</tspan></text>
+    <text class="connection-label code" x="185" y="578" xml:space="preserve"><tspan x="185" dy="0">early</tspan></text>
+    <text class="connection-label code" x="185" y="195" xml:space="preserve"><tspan x="185" dy="0">log</tspan></text>
+    <text class="connection-label code" x="185" y="333" xml:space="preserve"><tspan x="185" dy="0">outer, &amp;inner</tspan></text>
+    <text class="connection-label code" x="185" y="477" xml:space="preserve"><tspan x="185" dy="0">nested, inner</tspan></text>
+    <text class="connection-label code" x="185" y="621" xml:space="preserve"><tspan x="185" dy="0">early, logged</tspan></text>
+    <text class="connection-label code" x="545" y="837" xml:space="preserve"><tspan x="545" dy="0">selected, logged</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 83 L 408 83"/>
+    <g class="parameter-panel" transform="translate(528 83)">
+      <rect class="node-shape" x="-120" y="-51" width="240" height="102"/>
+      <text class="label code" x="-104" y="-21" xml:space="preserve"><tspan x="-104" dy="0">outer: bool</tspan><tspan x="-104" dy="18">inner: bool</tspan><tspan x="-104" dy="18">log: &amp;mut Vec&lt;&amp;&apos;static </tspan><tspan x="-104" dy="18">str&gt;</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 988)">
+      <title xml:space="preserve">the end merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(532 772)">
+      <title xml:space="preserve">the selected merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 83)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-104.16" y="-3.84" text-anchor="middle">−</text>
+        <text x="-97.16" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> effect_before_a_nested_</tspan></text>
+        <text x="-65.1" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">terminal_branch</tspan></text>
+      </g>
+    </g>
+    <g class="node action" transform="translate(172 239)">
+      <title xml:space="preserve">Record the effect before branching.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Record the effect before </tspan><tspan x="-124" dy="18">branching.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 380)">
+      <title xml:space="preserve">Take the nested branch?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Take the nested branch?</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 524)">
+      <title xml:space="preserve">Finish early?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Finish early?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 664)">
+      <title xml:space="preserve">Produce the early result.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the early result.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 664)">
+      <title xml:space="preserve">Build the late value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the late value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(892 524)">
+      <title xml:space="preserve">Build the direct value.</title>
+      <rect class="node-shape" x="-140" y="-36" width="280" height="72"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the direct value.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 880)">
+      <title xml:space="preserve">Use the selected value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the selected value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1093)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

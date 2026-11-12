@@ -1,0 +1,20 @@
+use kaalang::kaa;
+
+/// Raw and plain spellings name one wire: at a keyword flow input, at a block
+/// input of a plain parameter, at a keyword output, at an ignored output, and
+/// at the `end` wire itself.
+#[kaa]
+fn raw_spellings(r#type: u8, value: u8) -> u8 {
+    #[kaa::action("Combine the keyword-named input with the plain one.")]
+    let (r#match, r#_ignored) = |r#type, r#value| (r#type + value, ());
+
+    #[kaa::action("Preserve the renamed value.")]
+    let r#end = |r#match| r#match;
+
+    |end| return end;
+}
+
+#[test]
+fn the_raw_spelling_names_the_same_wire() {
+    assert_eq!(raw_spellings(3, 4), 7);
+}

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="482" height="324" viewBox="0 0 482 324" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Slot</title>
+  <desc id="kaalang-description">Type Slot; it refers to itself once.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card focus">
+      <title xml:space="preserve">Slot</title>
+      <rect class="card-shape" x="32" y="56" width="404" height="236"/>
+      <path class="card-rules" d="M 32 126 L 436 126 M 32 220 L 436 220"/>
+      <rect class="card-outline" x="32" y="56" width="404" height="236"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="86.92" text-anchor="middle">−</text>
+        <text x="64" y="88" text-anchor="start" xml:space="preserve"> Slot</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="88" xml:space="preserve"><tspan x="422" dy="0">union</tspan></text>
+      <text class="description" y="111" xml:space="preserve"><tspan x="46" dy="0">A pool slot, free or holding a value, in shared storage.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="146.28" text-anchor="middle">−</text>
+        <text x="58" y="147" text-anchor="start" xml:space="preserve"> next</text>
+      </g>
+      <text class="field-type" y="163" xml:space="preserve"><tspan x="46" dy="0">u32</tspan></text>
+      <text class="description" y="187" xml:space="preserve"><tspan x="46" dy="0">The next free slot, while this one is free.</tspan></text>
+      <text class="target" text-anchor="end" y="209" xml:space="preserve"><tspan x="422" dy="0">▸ <tspan class="md-code">Slot</tspan></tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="240.28" text-anchor="middle">−</text>
+        <text x="58" y="241" text-anchor="start" xml:space="preserve"> value</text>
+      </g>
+      <text class="field-type" y="257" xml:space="preserve"><tspan x="46" dy="0">f32</tspan></text>
+      <text class="description" y="281" xml:space="preserve"><tspan x="46" dy="0">The stored value, while this slot is taken.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Slot → Slot</title>
+      <path class="relationship" d="M 436 204 L 450 204 L 450 42 L 422 42 L 422 56" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="436" cy="204" r="4"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,5 @@
+error: a kaalang value attribute requires a parenthesized description
+ --> tests/datatype/compile_fail/value_without_description.rs:5:5
+  |
+5 |     #[kaa::value]
+  |     ^^^^^^^^^^^^^

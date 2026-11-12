@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1092" height="1316" viewBox="0 0 1092 1316" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for middle_exit</title>
+  <desc id="kaalang-description">Cycles: Lower the guess until it is the integer square root. with inputs mut guess, number and outputs root. Nodes: Start: middle_exit with parameters number: u64 handing over number; Question: Is the number positive? capturing number handing over positive / zero described as branch 1: YES / branch 2: NO; Action: 🤔 Start with a guess at or above the square root. capturing positive, number handing over mut guess; Action: Divide the number by the current guess. capturing number, guess handing over quotient; Action: ⚖️ Average the guess and quotient to get a new guess. capturing guess, quotient handing over next; Question: Is the new guess at least as large as the current one? capturing next, guess handing over done / again described as branch 1: YES / branch 2: NO; Action: ✅ Use the current guess as the integer square root. capturing done, guess handing over root; Action: 🔽 Replace the current guess with the smaller new guess. capturing again, next, &amp;mut guess; Action: ⭕ The square root of zero is zero. capturing zero handing over root; End: u64 capturing root; Merge: root. Connections: Start: middle_exit to Question: Is the number positive?; Question: Is the number positive? branch 1 to Action: 🤔 Start with a guess at or above the square root.; Question: Is the number positive? branch 2 to Action: ⭕ The square root of zero is zero.; Action: 🤔 Start with a guess at or above the square root. to the entry of the cycle; Action: Divide the number by the current guess. to Action: ⚖️ Average the guess and quotient to get a new guess.; Action: ⚖️ Average the guess and quotient to get a new guess. to Question: Is the new guess at least as large as the current one?; Question: Is the new guess at least as large as the current one? branch 1 to Action: ✅ Use the current guess as the integer square root.; Question: Is the new guess at least as large as the current one? branch 2 to Action: 🔽 Replace the current guess with the smaller new guess.; Action: ✅ Use the current guess as the integer square root. to the root merge; Action: 🔽 Replace the current guess with the smaller new guess. to the iteration tail of the cycle; Action: ⭕ The square root of zero is zero. to the root merge; the root merge to End: u64; the entry of the cycle to Action: Divide the number by the current guess.; Repeat from the iteration tail of the cycle to the entry of the cycle.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Lower the guess until it is the integer square root.</title>
+    <rect class="cycle-boundary" x="32" y="409" width="756" height="700" rx="12"/>
+    <text class="cycle-caption" x="776" y="423" text-anchor="end" xml:space="preserve"><tspan x="776" dy="0">Lower the guess until it is the integer square root.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <defs><marker id="back-edge-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker></defs>
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 234 L 200 306
+      M 340 198 L 920 198 L 920 306
+      M 200 372 L 200 444
+      M 200 582 L 200 654
+      M 200 720 L 200 792
+      M 200 864 L 200 936
+      M 340 828 L 560 828 L 560 936
+      M 200 1002 L 200 1150
+      M 560 1002 L 560 1074
+      M 920 372 L 920 1150 L 200 1150
+      M 200 1150 L 200 1226
+      M 200 444 L 200 516
+    "/>
+    <path class="connection" d="
+      M 560 1074 L 760 1074 L 760 444 L 200 444
+    " marker-end="url(#back-edge-arrow)"/>
+    <text class="connection-label code" x="213" y="1168" xml:space="preserve"><tspan x="213" dy="0">root</tspan></text>
+    <text class="connection-label code" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">number</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="254" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="186" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label code" x="213" y="390" xml:space="preserve"><tspan x="213" dy="0">mut guess</tspan></text>
+    <text class="connection-label code" x="213" y="600" xml:space="preserve"><tspan x="213" dy="0">quotient</tspan></text>
+    <text class="connection-label code" x="213" y="738" xml:space="preserve"><tspan x="213" dy="0">next</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="884" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="816" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label code" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">positive, number</tspan></text>
+    <text class="connection-label code" x="213" y="505" xml:space="preserve"><tspan x="213" dy="0">number, guess</tspan></text>
+    <text class="connection-label code" x="213" y="643" xml:space="preserve"><tspan x="213" dy="0">guess, quotient</tspan></text>
+    <text class="connection-label code" x="213" y="781" xml:space="preserve"><tspan x="213" dy="0">next, guess</tspan></text>
+    <text class="connection-label code" x="213" y="925" xml:space="preserve"><tspan x="213" dy="0">done, guess</tspan></text>
+    <text class="connection-label code" x="573" y="925" xml:space="preserve"><tspan x="573" dy="0">again, next, &amp;mut guess</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">number: u64</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 1150)">
+      <title xml:space="preserve">the root merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <g class="label code">
+        <text class="md-badge" x="-52.08" y="5.16" text-anchor="middle">~</text>
+        <text x="-45.08" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> middle_exit</tspan></text>
+      </g>
+    </g>
+    <g class="node question" transform="translate(200 198)">
+      <title xml:space="preserve">Is the number positive?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is the number positive?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 339)">
+      <title xml:space="preserve">🤔 Start with a guess at or above the square root.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🤔 Start with a guess at or above </tspan><tspan x="-124" dy="18">the square root.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 549)">
+      <title xml:space="preserve">Divide the number by the current guess.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Divide the number by the current </tspan><tspan x="-124" dy="18">guess.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 687)">
+      <title xml:space="preserve">⚖️ Average the guess and quotient to get a new guess.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">⚖️ Average the guess and quotient </tspan><tspan x="-124" dy="18">to get a new guess.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(200 828)">
+      <title xml:space="preserve">Is the new guess at least as large as the current one?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">Is the new guess at least </tspan><tspan x="0" dy="18">as large as the current one?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 969)">
+      <title xml:space="preserve">✅ Use the current guess as the integer square root.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">✅ Use the current guess as the </tspan><tspan x="-124" dy="18">integer square root.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 969)">
+      <title xml:space="preserve">🔽 Replace the current guess with the smaller new guess.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">🔽 Replace the current guess with </tspan><tspan x="-124" dy="18">the smaller new guess.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(920 339)">
+      <title xml:space="preserve">⭕ The square root of zero is zero.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">⭕ The square root of zero is zero.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 1255)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u64</tspan></text>
+    </g>
+  </g>
+</svg>

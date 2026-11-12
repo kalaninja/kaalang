@@ -17,6 +17,7 @@ pub fn flow(source: &str) -> ItemFn {
     kaalang_compiler::flows(&file.items)
         .pop()
         .expect("the generated source declares a flow")
+        .function
 }
 
 /// The generated shapes every budget expects to be drawn, each with what it
@@ -39,7 +40,7 @@ pub fn accepted() -> Vec<(String, String, &'static str)> {
         )))
         .chain(std::iter::once((
             "staged flow with a cycle".to_owned(),
-            include_str!("../../kaalang/tests/stage/behavior/digital_root.rs").to_owned(),
+            include_str!("../../kaalang/tests/flow/stage/digital_root.rs").to_owned(),
             "digital_root",
         )))
         .collect()
@@ -60,7 +61,7 @@ fn open_level(depth: usize) -> String {
     } else {
         format!("let _leave_{depth} = |stay_{}| loop {{", depth - 1)
     };
-    format!("{pad}#[cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
+    format!("{pad}#[kaa::cycle(\"Level {depth}.\")]\n{pad}{opening}\n")
 }
 
 /// Closes every level [`open_level`] opened, innermost first, each after the
@@ -86,7 +87,7 @@ pub fn nested_cycles(cycles: usize, actions: usize, empty_tail: bool) -> String 
     for depth in 0..cycles {
         let pad = indent(depth);
         body.push_str(&open_level(depth));
-        let _ = writeln!(body, "{pad}    #[question(\"Leave level {depth}?\")]");
+        let _ = writeln!(body, "{pad}    #[kaa::question(\"Leave level {depth}?\")]");
         let _ = writeln!(
             body,
             "{pad}    let (stay_{depth}, _leave_{depth}) = |step| step > {depth};"
@@ -95,18 +96,21 @@ pub fn nested_cycles(cycles: usize, actions: usize, empty_tail: bool) -> String 
     let deepest = cycles - 1;
     let pad = indent(deepest);
     if !empty_tail {
-        let _ = writeln!(body, "{pad}    #[action(\"Work at the deepest level.\")]");
+        let _ = writeln!(
+            body,
+            "{pad}    #[kaa::action(\"Work at the deepest level.\")]"
+        );
         let _ = writeln!(body, "{pad}    |stay_{deepest}| ();");
     }
     close_levels(&mut body, cycles);
     for index in 0..actions {
-        let _ = writeln!(body, "    #[action(\"Step {index}.\")]");
+        let _ = writeln!(body, "    #[kaa::action(\"Step {index}.\")]");
         let _ = writeln!(body, "    let step_{index} = || {index}usize;");
-        let _ = writeln!(body, "    #[action(\"Use step {index}.\")]");
+        let _ = writeln!(body, "    #[kaa::action(\"Use step {index}.\")]");
         let _ = writeln!(body, "    |step_{index}| ();");
     }
     let _ = writeln!(body, "    |step| return step;");
-    format!("#[kaalang]\nfn nested_cycles(step: usize) -> usize {{\n{body}}}\n")
+    format!("#[kaa]\nfn nested_cycles(step: usize) -> usize {{\n{body}}}\n")
 }
 
 /// A chain of `levels` questions, each selecting between two actions that
@@ -131,20 +135,21 @@ pub fn data_branching(levels: usize) -> String {
 /// side effects, and captures of inputs and earlier merged values.
 #[must_use]
 pub fn branching_with_work(levels: usize) -> String {
-    let mut body =
-        String::from("    #[action(\"Prepare the seed.\")]\n    let prepared = |seed| seed;\n");
+    let mut body = String::from(
+        "    #[kaa::action(\"Prepare the seed.\")]\n    let prepared = |seed| seed;\n",
+    );
     let mut wire = "prepared".to_owned();
     for level in 0..levels {
         let branches = if level % 2 == 0 { 2 } else { 3 };
         if branches == 2 {
             let _ = writeln!(
                 body,
-                "    #[question(\"Choose work {level}.\")]\n    let (case_{level}_0, case_{level}_1) = |&config| *config & 1 == 0;"
+                "    #[kaa::question(\"Choose work {level}.\")]\n    let (case_{level}_0, case_{level}_1) = |&config| *config & 1 == 0;"
             );
         } else {
             let _ = writeln!(
                 body,
-                "    #[choice(\"Choose work {level}.\")]\n    #[case(\"First.\")]\n    #[case(\"Second.\")]\n    #[case(\"Third.\")]\n    let (case_{level}_0, case_{level}_1, case_{level}_2) = |&config| match *config % 3 {{ 0 => (), 1 => (), _ => () }};"
+                "    #[kaa::choice(\"Choose work {level}.\")]\n    #[kaa::case(\"First.\")]\n    #[kaa::case(\"Second.\")]\n    #[kaa::case(\"Third.\")]\n    let (case_{level}_0, case_{level}_1, case_{level}_2) = |&config| match *config % 3 {{ 0 => (), 1 => (), _ => () }};"
             );
         }
         let earlier = if level > 1 {
@@ -170,27 +175,27 @@ pub fn branching_with_work(levels: usize) -> String {
             };
             let _ = writeln!(
                 body,
-                "    #[action(\"Prepare branch {level}/{branch}.\")]\n    let data_{level}_{branch} = |case_{level}_{branch}, &{wire}, &config{older}| *{wire} + *config{added}{offset};"
+                "    #[kaa::action(\"Prepare branch {level}/{branch}.\")]\n    let data_{level}_{branch} = |case_{level}_{branch}, &{wire}, &config{older}| *{wire} + *config{added}{offset};"
             );
             let mut data = format!("data_{level}_{branch}");
             for step in 0..branch {
                 let next = format!("data_{level}_{branch}_{step}");
                 let _ = writeln!(
                     body,
-                    "    #[call(\"Transform branch {level}/{branch}/{step}.\")]\n    let {next} = |{data}| std::convert::identity({data});"
+                    "    #[kaa::call(\"Transform branch {level}/{branch}/{step}.\")]\n    let {next} = |{data}| std::convert::identity({data});"
                 );
                 data = next;
             }
             let _ = writeln!(
                 body,
-                "    #[action(\"Record branch {level}/{branch}.\")]\n    let effect_{level}_{branch} = |&{data}, &events| {{ assert_eq!(events.get(), (1usize << {level}) - 1); events.set(events.get() | (1usize << {level})); }};\n    #[action(\"Finish branch {level}/{branch}.\")]\n    let step_{level} = |{data}, effect_{level}_{branch}| {data};"
+                "    #[kaa::action(\"Record branch {level}/{branch}.\")]\n    let effect_{level}_{branch} = |&{data}, &events| {{ assert_eq!(events.get(), (1usize << {level}) - 1); events.set(events.get() | (1usize << {level})); }};\n    #[kaa::action(\"Finish branch {level}/{branch}.\")]\n    let step_{level} = |{data}, effect_{level}_{branch}| {data};"
             );
         }
         wire = format!("step_{level}");
     }
     let _ = writeln!(body, "    |{wire}| return {wire};");
     format!(
-        "#[kaalang]\nfn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {{\n{body}}}\n"
+        "#[kaa]\nfn branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>) -> usize {{\n{body}}}\n"
     )
 }
 
@@ -206,7 +211,7 @@ pub fn cyclic_branching_with_work(levels: usize) -> String {
     let body = &source[source.find('{').expect("the probe has a body") + 1
         ..source.rfind('}').expect("the probe closes")];
     let mut body = body.replace("|seed| seed;", "|work, seed| seed;")
-        .replace(&format!("|step_{}| return step_{};", levels - 1, levels - 1), &format!("#[question(\"Which result?\")] let (pick_left, pick_right) = |&step_{}, &config| *config & 1 == 0;\n#[action(\"Left result.\")] let left = |pick_left, step_{}| step_{};\n#[action(\"Right result.\")] let right = |pick_right, step_{}| (step_{},);", levels - 1, levels - 1, levels - 1, levels - 1, levels - 1));
+        .replace(&format!("|step_{}| return step_{};", levels - 1, levels - 1), &format!("#[kaa::question(\"Which result?\")] let (pick_left, pick_right) = |&step_{}, &config| *config & 1 == 0;\n#[kaa::action(\"Left result.\")] let left = |pick_left, step_{}| step_{};\n#[kaa::action(\"Right result.\")] let right = |pick_right, step_{}| (step_{},);", levels - 1, levels - 1, levels - 1, levels - 1, levels - 1));
     for level in 0..levels {
         let branches = if level % 2 == 0 { 2 } else { 3 };
         let cases = (0..branches)
@@ -224,7 +229,7 @@ pub fn cyclic_branching_with_work(levels: usize) -> String {
         );
     }
     format!(
-        "#[kaalang] fn cyclic_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n#[cycle(\"Repeat before working.\")] let (left, right) = || loop {{\n#[question(\"Repeat?\")] let (again, work) = |&remaining| remaining.get() > 0;\n#[action(\"Count the repeat.\")] let repeated = |again, &remaining| remaining.set(remaining.get() - 1);\n|repeated| continue;\n{body}\n}};\n#[action(\"Use the left result.\")] let result = |left| left;\n#[action(\"Use the right result.\")] let result = |right| right.0;\n|result| return result;\n}}"
+        "#[kaa] fn cyclic_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n#[kaa::cycle(\"Repeat before working.\")] let (left, right) = || loop {{\n#[kaa::question(\"Repeat?\")] let (again, work) = |&remaining| remaining.get() > 0;\n#[kaa::action(\"Count the repeat.\")] let repeated = |again, &remaining| remaining.set(remaining.get() - 1);\n|repeated| continue;\n{body}\n}};\n#[kaa::action(\"Use the left result.\")] let result = |left| left;\n#[kaa::action(\"Use the right result.\")] let result = |right| right.0;\n|result| return result;\n}}"
     )
 }
 
@@ -241,7 +246,7 @@ pub fn staged_branching_with_work(levels: usize) -> String {
     let preparation = preparation.replace(
         &format!("|step_{}| return step_{};", levels - 1, levels - 1),
         &format!(
-            "#[action(\"Enter the work stage.\")] let entry = |step_{}| step_{};",
+            "#[kaa::action(\"Enter the work stage.\")] let entry = |step_{}| step_{};",
             levels - 1,
             levels - 1
         ),
@@ -268,7 +273,7 @@ pub fn staged_branching_with_work(levels: usize) -> String {
         )
         .replace("|result| return result;", "");
     format!(
-        "#[kaalang] fn staged_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n{preparation}\n#[stage(\"Do more work.\")] let (finish_left, finish_right) = |entry| {{\n#[action(\"Reset the stage effects.\")] let reset = |entry, &events| events.set(0);\n{body}\n}};\n#[stage(\"Finish on the left.\")] let finish_right = |finish_left| {{ #[action(\"Forward the left result.\")] let finish_right = |finish_left| finish_left; }};\n#[stage(\"Finish on the right.\")] |finish_right| {{ |finish_right| return finish_right; }};\n}}"
+        "#[kaa] fn staged_branching_with_work(seed: usize, config: usize, events: &std::cell::Cell<usize>, remaining: &std::cell::Cell<usize>) -> usize {{\n{preparation}\n#[kaa::stage(\"Do more work.\")] let (finish_left, finish_right) = |entry| {{\n#[kaa::action(\"Reset the stage effects.\")] let reset = |entry, &events| events.set(0);\n{body}\n}};\n#[kaa::stage(\"Finish on the left.\")] let finish_right = |finish_left| {{ #[kaa::action(\"Forward the left result.\")] let finish_right = |finish_left| finish_left; }};\n#[kaa::stage(\"Finish on the right.\")] |finish_right| {{ |finish_right| return finish_right; }};\n}}"
     )
 }
 
@@ -276,7 +281,7 @@ fn serial_branching(levels: usize, data: bool) -> String {
     let mut body = String::new();
     let mut wire = "seed".to_owned();
     for level in 0..levels {
-        let _ = writeln!(body, "    #[question(\"Take branch {level}?\")]");
+        let _ = writeln!(body, "    #[kaa::question(\"Take branch {level}?\")]");
         let input = if data {
             format!("&{wire}")
         } else {
@@ -308,16 +313,16 @@ fn serial_branching(levels: usize, data: bool) -> String {
         };
         let _ = writeln!(
             body,
-            "    #[action(\"Build the yes value of {level}.\")]
+            "    #[kaa::action(\"Build the yes value of {level}.\")]
     let step_{level} = |{yes}| {value};"
         );
         let _ = writeln!(
             body,
-            "    #[action(\"Build the no value of {level}.\")]
+            "    #[kaa::action(\"Build the no value of {level}.\")]
     let step_{level} = |{no}| {value} + 1;"
         );
         wire = format!("step_{level}");
     }
     let _ = writeln!(body, "    |{wire}| return {wire};");
-    format!("#[kaalang]\nfn branching(seed: usize) -> usize {{\n{body}}}\n")
+    format!("#[kaa]\nfn branching(seed: usize) -> usize {{\n{body}}}\n")
 }

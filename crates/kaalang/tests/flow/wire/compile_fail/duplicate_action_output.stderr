@@ -1,0 +1,5 @@
+error: duplicate kaalang block output
+ --> tests/flow/wire/compile_fail/duplicate_action_output.rs:6:15
+  |
+6 |     let (end, end) = |input| { (input, input) };
+  |               ^^^

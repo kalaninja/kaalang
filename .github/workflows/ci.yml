@@ -51,7 +51,7 @@ jobs:
       - uses: extractions/setup-just@v3
       - run: just rust clippy
       - run: just rust test
-      # The behavior diagrams redraw themselves during the tests above.
+      - run: just rust svg
       - run: git add -A && git diff --cached --exit-code
 
   # Linux containers do not run on these runners, so they install the same
@@ -77,6 +77,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo test -p kaalang --test diagrams -- --ignored
       - run: git add -A && git diff --cached --exit-code
 
   msrv:

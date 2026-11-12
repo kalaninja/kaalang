@@ -9,6 +9,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cargo-platform = { workspace = true }
 kaalang-compiler = { workspace = true }
 kaalang-render = { workspace = true }
 latex-rust = { workspace = true }
@@ -19,6 +20,7 @@ unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
 kaalang-testing = { workspace = true }
+quote = { workspace = true }
 
 [lints]
 workspace = true

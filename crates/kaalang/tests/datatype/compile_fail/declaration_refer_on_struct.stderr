@@ -1,0 +1,5 @@
+error: only a type alias takes a declaration-level `refer`; put it on a field
+ --> tests/datatype/compile_fail/declaration_refer_on_struct.rs:7:1
+  |
+7 | #[kaa::refer(Member, "The member the key names.")]
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

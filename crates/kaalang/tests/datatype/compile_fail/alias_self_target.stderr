@@ -1,0 +1,5 @@
+error: a type alias has no `Self`
+ --> tests/datatype/compile_fail/alias_self_target.rs:7:14
+  |
+7 | #[kaa::refer(Self, "The outline's sections.")]
+  |              ^^^^

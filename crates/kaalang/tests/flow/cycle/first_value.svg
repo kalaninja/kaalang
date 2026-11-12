@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="612" viewBox="0 0 760 612" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for first_value</title>
+  <desc id="kaalang-description">Cycles: Find the first value. with inputs values and outputs selected. Nodes: Start: first_value with parameters values: &amp;[i32] handing over values; Question: Is there a first value? capturing values handing over iterate_1 / leave_1 described as branch 1: YES / branch 2: NO; Action: Report that no first value exists. capturing leave_1 handing over selected; Action: Produce the first value. capturing iterate_1, values handing over selected; End: Option&lt;i32&gt; capturing selected; Merge: selected. Connections: Start: first_value to Question: Is there a first value?; Question: Is there a first value? branch 1 to Action: Produce the first value.; Question: Is there a first value? branch 2 to Action: Report that no first value exists.; Action: Report that no first value exists. to the selected merge at the cycle result; Action: Produce the first value. to the selected merge at the cycle result; the selected merge at the cycle result to End: Option&lt;i32&gt;.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+    <g>
+      <title xml:space="preserve">Find the first value.</title>
+    <rect class="cycle-boundary" x="32" y="127" width="696" height="354" rx="12"/>
+    <text class="cycle-caption" x="716" y="141" text-anchor="end" xml:space="preserve"><tspan x="716" dy="0">Find the first value.</tspan></text>
+    </g>
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 200 90 L 200 162
+      M 200 234 L 200 306
+      M 340 198 L 560 198 L 560 306
+      M 560 370 L 560 446 L 200 446
+      M 200 370 L 200 446
+      M 200 446 L 200 522
+    "/>
+    <text class="connection-label code" x="213" y="464" xml:space="preserve"><tspan x="213" dy="0">selected</tspan></text>
+    <text class="connection-label code" x="213" y="151" xml:space="preserve"><tspan x="213" dy="0">values</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="213" y="254" xml:space="preserve"><tspan x="213" dy="0">YES</tspan></text>
+    <text class="connection-label branch-label" style="font-size: 14px" x="353" y="186" xml:space="preserve"><tspan x="353" dy="0">NO</tspan></text>
+    <text class="connection-label code" x="213" y="295" xml:space="preserve"><tspan x="213" dy="0">iterate_1, values</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 340 61 L 436 61"/>
+    <g class="parameter-panel" transform="translate(556 61)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">values: &amp;[i32]</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(200 446)">
+      <title xml:space="preserve">the selected merge at the cycle result</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(200 61)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <g class="label code">
+        <text class="md-badge" x="-52.08" y="5.16" text-anchor="middle">−</text>
+        <text x="-45.08" y="6" text-anchor="start" xml:space="preserve"><tspan class="md-code"> first_value</tspan></text>
+      </g>
+    </g>
+    <g class="node question" transform="translate(200 198)">
+      <title xml:space="preserve">Is there a first value?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is there a first value?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(560 338)">
+      <title xml:space="preserve">Report that no first value exists.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Report that no first value exists.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(200 338)">
+      <title xml:space="preserve">Produce the first value.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Produce the first value.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(200 551)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">Option&lt;i32&gt;</tspan></text>
+    </g>
+  </g>
+</svg>

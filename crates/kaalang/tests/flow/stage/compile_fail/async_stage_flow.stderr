@@ -1,0 +1,5 @@
+error: kaalang does not support async flows
+ --> tests/flow/stage/compile_fail/async_stage_flow.rs:4:1
+  |
+4 | async fn async_stage_flow(go: ()) {
+  | ^^^^^

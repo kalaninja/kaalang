@@ -197,17 +197,17 @@ mod tests {
     fn a_cycle_lists_its_gate_then_each_outer_capture_once() {
         let mut flow = crate::parse::flow(&parse_quote! {
             fn probe(a: u32, b: u32, go: bool) {
-                #[cycle("Run the outer cycle.")]
+                #[kaa::cycle("Run the outer cycle.")]
                 |go| loop {
-                    #[action("Use b and the gate.")]
+                    #[kaa::action("Use b and the gate.")]
                     |b, go| {};
 
-                    #[action("Produce a local.")]
+                    #[kaa::action("Produce a local.")]
                     let local = || 1;
 
-                    #[cycle("Run the inner cycle.")]
+                    #[kaa::cycle("Run the inner cycle.")]
                     loop {
-                        #[action("Use a, b and the local.")]
+                        #[kaa::action("Use a, b and the local.")]
                         |&a, &mut b, local| {};
 
                         continue;

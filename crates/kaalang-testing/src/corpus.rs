@@ -1,5 +1,5 @@
 //! Loads executable fixture flows from `crates/kaalang/tests`, keeping the
-//! performance corpus in sync with behavior tests, gallery examples, and stress fixtures.
+//! performance corpus in sync with flow fixtures and stress fixtures.
 
 use std::{
     fs,
@@ -11,7 +11,7 @@ use syn::ItemFn;
 /// Fixture suites to load.
 #[derive(Clone, Copy)]
 pub enum Suite {
-    /// Behavior tests and gallery examples outside the stress suite.
+    /// Flow fixtures outside the stress suite.
     Ordinary,
     /// Hand-written stress fixtures.
     Stress,
@@ -52,7 +52,10 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
                 .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             kaalang_compiler::flows(&file.items)
                 .into_iter()
-                .map(|function| (function.sig.ident.to_string(), function, is_stress(path)))
+                .map(|flow| {
+                    let name = flow.function.sig.ident.to_string();
+                    (name, flow.function, is_stress(path))
+                })
         })
         .collect();
     flows.sort_by(|a, b| a.0.cmp(&b.0));
@@ -69,8 +72,9 @@ pub fn flow_named(source: &str, name: &str) -> ItemFn {
     let file = syn::parse_file(source).expect("the fixture parses");
     kaalang_compiler::flows(&file.items)
         .into_iter()
-        .find(|function| function.sig.ident == name)
+        .find(|flow| flow.path == name)
         .expect("the fixture declares the flow")
+        .function
 }
 
 fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {

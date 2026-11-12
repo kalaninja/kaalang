@@ -6,25 +6,25 @@ use std::ops::RangeInclusive;
 
 /// Four cycles nested one inside the next, whose back edges climb the same side
 /// in four lanes. The outermost takes lane 3, which no fixture reaches.
-pub const FOUR_LANES: &str = r#"#[kaalang]
+pub const FOUR_LANES: &str = r#"#[kaa]
 fn deep(mut step: usize) -> usize {
-    #[cycle("Repeat the first cycle.")]
+    #[kaa::cycle("Repeat the first cycle.")]
     let leave_0 = |step| loop {
-        #[question("Leave the first?")]
+        #[kaa::question("Leave the first?")]
         let (stay_0, leave_0) = |&step| *step > 0;
-        #[cycle("Repeat the second cycle.")]
+        #[kaa::cycle("Repeat the second cycle.")]
         let leave_1 = |stay_0| loop {
-            #[question("Leave the second?")]
+            #[kaa::question("Leave the second?")]
             let (stay_1, leave_1) = |&step| *step > 1;
-            #[cycle("Repeat the third cycle.")]
+            #[kaa::cycle("Repeat the third cycle.")]
             let leave_2 = |stay_1| loop {
-                #[question("Leave the third?")]
+                #[kaa::question("Leave the third?")]
                 let (stay_2, leave_2) = |&step| *step > 2;
-                #[cycle("Repeat the fourth cycle.")]
+                #[kaa::cycle("Repeat the fourth cycle.")]
                 let leave_3 = |stay_2| loop {
-                    #[question("Leave the fourth?")]
+                    #[kaa::question("Leave the fourth?")]
                     let (stay_3, leave_3) = |&step| *step > 3;
-                    #[action("Advance at the deepest level.")]
+                    #[kaa::action("Advance at the deepest level.")]
                     |stay_3, &mut step| *step += 1;
                     |stay_3| continue;
                 };
@@ -89,13 +89,13 @@ fn cycle_routes_with(routes: &[&str], choice: &str) -> String {
         .enumerate()
         .map(|(index, route)| match *route {
             "leave" => format!(
-                "        #[action(\"Keep the mode from case {index}.\")]\n        let completed = |case_{index}, mode| mode;"
+                "        #[kaa::action(\"Keep the mode from case {index}.\")]\n        let completed = |case_{index}, mode| mode;"
             ),
             "finish" => format!(
-                "        #[action(\"Finish from case {index}.\")]\n        let completed = |case_{index}| 7;"
+                "        #[kaa::action(\"Finish from case {index}.\")]\n        let completed = |case_{index}| 7;"
             ),
             "repeat" => format!(
-                "        #[action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
+                "        #[kaa::action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
             ),
             other => panic!("unknown route {other} in {routes:?}"),
         })
@@ -134,7 +134,7 @@ fn cycle_flow(
         ("", "")
     };
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"{caption}\")]\n    {output}|mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[kaa::cycle(\"{caption}\")]\n    {output}|mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};{after}\n}}\n"
     )
 }
 
@@ -161,10 +161,10 @@ fn alternative(routes: &[&str]) -> String {
         .enumerate()
         .map(|(index, route)| match *route {
             "repeat" => format!(
-                "        #[action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
+                "        #[kaa::action(\"Advance in case {index}.\")]\n        let again = |case_{index}| ();"
             ),
             output => format!(
-                "        #[action(\"Export {output} from case {index}.\")]\n        let {output} = |case_{index}| {index}u8;"
+                "        #[kaa::action(\"Export {output} from case {index}.\")]\n        let {output} = |case_{index}| {index}u8;"
             ),
         })
         .collect::<Vec<_>>()
@@ -176,7 +176,7 @@ fn alternative(routes: &[&str]) -> String {
     };
     let selection = selection(routes, "case_");
     format!(
-        "fn probe(mode: u8) -> u8 {{\n    #[cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
+        "fn probe(mode: u8) -> u8 {{\n    #[kaa::cycle(\"Exercise the generated outputs.\")]\n    let (first, second) = |mode| loop {{\n{selection}\n{bodies}{transfer}\n    }};\n    #[kaa::action(\"Continue the first output.\")]\n    let result = |first| first;\n    #[kaa::action(\"Continue the second output.\")]\n    let result = |second| second + 100;\n    |result| return result;\n}}\n"
     )
 }
 
@@ -226,7 +226,7 @@ fn bypassed_cycle(outputs: usize, joined: usize, bypass_first: bool, repeats: bo
         .iter()
         .map(|output| {
             format!(
-                "    #[action(\"Join output {output}.\")]\n    let joined = |out_{output}| {output}u8;\n"
+                "    #[kaa::action(\"Join output {output}.\")]\n    let joined = |out_{output}| {output}u8;\n"
             )
         })
         .collect::<Vec<_>>()
@@ -235,14 +235,14 @@ fn bypassed_cycle(outputs: usize, joined: usize, bypass_first: bool, repeats: bo
         .iter()
         .map(|output| {
             format!(
-                "    #[action(\"Keep output {output}.\")]\n    let result = |out_{output}| {}u8;\n",
+                "    #[kaa::action(\"Keep output {output}.\")]\n    let result = |out_{output}| {}u8;\n",
                 output + 10
             )
         })
         .collect::<Vec<_>>()
         .concat();
     format!(
-        "fn probe(flag: bool, mode: u8) -> u8 {{\n    #[question(\"Bypass the cycle?\")]\n    {question}\n    #[cycle(\"Select an output.\")]\n    let ({declared}) = |enter| loop {{\n{selection}{transfer}\n    }};\n    #[action(\"Bypass.\")]\n    let joined = |bypass| 100u8;\n{merged}    #[action(\"Use the joined value.\")]\n    let result = |joined| joined + 1;\n{kept}    |result| return result;\n}}\n"
+        "fn probe(flag: bool, mode: u8) -> u8 {{\n    #[kaa::question(\"Bypass the cycle?\")]\n    {question}\n    #[kaa::cycle(\"Select an output.\")]\n    let ({declared}) = |enter| loop {{\n{selection}{transfer}\n    }};\n    #[kaa::action(\"Bypass.\")]\n    let joined = |bypass| 100u8;\n{merged}    #[kaa::action(\"Use the joined value.\")]\n    let result = |joined| joined + 1;\n{kept}    |result| return result;\n}}\n"
     )
 }
 
@@ -251,7 +251,7 @@ fn selection(routes: &[&str], prefix: &str) -> String {
     let cases = routes
         .iter()
         .enumerate()
-        .map(|(index, route)| format!("        #[case(\"Case {prefix}{index} {route}.\")]"))
+        .map(|(index, route)| format!("        #[kaa::case(\"Case {prefix}{index} {route}.\")]"))
         .collect::<Vec<_>>()
         .join("\n");
     let outputs = (0..routes.len())
@@ -269,7 +269,7 @@ fn selection(routes: &[&str], prefix: &str) -> String {
         .collect::<Vec<_>>()
         .join("\n");
     format!(
-        "        #[choice(\"Which {prefix} route?\")]\n{cases}\n        let ({outputs}) = |mode| match mode {{\n{arms}\n        }};"
+        "        #[kaa::choice(\"Which {prefix} route?\")]\n{cases}\n        let ({outputs}) = |mode| match mode {{\n{arms}\n        }};"
     )
 }
 
@@ -293,19 +293,19 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .enumerate()
         .map(|(index, route)| match (*route, propagates) {
             ("leave", false) => format!(
-                "        #[action(\"Complete the inner cycle from i{index}.\")]\n        let again = |i{index}| ();"
+                "        #[kaa::action(\"Complete the inner cycle from i{index}.\")]\n        let again = |i{index}| ();"
             ),
             ("leave", true) => format!(
-                "        #[action(\"Complete only the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| None;"
+                "        #[kaa::action(\"Complete only the inner cycle from i{index}.\")]\n        let inner_value = |i{index}| None;"
             ),
             ("propagate", _) => format!(
-                "        #[action(\"Complete the outer cycle from i{index}.\")]\n        let inner_value = |i{index}, mode| Some(mode);"
+                "        #[kaa::action(\"Complete the outer cycle from i{index}.\")]\n        let inner_value = |i{index}, mode| Some(mode);"
             ),
             ("finish", _) => format!(
-                "        #[action(\"Finish from i{index}.\")]\n        let inner_value = |i{index}| Some(7);"
+                "        #[kaa::action(\"Finish from i{index}.\")]\n        let inner_value = |i{index}| Some(7);"
             ),
             ("repeat", _) => format!(
-                "        #[action(\"Advance in i{index}.\")]\n        let inner_again = |i{index}| ();"
+                "        #[kaa::action(\"Advance in i{index}.\")]\n        let inner_again = |i{index}| ();"
             ),
             (other, _) => panic!("unknown inner route {other} in {inner:?}"),
         })
@@ -324,15 +324,15 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
     let inner_cycle = |index: usize| {
         if propagates {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
+                "        #[kaa::cycle(\"Exercise the generated inner routes.\")]\n        let inner_value = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};\n        #[kaa::question(\"Should the inner result complete the outer cycle?\")]\n        let (finish_outer, again) = |&inner_value| inner_value.is_some();\n        #[kaa::action(\"Extract the propagated inner result.\")]\n        let completed = |finish_outer, inner_value| inner_value.unwrap();"
             )
         } else if inner_completes {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[kaa::cycle(\"Exercise the generated inner routes.\")]\n        let again = |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         } else {
             format!(
-                "        #[cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
+                "        #[kaa::cycle(\"Exercise the generated inner routes.\")]\n        |o{index}| loop {{\n{inner_selection}\n{inner_bodies}{inner_transfer}\n        }};"
             )
         }
     };
@@ -342,14 +342,14 @@ pub fn nested(outer: &[&str], inner: &[&str]) -> String {
         .enumerate()
         .map(|(index, route)| match *route {
             "leave" => format!(
-                "        #[action(\"Keep the mode from o{index}.\")]\n        let completed = |o{index}, mode| mode;"
+                "        #[kaa::action(\"Keep the mode from o{index}.\")]\n        let completed = |o{index}, mode| mode;"
             ),
             "finish" => format!(
-                "        #[action(\"Finish from o{index}.\")]\n        let completed = |o{index}| 7;"
+                "        #[kaa::action(\"Finish from o{index}.\")]\n        let completed = |o{index}| 7;"
             ),
             "inner" => inner_cycle(index),
             "repeat" => format!(
-                "        #[action(\"Advance in o{index}.\")]\n        let again = |o{index}| ();"
+                "        #[kaa::action(\"Advance in o{index}.\")]\n        let again = |o{index}| ();"
             ),
             other => panic!("unknown outer route {other} in {outer:?}"),
         })
@@ -416,9 +416,9 @@ pub fn cycle_shapes() -> Vec<String> {
 ///
 #[must_use]
 pub fn question_shapes() -> Vec<String> {
-    const QUESTIONS: &str = r#"        #[question("Take the first route?")]
+    const QUESTIONS: &str = r#"        #[kaa::question("Take the first route?")]
         let (case_0, other) = |mode| mode == 0;
-        #[question("Take the second route?")]
+        #[kaa::question("Take the second route?")]
         let (case_1, case_2) = |other, mode| mode == 1;"#;
     combinations(&ROUTES, 3)
         .iter()
@@ -432,56 +432,56 @@ pub fn question_shapes() -> Vec<String> {
 #[must_use]
 pub fn staged_shapes() -> Vec<String> {
     const GRAPH: &str = r#"
-        #[kaalang]
+        #[kaa]
         fn probe(INPUT: u8) -> u8 {
             PREPARATION
 
-            #[stage("First.")]
+            #[kaa::stage("First.")]
             let (first, second, finish) = |first| {
                 FIRST_VALUE
-                #[choice("Choose the first route.")]
-                #[case("Stay.")]
-                #[case("Advance.")]
-                #[case("Finish.")]
+                #[kaa::choice("Choose the first route.")]
+                #[kaa::case("Stay.")]
+                #[kaa::case("Advance.")]
+                #[kaa::case("Finish.")]
                 let (stay, advance, done) = |current| match current % 3 {
                     0 => (),
                     1 => (),
                     _ => (),
                 };
-                #[action("Stay at first.")]
+                #[kaa::action("Stay at first.")]
                 let first = |stay, current| current;
-                #[action("Advance to second.")]
+                #[kaa::action("Advance to second.")]
                 let second = |advance, current| current;
-                #[action("Finish from first.")]
+                #[kaa::action("Finish from first.")]
                 let finish = |done, current| current;
             };
 
-            #[stage("Second.")]
+            #[kaa::stage("Second.")]
             let (first, second, finish) = |second| {
-                #[action("Read the second entry.")]
+                #[kaa::action("Read the second entry.")]
                 let current = |second| second;
-                #[choice("Choose the second route.")]
-                #[case("Go back.")]
-                #[case("Stay.")]
-                #[case("Finish.")]
-                #[case("Diverge.")]
+                #[kaa::choice("Choose the second route.")]
+                #[kaa::case("Go back.")]
+                #[kaa::case("Stay.")]
+                #[kaa::case("Finish.")]
+                #[kaa::case("Diverge.")]
                 let (back, stay, done, diverge) = |current| match current % 4 {
                     0 => (),
                     1 => (),
                     2 => (),
                     _ => (),
                 };
-                #[action("Return to first.")]
+                #[kaa::action("Return to first.")]
                 let first = |back, current| current;
-                #[action("Stay at second.")]
+                #[kaa::action("Stay at second.")]
                 let second = |stay, current| current;
-                #[action("Finish from second.")]
+                #[kaa::action("Finish from second.")]
                 let finish = |done, current| current;
-                #[cycle("Diverge in second.")]
+                #[kaa::cycle("Diverge in second.")]
                 |diverge| loop { continue; };
             };
 
-            #[stage("Return.")]
+            #[kaa::stage("Return.")]
             |finish| { |finish| return finish; };
         }
     "#;
@@ -491,22 +491,22 @@ pub fn staged_shapes() -> Vec<String> {
             .replace("PREPARATION", preparation)
             .replace("FIRST_VALUE", first_value)
     };
-    let read = "#[action(\"Read the first entry.\")] let current = |first| first;";
+    let read = "#[kaa::action(\"Read the first entry.\")] let current = |first| first;";
     vec![
         shape("first", "", read),
         shape(
             "seed",
-            "#[cycle(\"Prepare without a gate.\")] let first = loop { #[action(\"Copy the seed.\")] let first = |seed| seed; };",
+            "#[kaa::cycle(\"Prepare without a gate.\")] let first = loop { #[kaa::action(\"Copy the seed.\")] let first = |seed| seed; };",
             read,
         ),
         shape(
             "first",
             "",
-            "#[cycle(\"Read or repeat.\")] let current = |first| loop { #[question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[action(\"Use the entry.\")] let current = |ready, first| first; };",
+            "#[kaa::cycle(\"Read or repeat.\")] let current = |first| loop { #[kaa::question(\"Repeat?\")] let (retry, ready) = |first| first == 255; |retry| continue; #[kaa::action(\"Use the entry.\")] let current = |ready, first| first; };",
         ),
-        include_str!("../../kaalang/tests/stage/behavior/stage_cycle_alternative_outputs.rs")
+        include_str!("../../kaalang/tests/flow/stage/stage_cycle_alternative_outputs.rs")
             .to_owned(),
-        include_str!("../../kaalang/tests/stage/behavior/nested_stage_alternative_outputs.rs")
+        include_str!("../../kaalang/tests/flow/stage/nested_stage_alternative_outputs.rs")
             .to_owned(),
     ]
 }

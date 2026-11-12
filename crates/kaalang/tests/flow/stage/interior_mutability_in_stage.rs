@@ -1,0 +1,23 @@
+use std::cell::Cell;
+
+use kaalang::kaa;
+#[kaa]
+fn interior_mutability_in_stage(go: Cell<u8>) -> u8 {
+    #[kaa::stage("Update the cell.")]
+    let finish = |go| {
+        #[kaa::action("Change the inner value.")]
+        let finish = |go| {
+            go.set(go.get() + 1);
+            go.get()
+        };
+    };
+
+    #[kaa::stage("Return the new value.")]
+    |finish| {
+        |finish| return finish;
+    };
+}
+#[test]
+fn an_immutable_entry_can_hold_interior_mutability() {
+    assert_eq!(interior_mutability_in_stage(Cell::new(4)), 5);
+}

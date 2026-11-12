@@ -1,0 +1,5 @@
+error: a field takes one `value` or `refer` annotation
+ --> tests/datatype/conditional_compilation/compile_fail/active_duplicate.rs:6:5
+  |
+6 |     #[cfg_attr(all(), kaa::value("The second description."))]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

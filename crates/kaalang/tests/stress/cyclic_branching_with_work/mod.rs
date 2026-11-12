@@ -1,186 +1,186 @@
 use std::cell::Cell;
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 use super::{ROUTE, expected, selected};
 
-#[kaalang]
+#[kaa]
 fn cyclic_branching_with_work(
     seed: usize,
     config: usize,
     events: &Cell<usize>,
     remaining: &Cell<usize>,
 ) -> usize {
-    #[cycle("Repeat before working.")]
+    #[kaa::cycle("Repeat before working.")]
     let (left, right) = || loop {
-        #[question("Repeat?")]
+        #[kaa::question("Repeat?")]
         let (again, work) = |&remaining| remaining.get() > 0;
-        #[action("Count the repeat.")]
+        #[kaa::action("Count the repeat.")]
         let repeated = |again, &remaining| remaining.set(remaining.get() - 1);
         |repeated| continue;
 
-        #[action("Prepare the seed.")]
+        #[kaa::action("Prepare the seed.")]
         let prepared = |work, seed| seed;
-        #[question("Choose work 0.")]
+        #[kaa::question("Choose work 0.")]
         let (case_0_0, case_0_1) = |&prepared, &config| selected(0) == 0;
-        #[action("Prepare branch 0/0.")]
+        #[kaa::action("Prepare branch 0/0.")]
         let data_0_0 = |case_0_0, &prepared, &config| *prepared + *config;
-        #[action("Record branch 0/0.")]
+        #[kaa::action("Record branch 0/0.")]
         let effect_0_0 = |&data_0_0, &events| {
             assert_eq!(events.get(), 0);
             events.set(events.get() | (1usize << 0));
         };
-        #[action("Finish branch 0/0.")]
+        #[kaa::action("Finish branch 0/0.")]
         let step_0 = |data_0_0, effect_0_0| data_0_0;
-        #[action("Prepare branch 0/1.")]
+        #[kaa::action("Prepare branch 0/1.")]
         let data_0_1 = |case_0_1, &prepared, &config| *prepared + *config + 1;
-        #[call("Transform branch 0/1/0.")]
+        #[kaa::call("Transform branch 0/1/0.")]
         let data_0_1_0 = |data_0_1| std::convert::identity(data_0_1);
-        #[action("Record branch 0/1.")]
+        #[kaa::action("Record branch 0/1.")]
         let effect_0_1 = |&data_0_1_0, &events| {
             assert_eq!(events.get(), 0);
             events.set(events.get() | (1usize << 0));
         };
-        #[action("Finish branch 0/1.")]
+        #[kaa::action("Finish branch 0/1.")]
         let step_0 = |data_0_1_0, effect_0_1| data_0_1_0;
-        #[choice("Choose work 1.")]
-        #[case("First.")]
-        #[case("Second.")]
-        #[case("Third.")]
+        #[kaa::choice("Choose work 1.")]
+        #[kaa::case("First.")]
+        #[kaa::case("Second.")]
+        #[kaa::case("Third.")]
         let (case_1_0, case_1_1, case_1_2) = |&step_0, &config| match selected(1) {
             0 => (),
             1 => (),
             _ => (),
         };
-        #[action("Prepare branch 1/0.")]
+        #[kaa::action("Prepare branch 1/0.")]
         let data_1_0 = |case_1_0, &step_0, &config, &prepared| *step_0 + *config + *prepared;
-        #[action("Record branch 1/0.")]
+        #[kaa::action("Record branch 1/0.")]
         let effect_1_0 = |&data_1_0, &events| {
             assert_eq!(events.get(), (1usize << 1) - 1);
             events.set(events.get() | (1usize << 1));
         };
-        #[action("Finish branch 1/0.")]
+        #[kaa::action("Finish branch 1/0.")]
         let step_1 = |data_1_0, effect_1_0| data_1_0;
-        #[action("Prepare branch 1/1.")]
+        #[kaa::action("Prepare branch 1/1.")]
         let data_1_1 = |case_1_1, &step_0, &config, &prepared| *step_0 + *config + *prepared + 1;
-        #[call("Transform branch 1/1/0.")]
+        #[kaa::call("Transform branch 1/1/0.")]
         let data_1_1_0 = |data_1_1| std::convert::identity(data_1_1);
-        #[action("Record branch 1/1.")]
+        #[kaa::action("Record branch 1/1.")]
         let effect_1_1 = |&data_1_1_0, &events| {
             assert_eq!(events.get(), (1usize << 1) - 1);
             events.set(events.get() | (1usize << 1));
         };
-        #[action("Finish branch 1/1.")]
+        #[kaa::action("Finish branch 1/1.")]
         let step_1 = |data_1_1_0, effect_1_1| data_1_1_0;
-        #[action("Prepare branch 1/2.")]
+        #[kaa::action("Prepare branch 1/2.")]
         let data_1_2 = |case_1_2, &step_0, &config, &prepared| *step_0 + *config + *prepared + 2;
-        #[call("Transform branch 1/2/0.")]
+        #[kaa::call("Transform branch 1/2/0.")]
         let data_1_2_0 = |data_1_2| std::convert::identity(data_1_2);
-        #[call("Transform branch 1/2/1.")]
+        #[kaa::call("Transform branch 1/2/1.")]
         let data_1_2_1 = |data_1_2_0| std::convert::identity(data_1_2_0);
-        #[action("Record branch 1/2.")]
+        #[kaa::action("Record branch 1/2.")]
         let effect_1_2 = |&data_1_2_1, &events| {
             assert_eq!(events.get(), (1usize << 1) - 1);
             events.set(events.get() | (1usize << 1));
         };
-        #[action("Finish branch 1/2.")]
+        #[kaa::action("Finish branch 1/2.")]
         let step_1 = |data_1_2_1, effect_1_2| data_1_2_1;
-        #[question("Choose work 2.")]
+        #[kaa::question("Choose work 2.")]
         let (case_2_0, case_2_1) = |&step_1, &config| selected(2) == 0;
-        #[action("Prepare branch 2/0.")]
+        #[kaa::action("Prepare branch 2/0.")]
         let data_2_0 = |case_2_0, &step_1, &config, &step_0| *step_1 + *config + *step_0;
-        #[action("Record branch 2/0.")]
+        #[kaa::action("Record branch 2/0.")]
         let effect_2_0 = |&data_2_0, &events| {
             assert_eq!(events.get(), (1usize << 2) - 1);
             events.set(events.get() | (1usize << 2));
         };
-        #[action("Finish branch 2/0.")]
+        #[kaa::action("Finish branch 2/0.")]
         let step_2 = |data_2_0, effect_2_0| data_2_0;
-        #[action("Prepare branch 2/1.")]
+        #[kaa::action("Prepare branch 2/1.")]
         let data_2_1 = |case_2_1, &step_1, &config, &step_0| *step_1 + *config + *step_0 + 1;
-        #[call("Transform branch 2/1/0.")]
+        #[kaa::call("Transform branch 2/1/0.")]
         let data_2_1_0 = |data_2_1| std::convert::identity(data_2_1);
-        #[action("Record branch 2/1.")]
+        #[kaa::action("Record branch 2/1.")]
         let effect_2_1 = |&data_2_1_0, &events| {
             assert_eq!(events.get(), (1usize << 2) - 1);
             events.set(events.get() | (1usize << 2));
         };
-        #[action("Finish branch 2/1.")]
+        #[kaa::action("Finish branch 2/1.")]
         let step_2 = |data_2_1_0, effect_2_1| data_2_1_0;
-        #[choice("Choose work 3.")]
-        #[case("First.")]
-        #[case("Second.")]
-        #[case("Third.")]
+        #[kaa::choice("Choose work 3.")]
+        #[kaa::case("First.")]
+        #[kaa::case("Second.")]
+        #[kaa::case("Third.")]
         let (case_3_0, case_3_1, case_3_2) = |&step_2, &config| match selected(3) {
             0 => (),
             1 => (),
             _ => (),
         };
-        #[action("Prepare branch 3/0.")]
+        #[kaa::action("Prepare branch 3/0.")]
         let data_3_0 = |case_3_0, &step_2, &config, &step_0| *step_2 + *config + *step_0;
-        #[action("Record branch 3/0.")]
+        #[kaa::action("Record branch 3/0.")]
         let effect_3_0 = |&data_3_0, &events| {
             assert_eq!(events.get(), (1usize << 3) - 1);
             events.set(events.get() | (1usize << 3));
         };
-        #[action("Finish branch 3/0.")]
+        #[kaa::action("Finish branch 3/0.")]
         let step_3 = |data_3_0, effect_3_0| data_3_0;
-        #[action("Prepare branch 3/1.")]
+        #[kaa::action("Prepare branch 3/1.")]
         let data_3_1 = |case_3_1, &step_2, &config, &step_0| *step_2 + *config + *step_0 + 1;
-        #[call("Transform branch 3/1/0.")]
+        #[kaa::call("Transform branch 3/1/0.")]
         let data_3_1_0 = |data_3_1| std::convert::identity(data_3_1);
-        #[action("Record branch 3/1.")]
+        #[kaa::action("Record branch 3/1.")]
         let effect_3_1 = |&data_3_1_0, &events| {
             assert_eq!(events.get(), (1usize << 3) - 1);
             events.set(events.get() | (1usize << 3));
         };
-        #[action("Finish branch 3/1.")]
+        #[kaa::action("Finish branch 3/1.")]
         let step_3 = |data_3_1_0, effect_3_1| data_3_1_0;
-        #[action("Prepare branch 3/2.")]
+        #[kaa::action("Prepare branch 3/2.")]
         let data_3_2 = |case_3_2, &step_2, &config, &step_0| *step_2 + *config + *step_0 + 2;
-        #[call("Transform branch 3/2/0.")]
+        #[kaa::call("Transform branch 3/2/0.")]
         let data_3_2_0 = |data_3_2| std::convert::identity(data_3_2);
-        #[call("Transform branch 3/2/1.")]
+        #[kaa::call("Transform branch 3/2/1.")]
         let data_3_2_1 = |data_3_2_0| std::convert::identity(data_3_2_0);
-        #[action("Record branch 3/2.")]
+        #[kaa::action("Record branch 3/2.")]
         let effect_3_2 = |&data_3_2_1, &events| {
             assert_eq!(events.get(), (1usize << 3) - 1);
             events.set(events.get() | (1usize << 3));
         };
-        #[action("Finish branch 3/2.")]
+        #[kaa::action("Finish branch 3/2.")]
         let step_3 = |data_3_2_1, effect_3_2| data_3_2_1;
-        #[question("Choose work 4.")]
+        #[kaa::question("Choose work 4.")]
         let (case_4_0, case_4_1) = |&step_3, &config| selected(4) == 0;
-        #[action("Prepare branch 4/0.")]
+        #[kaa::action("Prepare branch 4/0.")]
         let data_4_0 = |case_4_0, &step_3, &config, &step_1| *step_3 + *config + *step_1;
-        #[action("Record branch 4/0.")]
+        #[kaa::action("Record branch 4/0.")]
         let effect_4_0 = |&data_4_0, &events| {
             assert_eq!(events.get(), (1usize << 4) - 1);
             events.set(events.get() | (1usize << 4));
         };
-        #[action("Finish branch 4/0.")]
+        #[kaa::action("Finish branch 4/0.")]
         let step_4 = |data_4_0, effect_4_0| data_4_0;
-        #[action("Prepare branch 4/1.")]
+        #[kaa::action("Prepare branch 4/1.")]
         let data_4_1 = |case_4_1, &step_3, &config, &step_1| *step_3 + *config + *step_1 + 1;
-        #[call("Transform branch 4/1/0.")]
+        #[kaa::call("Transform branch 4/1/0.")]
         let data_4_1_0 = |data_4_1| std::convert::identity(data_4_1);
-        #[action("Record branch 4/1.")]
+        #[kaa::action("Record branch 4/1.")]
         let effect_4_1 = |&data_4_1_0, &events| {
             assert_eq!(events.get(), (1usize << 4) - 1);
             events.set(events.get() | (1usize << 4));
         };
-        #[action("Finish branch 4/1.")]
+        #[kaa::action("Finish branch 4/1.")]
         let step_4 = |data_4_1_0, effect_4_1| data_4_1_0;
-        #[question("Which result?")]
+        #[kaa::question("Which result?")]
         let (pick_left, pick_right) = |&step_4, &config| *config & 1 == 0;
-        #[action("Left result.")]
+        #[kaa::action("Left result.")]
         let left = |pick_left, step_4| step_4;
-        #[action("Right result.")]
+        #[kaa::action("Right result.")]
         let right = |pick_right, step_4| (step_4,);
     };
-    #[action("Use the left result.")]
+    #[kaa::action("Use the left result.")]
     let result = |left| left;
-    #[action("Use the right result.")]
+    #[kaa::action("Use the right result.")]
     let result = |right| right.0;
     |result| return result;
 }

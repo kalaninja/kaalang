@@ -1,0 +1,5 @@
+error: kaalang block inputs must contain only `name`, `mut name`, `&name`, or `&mut name`
+ --> tests/flow/syntax/compile_fail/bracketed_inputs.rs:6:19
+  |
+6 |     let output = |[input]| { input };
+  |                   ^^^^^^^

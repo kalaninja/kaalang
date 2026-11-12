@@ -4,14 +4,15 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 
 ## Language
 
-- **flow**: one function marked `#[kaalang]`; its **flow inputs** are its
-  parameters and its **flow output** is the structural `return` value.
+- **flow**: one function marked `#[kaa]`; its **flow inputs** are its parameters
+  and its **flow output** is the structural `return` value.
 - **block**: one authored statement of a flow; **computational block** when it
   has a Rust body (action, call, question, choice).
 - **block kinds**: action, call, question, choice, cycle, continue, return.
 - **description**: the string in a block's attribute, such as
-  `#[action("...")]`, and the text of a question branch, a case, or a stage. A
-  call without one is described by the function it names.
+  `#[kaa::action("...")]`, and the text of a question branch, a case, or a
+  stage. A call without one is described by the function it names. A datatype, a
+  field's `value` or `refer`, and an enum variant's `case` carry one too.
 - **wire**: a named value a producer provides for capture.
 - **input**, **output**: a block's captured wires and the wires it produces.
 - **producer**: one occurrence of a named flow input or block output that
@@ -28,7 +29,8 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 - **branch**: one alternative continuation selected by a selector.
 - **branch output**: a selector's output that selects a branch and provides its
   wire. A cycle's single output is an ordinary result.
-- **case**: the description of one choice branch, not a block.
+- **case**: the description of one choice branch, not a block, or of one enum
+  variant.
 - **branch ancestry**: the branches a block belongs to through its captures and
   enclosing cycles; merged wires retain shared ancestry.
 - **decides**: a selector decides a block when changing only that selection can
@@ -77,10 +79,30 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
   stage entry is the wire a stage receives and the node that draws it; a cycle
   entry is where its body begins and its back edge returns; a for-entry is a for
   cycle's top cap.
+- **datatype**: a struct, enum, union, or type alias marked `#[kaa]`; a **plain
+  type** is one without the mark.
+- **relationship**: one `refer` annotation, from a field or an alias to the type
+  it names, a datatype or a plain type; neither a wire nor a connection.
+- **compilation target**: the platform the source is read for, named by a triple
+  such as `x86_64-unknown-linux-gnu`; its **cfg set** decides which `cfg` and
+  `cfg_attr` predicates hold. Not a relationship's target, nor a package's
+  target such as its library or tests.
 
 ## Diagram
 
-- **diagram**: the complete drawing of one flow.
+- **diagram**: the complete drawing of one flow; a **type diagram** draws one
+  focus type with its incoming types.
+- **focus type**, **incoming type**: the type a type diagram is drawn for, a
+  datatype or a plain type, and a datatype with a relationship to it.
+- **card**: the drawing of one type: its name with its form and representation,
+  its description when it has one, and its tiles.
+- **tile**: the drawing of one field, enum variant, or alias right-hand side
+  inside a card.
+- **groove**, **bus**, **port**, **trunk**: the strip in the focus under each
+  enum variant; the line a row's lines drop into, along a groove or below a
+  struct's row; the square where a groove's bus leaves the focus; and the line
+  beside a column of incoming cards, or beside the focus, that their lines join
+  on the way to the focus.
 - **node**: a drawn unit for a block, a merge, or the synthetic start and end.
 - **node kinds**: start, stage entry, action, call, question, select, case,
   cycle, for-entry, for-end, transition, merge, end. A return draws only its
@@ -91,7 +113,7 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 - **label**, **parameter panel**: text on a node or connection, and the panel
   beside start listing the flow's Rust parameters.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
-  align to.
+  align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body
   stays inside and its interface sits on the edge. An expanded for cycle has its
   caps instead.
@@ -194,16 +216,16 @@ The names used across kaalang's documentation, crates, diagnostics, and tests.
 
 ### Tests
 
-- **fixture**: a test source file of flows. A behavior fixture holds one
-  executable flow, a gallery file may group several, a stress fixture is a heavy
-  hand-written flow, and a compile-fail fixture is a rejected program with its
-  diagnostic.
+- **fixture**: a test source file of flows or types. A flow fixture holds one
+  executable flow, a type fixture the types of one case, a stress fixture is a
+  heavy hand-written flow, and a compile-fail fixture is a rejected program with
+  its diagnostic.
 - **corpus**: the flows of every executable fixture; compile-fail fixtures stay
   out.
 - **suite**: a corpus selection: ordinary, stress, or all (`Suite`).
-- **fixture diagram**: the `.svg` drawn beside its source for each flow of an
-  executable fixture, redrawn by the test suite and reviewed in the diff, never
-  edited by hand.
+- **fixture diagram**: the `.svg` drawn beside its source for each flow, or each
+  type, of an executable fixture, redrawn by the test suite and reviewed in the
+  diff, never edited by hand.
 - **probe**: a generated flow of a chosen size for the performance budgets.
 - **shape**: a generated small flow from a family enumerated exhaustively to
   compare searches and renders; unrelated to corridor shapes.

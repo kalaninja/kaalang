@@ -140,8 +140,8 @@ fn symbolic_analysis_matches_the_complete_fixture_corpus() {
             {
                 let source = std::fs::read_to_string(&path).expect("the fixture is readable");
                 if let Ok(file) = syn::parse_file(&source) {
-                    for function in crate::flows(&file.items) {
-                        *compared += usize::from(compare(&function));
+                    for flow in crate::flows(&file.items) {
+                        *compared += usize::from(compare(&flow.function));
                     }
                 }
             }
@@ -182,7 +182,10 @@ fn compare_generated(sources: &[String]) {
         .iter()
         .flat_map(|source| match syn::parse_str::<syn::ItemFn>(source) {
             Ok(function) => vec![function],
-            Err(_) => crate::flows(&syn::parse_file(source).expect("the shape parses").items),
+            Err(_) => crate::flows(&syn::parse_file(source).expect("the shape parses").items)
+                .into_iter()
+                .map(|flow| flow.function)
+                .collect(),
         })
         .collect::<Vec<_>>();
     let compared = functions
@@ -229,18 +232,18 @@ fn arbitrary_branch_work_and_captures_preserve_rejection_priority() {
     }
     let nested = branching_with_work(4).replace(
         "let data_0_0 = |case_0_0, &prepared, &config| *prepared + *config;",
-        "let (nested_yes, nested_no) = |case_0_0, &config| *config > 1;\n    #[action(\"Nested yes.\")]\n    let data_0_0 = |nested_yes, &prepared, &config| *prepared + *config;\n    #[action(\"Nested no.\")]\n    let data_0_0 = |nested_no, &prepared, &config| *prepared + *config + 1;"
-    ).replace("#[action(\"Prepare branch 0/0.\")]", "#[question(\"Nested work?\")]");
+        "let (nested_yes, nested_no) = |case_0_0, &config| *config > 1;\n    #[kaa::action(\"Nested yes.\")]\n    let data_0_0 = |nested_yes, &prepared, &config| *prepared + *config;\n    #[kaa::action(\"Nested no.\")]\n    let data_0_0 = |nested_no, &prepared, &config| *prepared + *config + 1;"
+    ).replace("#[kaa::action(\"Prepare branch 0/0.\")]", "#[kaa::question(\"Nested work?\")]");
     assert!(compare(&flow(&nested)));
 }
 
 #[test]
 fn transitive_dependencies_can_require_more_than_two_changed_answers() {
-    let mut body = String::from("#[kaalang] fn conditional(flag: bool, seed: usize) -> usize {\n");
+    let mut body = String::from("#[kaa] fn conditional(flag: bool, seed: usize) -> usize {\n");
     let mut previous = "seed".to_owned();
     for level in 0..6 {
         use std::fmt::Write;
-        writeln!(body, "#[question(\"Keep the earlier value?\")] let (reset_{level}, keep_{level}) = |&flag| *flag;\n#[action(\"Reset.\")] let step_{level} = |reset_{level}, &seed| *seed;\n#[action(\"Keep.\")] let step_{level} = |keep_{level}, &{previous}| *{previous} + 1;").expect("the source is writable");
+        writeln!(body, "#[kaa::question(\"Keep the earlier value?\")] let (reset_{level}, keep_{level}) = |&flag| *flag;\n#[kaa::action(\"Reset.\")] let step_{level} = |reset_{level}, &seed| *seed;\n#[kaa::action(\"Keep.\")] let step_{level} = |keep_{level}, &{previous}| *{previous} + 1;").expect("the source is writable");
         previous = format!("step_{level}");
     }
     body.push_str("|step_5| return step_5; }");
@@ -287,11 +290,11 @@ fn cycles_and_stage_boundaries_match_complete_histories() {
 fn independent_nested_for_cycles_match_complete_histories() {
     for (source, name) in [
         (
-            include_str!("../../../kaalang/tests/cycle/behavior/for_independent_ranges.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/for_independent_ranges.rs"),
             "for_independent_ranges",
         ),
         (
-            include_str!("../../../kaalang/tests/cycle/behavior/for_inside_loop_inside_for.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/for_inside_loop_inside_for.rs"),
             "for_inside_loop_inside_for",
         ),
     ] {
@@ -325,11 +328,11 @@ fn nested_cycle_frames_and_rejected_body_mutations_match_the_reference() {
     let nested = source
         .replace(
             "let (left, right) = || loop {",
-            "let (left, right) = || loop { #[cycle(\"Inner work.\")] let (left, right) = || loop {",
+            "let (left, right) = || loop { #[kaa::cycle(\"Inner work.\")] let (left, right) = || loop {",
         )
         .replace(
-            "\n};\n#[action(\"Use the left result.\")]",
-            "\n};\n};\n#[action(\"Use the left result.\")]",
+            "\n};\n#[kaa::action(\"Use the left result.\")]",
+            "\n};\n};\n#[kaa::action(\"Use the left result.\")]",
         );
     assert!(compare(&flow(&nested)));
     let mut function = flow(&source);

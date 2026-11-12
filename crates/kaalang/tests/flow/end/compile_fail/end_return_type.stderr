@@ -1,0 +1,12 @@
+error[E0308]: mismatched types
+ --> tests/flow/end/compile_fail/end_return_type.rs:5:20
+  |
+4 | fn invalid(input: u32) -> String {
+  |                           ------ expected `String` because of return type
+5 |     |input| return input;
+  |                    ^^^^^ expected `String`, found `u32`
+  |
+help: try using a conversion method
+  |
+5 |     |input| return input.to_string();
+  |                         ++++++++++++

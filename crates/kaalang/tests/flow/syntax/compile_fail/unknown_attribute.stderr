@@ -1,0 +1,5 @@
+error: kaalang blocks support only comments and `kaa::` attributes
+ --> tests/flow/syntax/compile_fail/unknown_attribute.rs:6:5
+  |
+6 |     #[unknown("Not a kaalang attribute.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

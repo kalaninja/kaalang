@@ -262,7 +262,7 @@ mod tests {
     #[test]
     fn resolves_a_self_transition_and_terminal_stage() {
         let function = crate::tests::fixture(
-            include_str!("../../kaalang/tests/stage/behavior/count_to.rs"),
+            include_str!("../../kaalang/tests/flow/stage/count_to.rs"),
             "count_to",
         );
         let analysis = crate::analyze(&function).expect("staged flow analyzes");
@@ -275,7 +275,7 @@ mod tests {
     #[test]
     fn terminal_stage_must_be_declared_last() {
         let function = crate::tests::fixture(
-            include_str!("../../kaalang/tests/stage/behavior/is_even.rs"),
+            include_str!("../../kaalang/tests/flow/stage/is_even.rs"),
             "is_even",
         );
         for position in 1..=3 {
@@ -298,12 +298,12 @@ mod tests {
     fn accepts_a_stage_that_diverges_in_a_nested_cycle() {
         let function: ItemFn = parse_quote! {
             fn diverge() {
-                #[action("Enter the only stage.")]
+                #[kaa::action("Enter the only stage.")]
                 let go = || ();
 
-                #[stage("Repeat forever.")]
+                #[kaa::stage("Repeat forever.")]
                 |go| {
-                    #[cycle("Stay in this stage.")]
+                    #[kaa::cycle("Stay in this stage.")]
                     loop {
                         continue;
                     };

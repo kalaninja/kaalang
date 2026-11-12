@@ -1,0 +1,5 @@
+error: `kaa::vlaue` is not a kaalang type annotation
+ --> tests/datatype/compile_fail/unknown_type_annotation.rs:5:5
+  |
+5 |     #[kaa::vlaue("The display name.")]
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

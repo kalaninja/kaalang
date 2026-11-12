@@ -1,0 +1,5 @@
+error[E0433]: cannot find module or crate `kaa` in this scope
+ --> tests/flow/syntax/compile_fail/block_outside_flow.rs:3:7
+  |
+3 |     #[kaa::action("Copy the input.")]
+  |       ^^^ use of unresolved module or unlinked crate `kaa`

@@ -15,7 +15,7 @@ pub(super) fn block(function: &ItemFn) -> Block {
     super::structural_block(BlockKind::End, span, Vec::new())
 }
 
-/// Reports the authored `#[end]` statement kaalang no longer has.
+/// Reports the authored `#[kaa::end]` statement kaalang no longer has.
 pub(super) fn authored(span: Span) -> Error {
     Error::new(
         span,

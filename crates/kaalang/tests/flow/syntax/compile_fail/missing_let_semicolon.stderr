@@ -1,0 +1,13 @@
+error: expected `;`, found `}`
+ --> tests/flow/syntax/compile_fail/missing_let_semicolon.rs:6:32
+  |
+6 |     let end = |input| { input }
+  |                                ^ help: add `;` here
+7 | }
+  | - unexpected token
+
+error: expected `;`
+ --> tests/flow/syntax/compile_fail/missing_let_semicolon.rs:7:1
+  |
+7 | }
+  | ^

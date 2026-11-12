@@ -1,0 +1,41 @@
+use kaalang::kaa;
+
+/// The join chain of a partial merge is ordinary control flow, so it remains
+/// available in a `const fn`.
+#[kaa]
+const fn const_partial_merge(source: u8) -> u8 {
+    #[kaa::choice("Which source?")]
+    #[kaa::case("First source.")]
+    #[kaa::case("Second source.")]
+    #[kaa::case("Third source.")]
+    let (first, second, third) = |source| match source {
+        0 => (),
+        1 => (),
+        _ => (),
+    };
+
+    #[kaa::action("Build the value from the first source.")]
+    let partial = |first| 10;
+
+    #[kaa::action("Build the value from the second source.")]
+    let partial = |second| 20;
+
+    #[kaa::action("Add one to the partially merged value.")]
+    let shared = |partial| partial + 1;
+
+    #[kaa::action("Build the value from the third source.")]
+    let shared = |third| 30;
+
+    #[kaa::action("Double the merged value.")]
+    let end = |shared| shared * 2;
+
+    |end| return end;
+}
+
+#[test]
+fn a_partial_merge_chain_evaluates_at_compile_time() {
+    const FIRST: u8 = const_partial_merge(0);
+    const SECOND: u8 = const_partial_merge(1);
+    const THIRD: u8 = const_partial_merge(2);
+    assert_eq!((FIRST, SECOND, THIRD), (22, 42, 60));
+}

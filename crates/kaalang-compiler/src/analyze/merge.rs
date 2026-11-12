@@ -528,7 +528,7 @@ mod tests {
         // this dependency cycle, so pin the defensive diagnostic directly.
         let function: ItemFn = parse_quote! {
             fn probe(go: ()) {
-                #[action("Forward the signal.")]
+                #[kaa::action("Forward the signal.")]
                 |go| {};
             }
         };
@@ -554,21 +554,21 @@ mod tests {
     fn an_unrelated_earlier_selection_does_not_split_a_later_partial_merge() {
         let function: ItemFn = parse_quote! {
             fn valid(flag: bool, mode: u8) -> u8 {
-                #[question("Choose the seed.")]
+                #[kaa::question("Choose the seed.")]
                 let (yes, no) = |flag| { flag };
-                #[action("First seed.")] let seed = |yes| { 1 };
-                #[action("Second seed.")] let seed = |no| { 2 };
-                #[choice("Choose the work.")]
-                #[case("First.")]
-                #[case("Second.")]
-                #[case("Finish.")]
+                #[kaa::action("First seed.")] let seed = |yes| { 1 };
+                #[kaa::action("Second seed.")] let seed = |no| { 2 };
+                #[kaa::choice("Choose the work.")]
+                #[kaa::case("First.")]
+                #[kaa::case("Second.")]
+                #[kaa::case("Finish.")]
                 let (first, second, finish) = |mode| {
                     match mode { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First value.")] let shared = |first| { 10 };
-                #[action("Second value.")] let shared = |second| { 20 };
-                #[action("Finish early.")] let end = |finish, seed| { seed };
-                #[action("Use the value.")] let end = |shared, seed| { shared + seed };
+                #[kaa::action("First value.")] let shared = |first| { 10 };
+                #[kaa::action("Second value.")] let shared = |second| { 20 };
+                #[kaa::action("Finish early.")] let end = |finish, seed| { seed };
+                #[kaa::action("Use the value.")] let end = |shared, seed| { shared + seed };
                 |end| return end;
             }
         };
@@ -582,15 +582,15 @@ mod tests {
     fn an_unused_merge_cannot_skip_a_nested_branch() {
         let function: ItemFn = parse_quote! {
             fn invalid(outer: bool, inner: bool) -> u8 {
-                #[question("Take the nested branch?")]
+                #[kaa::question("Take the nested branch?")]
                 let (nested, direct) = |outer| { outer };
-                #[question("Add the marker?")]
+                #[kaa::question("Add the marker?")]
                 let (mark, skip) = |nested, inner| { inner };
-                #[action("Mark the first branch.")]
+                #[kaa::action("Mark the first branch.")]
                 let (_marker, end) = |mark| { ((), 1) };
-                #[action("Leave the marker absent.")]
+                #[kaa::action("Leave the marker absent.")]
                 let end = |skip| { 2 };
-                #[action("Mark the last branch.")]
+                #[kaa::action("Mark the last branch.")]
                 let (_marker, end) = |direct| { ((), 3) };
                 |end| return end;
             }
@@ -605,17 +605,17 @@ mod tests {
     fn an_inner_merge_may_precede_the_enclosing_merge() {
         let function: ItemFn = parse_quote! {
             fn valid(outer: bool, inner: bool) -> u8 {
-                #[question("Take the nested branch?")]
+                #[kaa::question("Take the nested branch?")]
                 let (nested, direct) = |outer| { outer };
-                #[question("Choose the nested value.")]
+                #[kaa::question("Choose the nested value.")]
                 let (yes, no) = |nested, inner| { inner };
-                #[action("Build the yes value.")]
+                #[kaa::action("Build the yes value.")]
                 let refined = |yes| { 1 };
-                #[action("Build the no value.")]
+                #[kaa::action("Build the no value.")]
                 let refined = |no| { 2 };
-                #[action("Finish the nested branch.")]
+                #[kaa::action("Finish the nested branch.")]
                 let shared = |refined| { refined + 10 };
-                #[action("Build the direct value.")]
+                #[kaa::action("Build the direct value.")]
                 let shared = |direct| { 3 };
                 |shared| return shared;
             }
@@ -628,17 +628,17 @@ mod tests {
     fn a_partial_continuation_may_feed_a_wider_merge() {
         let function: ItemFn = parse_quote! {
             fn valid(a: bool, b: bool, c: bool) -> bool {
-                #[question("a")]
+                #[kaa::question("a")]
                 let (check_b, false_result) = |a| { a };
-                #[question("b")]
+                #[kaa::question("b")]
                 let (check_c, false_result) = |check_b, b| { b };
-                #[question("c")]
+                #[kaa::question("c")]
                 let (true_result, false_result) = |check_c, c| { c };
-                #[action("Build true.")]
+                #[kaa::action("Build true.")]
                 let combined = |true_result| { true };
-                #[action("Build false.")]
+                #[kaa::action("Build false.")]
                 let combined = |false_result| { false };
-                #[action("Use the wider merge.")]
+                #[kaa::action("Use the wider merge.")]
                 let result = |combined| { combined };
                 |result| return result;
             }
@@ -654,7 +654,7 @@ mod tests {
     #[test]
     fn a_cycle_with_several_outputs_owns_the_merge_after_it() {
         let model = build(&crate::tests::fixture(
-            include_str!("../../../kaalang/tests/cycle/behavior/alternative_outputs.rs"),
+            include_str!("../../../kaalang/tests/flow/cycle/alternative_outputs.rs"),
             "alternative_outputs",
         ))
         .expect("the fixture is valid");
@@ -679,17 +679,17 @@ mod tests {
     fn a_repeat_route_does_not_split_a_merge_after_its_cycle() {
         let source = r#"
             fn valid(run: bool, done: bool, value: u8) -> u8 {
-                #[question("Run the cycle?")]
+                #[kaa::question("Run the cycle?")]
                 let (enter, fallback) = |run| { run };
-                #[cycle("Wait until done.")]
+                #[kaa::cycle("Wait until done.")]
                 let result = |enter| loop {
-                    #[question("Done?")]
+                    #[kaa::question("Done?")]
                     let (leave, again) = |done| { done };
-                    #[action("Keep the value.")]
+                    #[kaa::action("Keep the value.")]
                     let result = |leave, value| { value };
                     |again| continue;
                 };
-                #[action("Use the fallback.")]
+                #[kaa::action("Use the fallback.")]
                 let result = |fallback| { 2 };
                 |result| return result;
             }
@@ -708,11 +708,11 @@ mod tests {
     fn a_branch_output_and_an_action_output_merge_before_every_capture() {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
-                #[question("Which value?")]
+                #[kaa::question("Which value?")]
                 let (shared, no) = |condition| { condition };
-                #[action("Produce the other value.")]
+                #[kaa::action("Produce the other value.")]
                 let shared = |no| { () };
-                #[action("Use the merged value.")]
+                #[kaa::action("Use the merged value.")]
                 let end = |shared| { 0 };
                 |end| return end;
             }
@@ -726,13 +726,13 @@ mod tests {
     fn a_merged_branch_output_can_be_borrowed_then_consumed() {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
-                #[question("Which value?")]
+                #[kaa::question("Which value?")]
                 let (shared, no) = |condition| { condition };
-                #[action("Produce the other value.")]
+                #[kaa::action("Produce the other value.")]
                 let shared = |no| { () };
-                #[action("Borrow the merged value.")]
+                #[kaa::action("Borrow the merged value.")]
                 let ready = |&shared| { () };
-                #[action("Consume it after the borrow.")]
+                #[kaa::action("Consume it after the borrow.")]
                 let end = |shared, ready| { 0 };
                 |end| return end;
             }
@@ -744,11 +744,11 @@ mod tests {
     fn unused_alternative_outputs_still_record_a_merge() {
         let function: ItemFn = parse_quote! {
             fn valid(condition: bool) -> u8 {
-                #[question("Which marker?")]
+                #[kaa::question("Which marker?")]
                 let (yes, no) = |condition| { condition };
-                #[action("First marker.")]
+                #[kaa::action("First marker.")]
                 let (_marker, end) = |yes| { ((), 1) };
-                #[action("Second marker.")]
+                #[kaa::action("Second marker.")]
                 let (_marker, end) = |no| { ((), 2) };
                 |end| return end;
             }
@@ -764,16 +764,16 @@ mod tests {
     fn unused_outputs_cannot_merge_nonadjacent_cases() {
         let function: ItemFn = parse_quote! {
             fn invalid(value: u8) -> u8 {
-                #[choice("Which branch?")]
-                #[case("First")]
-                #[case("Between")]
-                #[case("Last")]
+                #[kaa::choice("Which branch?")]
+                #[kaa::case("First")]
+                #[kaa::case("Between")]
+                #[kaa::case("Last")]
                 let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("First marker.")] let (_marker, end) = |a| { ((), 1) };
-                #[action("Middle result.")] let end = |b| { 2 };
-                #[action("Last marker.")] let (_marker, end) = |c| { ((), 3) };
+                #[kaa::action("First marker.")] let (_marker, end) = |a| { ((), 1) };
+                #[kaa::action("Middle result.")] let end = |b| { 2 };
+                #[kaa::action("Last marker.")] let (_marker, end) = |c| { ((), 3) };
                 |end| return end;
             }
         };
@@ -787,16 +787,16 @@ mod tests {
     fn unused_outputs_cannot_form_crossing_merge_groups() {
         let function: ItemFn = parse_quote! {
             fn invalid(value: u8) -> u8 {
-                #[choice("Which branch?")]
-                #[case("Left")]
-                #[case("Both")]
-                #[case("Right")]
+                #[kaa::choice("Which branch?")]
+                #[kaa::case("Left")]
+                #[kaa::case("Both")]
+                #[kaa::case("Right")]
                 let (a, b, c) = |value| {
                     match value { 0 => (), 1 => (), _ => () }
                 };
-                #[action("Left marker.")] let (_left, end) = |a| { ((), 1) };
-                #[action("Both markers.")] let (_left, _right, end) = |b| { ((), (), 2) };
-                #[action("Right marker.")] let (_right, end) = |c| { ((), 3) };
+                #[kaa::action("Left marker.")] let (_left, end) = |a| { ((), 1) };
+                #[kaa::action("Both markers.")] let (_left, _right, end) = |b| { ((), (), 2) };
+                #[kaa::action("Right marker.")] let (_right, end) = |c| { ((), 3) };
                 |end| return end;
             }
         };
@@ -917,14 +917,14 @@ mod tests {
                 "two merges with independent contexts",
                 parse_quote! {
                     fn valid(first: bool, second: bool) -> u8 {
-                        #[question("Which left?")]
+                        #[kaa::question("Which left?")]
                         let (left_yes, left_no) = |first| { first };
-                        #[action("Left yes.")] let left = |left_yes| { 1 };
-                        #[action("Left no.")] let left = |left_no| { 2 };
-                        #[question("Which right?")]
+                        #[kaa::action("Left yes.")] let left = |left_yes| { 1 };
+                        #[kaa::action("Left no.")] let left = |left_no| { 2 };
+                        #[kaa::question("Which right?")]
                         let (right_yes, right_no) = |left, second| { second };
-                        #[action("Right yes.")] let right = |right_yes| { 3 };
-                        #[action("Right no.")] let right = |right_no| { 4 };
+                        #[kaa::action("Right yes.")] let right = |right_yes| { 3 };
+                        #[kaa::action("Right no.")] let right = |right_no| { 4 };
                         |right| return right;
                     }
                 },
@@ -933,13 +933,13 @@ mod tests {
                 "a nested selector only one branch runs",
                 parse_quote! {
                     fn valid(outer: bool, inner: bool) -> u8 {
-                        #[question("Go deeper?")]
+                        #[kaa::question("Go deeper?")]
                         let (deeper, direct) = |outer| { outer };
-                        #[question("Which nested?")]
+                        #[kaa::question("Which nested?")]
                         let (yes, no) = |deeper, inner| { inner };
-                        #[action("Nested yes.")] let value = |yes| { 1 };
-                        #[action("Nested no.")] let value = |no| { 2 };
-                        #[action("Direct.")] let value = |direct| { 3 };
+                        #[kaa::action("Nested yes.")] let value = |yes| { 1 };
+                        #[kaa::action("Nested no.")] let value = |no| { 2 };
+                        #[kaa::action("Direct.")] let value = |direct| { 3 };
                         |value| return value;
                     }
                 },
@@ -948,15 +948,15 @@ mod tests {
                 "one producer reached from both branches of a selector",
                 parse_quote! {
                     fn valid(first: bool, second: bool) -> u8 {
-                        #[question("Which outer?")]
+                        #[kaa::question("Which outer?")]
                         let (outer_yes, outer_no) = |first| { first };
-                        #[question("Which inner?")]
+                        #[kaa::question("Which inner?")]
                         let (inner_yes, inner_no) = |outer_yes, second| { second };
-                        #[action("From either inner branch.")]
+                        #[kaa::action("From either inner branch.")]
                         let value = |inner_yes| { 1 };
-                        #[action("Also from the inner no.")]
+                        #[kaa::action("Also from the inner no.")]
                         let value = |inner_no| { 2 };
-                        #[action("From the outer no.")]
+                        #[kaa::action("From the outer no.")]
                         let value = |outer_no| { 3 };
                         |value| return value;
                     }
@@ -966,14 +966,14 @@ mod tests {
                 "a merge one branch never reaches",
                 parse_quote! {
                     fn valid(skip: bool, pick: bool) -> u8 {
-                        #[question("Pick a value?")]
+                        #[kaa::question("Pick a value?")]
                         let (choose, single) = |skip| { skip };
-                        #[question("Which value?")]
+                        #[kaa::question("Which value?")]
                         let (yes, no) = |choose, pick| { pick };
-                        #[action("Yes value.")] let picked = |yes| { 1 };
-                        #[action("No value.")] let picked = |no| { 2 };
-                        #[action("Use the picked value.")] let value = |picked| { picked };
-                        #[action("Skip picking.")] let value = |single| { 0 };
+                        #[kaa::action("Yes value.")] let picked = |yes| { 1 };
+                        #[kaa::action("No value.")] let picked = |no| { 2 };
+                        #[kaa::action("Use the picked value.")] let value = |picked| { picked };
+                        #[kaa::action("Skip picking.")] let value = |single| { 0 };
                         |value| return value;
                     }
                 },

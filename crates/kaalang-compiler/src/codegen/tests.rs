@@ -36,7 +36,7 @@ fn preserves_the_authored_function_signature() {
 #[test]
 fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
     let function = fixture(
-        include_str!("../../../kaalang/tests/stage/behavior/prepared_initial_selection.rs"),
+        include_str!("../../../kaalang/tests/flow/stage/prepared_initial_selection.rs"),
         "prepared_initial_selection",
     );
     let lowered = expand(function).expect("the flow expands");
@@ -47,9 +47,7 @@ fn emits_one_dispatcher_when_an_initial_transition_bypasses_a_join() {
 #[test]
 fn a_nested_early_return_needs_no_join_dispatch() {
     let function = fixture(
-        include_str!(
-            "../../../kaalang/tests/wire/behavior/nested_branch_passes_a_question_join.rs"
-        ),
+        include_str!("../../../kaalang/tests/flow/wire/nested_branch_passes_a_question_join.rs"),
         "nested_branch_passes_a_question_join",
     );
     let function = expand(function).expect("the flow expands");
@@ -64,16 +62,16 @@ fn a_nested_early_return_needs_no_join_dispatch() {
 fn emits_a_shared_consumer_body_once() {
     let function: ItemFn = parse_quote! {
         fn choose(condition: bool) -> u32 {
-            #[question("Choose a value")]
+            #[kaa::question("Choose a value")]
             let (yes, no) = |condition| { condition };
 
-            #[action("Build the yes value")]
+            #[kaa::action("Build the yes value")]
             let selected = |yes| { 1 };
 
-            #[action("Build the no value")]
+            #[kaa::action("Build the no value")]
             let selected = |no| { 2 };
 
-            #[action("Use the selected value")]
+            #[kaa::action("Use the selected value")]
             let end = |selected| { __kaalang_shared_marker(selected) };
 
             |end| return end;
@@ -92,25 +90,25 @@ fn emits_a_shared_consumer_body_once() {
 fn emits_each_body_once_across_a_question_join_chain() {
     let function: ItemFn = parse_quote! {
         fn and(a: bool, b: bool, c: bool) -> bool {
-            #[question("a")]
-            #[yes("Yes")]
-            #[no("No")]
+            #[kaa::question("a")]
+            #[kaa::yes("Yes")]
+            #[kaa::no("No")]
             let (check_b, false_result) = |a| a;
 
-            #[question("b")]
-            #[yes("Yes")]
-            #[no("No")]
+            #[kaa::question("b")]
+            #[kaa::yes("Yes")]
+            #[kaa::no("No")]
             let (check_c, false_result) = |check_b, b| b;
 
-            #[question("c")]
-            #[yes("Yes")]
-            #[no("No")]
+            #[kaa::question("c")]
+            #[kaa::yes("Yes")]
+            #[kaa::no("No")]
             let (true_result, false_result) = |check_c, c| c;
 
-            #[action("Return true.")]
+            #[kaa::action("Return true.")]
             let end = |true_result| __kaalang_true_marker(true);
 
-            #[action("Return false.")]
+            #[kaa::action("Return false.")]
             let end = |false_result| __kaalang_false_marker(false);
 
             |end| return end;
@@ -127,9 +125,9 @@ fn emits_each_body_once_across_a_question_join_chain() {
 fn a_choice_dispatches_once_without_a_case_tag() {
     let function: ItemFn = parse_quote! {
         fn choose(input: Option<String>) -> usize {
-            #[choice("Was text supplied?")]
-            #[case("Text")]
-            #[case("Absent")]
+            #[kaa::choice("Was text supplied?")]
+            #[kaa::case("Text")]
+            #[kaa::case("Absent")]
             let (text, absent) = |input| {
                 match input {
                     Some(value) => value,
@@ -137,13 +135,13 @@ fn a_choice_dispatches_once_without_a_case_tag() {
                 }
             };
 
-            #[action("Measure the text")]
+            #[kaa::action("Measure the text")]
             let selected = |text| { text.len() };
 
-            #[action("Use the fallback")]
+            #[kaa::action("Use the fallback")]
             let selected = |absent| { absent as usize };
 
-            #[action("Finish")]
+            #[kaa::action("Finish")]
             let end = |selected| { __kaalang_shared_marker(selected) };
 
             |end| return end;
@@ -160,12 +158,12 @@ fn a_choice_dispatches_once_without_a_case_tag() {
 fn emits_every_body_once_across_two_joins_and_a_nested_question() {
     let function: ItemFn = parse_quote! {
         fn route(value: u8, condition: bool) -> u8 {
-            #[choice("Which group?")]
-            #[case("First of the left group")]
-            #[case("Second of the left group")]
-            #[case("Terminal")]
-            #[case("First of the right group")]
-            #[case("Second of the right group")]
+            #[kaa::choice("Which group?")]
+            #[kaa::case("First of the left group")]
+            #[kaa::case("Second of the left group")]
+            #[kaa::case("Terminal")]
+            #[kaa::case("First of the right group")]
+            #[kaa::case("Second of the right group")]
             let (a, b, done, c, d) = |value, &condition| {
                 match value {
                     0 => (),
@@ -176,31 +174,31 @@ fn emits_every_body_once_across_two_joins_and_a_nested_question() {
                 }
             };
 
-            #[action("Build the left value from a")]
+            #[kaa::action("Build the left value from a")]
             let left = |a| { 1 };
 
-            #[action("Build the left value from b")]
+            #[kaa::action("Build the left value from b")]
             let left = |b| { 2 };
 
-            #[action("Produce the terminal result")]
+            #[kaa::action("Produce the terminal result")]
             let end = |done| { __kaalang_terminal_marker(3) };
 
-            #[question("Refine the right group")]
+            #[kaa::question("Refine the right group")]
             let (yes, no) = |c, condition| { condition };
 
-            #[action("Build the right value on yes")]
+            #[kaa::action("Build the right value on yes")]
             let right = |yes| { 4 };
 
-            #[action("Build the right value on no")]
+            #[kaa::action("Build the right value on no")]
             let right = |no| { 5 };
 
-            #[action("Build the right value from d")]
+            #[kaa::action("Build the right value from d")]
             let right = |d| { 6 };
 
-            #[action("Use the left value")]
+            #[kaa::action("Use the left value")]
             let end = |left| { __kaalang_left_marker(left) };
 
-            #[action("Use the right value")]
+            #[kaa::action("Use the right value")]
             let end = |right| { __kaalang_right_marker(right) };
 
             |end| return end;
@@ -229,17 +227,17 @@ fn emits_every_body_once_across_two_joins_and_a_nested_question() {
 fn nested_partial_joins_emit_each_body_once_without_routing_values() {
     for (source, name) in [
         (
-            include_str!("../../../kaalang/tests/wire/behavior/const_partial_merge.rs"),
+            include_str!("../../../kaalang/tests/flow/wire/const_partial_merge.rs"),
             "const_partial_merge",
         ),
         (
             include_str!(
-                "../../../kaalang/tests/capture/behavior/const_borrowed_input_partial_merge.rs"
+                "../../../kaalang/tests/flow/capture/const_borrowed_input_partial_merge.rs"
             ),
             "const_borrowed_input_partial_merge",
         ),
         (
-            include_str!("../../../kaalang/tests/wire/behavior/nested_partial_merges.rs"),
+            include_str!("../../../kaalang/tests/flow/wire/nested_partial_merges.rs"),
             "nested_partial_merges",
         ),
     ] {

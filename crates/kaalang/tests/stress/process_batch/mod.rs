@@ -4,7 +4,7 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use kaalang::kaalang;
+use kaalang::kaa;
 
 #[derive(Clone, Debug)]
 enum Job {
@@ -119,55 +119,55 @@ impl BatchProcessor {
         self.audited += 1;
     }
 
-    #[kaalang]
+    #[kaa]
     fn process_batch(&mut self, jobs: Vec<Job>, policy: Policy) -> Report {
-        #[action("Open the batch.")]
+        #[kaa::action("Open the batch.")]
         let started = |&mut self| self.events.borrow_mut().push(Event::Started);
 
-        #[action("Prepare the queue and an empty report.")]
+        #[kaa::action("Prepare the queue and an empty report.")]
         let (mut pending, mut report) = |jobs| (jobs.into_iter(), Report::default());
 
-        #[cycle("Process tasks until the queue ends or cancellation is requested.")]
+        #[kaa::cycle("Process tasks until the queue ends or cancellation is requested.")]
         let reason = |started| loop {
-            #[question("Has the cancellation boundary been reached?")]
-            #[no("Take another task.")]
-            #[yes("Cancel the batch.")]
+            #[kaa::question("Has the cancellation boundary been reached?")]
+            #[kaa::no("Take another task.")]
+            #[kaa::yes("Cancel the batch.")]
             let (poll, cancelled) = |policy, &report| {
                 policy
                     .stop_after
                     .is_some_and(|limit| report.outcomes.len() >= limit)
             };
 
-            #[action("Keep the cancellation reason.")]
+            #[kaa::action("Keep the cancellation reason.")]
             let reason = |cancelled| Stop::Cancelled;
 
-            #[call]
+            #[kaa::call]
             let next = |poll, &mut pending| Iterator::next(pending);
 
-            #[choice("Is another task available?")]
-            #[case("Process the task.")]
-            #[case("The queue is empty.")]
+            #[kaa::choice("Is another task available?")]
+            #[kaa::case("Process the task.")]
+            #[kaa::case("The queue is empty.")]
             let (job, finished) = |next| match next {
                 Some(job) => job,
                 None => (),
             };
 
-            #[action("Keep the normal completion reason.")]
+            #[kaa::action("Keep the normal completion reason.")]
             let reason = |finished| Stop::Exhausted;
 
-            #[action("Record entry into this task.")]
+            #[kaa::action("Record entry into this task.")]
             let index = |&job, &report, &mut self| {
                 let index = report.outcomes.len();
                 self.events.borrow_mut().push(Event::Job(index));
                 index
             };
 
-            #[choice("Where does the task's result come from?")]
-            #[case("Use the cached value.")]
-            #[case("Sum local values.")]
-            #[case("Try the scripted remote responses.")]
-            #[case("Skip this task.")]
-            #[case("Reject this task.")]
+            #[kaa::choice("Where does the task's result come from?")]
+            #[kaa::case("Use the cached value.")]
+            #[kaa::case("Sum local values.")]
+            #[kaa::case("Try the scripted remote responses.")]
+            #[kaa::case("Skip this task.")]
+            #[kaa::case("Reject this task.")]
             let (cached, local, remote, skipped, rejected) = |job| match job {
                 Job::Cached(value) => value,
                 Job::Local(values) => values,
@@ -176,16 +176,16 @@ impl BatchProcessor {
                 Job::Reject(message) => message,
             };
 
-            #[action("Prepare a cached value and its source.")]
+            #[kaa::action("Prepare a cached value and its source.")]
             let (prepared, origin) = |cached| (i128::from(cached), "cache");
 
-            #[call("Sum the local values without narrowing them.")]
+            #[kaa::call("Sum the local values without narrowing them.")]
             let local_total = |local| sum_values(local);
 
-            #[action("Prepare a local value and its source.")]
+            #[kaa::action("Prepare a local value and its source.")]
             let (prepared, origin) = |local_total| (local_total, "local");
 
-            #[action("Join both prepared wires before accepting the value.")]
+            #[kaa::action("Join both prepared wires before accepting the value.")]
             let (processed, attempts) = |prepared, origin, index, &mut self| {
                 self.events
                     .borrow_mut()
@@ -193,20 +193,20 @@ impl BatchProcessor {
                 (Outcome::Value(prepared), 0)
             };
 
-            #[action("Prepare the remote attempt queue.")]
+            #[kaa::action("Prepare the remote attempt queue.")]
             let (mut responses, mut attempt_number) = |remote| (remote.into_iter(), 0usize);
 
-            #[cycle(
+            #[kaa::cycle(
                 "Retry transient failures; complete on a response, a fatal error, or exhaustion."
             )]
             let final_result = |responses| loop {
-                #[question("Is there another scripted response?")]
+                #[kaa::question("Is there another scripted response?")]
                 let (try_next, exhausted) = |&responses| responses.len() > 0;
 
-                #[action("No attempt can provide a result.")]
+                #[kaa::action("No attempt can provide a result.")]
                 let final_result = |exhausted| Outcome::Failed(Failure::Exhausted);
 
-                #[action("Acquire a resource for this attempt.")]
+                #[kaa::action("Acquire a resource for this attempt.")]
                 let _lease = |try_next, &mut attempt_number, index, &mut self| {
                     *attempt_number += 1;
                     self.events
@@ -219,14 +219,14 @@ impl BatchProcessor {
                     }
                 };
 
-                #[call("Read the next response.")]
+                #[kaa::call("Read the next response.")]
                 let response = |try_next, &mut responses| Iterator::next(responses);
 
-                #[choice("Can this attempt finish the task?")]
-                #[case("A transient failure can be retried.")]
-                #[case("Validate the response parts.")]
-                #[case("A fatal error ends the task.")]
-                #[case("The final attempt failed.")]
+                #[kaa::choice("Can this attempt finish the task?")]
+                #[kaa::case("A transient failure can be retried.")]
+                #[kaa::case("Validate the response parts.")]
+                #[kaa::case("A fatal error ends the task.")]
+                #[kaa::case("The final attempt failed.")]
                 let (retry, payload, fatal, last_failure) = |response, &responses| match response {
                     Some(Attempt::Transient) if responses.len() > 0 => (),
                     Some(Attempt::Payload(parts)) => parts,
@@ -234,44 +234,46 @@ impl BatchProcessor {
                     _ => (),
                 };
 
-                #[action("Record the retry before releasing its resource.")]
+                #[kaa::action("Record the retry before releasing its resource.")]
                 |retry, index, &mut self| self.events.borrow_mut().push(Event::Retry(index));
 
-                #[action("Prepare the response parts and their running total.")]
+                #[kaa::action("Prepare the response parts and their running total.")]
                 let (mut parts, mut subtotal, mut part_index) =
                     |payload| (payload.into_iter(), 0i128, 0usize);
 
-                #[cycle("Parse each response part; discard the subtotal if any part is malformed.")]
+                #[kaa::cycle(
+                    "Parse each response part; discard the subtotal if any part is malformed."
+                )]
                 let checked = |parts| loop {
-                    #[call]
+                    #[kaa::call]
                     let part = |&mut parts| Iterator::next(parts);
 
-                    #[choice("Is another response part available?")]
-                    #[case("Parse this part.")]
-                    #[case("Every part was valid.")]
+                    #[kaa::choice("Is another response part available?")]
+                    #[kaa::case("Parse this part.")]
+                    #[kaa::case("Every part was valid.")]
                     let (text, complete) = |part| match part {
                         Some(text) => text,
                         None => (),
                     };
 
-                    #[action("Accept the complete response total.")]
+                    #[kaa::action("Accept the complete response total.")]
                     let checked = |complete, subtotal| Outcome::Value(subtotal);
 
-                    #[action("Borrow the part for parsing.")]
+                    #[kaa::action("Borrow the part for parsing.")]
                     let source = |&text| text.as_str();
 
-                    #[call]
+                    #[kaa::call]
                     let parsed = |source| str::parse::<i64>(source);
 
-                    #[choice("Did the part contain an integer?")]
-                    #[case("Add the parsed number.")]
-                    #[case("Reject the entire response.")]
+                    #[kaa::choice("Did the part contain an integer?")]
+                    #[kaa::case("Add the parsed number.")]
+                    #[kaa::case("Reject the entire response.")]
                     let (number, invalid) = |parsed| match parsed {
                         Ok(number) => number,
                         Err(_) => (),
                     };
 
-                    #[action("Accumulate the value and record its position.")]
+                    #[kaa::action("Accumulate the value and record its position.")]
                     |number, &mut subtotal, &mut part_index, index, &mut self| {
                         *subtotal += i128::from(number);
                         self.events
@@ -280,7 +282,7 @@ impl BatchProcessor {
                         *part_index += 1;
                     };
 
-                    #[action("Keep the malformed part and its position.")]
+                    #[kaa::action("Keep the malformed part and its position.")]
                     let checked = |invalid, text, part_index| {
                         Outcome::Failed(Failure::Malformed {
                             part: part_index,
@@ -291,38 +293,38 @@ impl BatchProcessor {
                     |number| continue;
                 };
 
-                #[action("Finish validation while the attempt resource is still alive.")]
+                #[kaa::action("Finish validation while the attempt resource is still alive.")]
                 let final_result = |checked, index, &mut self| {
                     self.events.borrow_mut().push(Event::Validated(index));
                     checked
                 };
 
-                #[action("Keep the fatal error without retrying.")]
+                #[kaa::action("Keep the fatal error without retrying.")]
                 let final_result = |fatal| Outcome::Failed(Failure::Fatal(fatal));
 
-                #[action("The final transient error exhausted the attempts.")]
+                #[kaa::action("The final transient error exhausted the attempts.")]
                 let final_result = |last_failure| Outcome::Failed(Failure::Exhausted);
 
                 |retry| continue;
             };
 
-            #[action("Pair the remote result with its attempt count.")]
+            #[kaa::action("Pair the remote result with its attempt count.")]
             let (processed, attempts) =
                 |final_result, attempt_number| (final_result, attempt_number);
 
-            #[action("Join local and remote processing before recording the task.")]
+            #[kaa::action("Join local and remote processing before recording the task.")]
             let (outcome, count) = |processed, attempts, index, &mut self| {
                 self.events.borrow_mut().push(Event::Processed(index));
                 (processed, attempts)
             };
 
-            #[action("Prepare a skipped outcome.")]
+            #[kaa::action("Prepare a skipped outcome.")]
             let (bypassed, bypass_origin) = |skipped| (Outcome::Skipped, "skip");
 
-            #[action("Prepare a rejected outcome.")]
+            #[kaa::action("Prepare a rejected outcome.")]
             let (bypassed, bypass_origin) = |rejected| (Outcome::Rejected(rejected), "reject");
 
-            #[action("Join both bypass routes before recording the task.")]
+            #[kaa::action("Join both bypass routes before recording the task.")]
             let (outcome, count) = |bypassed, bypass_origin, index, &mut self| {
                 self.events
                     .borrow_mut()
@@ -330,42 +332,42 @@ impl BatchProcessor {
                 (bypassed, 0)
             };
 
-            #[call("Record exactly one outcome and schedule its audit.")]
+            #[kaa::call("Record exactly one outcome and schedule its audit.")]
             let recorded =
                 |outcome, count, &mut report, &mut self| Self::record(self, report, outcome, count);
 
             |recorded| continue;
         };
 
-        #[action("Attach the batch's completion reason.")]
+        #[kaa::action("Attach the batch's completion reason.")]
         let result = |reason, mut report| {
             report.stop = reason;
             report
         };
 
-        #[action("Take the pending audit records.")]
+        #[kaa::action("Take the pending audit records.")]
         let mut audit_queue = |&mut self| std::mem::take(&mut self.pending_audit).into_iter();
 
-        #[cycle("Audit every recorded task before returning the report.")]
+        #[kaa::cycle("Audit every recorded task before returning the report.")]
         let flushed = loop {
-            #[call]
+            #[kaa::call]
             let entry = |&mut audit_queue| Iterator::next(audit_queue);
 
-            #[choice("Is another audit record waiting?")]
-            #[case("Audit the record.")]
-            #[case("The audit queue is empty.")]
+            #[kaa::choice("Is another audit record waiting?")]
+            #[kaa::case("Audit the record.")]
+            #[kaa::case("The audit queue is empty.")]
             let (record, flushed) = |entry| match entry {
                 Some(record) => record,
                 None => (),
             };
 
-            #[call("Commit the audit record.")]
+            #[kaa::call("Commit the audit record.")]
             let audited = |record, &mut self| Self::audit(self, record);
 
             |audited| continue;
         };
 
-        #[action("Close the batch after all audits.")]
+        #[kaa::action("Close the batch after all audits.")]
         |flushed, &mut self| self.events.borrow_mut().push(Event::Finished);
 
         |result| return result;

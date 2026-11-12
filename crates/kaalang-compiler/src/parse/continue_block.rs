@@ -54,8 +54,9 @@ pub(super) fn parse(
 #[cfg(test)]
 mod tests {
     fn second_continue(transfer: &str) {
-        let source =
-            format!("fn example() {{ #[cycle(\"Repeat.\")] loop {{ {transfer} {transfer} }}; }}");
+        let source = format!(
+            "fn example() {{ #[kaa::cycle(\"Repeat.\")] loop {{ {transfer} {transfer} }}; }}"
+        );
         let error = crate::parse::flow(&syn::parse_str(&source).unwrap())
             .err()
             .expect("a second structural continue is rejected before reachability");
@@ -84,9 +85,9 @@ mod tests {
     fn nested_cycles_count_their_continues_separately() {
         let function = syn::parse_quote! {
             fn example() {
-                #[cycle("Repeat the outer cycle.")]
+                #[kaa::cycle("Repeat the outer cycle.")]
                 loop {
-                    #[cycle("Repeat the inner cycle.")]
+                    #[kaa::cycle("Repeat the inner cycle.")]
                     loop {
                         continue;
                     };
@@ -101,9 +102,9 @@ mod tests {
     fn native_continues_do_not_count_as_structural_continues() {
         let function = syn::parse_quote! {
             fn example() {
-                #[cycle("Repeat.")]
+                #[kaa::cycle("Repeat.")]
                 loop {
-                    #[action("Use native Rust control flow.")]
+                    #[kaa::action("Use native Rust control flow.")]
                     {
                         for _ in 0..2 {
                             continue;

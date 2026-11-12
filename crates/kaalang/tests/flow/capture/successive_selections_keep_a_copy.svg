@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="1254" viewBox="0 0 704 1254" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for successive_selections_keep_a_copy</title>
+  <desc id="kaalang-description">Nodes: Start: successive_selections_keep_a_copy with parameters condition: bool; long: bool handing over condition, long; Question: Which seed? capturing condition handing over first / second; Action: Build the first seed. capturing first handing over seed; Action: Build the second seed. capturing second handing over seed; Action: Scale the merged seed. capturing seed handing over scaled; Question: Is it large? capturing &amp;scaled, long handing over yes / no; Action: Include the original seed. capturing yes handing over include_seed; Action: Use the scaled value alone. capturing no handing over include_seed; Action: Finish with the selected adjustment. capturing include_seed, scaled, seed handing over end; End: u32 capturing end; Merge: seed; Merge: include_seed. Connections: Start: successive_selections_keep_a_copy to Question: Which seed?; Question: Which seed? branch 1 to Action: Build the first seed.; Question: Which seed? branch 2 to Action: Build the second seed.; Action: Build the first seed. to the seed merge; Action: Build the second seed. to the seed merge; Action: Scale the merged seed. to Question: Is it large?; Question: Is it large? branch 1 to Action: Include the original seed.; Question: Is it large? branch 2 to Action: Use the scaled value alone.; Action: Include the original seed. to the include_seed merge; Action: Use the scaled value alone. to the include_seed merge; Action: Finish with the selected adjustment. to End: u32; the seed merge to Action: Scale the merged seed.; the include_seed merge to Action: Finish with the selected adjustment..</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 312 206 L 532 206 L 532 314
+      M 172 378 L 172 454
+      M 532 378 L 532 454 L 172 454
+      M 172 594 L 172 666
+      M 172 738 L 172 810
+      M 312 702 L 532 702 L 532 810
+      M 172 874 L 172 950
+      M 532 874 L 532 950 L 172 950
+      M 172 1092 L 172 1164
+      M 172 454 L 172 530
+      M 172 950 L 172 1026
+    "/>
+    <text class="connection-label code" x="185" y="472" xml:space="preserve"><tspan x="185" dy="0">seed</tspan></text>
+    <text class="connection-label code" x="185" y="968" xml:space="preserve"><tspan x="185" dy="0">include_seed</tspan></text>
+    <text class="connection-label code" x="185" y="303" xml:space="preserve"><tspan x="185" dy="0">first</tspan></text>
+    <text class="connection-label code" x="545" y="303" xml:space="preserve"><tspan x="545" dy="0">second</tspan></text>
+    <text class="connection-label code" x="185" y="799" xml:space="preserve"><tspan x="185" dy="0">yes</tspan></text>
+    <text class="connection-label code" x="545" y="799" xml:space="preserve"><tspan x="545" dy="0">no</tspan></text>
+    <text class="connection-label code" x="185" y="1153" xml:space="preserve"><tspan x="185" dy="0">end</tspan></text>
+    <text class="connection-label code" x="185" y="116" xml:space="preserve"><tspan x="185" dy="0">condition, long</tspan></text>
+    <text class="connection-label code" x="185" y="612" xml:space="preserve"><tspan x="185" dy="0">scaled</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
+    <text class="connection-label code" x="185" y="655" xml:space="preserve"><tspan x="185" dy="0">&amp;scaled, long</tspan></text>
+    <text class="connection-label code" x="185" y="1015" xml:space="preserve"><tspan x="185" dy="0">include_seed, scaled, seed</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-33" width="240" height="66"/>
+      <text class="label code" x="-104" y="-3" xml:space="preserve"><tspan x="-104" dy="0">condition: bool</tspan><tspan x="-104" dy="18">long: bool</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 454)">
+      <title xml:space="preserve">the seed merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node merge" transform="translate(172 950)">
+      <title xml:space="preserve">the include_seed merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-99.82" y="-3.84" text-anchor="middle">−</text>
+        <text x="-92.82" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> successive_selections_</tspan></text>
+        <text x="-47.74" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">keep_a_copy</tspan></text>
+      </g>
+    </g>
+    <g class="node question" transform="translate(172 206)">
+      <title xml:space="preserve">Which seed?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Which seed?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 346)">
+      <title xml:space="preserve">Build the first seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the first seed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 346)">
+      <title xml:space="preserve">Build the second seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the second seed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 562)">
+      <title xml:space="preserve">Scale the merged seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Scale the merged seed.</tspan></text>
+    </g>
+    <g class="node question" transform="translate(172 702)">
+      <title xml:space="preserve">Is it large?</title>
+      <polygon class="node-shape" points="-112,-36 112,-36 140,0 112,36 -112,36 -140,0"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="0" dy="0">Is it large?</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 842)">
+      <title xml:space="preserve">Include the original seed.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Include the original seed.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 842)">
+      <title xml:space="preserve">Use the scaled value alone.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Use the scaled value alone.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 1059)">
+      <title xml:space="preserve">Finish with the selected adjustment.</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">Finish with the selected </tspan><tspan x="-124" dy="18">adjustment.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 1193)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">u32</tspan></text>
+    </g>
+  </g>
+</svg>

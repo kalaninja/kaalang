@@ -1,0 +1,27 @@
+use kaalang::kaa;
+
+#[kaa]
+fn merged_cycle(select_first: bool) -> usize {
+    #[kaa::question("Select the first cycle?")]
+    let (first, second) = |select_first| select_first;
+
+    #[kaa::cycle("Produce the first result.")]
+    let result = |first| loop {
+        #[kaa::action("Build the first value.")]
+        let result = || 1;
+    };
+
+    #[kaa::cycle("Produce the second result.")]
+    let result = |second| loop {
+        #[kaa::action("Build the second value.")]
+        let result = || 2;
+    };
+
+    |result| return result;
+}
+
+#[test]
+fn mutually_exclusive_cycles_merge_their_outer_result_wire() {
+    assert_eq!(merged_cycle(true), 1);
+    assert_eq!(merged_cycle(false), 2);
+}

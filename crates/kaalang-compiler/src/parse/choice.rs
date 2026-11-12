@@ -13,11 +13,11 @@ use crate::{
 pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
     Error::new_spanned(
         attribute,
-        "a `#[case(\"description\")]` attribute must follow `#[choice(\"description\")]`",
+        "a `#[kaa::case(\"description\")]` attribute must follow `#[kaa::choice(\"description\")]`",
     )
 }
 
-/// A choice owns the `#[case("...")]` attributes that describe its branches.
+/// A choice owns the `#[kaa::case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let block_description = description(syntax.kind_attribute, "kaalang block")?;
     let cases = syntax.accept_companions(&["case"])?;
@@ -29,7 +29,7 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     if cases.len() < 2 {
         return Err(Error::new_spanned(
             syntax.kind_attribute,
-            "a kaalang choice requires at least two `#[case(\"description\")]` attributes",
+            "a kaalang choice requires at least two `#[kaa::case(\"description\")]` attributes",
         ));
     }
     if cases.len() != syntax.outputs.len() {

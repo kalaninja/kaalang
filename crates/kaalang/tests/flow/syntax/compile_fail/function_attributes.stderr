@@ -1,0 +1,15 @@
+error: unused return value of `doubled` that must be used
+  --> tests/flow/syntax/compile_fail/function_attributes.rs:18:5
+   |
+18 |     doubled(1);
+   |     ^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tests/flow/syntax/compile_fail/function_attributes.rs:1:9
+   |
+ 1 | #![deny(unused_must_use)]
+   |         ^^^^^^^^^^^^^^^
+help: use `let _ = ...` to ignore the resulting value
+   |
+18 |     let _ = doubled(1);
+   |     +++++++

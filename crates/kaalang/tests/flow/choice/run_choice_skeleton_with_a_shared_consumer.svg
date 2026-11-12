@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="704" height="762" viewBox="0 0 704 762" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang diagram for run_choice_skeleton_with_a_shared_consumer</title>
+  <desc id="kaalang-description">Nodes: Start: run_choice_skeleton_with_a_shared_consumer with parameters value: i32 handing over value; Select: What is the sign of the value? capturing value; Case: The value is negative. handing over negative; Case: The value is nonnegative. handing over nonnegative; Action: Build the negative magnitude. capturing negative handing over magnitude; Action: Build the nonnegative magnitude. capturing nonnegative handing over magnitude; End: i32 capturing magnitude; Merge: magnitude. Connections: Start: run_choice_skeleton_with_a_shared_consumer to Select: What is the sign of the value?; Select: What is the sign of the value? to Case: The value is negative.; Select: What is the sign of the value? to Case: The value is nonnegative.; Case: The value is negative. to Action: Build the negative magnitude.; Case: The value is nonnegative. to Action: Build the nonnegative magnitude.; Action: Build the negative magnitude. to the magnitude merge; Action: Build the nonnegative magnitude. to the magnitude merge; the magnitude merge to End: i32.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .connection { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: square; stroke-linejoin: round; }
+      .connection-label { fill: #64748b; font-size: 12px; font-weight: 400; paint-order: stroke; stroke: #ffffff; stroke-width: 5px; stroke-linejoin: round; text-anchor: start; }
+      .branch-label { fill: currentColor; font-weight: 500; }
+      .parameter-link { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .node-shape { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .start .node-shape, .end .node-shape, .parameter-panel .node-shape { fill: #f0f9ff; }
+      .action .node-shape, .call .node-shape { fill: #f8fafc; }
+      .call-bars { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .cycle .node-shape { fill: #f0fdf4; }
+      .loop-marker { fill: #15803d; font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .question .node-shape { fill: #fffbeb; }
+      .select .node-shape, .case .node-shape { fill: #f5f3ff; }
+      .label { fill: currentColor; font-size: 14px; text-anchor: middle; }
+      .start .label, .question .label, .select .label, .case .label, .end .label { font-weight: 600; }
+      .action .label, .call .label, .cycle .label { font-weight: 500; text-anchor: start; }
+      .parameter-panel .label { font-weight: 400; text-anchor: start; }
+      .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+      .cycle-boundary { fill: #f0fdf433; stroke: #15803d; stroke-width: 1.75; stroke-dasharray: 7 5; }
+      .cycle-caption { fill: #166534; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #ffffff; stroke-width: 4px; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cycle-regions">
+  </g>
+  <g class="connections">
+    <path class="connection" d="
+      M 172 98 L 172 170
+      M 172 242 L 172 314
+      M 300 206 L 532 206 L 532 314
+      M 172 384 L 172 456
+      M 532 384 L 532 456
+      M 172 520 L 172 596
+      M 532 520 L 532 596 L 172 596
+      M 172 596 L 172 672
+    "/>
+    <text class="connection-label code" x="185" y="614" xml:space="preserve"><tspan x="185" dy="0">magnitude</tspan></text>
+    <text class="connection-label code" x="185" y="159" xml:space="preserve"><tspan x="185" dy="0">value</tspan></text>
+    <text class="connection-label code" x="185" y="445" xml:space="preserve"><tspan x="185" dy="0">negative</tspan></text>
+    <text class="connection-label code" x="545" y="445" xml:space="preserve"><tspan x="545" dy="0">nonnegative</tspan></text>
+  </g>
+  <g class="nodes">
+    <path class="parameter-link" d="M 312 65 L 408 65"/>
+    <g class="parameter-panel" transform="translate(528 65)">
+      <rect class="node-shape" x="-120" y="-24" width="240" height="48"/>
+      <text class="label code" x="-104" y="6" xml:space="preserve"><tspan x="-104" dy="0">value: i32</tspan></text>
+    </g>
+    <g class="node merge" transform="translate(172 596)">
+      <title xml:space="preserve">the magnitude merge</title>
+      <circle class="node-shape" r="4" style="fill: currentColor"/>
+    </g>
+    <g class="node start" transform="translate(172 65)">
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66" rx="33"/>
+      <g class="label code">
+        <text class="md-badge" x="-112.84" y="-3.84" text-anchor="middle">−</text>
+        <text x="-105.84" y="-3" text-anchor="start" xml:space="preserve"><tspan class="md-code"> run_choice_skeleton_with_</tspan></text>
+        <text x="-73.78" y="15" text-anchor="start" xml:space="preserve"><tspan class="md-code">a_shared_consumer</tspan></text>
+      </g>
+    </g>
+    <g class="node select" transform="translate(172 206)">
+      <title xml:space="preserve">What is the sign of the value?</title>
+      <polygon class="node-shape" points="-116,-36 140,-36 116,36 -140,36"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">What is the sign of the </tspan><tspan x="0" dy="18">value?</tspan></text>
+    </g>
+    <g class="node case" transform="translate(172 349)">
+      <title xml:space="preserve">The value is negative.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The value is negative.</tspan></text>
+    </g>
+    <g class="node case" transform="translate(532 349)">
+      <title xml:space="preserve">The value is nonnegative.</title>
+      <polygon class="node-shape" points="-120,-35 120,-35 120,17 0,35 -120,17"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="0" dy="0">The value is nonnegative.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(172 488)">
+      <title xml:space="preserve">Build the negative magnitude.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the negative magnitude.</tspan></text>
+    </g>
+    <g class="node action" transform="translate(532 488)">
+      <title xml:space="preserve">Build the nonnegative magnitude.</title>
+      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
+      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">Build the nonnegative magnitude.</tspan></text>
+    </g>
+    <g class="node end" transform="translate(172 701)">
+      <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
+      <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">i32</tspan></text>
+    </g>
+  </g>
+</svg>

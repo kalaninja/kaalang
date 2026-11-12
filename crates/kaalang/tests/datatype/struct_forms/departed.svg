@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="431" height="492" viewBox="0 0 431 492" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+  <title id="kaalang-title">kaalang type diagram for Departed</title>
+  <desc id="kaalang-description">Type Departed with incoming types Member.</desc>
+  <defs>
+    <style>
+      svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }
+      .card-shape { fill: #ffffff; }
+      .card-groove { fill: #f8fafc; }
+      .card-outline { fill: none; stroke: currentColor; stroke-width: 1.75; }
+      .focus .card-outline { stroke-width: 2.5; }
+      .card-rules { fill: none; stroke: #cbd5e1; stroke-width: 1; }
+      .type-name, .description, .field-type, .variant-name { fill: currentColor; }
+      .type-kind, .field-name, .target { fill: #64748b; font-size: 12px; }
+      .type-name { font-size: 18px; font-weight: 700; }
+      .description, .variant-name { font-size: 14px; }
+      .field-type { font-size: 12px; }
+      .field-name, .field-type, .variant-name { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .target .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 400; }
+      .relationship { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; }
+      .relationship-source { fill: currentColor; }
+      .port { fill: #ffffff; stroke: currentColor; stroke-width: 1.75; }
+      .md-badge { fill: #64748b; stroke: none; font-size: 0.9em; font-weight: 700; }
+      .md-code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-weight: 600; }
+      .md-bold { font-weight: 800; }
+      .md-italic { font-style: italic; }
+      .md-quote { font-style: italic; }
+      .md-strikethrough { text-decoration: line-through; }
+      .md-underline { text-decoration: underline; }
+      .md-strikethrough.md-underline { text-decoration: underline line-through; }
+      .md-highlight-box { fill: #fef08a; stroke: none; }
+      .md-superscript, .md-subscript { font-size: 75%; }
+      .md-superscript { baseline-shift: 0.4em; }
+      .md-subscript { baseline-shift: -0.2em; }
+      .md-math { color: inherit; overflow: visible; }
+      .md-math path, .md-math rect:not([stroke]) { stroke: none; vector-effect: non-scaling-stroke; }
+      .md-math.md-bold path { stroke: currentColor; stroke-width: 0.7px; stroke-linejoin: round; }
+      .md-math.md-bold g[stroke] path { stroke: inherit; }
+      .md-color-red, .md-math.md-color-red { fill: #b91c1c; color: #b91c1c; }
+      .md-color-green, .md-math.md-color-green { fill: #166534; color: #166534; }
+      .md-color-blue, .md-math.md-color-blue { fill: #1d4ed8; color: #1d4ed8; }
+      .md-color-purple, .md-math.md-color-purple { fill: #6d28d9; color: #6d28d9; }
+      .md-color-muted, .md-math.md-color-muted { fill: #475569; color: #475569; }
+    </style>
+    <marker id="relationship-arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/></marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <g class="cards">
+    <g class="card">
+      <title xml:space="preserve">Member</title>
+      <rect class="card-shape" x="32" y="32" width="323" height="310"/>
+      <path class="card-rules" d="M 32 102 L 355 102 M 32 150 L 355 150 M 32 220 L 355 220 M 32 268 L 355 268"/>
+      <rect class="card-outline" x="32" y="32" width="323" height="310"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="62.92" text-anchor="middle">+</text>
+        <text x="64" y="64" text-anchor="start" xml:space="preserve"> Member</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="64" xml:space="preserve"><tspan x="341" dy="0">struct</tspan></text>
+      <text class="description" y="87" xml:space="preserve"><tspan x="46" dy="0">A member of the directory.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="122.28" text-anchor="middle">+</text>
+        <text x="58" y="123" text-anchor="start" xml:space="preserve"> id</text>
+      </g>
+      <text class="field-type" y="139" xml:space="preserve"><tspan x="46" dy="0">MemberId</tspan></text>
+      <text class="description" y="125" xml:space="preserve"><tspan x="181" dy="0">The member&apos;s key.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="170.28" text-anchor="middle">~</text>
+        <text x="58" y="171" text-anchor="start" xml:space="preserve"> name</text>
+      </g>
+      <text class="field-type" y="187" xml:space="preserve"><tspan x="46" dy="0">String</tspan></text>
+      <text class="description" y="173" xml:space="preserve"><tspan x="181" dy="0">The <tspan class="md-bold">display</tspan> name, as </tspan><tspan x="181" dy="18">the <tspan class="md-code">directory</tspan> shows </tspan><tspan x="181" dy="18">it.</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="240.28" text-anchor="middle">−</text>
+        <text x="58" y="241" text-anchor="start" xml:space="preserve"> active</text>
+      </g>
+      <text class="field-type" y="257" xml:space="preserve"><tspan x="46" dy="0">bool</tspan></text>
+      <g class="field-name">
+        <text class="md-badge" x="52" y="288.28" text-anchor="middle">+</text>
+        <text x="58" y="289" text-anchor="start" xml:space="preserve"> departed</text>
+      </g>
+      <text class="field-type" y="305" xml:space="preserve"><tspan x="46" dy="0">Option&lt;Departed&gt;</tspan></text>
+      <text class="description" y="291" xml:space="preserve"><tspan x="181" dy="0">Set once the member </tspan><tspan x="181" dy="18">leaves.</tspan></text>
+      <text class="target" text-anchor="end" y="331" xml:space="preserve"><tspan x="341" dy="0">▸ <tspan class="md-code">Departed</tspan></tspan></text>
+    </g>
+    <g class="card focus">
+      <title xml:space="preserve">Departed</title>
+      <rect class="card-shape" x="32" y="390" width="367" height="70"/>
+      <rect class="card-outline" x="32" y="390" width="367" height="70"/>
+      <g class="type-name">
+        <text class="md-badge" x="55" y="420.92" text-anchor="middle">+</text>
+        <text x="64" y="422" text-anchor="start" xml:space="preserve"> Departed</text>
+      </g>
+      <text class="type-kind" text-anchor="end" y="422" xml:space="preserve"><tspan x="385" dy="0">struct</tspan></text>
+      <text class="description" y="445" xml:space="preserve"><tspan x="46" dy="0">A marker that a member has left the directory.</tspan></text>
+    </g>
+  </g>
+  <g class="relationships">
+    <g class="relationship-route">
+      <title xml:space="preserve">Member → Departed</title>
+      <path class="relationship" d="M 355 326 L 369 326 L 369 390" marker-end="url(#relationship-arrow)"/>
+      <circle class="relationship-source" cx="355" cy="326" r="4"/>
+    </g>
+  </g>
+</svg>

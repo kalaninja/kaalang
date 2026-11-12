@@ -4,7 +4,7 @@ use kaalang_render::ArrangementVerifier;
 /// One action between the flow's start and end: the smallest arrangement a
 /// reference can be removed from.
 const SERIAL_PROBE: &str = "fn probe(value: u8) -> u8 {
-    #[action(\"Keep the value.\")]
+    #[kaa::action(\"Keep the value.\")]
     let kept = |value| value;
     |kept| return kept;
 }";
@@ -104,7 +104,7 @@ fn the_public_verifiers_reject_unrepresentable_grid_spacing() {
 #[test]
 fn the_public_verifier_rejects_a_crossed_corridor() {
     let mut model = fixture(
-        include_str!("../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
+        include_str!("../../kaalang/tests/flow/wire/blocked_terminal_crossing.rs"),
         "blocked_terminal_crossing",
     );
     kaalang_render::compact_arrangement(&mut model);
@@ -122,7 +122,7 @@ fn the_public_verifier_rejects_a_crossed_corridor() {
 #[test]
 fn a_lifted_completion_is_a_renderer_exception_not_a_construction_result() {
     let mut model = fixture(
-        include_str!("../../kaalang/tests/cycle/behavior/collect_steps.rs"),
+        include_str!("../../kaalang/tests/flow/cycle/collect_steps.rs"),
         "collect_steps",
     );
     kaalang_render::compact_arrangement(&mut model);

@@ -1,0 +1,23 @@
+use kaalang::kaa;
+
+#[kaa]
+const fn const_mutable_captures(mut value: u32) -> u32 {
+    #[kaa::action("Increment a local copy.")]
+    let incremented = |mut value| {
+        value += 1;
+        value
+    };
+
+    #[kaa::action("Add the copy to the original wire.")]
+    |&mut value, incremented| {
+        *value += incremented;
+    };
+
+    |value| return value;
+}
+
+#[test]
+fn both_mutable_capture_forms_work_during_constant_evaluation() {
+    const VALUE: u32 = const_mutable_captures(3);
+    assert_eq!(VALUE, 7);
+}

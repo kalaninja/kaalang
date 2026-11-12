@@ -24,6 +24,13 @@ pub(crate) const FORMULA_UNDERLINE_OFFSET: (i32, i32) = (1, 10);
 pub(crate) const FORMULA_STRIKETHROUGH_OFFSET: (i32, i32) = (1, 3);
 pub(crate) const FORMULA_UNDERLINE_PADDING: i32 = 2;
 pub(crate) const TEXT_ADVANCE_SCALE: i64 = 10_000;
+/// Font size of a node label or a description. The serializers write the
+/// stylesheet from this, so measurement and rendering cannot disagree.
+pub(crate) const LABEL_FONT: i32 = 14;
+/// Baseline-to-baseline distance between the lines of a label or description.
+pub(crate) const LINE_HEIGHT: i32 = 18;
+/// Font size of secondary text: wire labels, a card's kind, a field's name.
+pub(crate) const SECONDARY_FONT: i32 = 12;
 const COLOR_MARKER_START: u32 = 0x0001_0203;
 
 // Estimated character widths, in hundredths of an em.
@@ -42,6 +49,30 @@ const TEXT_EM_PARTS: i32 = 5;
 const SUPERSCRIPT_ASCENT_PERCENT: i32 = 90;
 const SUBSCRIPT_DESCENT_PERCENT: i32 = 30;
 
+/// The style of Rust source.
+const CODE: Style = Style {
+    bold: false,
+    italic: false,
+    strikethrough: false,
+    underline: false,
+    highlight: false,
+    badge: false,
+    code: true,
+    quote: false,
+    script: None,
+    color: None,
+};
+
+/// The cell a visibility badge's marker is centered in, as a percentage of the
+/// font size.
+const BADGE_WIDTH_PERCENT: i64 = 100;
+/// The marker's center above the line's baseline, as a fraction of the font
+/// size: where `+`, `-`, and `~` have theirs.
+pub(crate) const BADGE_CENTER: (i32, i32) = (9, 25);
+/// The marker's baseline below its center, as a fraction of the font size: the
+/// markers sit a third of their own size above their baseline, in every font.
+pub(crate) const BADGE_GLYPH_DROP: (i32, i32) = (3, 10);
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)] // A span combines independent CSS effects.
 pub(crate) struct Style {
@@ -50,6 +81,8 @@ pub(crate) struct Style {
     pub(crate) strikethrough: bool,
     pub(crate) underline: bool,
     pub(crate) highlight: bool,
+    /// A visibility marker, centered in a cell of its own.
+    pub(crate) badge: bool,
     pub(crate) code: bool,
     pub(crate) quote: bool,
     pub(crate) script: Option<Script>,
@@ -279,10 +312,67 @@ pub(crate) struct RichText {
 
 impl RichText {
     pub(crate) fn literal(text: impl Into<String>) -> Self {
+        Self::styled(text.into(), Style::default())
+    }
+
+    /// Source-derived text in one style, measured as that style renders.
+    pub(crate) fn styled(text: impl AsRef<str>, style: Style) -> Self {
         let mut result = Self::default();
-        result.push(text.into(), Style::default());
+        result.push(text, style);
         result.finish();
         result
+    }
+
+    /// Rust source: a name, a type, or a path, measured and set in code.
+    pub(crate) fn code(text: impl AsRef<str>) -> Self {
+        Self::styled(text, CODE)
+    }
+
+    /// Rust source behind its visibility marker, as `with_visibility` writes
+    /// it: the marker becomes a badge. Without one, the whole text is source.
+    pub(crate) fn marked_code(text: &str) -> Self {
+        Self::marked(text, CODE)
+    }
+
+    /// `text` in one style, with a leading visibility marker as a badge.
+    pub(crate) fn marked(text: &str, style: Style) -> Self {
+        let mut result = Self::default();
+        match text.split_once(' ') {
+            Some((marker @ ("+" | "~" | "-"), rest)) => {
+                result.push(
+                    marker,
+                    Style {
+                        badge: true,
+                        ..style
+                    },
+                );
+                result.push(format!(" {rest}"), style);
+            }
+            _ => result.push(text, style),
+        }
+        result.finish();
+        result
+    }
+
+    /// Whether the text is Rust source and nothing else, behind a visibility
+    /// badge or not.
+    pub(crate) fn is_code(&self) -> bool {
+        !self.spans.is_empty()
+            && self.spans.iter().all(|span| {
+                span.formula.is_none()
+                    && Style {
+                        badge: false,
+                        ..span.style
+                    } == CODE
+            })
+    }
+
+    /// The plain text without a leading visibility badge, for prose.
+    pub(crate) fn unmarked(&self) -> &str {
+        match self.spans.first() {
+            Some(span) if span.style.badge => self.plain[span.text.len()..].trim_start(),
+            _ => &self.plain,
+        }
     }
 
     pub(crate) fn markdown(text: &str) -> Self {
@@ -332,7 +422,11 @@ impl RichText {
     }
 
     pub(crate) fn push_literal(&mut self, text: &str) {
-        self.push(text, Style::default());
+        self.push_styled(text, Style::default());
+    }
+
+    pub(crate) fn push_styled(&mut self, text: &str, style: Style) {
+        self.push(text, style);
         self.finish();
     }
 
@@ -746,6 +840,7 @@ fn active_style(effects: &[TagEnd], inline: &[InlineEffect], quote: bool) -> Sty
         highlight: inline
             .iter()
             .any(|effect| matches!(effect, InlineEffect::Highlight)),
+        badge: false,
         code: false,
         quote,
         script: effects.iter().rev().find_map(|effect| match effect {
@@ -782,6 +877,10 @@ fn advance(character: char, code: bool) -> i32 {
 }
 
 fn cluster_advance(cluster: &str, style: Style, font_size: i32) -> i64 {
+    if style.badge {
+        // The cell, whatever glyph it holds.
+        return BADGE_WIDTH_PERCENT * i64::from(font_size) * 100;
+    }
     let character = cluster
         .chars()
         .next()
@@ -979,7 +1078,14 @@ fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
     clusters.len()
 }
 
-/// Wraps at the last fitting space, or between grapheme clusters for long words.
+/// Whether `cluster` is an underscore in Rust source, after which an
+/// identifier too long for its line breaks without a hyphen.
+fn underscore_in_code(cluster: &Cluster) -> bool {
+    cluster.text == "_" && cluster.spans[0].style.code
+}
+
+/// Wraps at the last fitting space; a word too long for a line breaks after
+/// an underscore in Rust source, or else between grapheme clusters.
 /// Preserves text except newline separators; an oversized cluster stays intact.
 pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<RichText> {
     let mut all = clusters(text);
@@ -1002,12 +1108,30 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
         let mut start = 0;
         while clusters_width(&clusters[start..], font_size) > budget {
             let hard_end = start + fitting_count(&clusters[start..], budget, font_size);
-            let preferred_break = clusters[start..hard_end]
+            let candidates = &clusters[start..hard_end];
+            // Never a lone space, nor a badge or a leading underscore without
+            // the name it belongs to.
+            let accepted = |offset: usize| {
+                let end = start + offset + 1;
+                (end > start + 1
+                    && !clusters[start..end].iter().all(|cluster| {
+                        cluster.spans[0].style.badge
+                            || cluster.text.starts_with(char::is_whitespace)
+                            || underscore_in_code(cluster)
+                    }))
+                .then_some(end)
+            };
+            let at_space = candidates
                 .iter()
                 .rposition(|cluster| cluster.text.starts_with(char::is_whitespace))
-                .map(|offset| start + offset + 1)
-                .filter(|end| *end > start + 1);
-            let end = preferred_break.unwrap_or(hard_end);
+                .and_then(accepted);
+            let at_underscore = || {
+                candidates
+                    .iter()
+                    .rposition(underscore_in_code)
+                    .and_then(accepted)
+            };
+            let end = at_space.or_else(at_underscore).unwrap_or(hard_end);
             lines.push(line(&clusters[start..end]));
             start = end;
         }
@@ -1016,10 +1140,6 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
         }
     }
     lines
-}
-
-pub(crate) fn wrap_literal(text: &str, budget: i32, font_size: i32) -> Vec<RichText> {
-    wrap_text(&RichText::literal(text), budget, font_size)
 }
 
 fn line(clusters: &[Cluster]) -> RichText {
@@ -1083,10 +1203,13 @@ pub(crate) fn block_metrics(
 #[cfg(test)]
 mod tests {
     use super::{
-        Color, Dim, RichText, Script, Style, joined, line_ink, svg_dimension, text_width,
-        wrap_literal, wrap_text,
+        Color, Dim, RichText, Script, Style, joined, line_ink, svg_dimension, text_width, wrap_text,
     };
-    use crate::layout::{LABEL_FONT, NODE_LABEL_WIDTH};
+    use crate::{flow::layout::NODE_LABEL_WIDTH, text::LABEL_FONT};
+
+    fn wrap_literal(text: &str, budget: i32, font_size: i32) -> Vec<RichText> {
+        wrap_text(&RichText::literal(text), budget, font_size)
+    }
 
     #[test]
     fn indices_do_not_reinterpret_code_escapes_entities_or_literal_fallbacks() {
@@ -1653,6 +1776,42 @@ mod tests {
                 "line exceeds the budget: {}",
                 line.as_ref()
             );
+        }
+    }
+
+    /// A start label is a badge and a `snake_case` name in code: the name breaks
+    /// after an underscore, and never leaves the badge alone on its line.
+    #[test]
+    fn wrapping_breaks_code_after_an_underscore_and_keeps_a_badge_with_its_name() {
+        let label = RichText::marked_code("+ transition_to_diverging_stage");
+        let lines = wrap_text(&label, text_width(&label, LABEL_FONT) - 1, LABEL_FONT);
+        assert_eq!(
+            lines.iter().map(RichText::as_ref).collect::<Vec<_>>(),
+            ["+ transition_to_diverging_", "stage"]
+        );
+
+        // A leading underscore stays with the name: the line breaks inside it.
+        let label = RichText::marked_code("+ _abcdefghijklmnopqrstuvwxyz_end");
+        let budget = text_width(&RichText::marked_code("+ _abcdefghij"), LABEL_FONT);
+        let lines = wrap_text(&label, budget, LABEL_FONT);
+        assert_eq!(lines[0].as_ref(), "+ _abcdefghij");
+
+        let label = RichText::marked_code("+ transitiontodivergingstage");
+        let lines = wrap_text(&label, text_width(&label, LABEL_FONT) - 1, LABEL_FONT);
+        assert!(
+            lines[0].as_ref().starts_with("+ t"),
+            "{:?}",
+            lines[0].as_ref()
+        );
+
+        // A space break keeps the next identifier whole; prose never breaks
+        // at an underscore.
+        for text in [
+            RichText::code("first_input_value, second_input_value"),
+            RichText::literal("first_input_value, second_input_value"),
+        ] {
+            let lines = wrap_text(&text, text_width(&text, LABEL_FONT) - 1, LABEL_FONT);
+            assert_eq!(lines[0].as_ref(), "first_input_value, ");
         }
     }
 

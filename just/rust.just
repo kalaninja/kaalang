@@ -27,9 +27,13 @@ clippy: (tooling::build "rust")
 test: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust cargo test --workspace
 
-# Redraw the behavior diagrams and show the diff to review.
-svg: (tooling::build "rust")
-    ./scripts/docker/run-tooling.sh kaalang-rust cargo test -p kaalang --test diagrams
+# Draw the gallery examples through the CLI.
+gallery: (tooling::build "rust")
+    ./scripts/docker/run-tooling.sh kaalang-rust bash scripts/draw-gallery.sh
+
+# Redraw fixture and gallery diagrams and show the diff to review.
+svg: gallery
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo test -p kaalang --test diagrams -- --ignored
     git diff -- '*.svg'
 
 # Run the exhaustive comparisons the baseline leaves out.

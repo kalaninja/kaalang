@@ -1068,25 +1068,23 @@ mod tests {
     fn shared_entries_keep_the_first_branch_approach_column() {
         for (source, name, entries) in [
             (
-                include_str!("../../../kaalang/tests/wire/behavior/independent_entry_blocks.rs"),
+                include_str!("../../../kaalang/tests/flow/wire/independent_entry_blocks.rs"),
                 "independent_entry_blocks",
                 vec![3, 4],
             ),
             (
-                include_str!(
-                    "../../../kaalang/tests/wire/behavior/question_after_a_partial_merge.rs"
-                ),
+                include_str!("../../../kaalang/tests/flow/wire/question_after_a_partial_merge.rs"),
                 "question_after_a_partial_merge",
                 vec![3, 5],
             ),
             (
-                include_str!("../../../kaalang/tests/wire/behavior/blocked_terminal_crossing.rs"),
+                include_str!("../../../kaalang/tests/flow/wire/blocked_terminal_crossing.rs"),
                 "blocked_terminal_crossing",
                 vec![7],
             ),
             (
                 include_str!(
-                    "../../../kaalang/tests/wire/behavior/a_branch_captures_a_merged_value.rs"
+                    "../../../kaalang/tests/flow/wire/a_branch_captures_a_merged_value.rs"
                 ),
                 "a_branch_captures_a_merged_value",
                 vec![3],
