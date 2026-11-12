@@ -15,13 +15,13 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/kalaninja/kaalang"
 rust-version = "1.99"
-version = "0.2.0"
+version = "0.3.0"
 
 [workspace.dependencies]
-kaalang-compiler = { version = "0.2.0", path = "crates/kaalang-compiler" }
-kaalang-macros = { version = "0.2.0", path = "crates/kaalang-macros" }
-kaalang-render = { version = "0.2.0", path = "crates/kaalang-render" }
-kaalang-svg = { version = "0.2.0", path = "crates/kaalang-svg" }
+kaalang-compiler = { version = "0.3.0", path = "crates/kaalang-compiler" }
+kaalang-macros = { version = "0.3.0", path = "crates/kaalang-macros" }
+kaalang-render = { version = "0.3.0", path = "crates/kaalang-render" }
+kaalang-svg = { version = "0.3.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 
 cargo-platform = "0.3.3"
