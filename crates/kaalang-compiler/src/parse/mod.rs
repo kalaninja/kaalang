@@ -971,6 +971,7 @@ fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident
 
 #[cfg(test)]
 mod tests {
+    use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
     use super::{block_input, block_outputs, flow, reject_control_transfers};
@@ -1050,7 +1051,7 @@ mod tests {
         assert_eq!(action.kind, BlockKind::Action);
         assert_eq!(return_block.kind, BlockKind::Return);
         assert_eq!(end.kind, BlockKind::End);
-        assert!(end.outputs.is_empty());
+        assert_eq!(end.outputs, Vec::<Ident>::new());
         assert!(end.description.is_none());
         assert!(end.inputs.is_empty());
     }
@@ -1113,7 +1114,7 @@ mod tests {
         ] {
             let flow: ItemFn = function;
             let flow = super::flow(&flow).expect("an action may declare no outputs");
-            assert!(flow.blocks[0].outputs.is_empty());
+            assert_eq!(flow.blocks[0].outputs, Vec::<Ident>::new());
         }
     }
 

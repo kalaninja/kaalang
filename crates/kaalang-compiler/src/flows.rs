@@ -740,7 +740,7 @@ mod tests {
     #[test]
     fn a_free_function_is_selected_by_its_modules_and_name() {
         assert_eq!(selected(METHODS, "nested::route"), ["nested::route"]);
-        assert!(selected(METHODS, "route").is_empty());
+        assert_eq!(selected(METHODS, "route"), Vec::<String>::new());
     }
 
     #[test]
@@ -839,7 +839,7 @@ mod tests {
             impl Report { fn approve(&self) {} }
             impl Approve for Report { #[kaa] fn approve(&self) {} }
         ";
-        assert!(selected(source, "Report::approve").is_empty());
+        assert_eq!(selected(source, "Report::approve"), Vec::<String>::new());
     }
 
     #[test]
@@ -942,7 +942,10 @@ mod tests {
             let path = format!("<{ty} as Run>::run");
             assert_eq!(selected(source, &path).len(), 1, "{path}");
         }
-        assert!(selected(source, "<&dyn Pair<Right = u8> as Run>::run").is_empty());
+        assert_eq!(
+            selected(source, "<&dyn Pair<Right = u8> as Run>::run"),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
@@ -966,7 +969,10 @@ mod tests {
             selected(source, "<&(dyn Send + Fn(u8)) as Run>::run"),
             ["<&(dyn Fn(T) + Send) as Run>::run"],
         );
-        assert!(selected(source, "<&dyn Fn(u8) as Run>::run").is_empty());
+        assert_eq!(
+            selected(source, "<&dyn Fn(u8) as Run>::run"),
+            Vec::<String>::new()
+        );
     }
 
     #[test]

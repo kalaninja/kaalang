@@ -35,5 +35,5 @@ fn both_branches_hand_over_the_merged_output() {
     assert_eq!(log, ["Some(\"a\")"]);
     let (taken, log) = output_merged_in_the_body(Vec::new(), Vec::new());
     assert_eq!(taken, None);
-    assert!(log.is_empty());
+    assert_eq!(log, Vec::<String>::new());
 }

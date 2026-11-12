@@ -123,10 +123,10 @@ fn labels_belong_to_exits_and_nodes_including_unused_names() {
     );
     assert_eq!(captions.capture(NodeId::Block(2)), ["&width", "depth"]);
     let distributor = ExitId::of(NodeId::Block(0));
-    assert!(captions.handover(distributor).is_empty());
+    assert_eq!(captions.handover(distributor), Vec::<String>::new());
     for (branch, name) in ["near", "far"].into_iter().enumerate() {
         let case = NodeId::Case { choice: 0, branch };
-        assert!(captions.capture_label(case).is_empty());
+        assert_eq!(captions.capture_label(case), Vec::<String>::new());
         assert_eq!(captions.handover(ExitId::of(case)), [name]);
         assert_eq!(
             captions.label(case).as_ref(),

@@ -354,7 +354,7 @@ fn nested_exit_routes_merge_without_crossing_side_departures() {
                 })
         })
         .unwrap();
-    assert!(model.arrangement.routes[outer_exit].runs.is_empty());
+    assert_eq!(model.arrangement.routes[outer_exit].runs, []);
 }
 
 /// Every result must pass independent verification.

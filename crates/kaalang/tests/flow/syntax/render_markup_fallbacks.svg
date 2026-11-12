@@ -1,15 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1502" viewBox="0 0 680 1502" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="1504" viewBox="0 0 680 1504" role="img" aria-labelledby="kaalang-title" aria-describedby="kaalang-description">
   <title id="kaalang-title">kaalang diagram for render_markup_fallbacks</title>
   <desc id="kaalang-description">Nodes: Start: render_markup_fallbacks with parameters condition: bool handing over condition; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside capturing condition handing over crossing; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after capturing crossing handing over overlapping; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; capturing overlapping handing over noncanonical; Action: &lt;B&gt;warning&lt;/b&gt;
-&lt;u&gt;foo&lt;/u &gt; capturing noncanonical handing over enclosing; Action: &lt;b&gt;foo&lt;/b&gt; capturing enclosing handing over indented; Action:    “quote  ” capturing indented handing over colors; Action: $\color{not-a-color}x$ capturing colors handing over carriage_returns; Action: **Two&#13;&#13;paragraphs** stay literal.
+&lt;u&gt;foo&lt;/u &gt; capturing noncanonical handing over enclosing; Action: &lt;b&gt;foo&lt;/b&gt; capturing enclosing handing over indented; Action:    “quote  ” capturing indented handing over colors; Action: $\color{not-a-color}x$, $^{14}\mathrm{C}$ and $\frac{}{}$ capturing colors handing over carriage_returns; Action: **Two&#13;&#13;paragraphs** stay literal.
 One&#13;paragraph keeps its style. capturing carriage_returns handing over empty_tags; Action: &lt;u&gt;&lt;/u&gt;
 &lt;mark&gt;&lt;/mark&gt;
 &lt;color name=&quot;red&quot;&gt;&lt;/color&gt; capturing empty_tags handing over tested; End: () capturing nothing. Connections: Start: render_markup_fallbacks to Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside; Action: &lt;b&gt;warning&lt;/b&gt; &lt;b&gt;x&lt;/b&gt; outside to Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after; Action: &lt;b&gt;foo&lt;/b&gt; after
 &lt;b&gt;foo&lt;/b&gt; after to Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt;; Action: &lt;b&gt;&lt;i&gt;x&lt;/b&gt;y&lt;/i&gt; to Action: &lt;B&gt;warning&lt;/b&gt;
 &lt;u&gt;foo&lt;/u &gt;; Action: &lt;B&gt;warning&lt;/b&gt;
-&lt;u&gt;foo&lt;/u &gt; to Action: &lt;b&gt;foo&lt;/b&gt;; Action: &lt;b&gt;foo&lt;/b&gt; to Action:    “quote  ”; Action:    “quote  ” to Action: $\color{not-a-color}x$; Action: $\color{not-a-color}x$ to Action: **Two&#13;&#13;paragraphs** stay literal.
+&lt;u&gt;foo&lt;/u &gt; to Action: &lt;b&gt;foo&lt;/b&gt;; Action: &lt;b&gt;foo&lt;/b&gt; to Action:    “quote  ”; Action:    “quote  ” to Action: $\color{not-a-color}x$, $^{14}\mathrm{C}$ and $\frac{}{}$; Action: $\color{not-a-color}x$, $^{14}\mathrm{C}$ and $\frac{}{}$ to Action: **Two&#13;&#13;paragraphs** stay literal.
 One&#13;paragraph keeps its style.; Action: **Two&#13;&#13;paragraphs** stay literal.
 One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
 &lt;mark&gt;&lt;/mark&gt;
@@ -74,9 +74,9 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       M 172 638 L 172 710
       M 172 774 L 172 846
       M 172 910 L 172 982
-      M 172 1046 L 172 1118
-      M 172 1184 L 172 1256
-      M 172 1340 L 172 1412
+      M 172 1048 L 172 1120
+      M 172 1186 L 172 1258
+      M 172 1342 L 172 1414
     "/>
     <text class="connection-label code" x="185" y="151" xml:space="preserve"><tspan x="185" dy="0">condition</tspan></text>
     <text class="connection-label code" x="185" y="287" xml:space="preserve"><tspan x="185" dy="0">crossing</tspan></text>
@@ -85,10 +85,10 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
     <text class="connection-label code" x="185" y="699" xml:space="preserve"><tspan x="185" dy="0">enclosing</tspan></text>
     <text class="connection-label code" x="185" y="835" xml:space="preserve"><tspan x="185" dy="0">indented</tspan></text>
     <text class="connection-label code" x="185" y="971" xml:space="preserve"><tspan x="185" dy="0">colors</tspan></text>
-    <text class="connection-label code" x="185" y="1107" xml:space="preserve"><tspan x="185" dy="0">carriage_returns</tspan></text>
-    <text class="connection-label code" x="185" y="1245" xml:space="preserve"><tspan x="185" dy="0">empty_tags</tspan></text>
-    <text class="connection-label code" x="185" y="1358" xml:space="preserve"><tspan x="185" dy="0">tested</tspan></text>
-    <text class="connection-label code" x="185" y="1401" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
+    <text class="connection-label code" x="185" y="1109" xml:space="preserve"><tspan x="185" dy="0">carriage_returns</tspan></text>
+    <text class="connection-label code" x="185" y="1247" xml:space="preserve"><tspan x="185" dy="0">empty_tags</tspan></text>
+    <text class="connection-label code" x="185" y="1360" xml:space="preserve"><tspan x="185" dy="0">tested</tspan></text>
+    <text class="connection-label code" x="185" y="1403" xml:space="preserve"><tspan x="185" dy="0">()</tspan></text>
   </g>
   <g class="nodes">
     <path class="parameter-link" d="M 312 61 L 408 61"/>
@@ -140,25 +140,25 @@ One&#13;paragraph keeps its style. to Action: &lt;u&gt;&lt;/u&gt;
       <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
       <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">   <tspan class="md-quote">“</tspan><tspan class="md-bold md-quote">quote</tspan><tspan class="md-quote">  ”</tspan></tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1014)">
-      <title xml:space="preserve">$\color{not-a-color}x$</title>
-      <rect class="node-shape" x="-140" y="-32" width="280" height="64"/>
-      <text class="label" y="6" xml:space="preserve"><tspan x="-124" dy="0">$\color{not-a-color}x$</tspan></text>
+    <g class="node action" transform="translate(172 1015)">
+      <title xml:space="preserve">$\color{not-a-color}x$, $^{14}\mathrm{C}$ and $\frac{}{}$</title>
+      <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
+      <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">$\color{not-a-color}x$, </tspan><tspan x="-124" dy="18">$^{14}\mathrm{C}$ and $\frac{}{}$</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1151)">
+    <g class="node action" transform="translate(172 1153)">
       <title xml:space="preserve">**Two&#13;&#13;paragraphs** stay literal.
 One&#13;paragraph keeps its style.</title>
       <rect class="node-shape" x="-140" y="-33" width="280" height="66"/>
       <text class="label" y="-3" xml:space="preserve"><tspan x="-124" dy="0">**Two&#13;&#13;paragraphs** stay literal.</tspan><tspan x="-124" dy="18"><tspan class="md-bold">One&#13;paragraph</tspan> keeps its style.</tspan></text>
     </g>
-    <g class="node action" transform="translate(172 1298)">
+    <g class="node action" transform="translate(172 1300)">
       <title xml:space="preserve">&lt;u&gt;&lt;/u&gt;
 &lt;mark&gt;&lt;/mark&gt;
 &lt;color name=&quot;red&quot;&gt;&lt;/color&gt;</title>
       <rect class="node-shape" x="-140" y="-42" width="280" height="84"/>
       <text class="label" y="-12" xml:space="preserve"><tspan x="-124" dy="0">&lt;u&gt;&lt;/u&gt;</tspan><tspan x="-124" dy="18">&lt;mark&gt;&lt;/mark&gt;</tspan><tspan x="-124" dy="18">&lt;color name=&quot;red&quot;&gt;&lt;/color&gt;</tspan></text>
     </g>
-    <g class="node end" transform="translate(172 1441)">
+    <g class="node end" transform="translate(172 1443)">
       <rect class="node-shape" x="-140" y="-29" width="280" height="58" rx="29"/>
       <text class="label code" y="6" xml:space="preserve"><tspan x="0" dy="0">()</tspan></text>
     </g>

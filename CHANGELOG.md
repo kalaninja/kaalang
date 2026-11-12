@@ -12,6 +12,7 @@
   a source file and a bare name, and searches the whole cargo workspace; `-p`
   picks the package. The default output is named after the last path segment.
 - Only Rust 2024 crates are supported.
+- The minimum supported Rust version is 1.99.
 - `kaalang-svg`: `render_source` and `render_source_with_options` are removed;
   `render_flow` renders the flow at a position from `flow_names`, which lists
   flows by their path within the file and takes a `Target`. `RenderOptions`

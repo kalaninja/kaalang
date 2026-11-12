@@ -20,7 +20,7 @@ fn render_markup_fallbacks(condition: bool) {
     #[kaa::action("   > **quote**  ")]
     let colors = |indented| indented;
 
-    #[kaa::action(r"$\color{not-a-color}x$")]
+    #[kaa::action(r"$\color{not-a-color}x$, $^{14}\mathrm{C}$ and $\frac{}{}$")]
     let carriage_returns = |colors| colors;
 
     #[kaa::action("**Two\r\rparagraphs** stay literal.\n**One\rparagraph** keeps its style.")]

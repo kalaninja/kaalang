@@ -31,7 +31,10 @@ fn render_formulas(condition: bool) {
     let huge = |clipped| clipped;
 
     #[kaa::action(r"$x\rule{1em}{13em}$")]
-    let tested = |huge| huge;
+    let fraction = |huge| huge;
+
+    #[kaa::action(r"$\dfrac{1}{2}$")]
+    let tested = |fraction| fraction;
 
     #[kaa::question("Highlighted formulas on branch labels.")]
     #[kaa::yes("<mark>$x$</mark>")]

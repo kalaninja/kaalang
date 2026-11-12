@@ -84,10 +84,10 @@ jobs:
     needs: fmt
     runs-on: ubuntu-latest
     env:
-      RUSTUP_TOOLCHAIN: '1.88'
+      RUSTUP_TOOLCHAIN: '1.99'
     steps:
       - uses: actions/checkout@v4
-      - run: rustup toolchain install 1.88 --profile minimal
+      - run: rustup toolchain install 1.99 --profile minimal
       - uses: Swatinem/rust-cache@v2
       # The compile-fail snapshots record the pinned toolchain's own diagnostics,
       # so the floor is type-checked rather than tested.

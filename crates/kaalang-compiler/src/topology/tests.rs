@@ -67,7 +67,7 @@ fn an_empty_unconditional_cycle_uses_only_its_entry_and_tail() {
     assert_eq!(topology.nodes.len(), 1);
     assert_eq!(topology.nodes[0].id, NodeId::Start);
     assert_eq!(topology.junctions.len(), 2);
-    assert!(topology.cycle_boundaries[0].results.is_empty());
+    assert_eq!(topology.cycle_boundaries[0].results, []);
     assert_eq!(
         topology.connections,
         [
@@ -332,7 +332,7 @@ fn every_node_and_exit_has_one_identity() {
         [ProducerId::FlowInput(0), ProducerId::FlowInput(1)]
     );
     let distributor = ExitId::of(NodeId::Block(0));
-    assert!(topology.exit(distributor).provides.is_empty());
+    assert_eq!(topology.exit(distributor).provides, []);
     assert_eq!(topology.leaving(distributor).count(), 2);
     for branch in 0..2 {
         let case = NodeId::Case { choice: 0, branch };

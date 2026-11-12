@@ -639,7 +639,7 @@ fn a_mixed_batch_preserves_effect_order_across_all_merges_and_cycles() {
         ]
     );
     assert_eq!((processor.processed, processor.audited), (6, 6));
-    assert!(processor.pending_audit.is_empty());
+    assert_eq!(processor.pending_audit, []);
 }
 
 #[test]
@@ -669,7 +669,7 @@ fn cancellation_only_happens_between_tasks_and_still_flushes_the_audit() {
             "{stop_after:?}"
         );
         assert_eq!((processor.processed, processor.audited), (count, count));
-        assert!(processor.pending_audit.is_empty());
+        assert_eq!(processor.pending_audit, []);
         let events = processor.events.borrow();
         let entered: Vec<_> = events
             .iter()
@@ -706,7 +706,7 @@ fn successive_batches_keep_receiver_state_and_reset_per_batch_state() {
         }
     );
     assert_eq!((processor.processed, processor.audited), (3, 3));
-    assert!(processor.pending_audit.is_empty());
+    assert_eq!(processor.pending_audit, []);
     assert_eq!(
         *processor.events.borrow(),
         [

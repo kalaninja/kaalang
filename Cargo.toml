@@ -14,7 +14,7 @@ resolver = "3"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/kalaninja/kaalang"
-rust-version = "1.88"
+rust-version = "1.99"
 version = "0.2.0"
 
 [workspace.dependencies]
@@ -24,17 +24,17 @@ kaalang-render = { version = "0.2.0", path = "crates/kaalang-render" }
 kaalang-svg = { version = "0.2.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
 
-cargo-platform = "0.3.2"
+cargo-platform = "0.3.3"
 cargo_metadata = "0.23.1"
 clap = "4.6.7"
 # Pin formula layout and SVG output; upgrades may change glyph geometry.
-latex-rust = "=2.1.0"
+latex-rust = "=3.0.3"
 proc-macro2 = "1.0.107"
-pulldown-cmark = { version = "0.13.4", default-features = false }
+pulldown-cmark = { version = "0.13.6", default-features = false }
 quote = "1.0.47"
 same-file = "1.0.6"
-syn = { version = "3.0.6", features = ["full"] }
-trybuild = "1.0.121"
+syn = { version = "3.0.10", features = ["full"] }
+trybuild = "1.0.122"
 unicode-segmentation = "1.13.3"
 
 [workspace.lints.rust]

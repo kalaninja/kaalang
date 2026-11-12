@@ -501,7 +501,10 @@ fn disjoint_convergence_groups_take_disjoint_footprints() {
 fn independent_producers_and_their_consumers_form_one_sequence() {
     let scene = drawn((SHARED_INPUTS, "shared_inputs"));
     assert_main_sequence(&scene, &[0, 1, 2, 3, 4]);
-    assert!(scene.captions.capture(NodeId::Block(1)).is_empty());
+    assert_eq!(
+        scene.captions.capture(NodeId::Block(1)),
+        Vec::<String>::new()
+    );
     assert_eq!(scene.captions.capture_label(NodeId::Block(1)), ["()"]);
     for consumer in [2, 3] {
         assert_eq!(
@@ -520,7 +523,7 @@ fn a_branch_effect_reaches_the_merge_before_common_work() {
     let stamp = Vertex::Node(NodeId::Block(4));
     assert_eq!(topology.junctions.len(), 1);
     assert_eq!(captions.junction_wires(0), ["value"]);
-    assert!(captions.handover(effect).is_empty());
+    assert_eq!(captions.handover(effect), Vec::<String>::new());
     assert_eq!(
         topology.leaving(effect).copied().collect::<Vec<_>>(),
         [kaalang_compiler::topology::Connection {
@@ -570,7 +573,7 @@ fn shared_setup_precedes_its_consumers_question_on_the_main_column() {
     assert_eq!(setup.x, scene.node(NodeId::Start).x);
     assert_eq!(setup.x, question.x);
     assert!(setup.y < question.y);
-    assert!(scene.captions.capture(setup.id).is_empty());
+    assert_eq!(scene.captions.capture(setup.id), Vec::<String>::new());
     assert_eq!(scene.captions.handover(ExitId::of(setup.id)), ["setup"]);
     assert_eq!(scene.captions.capture(question.id), ["condition"]);
     let outgoing = scene

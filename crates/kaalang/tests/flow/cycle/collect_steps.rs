@@ -67,7 +67,7 @@ fn collect_steps(enabled: bool, limit: usize) -> Vec<String> {
 
 #[test]
 fn each_iteration_and_sibling_cycle_has_its_own_local_wires() {
-    assert!(collect_steps(false, 3).is_empty());
-    assert!(collect_steps(true, 0).is_empty());
+    assert_eq!(collect_steps(false, 3), Vec::<String>::new());
+    assert_eq!(collect_steps(true, 0), Vec::<String>::new());
     assert_eq!(collect_steps(true, 3), ["a", "a", "a", "b", "c", "b"]);
 }

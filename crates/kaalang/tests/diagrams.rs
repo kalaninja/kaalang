@@ -13,7 +13,7 @@ use std::{
 use kaalang_svg::Target;
 
 /// The compilation target every fixture is read for, `x86_64-unknown-linux-gnu`
-/// as rustc 1.98.1 prints its cfg, so that the diagrams depend on neither the
+/// as rustc 1.99.1 prints its cfg, so that the diagrams depend on neither the
 /// host nor the toolchain, and with `test`, since the fixtures are tests.
 const TARGET: &str = r#"
 debug_assertions
