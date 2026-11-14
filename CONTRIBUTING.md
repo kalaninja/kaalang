@@ -95,8 +95,8 @@ just ci run
 ```
 
 It checks formatting, then runs `cargo clippy` with warnings denied,
-`cargo test`, `just rust svg`, and `git diff --check`. `just rust` and
-`just docs` list the per-step recipes.
+`cargo test`, `just rust wasm`, `just rust svg`, and `git diff --check`.
+`just rust` and `just docs` list the per-step recipes.
 
 One comparison is too slow for the baseline and sits behind `#[ignore]`:
 

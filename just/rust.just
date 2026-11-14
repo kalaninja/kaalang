@@ -27,6 +27,10 @@ clippy: (tooling::build "rust")
 test: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust cargo test --workspace
 
+# Type-check the compiler and the renderers for WebAssembly.
+wasm: (tooling::build "rust")
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo check --target wasm32-unknown-unknown -p kaalang-compiler -p kaalang-render -p kaalang-svg
+
 # Draw the gallery examples through the CLI.
 gallery: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust bash scripts/draw-gallery.sh
