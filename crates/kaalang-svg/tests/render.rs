@@ -1,28 +1,26 @@
-use kaalang_svg::{RenderError, RenderOptions, Target, render_flow};
-use kaalang_testing::corpus::flow_paths;
+use kaalang_compiler::{SourceError, SourceFile, SourceFlow, Target};
+use kaalang_svg::{RenderError, render_flow};
 
-/// Renders the flow at `path` within `source`.
-fn render_source_with_options(
-    source: &str,
-    path: &str,
-    options: RenderOptions<'_>,
-) -> Result<String, RenderError> {
-    let position = flow_paths(source, |file| options.target.configure(file))
+/// Reads the flow at `path` within `source` for no target, with each cycle as
+/// one node when `collapse_cycles` is set.
+fn read(source: &str, path: &str, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
+    let file = SourceFile::parse(source, Target::EMPTY)?;
+    let position = kaalang_compiler::flows(file.items())
         .iter()
-        .position(|listed| listed == path)
-        .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
-    render_flow(source, position, options)
+        .position(|flow| flow.path == path)
+        .unwrap_or_else(|| panic!("the source declares no flow `{path}`"));
+    file.flow(position, collapse_cycles)
+}
+
+/// Renders that flow, which must read.
+fn render_view(source: &str, path: &str, collapse_cycles: bool) -> Result<String, RenderError> {
+    render_flow(read(source, path, collapse_cycles).unwrap_or_else(|error| panic!("{error}")))
 }
 
 /// Renders the flow at `path` within `source`, read for no target.
 fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
-    render_source_with_options(source, path, RenderOptions::default())
+    render_view(source, path, false)
 }
-
-const COLLAPSED: RenderOptions<'static> = RenderOptions {
-    collapse_cycles: true,
-    target: Target::EMPTY,
-};
 
 /// One flow carrying every label case at once, with a distinct wire name for
 /// each so a duplicate in the description is detectable by counting.
@@ -450,7 +448,7 @@ fn an_oversized_cycle_formula_is_clipped_at_its_base_size() {
         assert!((formula_scale(math) - 12.0).abs() < 0.01);
     }
 
-    let collapsed = render_source_with_options(&source, "count_to", COLLAPSED).unwrap();
+    let collapsed = render_view(&source, "count_to", true).unwrap();
     let math = first_line(&collapsed, r#"<svg class="md-math""#);
     assert!(math.contains("style=\"overflow: hidden\""));
     assert!((formula_scale(math) - 14.0).abs() < 0.01);
@@ -557,8 +555,7 @@ fn a_highlighted_branch_description_drops_the_halo_over_its_box() {
 #[test]
 fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     let expanded = render_source(CYCLE_SOURCE, "count_to").expect("the cycle expands");
-    let collapsed = render_source_with_options(CYCLE_SOURCE, "count_to", COLLAPSED)
-        .expect("the cycle collapses");
+    let collapsed = render_view(CYCLE_SOURCE, "count_to", true).expect("the cycle collapses");
 
     assert!(expanded.contains(r#"class="cycle-boundary""#));
     assert!(!expanded.contains(r#"class="node cycle""#));
@@ -581,15 +578,8 @@ fn renders_cycles_as_expanded_boundaries_or_collapsed_nodes() {
     let invalid = CYCLE_SOURCE.replace("|iterate_1| continue;", "|iterate_1, count| return count;");
     for collapse_cycles in [false, true] {
         assert!(matches!(
-            render_source_with_options(
-                &invalid,
-                "count_to",
-                RenderOptions {
-                    collapse_cycles,
-                    target: Target::EMPTY,
-                }
-            ),
-            Err(RenderError::InvalidFlow { .. })
+            read(&invalid, "count_to", collapse_cycles),
+            Err(SourceError::InvalidFlow { .. })
         ));
     }
 }
@@ -632,7 +622,7 @@ fn collapsed_cycle_inputs_share_reordered_handovers_directly_and_after_merges() 
                     |done| return done;
                 }}"#
             );
-            let svg = render_source_with_options(&source, "example", COLLAPSED).unwrap();
+            let svg = render_view(&source, "example", true).unwrap();
             assert_eq!(
                 svg.lines()
                     .filter(|line| line.contains(r#"class="connection-label code""#))

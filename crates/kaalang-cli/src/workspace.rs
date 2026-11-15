@@ -14,7 +14,6 @@ use std::{
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
 use kaalang_compiler::{Declarations, FlowPath, Place, Question};
-use kaalang_svg::RenderError;
 use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
 
 use crate::{
@@ -28,7 +27,7 @@ pub(super) struct Found {
     pub(super) file: PathBuf,
     pub(super) source: String,
     pub(super) position: usize,
-    pub(super) cfg: kaalang_svg::Target,
+    pub(super) cfg: kaalang_compiler::Target,
 }
 
 /// The target options, as cargo takes them.
@@ -75,7 +74,7 @@ pub(super) struct Crate {
     /// Each file that could not be read or parsed, with the reason.
     pub(super) skipped: Vec<String>,
     /// The cfg set its files are read for.
-    pub(super) cfg: kaalang_svg::Target,
+    pub(super) cfg: kaalang_compiler::Target,
 }
 
 impl Crate {
@@ -344,7 +343,7 @@ fn cfg_set(
     target: &Target,
     printed: &str,
     features: &[String],
-) -> Result<kaalang_svg::Target, String> {
+) -> Result<kaalang_compiler::Target, String> {
     let mut lines = vec![printed.to_owned()];
     lines.extend(
         features
@@ -555,7 +554,7 @@ pub(super) fn find(
             })
             .collect();
         return Err(ambiguous(
-            &RenderError::AmbiguousFlow(path.to_owned()),
+            &format!("multiple `#[kaa]` functions have the path `{path}`"),
             &listed,
         ));
     }
@@ -566,7 +565,7 @@ pub(super) fn find(
             .filter(|krate| selected(krate) || krate.library),
     );
     let Some((_, source, module, _, position)) = matches.pop() else {
-        let message = RenderError::FlowNotFound(path.to_owned()).to_string();
+        let message = format!("`#[kaa]` function `{path}` was not found");
         return Err(with_skipped(message, &skipped));
     };
     warn_skipped(path, &skipped);
@@ -649,8 +648,8 @@ fn answer(
 
 /// Lists where each match of a path is, after its crate, with a hint to `-p`
 /// when a package has one match and could be selected.
-pub(super) fn ambiguous(error: &dyn std::fmt::Display, matches: &[(&Crate, String)]) -> String {
-    let mut message = error.to_string();
+pub(super) fn ambiguous(heading: &str, matches: &[(&Crate, String)]) -> String {
+    let mut message = heading.to_owned();
     message.push(':');
     for (krate, at) in matches {
         write!(message, "\n  {} in {at}", krate.label()).expect("writing to a String cannot fail");
@@ -696,7 +695,7 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
 /// One crate's module tree as it is read.
 struct Walk<'a> {
     /// The cfg set the crate's files are read for.
-    cfg: &'a kaalang_svg::Target,
+    cfg: &'a kaalang_compiler::Target,
     /// The files being read, outermost first; a `#[path]` loop stops here.
     open: Vec<PathBuf>,
     modules: Vec<Module>,
@@ -705,7 +704,7 @@ struct Walk<'a> {
 }
 
 impl<'a> Walk<'a> {
-    fn new(cfg: &'a kaalang_svg::Target) -> Self {
+    fn new(cfg: &'a kaalang_compiler::Target) -> Self {
         Self {
             cfg,
             open: Vec::new(),
@@ -1069,7 +1068,7 @@ fn target_label(target: &Target) -> String {
 #[cfg(test)]
 pub(super) fn library(package: &str, source: &str) -> Crate {
     let parsed = syn::parse_file(source).expect("the test source parses");
-    let cfg = kaalang_svg::Target::default();
+    let cfg = kaalang_compiler::Target::default();
     let mut walk = Walk::new(&cfg);
     walk.modules.push(Module {
         path: String::new(),

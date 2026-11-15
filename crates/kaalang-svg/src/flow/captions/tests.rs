@@ -42,9 +42,9 @@ fn internal_looking_names_keep_their_for_cycle_labels() {
 /// One flow of an authored fixture file. The start and return type only caption
 /// start and end, which no test here reads.
 fn fixture(source: &str, flow: &str) -> (SemanticModel, Captions) {
-    let file = crate::parse_file(source).expect("the fixture parses");
-    let flow = crate::flow::select_named(&file.items, flow).expect("the fixture declares its flow");
-    let model = kaalang_compiler::build(&flow.function).expect("the fixture is valid");
+    let model = crate::read_path(source, flow, false)
+        .unwrap_or_else(|error| panic!("{error}"))
+        .model;
     let captions = derive(&model, "example", "u8");
     (model, captions)
 }

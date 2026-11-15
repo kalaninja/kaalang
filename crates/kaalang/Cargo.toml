@@ -16,9 +16,8 @@ repository.workspace = true
 kaalang-macros = { workspace = true }
 
 [dev-dependencies]
-kaalang-compiler = { workspace = true }
+kaalang-compiler = { workspace = true, features = ["source"] }
 kaalang-svg = { workspace = true }
-syn = { workspace = true }
 trybuild = { workspace = true }
 
 [lints]

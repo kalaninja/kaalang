@@ -371,18 +371,19 @@ fn drawn((source, flow): (&str, &str)) -> Scene {
 /// model's own check still accepts is a witness, so a test using this says
 /// which one it made and why it conforms.
 fn drawn_with((source, flow): (&str, &str), change: impl FnOnce(&mut Arrangement)) -> Scene {
-    let file = crate::parse_file(source).expect("the fixture is valid Rust");
-    let selected =
-        crate::flow::select_named(&file.items, flow).expect("the fixture declares the flow");
-    let function = &selected.function;
-    let mut model = kaalang_compiler::build(function).expect("the fixture is a valid flow");
+    let kaalang_compiler::SourceFlow {
+        item,
+        mut model,
+        header,
+        parameters,
+        return_type,
+        ..
+    } = crate::read_path(source, flow, false).expect("the fixture is a valid flow");
     kaalang_render::compact_arrangement(&mut model);
     change(&mut model.arrangement);
     let model = model;
-    let visibility = (!selected.trait_method).then_some(&function.vis);
-    let start = start_text(source, &function.sig, visibility);
-    let parameters = parameter_text(source, &function.sig);
-    let captions = captions_of(&model, &start, &return_text(source, &function.sig.output));
+    let start = crate::flow::start_text(&item, &header);
+    let captions = captions_of(&model, &start, &return_type);
     let scene =
         layout(&model, &captions, &parameters).expect("the fixture has a conforming diagram");
 
@@ -755,10 +756,8 @@ fn the_same_flow_renders_to_the_same_bytes() {
     // Two independently built models in one process meet differently seeded
     // hashers, so equal bytes mean no hash order reached the layout.
     for (source, flow) in FIXTURES {
-        let first = crate::render_path(source, flow, crate::RenderOptions::default())
-            .expect("the fixture renders");
-        let second = crate::render_path(source, flow, crate::RenderOptions::default())
-            .expect("the fixture renders");
+        let first = crate::render_path(source, flow, false).expect("the fixture renders");
+        let second = crate::render_path(source, flow, false).expect("the fixture renders");
         assert_eq!(first, second, "{flow} does not render deterministically");
     }
 }
@@ -819,7 +818,7 @@ fn three_producers_and_three_consumers_render_as_a_sequence() {
             ["&first", "&second", "&third"]
         );
     }
-    assert!(crate::render_path(source, "serial", crate::RenderOptions::default()).is_ok());
+    assert!(crate::render_path(source, "serial", false).is_ok());
 }
 
 #[test]
@@ -1073,17 +1072,15 @@ fn a_side_back_edge_clears_a_wrapped_branch_description() {
 fn an_exit_between_repeating_cases_is_rejected_before_layout() {
     // Collapsed, because the expanded flow must still be checked before its
     // cycles fold into nodes that would hide the conflict.
-    let error = crate::render_path(
+    let Err(error) = crate::read_path(
         include_str!("../../../../kaalang/tests/flow/cycle/compile_fail/enclosed_exit.rs"),
         "invalid",
-        crate::RenderOptions {
-            collapse_cycles: true,
-            ..crate::RenderOptions::default()
-        },
-    )
-    .unwrap_err();
-    let crate::RenderError::InvalidFlow { message, .. } = &error else {
-        panic!("an unrealizable topology is an invalid flow, not a rendering error: {error}")
+        true,
+    ) else {
+        panic!("an unrealizable topology is an invalid flow, not a rendering error")
+    };
+    let kaalang_compiler::SourceError::InvalidFlow { message, .. } = &error else {
+        panic!("an unrealizable topology is an invalid flow: {error}")
     };
     // The repeating cases merge before their one continue, so the exit
     // between them splits that merge before any diagram is decided.
@@ -1506,13 +1503,18 @@ fn every_generated_shape_the_model_accepts_also_renders() {
 
     let (mut drawn, mut refused) = (0, 0);
     for source in &sources {
-        match crate::render_path(source, "probe", crate::RenderOptions::default()) {
-            Ok(_) => drawn += 1,
-            Err(crate::RenderError::InvalidFlow { message, .. }) => {
+        match crate::read_path(source, "probe", false) {
+            Ok(flow) => {
+                crate::render_flow(flow).unwrap_or_else(|error| {
+                    panic!("{source}\nan accepted flow did not render: {error}")
+                });
+                drawn += 1;
+            }
+            Err(kaalang_compiler::SourceError::InvalidFlow { message, .. }) => {
                 assert!(!message.contains("internal kaalang"), "{source}\n{message}");
                 refused += 1;
             }
-            Err(error) => panic!("{source}\nan accepted flow did not render: {error}"),
+            Err(error) => panic!("{source}\nthe shape did not read: {error}"),
         }
     }
     assert_eq!((drawn, refused), (1095, 1740));
@@ -1526,17 +1528,15 @@ fn every_accepted_alternative_output_shape_renders_in_both_views() {
     for source in kaalang_testing::shapes::alternative_bodies(2..=4) {
         let source = format!("#[kaa]\n{source}");
         for collapse_cycles in [false, true] {
-            match crate::render_path(
-                &source,
-                "probe",
-                crate::RenderOptions {
-                    collapse_cycles,
-                    ..crate::RenderOptions::default()
-                },
-            ) {
-                Ok(_) => drawn += 1,
-                Err(crate::RenderError::InvalidFlow { .. }) => {}
-                Err(error) => panic!("{source}\nan accepted flow did not render: {error}"),
+            match crate::read_path(&source, "probe", collapse_cycles) {
+                Ok(flow) => {
+                    crate::render_flow(flow).unwrap_or_else(|error| {
+                        panic!("{source}\nan accepted flow did not render: {error}")
+                    });
+                    drawn += 1;
+                }
+                Err(kaalang_compiler::SourceError::InvalidFlow { .. }) => {}
+                Err(error) => panic!("{source}\nthe shape did not read: {error}"),
             }
         }
     }
@@ -1547,22 +1547,16 @@ fn every_accepted_alternative_output_shape_renders_in_both_views() {
 fn every_accepted_staged_shape_renders_in_both_views() {
     let mut rendered = 0;
     for source in kaalang_testing::shapes::staged_shapes() {
-        let file = crate::parse_file(&source).expect("the staged shape parses");
-        let flow = kaalang_compiler::flows(&file.items).remove(0);
-        let (name, function) = (flow.path, flow.function);
-        if kaalang_compiler::build(&function).is_err() {
+        let file = kaalang_compiler::SourceFile::parse(&source, kaalang_compiler::Target::EMPTY)
+            .unwrap_or_else(|error| panic!("{source}\n{error}"));
+        if file.flow(0, false).is_err() {
             continue;
         }
         for collapse_cycles in [false, true] {
-            crate::render_path(
-                &source,
-                &name,
-                crate::RenderOptions {
-                    collapse_cycles,
-                    ..crate::RenderOptions::default()
-                },
-            )
-            .unwrap_or_else(|error| panic!("{source}\n{error}"));
+            let flow = file
+                .flow(0, collapse_cycles)
+                .unwrap_or_else(|error| panic!("{source}\n{error}"));
+            crate::render_flow(flow).unwrap_or_else(|error| panic!("{source}\n{error}"));
             rendered += 1;
         }
     }

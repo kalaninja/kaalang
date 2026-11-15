@@ -11,7 +11,6 @@ use kaalang_compiler::{
     Arrangement, RunLine, SemanticModel, Side,
     topology::{Destination, ExitId, NodeId, NodeKind, Source, Topology, Vertex},
 };
-use syn::{ReturnType, Signature, Visibility, spanned::Spanned};
 
 use self::label::{label_rect, vertical_gaps};
 pub(crate) use self::{
@@ -19,12 +18,9 @@ pub(crate) use self::{
     staged::{StagedScene, layout_staged},
 };
 use crate::{
-    collapsed, collapsed_text,
     flow::captions::Captions,
-    generics_text,
     markup::{DOT_RADIUS, MARGIN},
     text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
-    with_visibility,
 };
 
 mod action;
@@ -318,51 +314,6 @@ fn clear_labels(scene: &mut Scene) -> i32 {
         }
     }
     wanted
-}
-
-/// The authored flow header without its parameters and return type, behind
-/// its marker when the function has a visibility of its own.
-pub(crate) fn start_text(
-    source: &str,
-    signature: &Signature,
-    visibility: Option<&Visibility>,
-) -> String {
-    let start = signature.span().byte_range().start;
-    // The generics follow from the parameters the target keeps.
-    let end = signature.generics.lt_token.map_or_else(
-        || signature.paren_token.span.open().byte_range().start,
-        |open| open.span.byte_range().start,
-    );
-    let keyword = signature.fn_token.span.byte_range();
-    let mut header = source[start..end].to_owned();
-    header.replace_range(keyword.start - start..keyword.end - start, "");
-    let mut authored = collapsed_text(&header);
-    authored.push_str(&generics_text(source, &signature.generics));
-    if let Some(where_clause) = &signature.generics.where_clause {
-        authored.push(' ');
-        authored.push_str(&collapsed(source, where_clause.span()));
-    }
-    match visibility {
-        Some(visibility) => with_visibility(visibility, &authored),
-        None => authored,
-    }
-}
-
-/// The authored flow parameters, one per panel row and without separating commas.
-pub(crate) fn parameter_text(source: &str, signature: &Signature) -> Vec<String> {
-    signature
-        .inputs
-        .iter()
-        .map(|parameter| collapsed(source, parameter.span()))
-        .collect()
-}
-
-/// The end node's caption: the authored return type, or `()` when absent.
-pub(crate) fn return_text(source: &str, output: &ReturnType) -> String {
-    match output {
-        ReturnType::Default => "()".to_owned(),
-        ReturnType::Type(_, ty) => collapsed(source, ty.span()),
-    }
 }
 
 /// Maximum rail reach on each side of every column used by a back edge.

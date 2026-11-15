@@ -6,15 +6,15 @@ use syn::Lit;
 
 /// The cfg set of one compilation target, as `rustc --print cfg` prints it:
 /// one `name` or `key="value"` per line, such as `unix` or `target_os="linux"`,
-/// with a `feature="…"` line for each enabled feature. A diagram reads its
-/// source as that target compiles it.
+/// with a `feature="…"` line for each enabled feature. A source file is read
+/// as that target compiles it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Target {
     cfgs: Vec<Cfg>,
 }
 
 impl Target {
-    /// The empty set, for options that name no target.
+    /// The empty set, for a caller that names no target.
     pub const EMPTY: &'static Self = &Self { cfgs: Vec::new() };
 
     /// Whether `predicate`, the tokens inside `cfg(...)`, holds for the set,
@@ -30,7 +30,7 @@ impl Target {
     /// Removes from `file` what does not hold for the set, as rustc strips a
     /// crate for its target.
     pub fn configure(&self, file: &mut syn::File) {
-        kaalang_compiler::configure(file, &mut |predicate| self.holds(predicate));
+        crate::configure(file, &mut |predicate| self.holds(predicate));
     }
 }
 

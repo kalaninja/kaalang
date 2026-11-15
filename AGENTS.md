@@ -14,7 +14,8 @@
 - `crates/kaalang-compiler/` parses and resolves flows into the shared validated
   semantic model, decides the diagram, exposes its common arrangement checks,
   and lowers the verified plan to Rust. It also parses type declarations and
-  expands datatypes.
+  expands datatypes. Behind its `source` feature it reads flows and types from
+  the text of a file for the renderers, which read no source themselves.
 - `crates/kaalang-macros/` holds only the procedural macro entry point: a
   `proc-macro` crate exports only macros, so anything else here could not be
   called, tested, or measured from another crate.

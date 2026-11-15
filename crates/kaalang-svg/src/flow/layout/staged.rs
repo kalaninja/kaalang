@@ -349,17 +349,27 @@ mod tests {
         layout_staged(&model, name, &[], return_type).unwrap()
     }
 
+    /// The first flow of `source`, read for no target.
+    fn first_flow(source: &str, collapsed: bool) -> kaalang_compiler::SourceFlow {
+        kaalang_compiler::SourceFile::parse(source, kaalang_compiler::Target::EMPTY)
+            .unwrap()
+            .flow(0, collapsed)
+            .unwrap_or_else(|error| panic!("{error}"))
+    }
+
     /// The first flow of `source` as `render_flow` lays it out: every part
     /// compacted, with its parameter captions.
     fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Vec<String>) {
-        let file = syn::parse_file(source).unwrap();
-        let function = kaalang_compiler::flows(&file.items).remove(0).function;
-        let mut model = kaalang_compiler::build_with_options(&function, collapsed).unwrap();
+        let kaalang_compiler::SourceFlow {
+            mut model,
+            parameters,
+            ..
+        } = first_flow(source, collapsed);
         kaalang_render::compact_arrangement(&mut model);
         for stage in &mut model.stages {
             kaalang_render::compact_arrangement(stage);
         }
-        (model, super::super::parameter_text(source, &function.sig))
+        (model, parameters)
     }
 
     #[test]
@@ -458,10 +468,9 @@ mod tests {
                 include_str!("../../../../kaalang/tests/flow/stage/prepared_cycle.rs"),
             ),
         ] {
-            let file = syn::parse_file(source).unwrap();
-            let function = kaalang_compiler::flows(&file.items).remove(0).function;
-            let model = kaalang_compiler::build(&function).unwrap();
-            let parameters = super::super::parameter_text(source, &function.sig);
+            let kaalang_compiler::SourceFlow {
+                model, parameters, ..
+            } = first_flow(source, false);
             let diagram = layout_staged(&model, name, &parameters, "u32").unwrap();
             let rail = diagram.return_route.as_ref().unwrap()[3].y;
             let (preparation, placement) = &diagram.parts[0];

@@ -1,13 +1,11 @@
 use std::num::NonZeroUsize;
 
-use kaalang_compiler::{Annotation, Field, TypeForm};
+use kaalang_compiler::{Annotation, Field, SourceType, TypeForm};
 use proc_macro2::Span;
-use syn::{Item, Meta, Visibility, ext::IdentExt, spanned::Spanned};
+use syn::{Item, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
-    RenderError, Target, TypeCard, collapsed, collapsed_text, generics_text, location,
-    parse_configured, parser_source, validate_description, validate_label, visibility_marker,
-    with_visibility,
+    RenderError, TypeCard, validate_description, validate_label, visibility_marker, with_visibility,
 };
 
 mod layout;
@@ -18,29 +16,13 @@ pub(crate) fn render(
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
-    let mut parsed = Vec::new();
     let groups = incoming
         .iter()
-        .map(|group| {
-            group
-                .iter()
-                .map(|card| read(card, &mut parsed))
-                .collect::<Result<Vec<_>, _>>()
-        })
+        .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    let focus = read(focus, &mut parsed)?;
+    let focus = read(focus)?;
     Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
-}
-
-/// A card's source file, parsed once per target for every card it declares.
-struct Parsed<'a> {
-    source: &'a str,
-    target: &'a Target,
-    /// The source the parser read, without a byte order mark or shebang.
-    parser_source: &'a str,
-    /// Every type declaration with its path within the file.
-    items: Vec<(String, Item)>,
 }
 
 /// What one card shows, in source order. Descriptions stay authored
@@ -96,71 +78,35 @@ struct Tile {
     drawn: bool,
 }
 
-/// Selects one card's declaration and reads what its card shows.
-fn read<'a>(card: &TypeCard<'a>, parsed: &mut Vec<Parsed<'a>>) -> Result<Card, RenderError> {
-    let index = if let Some(index) = parsed
-        .iter()
-        .position(|file| std::ptr::eq(file.source, card.source) && file.target == card.target)
-    {
-        index
-    } else {
-        let file = parse_configured(card.source, card.target)?;
-        parsed.push(Parsed {
-            source: card.source,
-            target: card.target,
-            parser_source: parser_source(card.source, &file),
-            items: kaalang_compiler::type_items(&file.items),
-        });
-        parsed.len() - 1
-    };
-    let Parsed {
-        parser_source: source,
-        items,
-        ..
-    } = &parsed[index];
-    // Only code rustc rejects declares a path twice for one target.
-    let Some((_, item)) = items.iter().find(|(path, _)| path == card.path) else {
-        return Err(RenderError::TypeNotFound(card.path.to_owned()));
-    };
-    let declaration = kaalang_compiler::type_declaration(item).map_err(|error| {
-        let (line, column) = location(error.span());
-        RenderError::InvalidType {
-            name: card.path.to_owned(),
-            line,
-            column,
-            message: error.to_string(),
-        }
-    })?;
-
-    let (structure, relationships) = structure(source, &declaration.form, card.relationships);
+/// Reads what one card shows of its type.
+fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
+    let ty = card.ty;
+    let (structure, relationships) = structure(ty, card.relationships);
     assert!(
         card.relationships
             .iter()
             .all(|index| *index < relationships),
         "`{}` has {relationships} relationships, fewer than the drawn indices {:?} need",
-        card.path,
+        ty.path,
         card.relationships
     );
 
     let read = Card {
-        name: format!(
-            "{}{}",
-            card.header,
-            generics_text(source, &declaration.generics)
-        ),
-        marker: visibility_marker(visibility(item)),
-        kind: kind(source, item),
-        description: declaration.description,
+        name: format!("{}{}", card.header, ty.generics),
+        marker: visibility_marker(visibility(&ty.item)),
+        kind: kind(ty),
+        description: ty.declaration.description.clone(),
         structure,
     };
-    validate(&read, card.path, item.span())?;
+    validate(&read, &ty.path, ty.item.span())?;
     Ok(read)
 }
 
 /// The card's structure, and how many relationships the type has. They count
 /// in source order, as `TypeDeclaration::relationships` lists them.
-fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usize) {
+fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
     let mut relationships = 0;
+    let mut types = ty.field_types.iter().cloned();
     let mut tiles = |fields: &[Field], in_variant: bool| -> Vec<Tile> {
         fields
             .iter()
@@ -175,7 +121,7 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
                             Some(relationship.description.clone()),
                             Some((
                                 relationships - 1,
-                                collapsed(source, relationship.target.span()),
+                                ty.relationship_targets[relationships - 1].clone(),
                             )),
                         )
                     }
@@ -191,7 +137,7 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
                     } else {
                         with_visibility(&field.visibility, &name)
                     }),
-                    ty: collapsed(source, field.ty.span()),
+                    ty: types.next().expect("each field has its authored type"),
                     description,
                     drawn: target
                         .as_ref()
@@ -201,7 +147,7 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
             })
             .collect()
     };
-    let structure = match form {
+    let structure = match &ty.declaration.form {
         TypeForm::Struct(fields) | TypeForm::Union(fields) if fields.is_empty() => Structure::Empty,
         TypeForm::Struct(fields) => Structure::Row(tiles(fields, false)),
         TypeForm::Union(fields) => Structure::Stack(tiles(fields, false)),
@@ -216,15 +162,13 @@ fn structure(source: &str, form: &TypeForm, drawn: &[usize]) -> (Structure, usiz
                 })
                 .collect(),
         ),
-        TypeForm::Alias(ty, relationship) => {
+        TypeForm::Alias(_, relationship) => {
             relationships = usize::from(relationship.is_some());
             Structure::Stack(vec![Tile {
                 label: None,
-                ty: collapsed(source, ty.span()),
+                ty: ty.field_types[0].clone(),
                 description: relationship.as_ref().map(|it| it.description.clone()),
-                target: relationship
-                    .as_ref()
-                    .map(|it| collapsed(source, it.target.span())),
+                target: ty.relationship_targets.first().cloned(),
                 drawn: relationship.is_some() && drawn.contains(&0),
             }])
         }
@@ -238,41 +182,23 @@ fn visibility(item: &Item) -> &Visibility {
         Item::Enum(declaration) => &declaration.vis,
         Item::Union(declaration) => &declaration.vis,
         Item::Type(declaration) => &declaration.vis,
-        _ => unreachable!("`type_items` lists only the supported forms"),
+        _ => unreachable!("only the supported forms read as a type"),
     }
 }
 
 /// `struct · repr(C)`: the form, and the representation Rust's `repr`
-/// attributes give it, or the form alone for the default. A `repr` under a
-/// `cfg_attr` that holds is one of them, since configuring the source expanded
-/// it.
-fn kind(source: &str, item: &Item) -> String {
-    let (form, attributes) = match item {
-        Item::Struct(declaration) => ("struct", &declaration.attrs),
-        Item::Enum(declaration) => ("enum", &declaration.attrs),
-        Item::Union(declaration) => ("union", &declaration.attrs),
-        _ => return "type alias".to_owned(),
+/// attributes give it, or the form alone for the default.
+fn kind(ty: &SourceType) -> String {
+    let form = match &ty.declaration.form {
+        TypeForm::Struct(_) => "struct",
+        TypeForm::Enum(_) => "enum",
+        TypeForm::Union(_) => "union",
+        TypeForm::Alias(..) => return "type alias".to_owned(),
     };
-    let representations: Vec<String> = attributes
-        .iter()
-        .filter(|attribute| attribute.path().is_ident("repr"))
-        .filter_map(|attribute| match &attribute.meta {
-            Meta::List(list) => {
-                let delimiters = list.delimiter.span();
-                Some(collapsed_text(
-                    &source
-                        [delimiters.open().byte_range().end..delimiters.close().byte_range().start],
-                ))
-            }
-            _ => None,
-        })
-        // An empty `repr()` leaves the default, as Rust reads it.
-        .filter(|representation| !representation.is_empty())
-        .collect();
-    if representations.is_empty() {
+    if ty.representations.is_empty() {
         return form.to_owned();
     }
-    format!("{form} · repr({})", representations.join(", "))
+    format!("{form} · repr({})", ty.representations.join(", "))
 }
 
 /// Checks every text the card shows for characters XML 1.0 cannot represent.
@@ -304,13 +230,17 @@ fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
 
 #[cfg(test)]
 mod tests {
+    use kaalang_compiler::{SourceFile, Target};
+
     use super::structure;
 
     /// Whether each tile with a target draws its line, in source order.
-    fn drawn(source: &str, drawn: &[usize]) -> Vec<bool> {
-        let file = syn::parse_file(source).unwrap();
-        let declaration = kaalang_compiler::type_declaration(&file.items[0]).unwrap();
-        structure(source, &declaration.form, drawn)
+    fn drawn(source: &str, path: &str, drawn: &[usize]) -> Vec<bool> {
+        let ty = SourceFile::parse(source, Target::EMPTY)
+            .unwrap()
+            .ty(path)
+            .unwrap();
+        structure(&ty, drawn)
             .0
             .tiles()
             .iter()
@@ -332,8 +262,8 @@ mod tests {
         }"#;
         let alias = r#"#[kaa] #[kaa::refer(Member, "The member.")] type MemberRef = u8;"#;
 
-        assert_eq!(drawn(variants, &[1]), [false, true]);
-        assert_eq!(drawn(alias, &[]), [false]);
-        assert_eq!(drawn(alias, &[0]), [true]);
+        assert_eq!(drawn(variants, "Approval", &[1]), [false, true]);
+        assert_eq!(drawn(alias, "MemberRef", &[]), [false]);
+        assert_eq!(drawn(alias, "MemberRef", &[0]), [true]);
     }
 }

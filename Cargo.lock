@@ -219,7 +219,6 @@ dependencies = [
  "kaalang-compiler",
  "kaalang-macros",
  "kaalang-svg",
- "syn",
  "trybuild",
 ]
 
@@ -240,6 +239,7 @@ dependencies = [
 name = "kaalang-compiler"
 version = "0.3.0"
 dependencies = [
+ "cargo-platform",
  "kaalang-testing",
  "proc-macro2",
  "quote",
@@ -268,14 +268,12 @@ dependencies = [
 name = "kaalang-svg"
 version = "0.3.0"
 dependencies = [
- "cargo-platform",
  "kaalang-compiler",
  "kaalang-render",
  "kaalang-testing",
  "latex-rust",
  "proc-macro2",
  "pulldown-cmark",
- "quote",
  "syn",
  "unicode-segmentation",
 ]

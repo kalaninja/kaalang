@@ -3,8 +3,8 @@
 
 use std::{collections::BTreeSet, fmt::Write as _, iter, path::PathBuf};
 
-use kaalang_compiler::TypeDeclaration;
-use kaalang_svg::{RenderError, TypeCard, TypeOptions};
+use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
+use kaalang_svg::{TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::{
@@ -161,11 +161,28 @@ fn render(
     };
 
     let (focus_header, headers) = headers(crates, focus, &incoming);
-    let focus_card = card(crates, focus, &focus_header, own);
+    let read = |source: TypeRef| {
+        read(crates, source).map_err(|error| format!("{}: {error}", file(source).display()))
+    };
+    let focus_type = read(focus)?;
+    let incoming_types = incoming
+        .iter()
+        .map(|(source, _)| read(*source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let focus_card = TypeCard {
+        ty: &focus_type,
+        header: &focus_header,
+        relationships: own,
+    };
     let incoming_cards: Vec<TypeCard> = incoming
         .iter()
+        .zip(&incoming_types)
         .zip(&headers)
-        .map(|((source, positions), header)| card(crates, *source, header, positions))
+        .map(|(((_, positions), ty), header)| TypeCard {
+            ty,
+            header,
+            relationships: positions,
+        })
         .collect();
     let cards = || {
         iter::once((focus, focus_card)).chain(
@@ -200,21 +217,11 @@ fn render(
     Ok(Drawn { svg, files })
 }
 
-fn card<'a>(
-    crates: &'a [Crate],
-    source: TypeRef,
-    header: &'a str,
-    relationships: &'a [usize],
-) -> TypeCard<'a> {
+/// Reads a card's type from its file as its crate compiles it.
+fn read(crates: &[Crate], source: TypeRef) -> Result<SourceType, SourceError> {
     let krate = &crates[source.krate];
     let entry = &krate.types[source.id];
-    TypeCard {
-        source: &krate.modules[entry.module].file.source,
-        path: &entry.in_file,
-        target: &krate.cfg,
-        header,
-        relationships,
-    }
+    SourceFile::parse(&krate.modules[entry.module].file.source, &krate.cfg)?.ty(&entry.in_file)
 }
 
 /// The one type that `path` resolves to from a crate root, from `package` when
@@ -254,7 +261,7 @@ fn focus(
     }
     match found.as_slice() {
         [] => {
-            let message = RenderError::TypeNotFound(path.to_owned()).to_string();
+            let message = SourceError::TypeNotFound(path.to_owned()).to_string();
             Err(workspace::with_skipped(message, skipped))
         }
         [one] => Ok(*one),
@@ -360,9 +367,11 @@ fn headers(
 
 /// `file:line:column` of `span` in the file of `module`.
 fn location(krate: &Crate, module: usize, span: proc_macro2::Span) -> String {
-    let start = span.start();
-    let file = krate.modules[module].file.path.display();
-    format!("{file}:{}:{}", start.line, start.column + 1)
+    let (line, column) = kaalang_compiler::line_and_column(span);
+    format!(
+        "{}:{line}:{column}",
+        krate.modules[module].file.path.display()
+    )
 }
 
 /// A path as written, without the spaces token printing adds.

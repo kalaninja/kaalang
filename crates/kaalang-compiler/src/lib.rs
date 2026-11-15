@@ -2,11 +2,14 @@
 //! diagram arrangements, and lowers flows to Rust.
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
-//! any minor release.
+//! any minor release. Its `source` feature reads flows and types from the text
+//! of a source file for the renderers; the macro leaves it off.
 
 use syn::{Error, ItemFn, Result};
 
 pub(crate) use self::choice::{choice_match, is_todo_body};
+#[cfg(feature = "source")]
+pub use self::source::{SourceError, SourceFile, SourceFlow, SourceType, Target, line_and_column};
 pub use self::{
     codegen::expand,
     configure::configure,
@@ -44,6 +47,8 @@ mod parse;
 mod plan;
 mod resolve;
 mod scope;
+#[cfg(feature = "source")]
+mod source;
 mod stage;
 mod symbolic;
 pub mod topology;

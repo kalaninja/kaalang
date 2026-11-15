@@ -1,48 +1,39 @@
 use std::rc::Rc;
 
-use kaalang_compiler::FlowItem;
-use syn::{Item, Meta, ReturnType, Signature, spanned::Spanned};
+use kaalang_compiler::{FlowItem, SourceFlow};
+use syn::{ReturnType, Signature, spanned::Spanned};
 
-use crate::{
-    RenderError, RenderOptions, location, parse_configured, parser_source, validate_description,
-    validate_label,
-};
+use crate::{RenderError, validate_description, validate_label, with_visibility};
 
 mod captions;
 pub(crate) mod layout;
 mod svg;
 
-pub(crate) fn render(
-    source: &str,
-    position: usize,
-    options: RenderOptions<'_>,
-) -> Result<String, RenderError> {
-    let file = parse_configured(source, options.target)?;
-    let parser_source = parser_source(source, &file);
-    let flow = select_flow(&file.items, position)?;
-    let flow_path = flow.path.as_str();
-    let function = &flow.function;
-    let mut model = kaalang_compiler::build_with_options(function, options.collapse_cycles)
-        .map_err(|error| invalid_flow(flow_path, &error))?;
+pub(crate) fn render(flow: SourceFlow) -> Result<String, RenderError> {
+    let SourceFlow {
+        item,
+        mut model,
+        header,
+        parameters,
+        return_type,
+        ..
+    } = flow;
+    let signature = &item.function.sig;
     kaalang_render::compact_arrangement(&mut model);
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
     }
-    // A trait's method has its trait's visibility, which the file may not tell.
-    let visibility = (!flow.trait_method).then_some(&function.vis);
-    let start = layout::start_text(parser_source, &function.sig, visibility);
-    let parameters = layout::parameter_text(parser_source, &function.sig);
-    let return_type = layout::return_text(parser_source, &function.sig.output);
-    validate_labels(&model, &function.sig, &start, &parameters, &return_type)?;
+    let start = start_text(&item, &header);
+    validate_labels(&model, signature, &start, &parameters, &return_type)?;
     let unroutable = |reason| RenderError::UnroutableTopology {
-        name: flow_path.to_owned(),
+        name: item.path.clone(),
         reason,
     };
     if !model.stages.is_empty() {
         for (stage, analysis) in model.stages.iter().zip(&model.analysis.stages) {
             let span = analysis.entry.span();
             validate_description(&analysis.description, span, "stage description")?;
-            validate_labels(stage, &function.sig, &start, &[], &return_type)?;
+            validate_labels(stage, signature, &start, &[], &return_type)?;
         }
         let scene =
             layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
@@ -61,54 +52,14 @@ pub(crate) fn render(
     ))
 }
 
-/// The flow at `path` among `items`, for tests that name a flow rather than
-/// count it.
-#[cfg(test)]
-pub(crate) fn select_named(items: &[Item], path: &str) -> Result<FlowItem, RenderError> {
-    let position = kaalang_compiler::declarations(items)
-        .flows
-        .iter()
-        .position(|flow| flow.path == path)
-        .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
-    select_flow(items, position)
-}
-
-fn select_flow(items: &[Item], position: usize) -> Result<FlowItem, RenderError> {
-    let Some(flow) = kaalang_compiler::declarations(items)
-        .flows
-        .into_iter()
-        .nth(position)
-    else {
-        return Err(RenderError::FlowNotFound(position.to_string()));
-    };
-    if let Some(attribute) = flow
-        .function
-        .attrs
-        .iter()
-        .filter(|attribute| kaalang_compiler::is_kaalang_attribute(attribute))
-        .find(|attribute| match &attribute.meta {
-            Meta::Path(_) => false,
-            Meta::List(arguments) => !arguments.tokens.is_empty(),
-            Meta::NameValue(_) => true,
-        })
-    {
-        return Err(invalid_flow(
-            &flow.path,
-            &syn::Error::new_spanned(attribute, "#[kaa] on a function does not accept arguments"),
-        ));
-    }
-
-    Ok(flow)
-}
-
-/// Reports a flow-level error at its source position.
-fn invalid_flow(flow_name: &str, error: &syn::Error) -> RenderError {
-    let (line, column) = location(error.span());
-    RenderError::InvalidFlow {
-        name: flow_name.to_owned(),
-        line,
-        column,
-        message: error.to_string(),
+/// The start node's text: the authored header, behind its marker when the
+/// function has a visibility of its own. A trait's method has its trait's,
+/// which the file may not tell.
+pub(crate) fn start_text(item: &FlowItem, header: &str) -> String {
+    if item.trait_method {
+        header.to_owned()
+    } else {
+        with_visibility(&item.function.vis, header)
     }
 }
 

@@ -77,24 +77,6 @@ pub fn flow_named(source: &str, name: &str) -> ItemFn {
         .function
 }
 
-/// The path of every flow `source` declares, in the order a renderer counts
-/// them, once `configure` has removed what a compilation target does not
-/// compile.
-///
-/// # Panics
-///
-/// Panics when the source does not parse.
-#[must_use]
-pub fn flow_paths(source: &str, configure: impl FnOnce(&mut syn::File)) -> Vec<String> {
-    let mut file = syn::parse_file(source)
-        .unwrap_or_else(|error| panic!("the source does not parse: {error}"));
-    configure(&mut file);
-    kaalang_compiler::flows(&file.items)
-        .into_iter()
-        .map(|flow| flow.path)
-        .collect()
-}
-
 fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {
     let entries = fs::read_dir(directory)
         .unwrap_or_else(|error| panic!("could not read {}: {error}", directory.display()));

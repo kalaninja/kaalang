@@ -9,18 +9,16 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-cargo-platform = { workspace = true }
-kaalang-compiler = { workspace = true }
+kaalang-compiler = { workspace = true, features = ["source"] }
 kaalang-render = { workspace = true }
 latex-rust = { workspace = true }
-proc-macro2 = { workspace = true, features = ["span-locations"] }
+proc-macro2 = { workspace = true }
 pulldown-cmark = { workspace = true }
 syn = { workspace = true }
 unicode-segmentation = { workspace = true }
 
 [dev-dependencies]
 kaalang-testing = { workspace = true }
-quote = { workspace = true }
 
 [lints]
 workspace = true

@@ -5,6 +5,7 @@ use std::{
 };
 
 use clap::{ArgGroup, builder::NonEmptyStringValueParser};
+use kaalang_compiler::{SourceError, SourceFile};
 use kaalang_svg::RenderError;
 use syn::ext::IdentExt;
 
@@ -83,22 +84,21 @@ impl Diagram {
     /// Renders the flow at `path` and returns it with the file declaring it.
     fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
         let found = workspace::find(path, self.package.as_deref(), &self.target)?;
-        let svg = kaalang_svg::render_flow(
-            &found.source,
-            found.position,
-            kaalang_svg::RenderOptions {
-                collapse_cycles: self.collapse_cycles,
-                target: &found.cfg,
-            },
-        )
-        .map_err(|mut error| {
-            // The renderer knows only the path within the file.
-            if let RenderError::InvalidFlow { name, .. }
-            | RenderError::UnroutableTopology { name, .. } = &mut error
-            {
+        let located = |error: &dyn std::fmt::Display| format!("{}: {error}", found.file.display());
+        // The file and the renderer know only the path within the file.
+        let flow = SourceFile::parse(&found.source, &found.cfg)
+            .and_then(|file| file.flow(found.position, self.collapse_cycles))
+            .map_err(|mut error| {
+                if let SourceError::InvalidFlow { name, .. } = &mut error {
+                    path.clone_into(name);
+                }
+                located(&error)
+            })?;
+        let svg = kaalang_svg::render_flow(flow).map_err(|mut error| {
+            if let RenderError::UnroutableTopology { name, .. } = &mut error {
                 path.clone_into(name);
             }
-            format!("{}: {error}", found.file.display())
+            located(&error)
         })?;
         Ok((svg, found.file))
     }

@@ -9,9 +9,18 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+cargo-platform = { workspace = true, optional = true }
 proc-macro2 = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true, features = ["visit"] }
+
+[features]
+# Reads flows and types from the text of a source file, for the renderers. The
+# macro leaves it off: rustc gives it tokens, not text.
+source = ["dep:cargo-platform", "proc-macro2/span-locations"]
+
+[package.metadata.docs.rs]
+features = ["source"]
 
 [dev-dependencies]
 kaalang-testing = { workspace = true }
