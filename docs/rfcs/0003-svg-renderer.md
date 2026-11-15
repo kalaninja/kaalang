@@ -12,16 +12,16 @@ independently reinterpret the authored source.
 
 ## 2. Layout
 
-The validated model supplies the topology and its arrangement.
-`kaalang_compiler::build` validates the complete expanded topology and
-independently checks its arrangement against RFC 0002 before it returns. For a
-collapsed view, the model layer projects each validated cycle boundary to one
-node and checks a second arrangement for that projection. Before any concrete
-renderer measures it, `kaalang-render` may compact that witness into the common
-rows, columns, corridors, lanes, and contours. A concrete renderer chooses no
-structure of its own; it assigns dimensions and spacing to the shared
-arrangement. Sections 2.1–2.4 describe construction and verification of RFC
-0002's rules; §2.5 defines presentation preferences.
+The validated model supplies the topology and its arrangement. Building the
+model validates the complete expanded topology and independently checks its
+arrangement against RFC 0002. For a collapsed view, the model layer projects
+each validated cycle boundary to one node and checks a second arrangement for
+that projection. Before any concrete renderer measures it, a shared step may
+compact that witness into the common rows, columns, corridors, lanes, and
+contours. A concrete renderer chooses no structure of its own; it assigns
+dimensions and spacing to the shared arrangement. Sections 2.1–2.4 describe
+construction and verification of RFC 0002's rules; §2.5 defines presentation
+preferences.
 
 ### 2.1 The decision procedure
 
@@ -46,10 +46,10 @@ before search: the first branch continues the current column, as do serial
 blocks; case nodes reached from a distributor and iteration tails need not
 continue that incoming route's temporary column. Branch columns increase in
 authored order. Each shared entry equals the minimum approach column of its
-group's first branch, as derived by `Regions::approaches`. This is represented
-by weak inequalities against all those approaches and a finite choice of which
-one is equal. Later-sibling reservation contributes strict inequalities against
-every reserved vertex that the sibling does not itself draw.
+group's first branch. This is represented by weak inequalities against all those
+approaches and a finite choice of which one is equal. Later-sibling reservation
+contributes strict inequalities against every reserved vertex that the sibling
+does not itself draw.
 
 A back edge's lower and upper bounds enclose every horizontal coordinate its
 climb uses. On the left, its upper bound is strictly less than every body column
@@ -181,7 +181,7 @@ consecutive integers preserves every strict order and equality. Back edge
 coordinates use lane zero beside those integer columns; the separation between
 distinct columns keeps the harmless lane offset from changing any order.
 
-The resulting `Arrangement` records all forward and back edge runs, including
+The resulting arrangement records all forward and back edge runs, including
 routing-only rows. Each sideways run explicitly names either a rank line or a
 lane in a rank gap. Every junction's final sideways arrival names its rank and
 does not occupy a gap lane, including cycle entries, iteration tails, breaks and
@@ -212,10 +212,8 @@ with `b` are excluded from this argument, because they can exchange positions
 immediately. The remaining separation is unavoidable, so refusing it loses no
 drawing.
 
-Bounding the memo cache limits a performance optimization, not the search:
-uncached states are explored again and no continuation is omitted. Disabling
-both memoization and separator refusal gives the same finite search for
-comparison tests.
+A state whose refusal is not memoized is explored again and no continuation is
+omitted.
 
 #### Termination and cost
 
@@ -243,8 +241,7 @@ one exchange orbit per vertex, and minimum equalities. If `S` denotes the state
 count above and `G` the number of minimum clauses, a loose space bound including
 memoization is `O(S * (M² + N + W + L) + N * W! * W + N² + G * M²)`. The terms
 account for stored keys, active exchange queues and witness rows, reachability,
-and recursive minimum settlement. The cache threshold reduces retained keys;
-these upper bounds do not depend on it.
+and recursive minimum settlement.
 
 ### 2.2 Branch and case placement
 
@@ -259,21 +256,20 @@ the flow impossible to draw, validation rejects it.
 
 ### 2.3 Independent checks
 
-Before rendering, `kaalang_render::compact_arrangement` simplifies repeating
-cycles and witnesses with long routing detours. This is optional presentation
-work, outside macro compilation and shared by concrete renderers. It shortens
-successive runs, joins compatible horizontal lanes, closes unused column space,
-brings straight contours toward their bodies and lifts vertices into earlier
-ranks. It may not split a choice's common case row. Each candidate is normalized
-and checked through `kaalang_render::ArrangementVerifier` before replacing the
-current witness. The verifier composes `kaalang_compiler::ArrangementChecks`
-with cached cycle boundaries and the renderer-only exception that lets a
-completion rise beside the cycle it leaves. A concrete renderer realizes that
-checked replacement. An unsuccessful simplification keeps the current witness
-and never rejects a flow; it is not a second decision procedure or an additional
-language restriction. The normal form remains the fallback, not the required
-appearance. Compaction reaches a deterministic local fixed point; it does not
-promise a global minimum of bends or area.
+Before rendering, compaction simplifies repeating cycles and witnesses with long
+routing detours. This is optional presentation work, outside macro compilation
+and shared by concrete renderers. It shortens successive runs, joins compatible
+horizontal lanes, closes unused column space, brings straight contours toward
+their bodies and lifts vertices into earlier ranks. It may not split a choice's
+common case row. Each candidate is normalized and verified before replacing the
+current witness: it must pass the model layer's arrangement checks and the cycle
+boundary checks, with the renderer-only exception that lets a completion rise
+beside the cycle it leaves. A concrete renderer realizes that checked
+replacement. An unsuccessful simplification keeps the current witness and never
+rejects a flow; it is not a second decision procedure or an additional language
+restriction. The normal form remains the fallback, not the required appearance.
+Compaction reaches a deterministic local fixed point; it does not promise a
+global minimum of bends or area.
 
 Normalization keeps all junctions on their rank lines and removes unused gap
 lanes. Rank runs do not reserve gap lanes. Lifting a junction moves its arrival
@@ -296,26 +292,6 @@ placement. Witness correspondence additionally checks columns, cycle boundaries,
 and recorded back edge corridors; a crossing-free drawing of a different witness
 does not satisfy it.
 
-The test-only reference uses separate event enumeration, a sparse difference
-constraint graph with strongly connected components and longest paths, and a
-separate strip router. It retains fresh coordinates for every live path on each
-row instead of production's interval projection and transitive-closure key.
-Positive-only preliminary attempts speed up witness discovery; their exhaustion
-always falls through to the full enumeration. Its external test guard panics on
-exhaustion and is never counted as a negative answer. It shares topology facts
-and the independent verifier, not production transitions, pruning, column solver
-or reconstruction.
-
-Exhaustive comparisons include both distributor and ordered-question bodies,
-with drawn, impossible and earlier-semantic outcomes counted separately. Both
-domains contain topology refusals, including exits enclosed between converging
-routes when the case row cannot be split. Separate tests compare the production
-search with both reductions disabled and check that shared-rail exchanges cannot
-separate a case from its siblings. Mutated witnesses check far contours, back
-edge bends, nested back edge order, cycle boundaries, body junctions, lanes,
-reserved columns, end placement and disconnected incident routes. Agreement of
-test sets supplements the correspondence argument; it does not replace it.
-
 The independent checks cover:
 
 | Rule                                           | Check                                                 |
@@ -332,9 +308,9 @@ The independent checks cover:
 
 ### 2.4 Why every checked arrangement has a realization
 
-One strictly increasing `column_x` map positions every node, junction, route,
-and back edge. Nodes sharing a column share an x coordinate; branch order and
-reserved areas retain their horizontal order.
+One strictly increasing map from columns to x coordinates positions every node,
+junction, route, and back edge. Nodes sharing a column share an x coordinate;
+branch order and reserved areas retain their horizontal order.
 
 Each column gap is large enough for its content, the contours that enter that
 gap from either side, a separating lane, and any label-clearance slack. A deep
@@ -418,10 +394,10 @@ height or duplicate capture labels. End labels its transferred value under RFC
 Route back edges innermost first. The tail meets its arrivals at the end of its
 rail nearest the chosen contour. The climb stays outside the complete body,
 including nested boundaries, regardless of the rows occupied by that body. Its
-recorded contour column uses the same `column_x` map as vertices; lane zero sits
-beyond that column's content, and each later lane adds 20 pixels. Leave at least
-one lane between an enclosing back edge and a nested boundary. Opposing climbs
-in one gap must remain distinct. A bent climb follows its recorded runs. The
+recorded contour column uses the same map as vertices; lane zero sits beyond
+that column's content, and each later lane adds 20 pixels. Leave at least one
+lane between an enclosing back edge and a nested boundary. Opposing climbs in
+one gap must remain distinct. A bent climb follows its recorded runs. The
 arrowhead belongs to the horizontal arrival at the entry junction.
 
 ## 3. SVG output
@@ -462,49 +438,21 @@ same marker and description on its node and its external capture and hand-over
 labels. End shows the value of the flow's structural return beside its receiving
 edge.
 
-## 4. Library interface
+## 4. Validation and failures
 
-The default and options-bearing library entry points are:
+A diagram draws one flow. That flow alone undergoes kaalang validation, and its
+view, every cycle expanded or every cycle collapsed, is drawn only after the
+full expanded flow has passed semantic and topology validation. Drawing does not
+invoke `cargo check` or perform full Rust type checking.
 
-```rust
-kaalang_svg::flow_names(source: &str) -> Result<Vec<String>, RenderError>
-
-kaalang_svg::render_source(source: &str, flow_name: &str)
-    -> Result<String, RenderError>
-
-kaalang_svg::render_source_with_options(
-    source: &str,
-    flow_name: &str,
-    options: RenderOptions,
-) -> Result<String, RenderError>
-
-pub struct RenderOptions {
-    pub collapse_loops: bool,
-}
-```
-
-The renderer parses the complete UTF-8 Rust source file and selects one function
-by its unqualified name. It recognizes `#[kaalang]` on top-level free functions,
-`impl` methods, and trait methods with default bodies. It does not descend into
-inline modules. The selected function alone undergoes kaalang validation.
-`flow_names` lists these functions in source order without validating their
-flows; duplicate names remain in the list. `render_source` is equivalent to
-options with `collapse_loops: false`. The options-bearing entry point selects
-the all-expanded or all-collapsed projection only after the full expanded flow
-has passed semantic and topology validation. It then serializes the shared
-arrangement or returns a rendering error. It does not invoke `cargo check` or
-perform full Rust type checking.
-
-`RenderError::Parse` reports invalid Rust syntax; `FlowNotFound` and
-`AmbiguousFlow` report missing and duplicate flow names. `InvalidFlow` reports
-invalid kaalang attributes and errors from model construction, including an
-impossible expanded topology. `InvalidLabelCharacter` reports authored
-descriptions, source-derived signature labels, and default call captions
-containing characters that XML 1.0 cannot represent.
-`RenderError::UnroutableTopology` reports a renderer defect in geometry, labels
-or witness correspondence for the selected projection after assigning dimensions
-and spacing. Final route, label and correspondence checks remain necessary after
-measurement.
+A diagram fails for invalid Rust syntax in the source file and for a flow that
+is not valid kaalang: invalid kaalang attributes and errors from model
+construction, including an impossible expanded topology. It fails for an
+authored description, a source-derived signature label, or a default call
+caption that contains a character XML 1.0 cannot represent. It also fails when
+the geometry, labels or witness correspondence of that view do not hold after
+dimensions and spacing are assigned; that is a renderer defect. Final route,
+label and correspondence checks remain necessary after measurement.
 
 ## 5. Command-line interface
 

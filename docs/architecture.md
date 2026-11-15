@@ -110,7 +110,28 @@ otherwise rejection requires exhaustion with flexible back edges. The production
 searches have no timeout, retry, coordinate, or bend limit that can reject a
 topology. The separate exhaustive procedure under
 [`construct/tests/reference.rs`](../crates/kaalang-compiler/src/construct/tests/reference.rs)
-is a test oracle, not a runtime fallback.
+is a test oracle, not a runtime fallback. It uses separate event enumeration, a
+sparse difference constraint graph with strongly connected components and
+longest paths, and a separate strip router. It retains fresh coordinates for
+every live path on each row instead of production's interval projection and
+transitive-closure key. Positive-only preliminary attempts speed up witness
+discovery; their exhaustion always falls through to the full enumeration. A
+bound on the states it visits panics rather than count as a negative answer. It
+shares topology facts and the independent verifier with production, not
+transitions, pruning, column solver or reconstruction.
+
+Exhaustive comparisons cover distributor bodies and ordered-question bodies and
+count drawn, refused, and earlier-rejected outcomes separately. Neither domain
+holds a refusal: validation rejects an exit enclosed between repeating routes
+before construction. A separate test compares the production search with
+memoization and separator refusal disabled. Mutated arrangements break
+corridors, contours, lanes, and branch order, and the verifier must reject each.
+Agreement supplements the coverage and soundness arguments of
+[RFC 0003 §2.1](rfcs/0003-svg-renderer.md#21-the-decision-procedure); it does
+not replace them.
+
+The memo cache stops growing at `MEMO_CACHE_BYTES`. That limits a performance
+optimization, not the search: a state it does not hold is explored again.
 
 ## Rendering steps and fallbacks
 

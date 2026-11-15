@@ -309,9 +309,9 @@ provisions only within the scope of description formatting:
 - [RFC 0003 §3](0003-svg-renderer.md#3-svg-output): besides expanded cycle
   captions, a label may shorten a formula wider than its wrapping width, as
   defined in §4 of this RFC.
-- [RFC 0003 §4](0003-svg-renderer.md#4-library-interface):
-  `InvalidLabelCharacter` also reports a character that a description's
-  character reference decodes to.
+- [RFC 0003 §4](0003-svg-renderer.md#4-validation-and-failures): a diagram also
+  fails when a description's character reference decodes to a character XML 1.0
+  cannot represent.
 
 The requirement for nonempty Rust description strings in
 [RFC 0001 §3](0001-language.md#3-block-statements) and all other provisions of

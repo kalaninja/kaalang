@@ -706,15 +706,14 @@ declares stages. Earlier released RFC texts remain unchanged.
   alternative result exits and explicit continue routes in the same validated
   model. In all diagrams, nodes sharing a row use its maximum measured node
   height so their edges align, as in §6.3 here.
-- **RFC 0003 §2.3:** reject an exit enclosed between repeating routes before
+- **RFC 0003 §2.2:** reject an exit enclosed between repeating routes before
   construction, as in §6.2 here; construction still reports a topology refusal
   when a search exhausts its space.
 - **RFC 0003 §§2.1, 2.3 and 3:** replace the authored break junction with one
   result junction per declared output, preserving the junction and merge reuse
   rules in §6.2 here.
-- **RFC 0003 §§4–5:** name the collapsed view after cycles: the
-  `RenderOptions::collapse_cycles` field and the `--collapse-cycles` option
-  replace `collapse_loops` and `--collapse-loops` with the same meaning.
+- **RFC 0003 §5:** name the collapsed view after cycles: the `--collapse-cycles`
+  option replaces `--collapse-loops` with the same meaning.
 - **RFC 0004 §2:** replace the uninitialized authored-name declarations and
   their permission to assign an uncaptured parameter spelling as an ordinary
   Rust local with the hygienic parameter bindings and capture checks in §5.3

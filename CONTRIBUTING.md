@@ -19,7 +19,10 @@ documentation.
 RFCs describe syntax, semantics, observable behavior, and design decisions.
 Algorithms, transformation steps, their rationale, and correctness arguments
 belong in the RFC covering that subject. Crate choices, library versions, and
-build or runtime configuration belong in code or development documentation.
+build or runtime configuration belong in code or development documentation. So
+does the organization of the code: which crate or function does what, library
+interfaces, the names of types and functions, and tests. An RFC names none of
+them.
 
 Accepted RFCs are immutable. A new RFC changes an accepted decision by naming
 the provisions it supersedes, and takes precedence for them.

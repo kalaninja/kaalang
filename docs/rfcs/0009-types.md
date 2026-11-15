@@ -439,17 +439,11 @@ incoming types are validated and the diagram rendered. On success it prints the
 output path; on failure it writes a diagnostic to stderr and exits with a
 nonzero status.
 
-This supersedes three provisions of [RFC 0003](0003-svg-renderer.md): in §4, the
-entry points `render_source` and `render_source_with_options`, which select one
-function by its unqualified name, and the rule that the renderer does not
-descend into inline modules; §5, which selects a flow by source file and name,
-and the part of §6 under which the renderer does not search an entire crate or
-resolve external modules or conditional compilation. The renderer instead lists
-the file's flows, each by its path within the file in the command's forms, as
-`review::route` or `<&Report as Approve>::approve`, and draws the one at the
-position its caller selects; it resolves no path. It removes what does not hold
-for the cfg set its caller gives, as the command does; without one, the set is
-empty. Macro-expanded source remains outside the renderer's scope.
+This supersedes two provisions of [RFC 0003](0003-svg-renderer.md): §5, which
+selects a flow by source file and name, and the part of §6 under which the
+renderer does not search an entire crate or resolve external modules or
+conditional compilation. Macro-expanded source remains outside the renderer's
+scope.
 
 ## 7. Validation and acceptance scenarios
 
