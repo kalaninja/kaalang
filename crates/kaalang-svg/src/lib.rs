@@ -167,8 +167,9 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders the flow at `position` among those [`flow_names`] lists for
-/// `options.target`, which the caller selected by its own rules.
+/// Renders the flow at `position` among those `options.target` compiles in
+/// `source`, counted in source order as `kaalang_compiler::flows` lists them;
+/// the caller selected it by its own rules.
 ///
 /// # Errors
 ///
@@ -188,36 +189,19 @@ pub fn render_flow(
     flow::render(source, position, options)
 }
 
-/// Renders the flow at `path` within `source`, as [`flow_names`] lists it, for
-/// tests that name a flow rather than count it.
+/// Renders the flow at `path` within `source`, for tests that name a flow
+/// rather than count it.
 #[cfg(test)]
 pub(crate) fn render_path(
     source: &str,
     path: &str,
     options: RenderOptions<'_>,
 ) -> Result<String, RenderError> {
-    let position = flow_names(source, options.target)?
+    let position = kaalang_compiler::flows(&parse_configured(source, options.target)?.items)
         .iter()
-        .position(|listed| listed == path)
+        .position(|flow| flow.path == path)
         .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;
     render_flow(source, position, options)
-}
-
-/// Lists the path within a UTF-8 Rust source file of every `#[kaa]`
-/// function `target` compiles, free or associated, in source order and with
-/// duplicates: `route`, `review::route` inside an inline module,
-/// `Report::approve`, `<Report as Approve>::approve`, or `Approve::approve`.
-///
-/// # Errors
-///
-/// Returns [`RenderError::Parse`] when `source` is not valid Rust.
-pub fn flow_names(source: &str, target: &Target) -> Result<Vec<String>, RenderError> {
-    Ok(
-        kaalang_compiler::flows(&parse_configured(source, target)?.items)
-            .into_iter()
-            .map(|flow| flow.path)
-            .collect(),
-    )
 }
 
 /// One card of a type diagram.
@@ -510,7 +494,10 @@ mod tests {
     fn requires_an_exact_kaalang_attribute() {
         let source = "#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n";
 
-        assert_eq!(flow_names(source, Target::EMPTY), Ok(Vec::new()));
+        assert_eq!(
+            render_flow(source, 0, RenderOptions::default()),
+            Err(RenderError::FlowNotFound("0".into()))
+        );
     }
 
     #[test]
@@ -533,26 +520,17 @@ mod tests {
     fn finds_a_flow_marked_through_the_crate_path() {
         let source = "#[kaalang::kaa]\nfn qualified(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
 
-        assert_eq!(
-            flow_names(source, Target::EMPTY),
-            Ok(vec!["qualified".to_owned()])
-        );
         assert!(render_flow(source, 0, RenderOptions::default()).is_ok());
     }
 
     #[test]
-    fn flows_are_listed_by_their_path_within_the_file() {
+    fn a_flow_in_a_module_an_impl_or_a_trait_renders() {
         let flow = "fn copy(input: u8) -> u8 {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
         let source = format!(
             "mod review {{ #[kaa] {flow} }}\nstruct Report;\nimpl Report {{ #[kaa] {flow} }}\ntrait Review {{ #[kaa] {flow} }}\n"
         );
 
-        let paths = ["review::copy", "Report::copy", "Review::copy"];
-        assert_eq!(
-            flow_names(&source, Target::EMPTY),
-            Ok(paths.map(str::to_owned).to_vec())
-        );
-        for path in paths {
+        for path in ["review::copy", "Report::copy", "Review::copy"] {
             assert!(render_source(&source, path).is_ok(), "{path}");
         }
     }

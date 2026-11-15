@@ -40,8 +40,7 @@ fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, 
     let diagrams: Vec<(String, usize, String, RenderOptions<'static>)> = corpus::files(suite)
         .into_iter()
         .flat_map(|(_, source)| {
-            let names =
-                kaalang_svg::flow_names(&source, Target::EMPTY).expect("the fixture parses");
+            let names = corpus::flow_paths(&source, |file| Target::EMPTY.configure(file));
             // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
             let views = std::iter::once(false)
                 .chain(source.contains("#[kaa::cycle(").then_some(true))
@@ -110,8 +109,7 @@ fn generated_probes_render_inside_their_budget() {
                 collapse_cycles,
                 target: Target::EMPTY,
             };
-            let position = kaalang_svg::flow_names(&source, Target::EMPTY)
-                .expect("the probe parses")
+            let position = corpus::flow_paths(&source, |file| Target::EMPTY.configure(file))
                 .iter()
                 .position(|listed| listed == name)
                 .expect("the probe declares its flow");

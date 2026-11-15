@@ -1,12 +1,13 @@
-use kaalang_svg::{RenderError, RenderOptions, Target, flow_names, render_flow};
+use kaalang_svg::{RenderError, RenderOptions, Target, render_flow};
+use kaalang_testing::corpus::flow_paths;
 
-/// Renders the flow at `path` within `source`, as `flow_names` lists it.
+/// Renders the flow at `path` within `source`.
 fn render_source_with_options(
     source: &str,
     path: &str,
     options: RenderOptions<'_>,
 ) -> Result<String, RenderError> {
-    let position = flow_names(source, options.target)?
+    let position = flow_paths(source, |file| options.target.configure(file))
         .iter()
         .position(|listed| listed == path)
         .ok_or_else(|| RenderError::FlowNotFound(path.to_owned()))?;

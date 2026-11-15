@@ -61,8 +61,8 @@ pub(crate) fn render(
     ))
 }
 
-/// The flow at `path` among `items`, as `flow_names` lists it, for tests that
-/// name a flow rather than count it.
+/// The flow at `path` among `items`, for tests that name a flow rather than
+/// count it.
 #[cfg(test)]
 pub(crate) fn select_named(items: &[Item], path: &str) -> Result<FlowItem, RenderError> {
     let position = kaalang_compiler::declarations(items)

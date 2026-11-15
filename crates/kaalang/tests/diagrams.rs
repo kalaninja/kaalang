@@ -72,12 +72,15 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 );
             }
             let source = fs::read_to_string(fixture).unwrap();
-            let flows = kaalang_svg::flow_names(&source, &target).unwrap();
+            let mut file = syn::parse_file(&source)
+                .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
+            target.configure(&mut file);
+            let flows = kaalang_compiler::flows(&file.items);
             // A method's diagram is named after the method, without its impl.
             let names: Vec<&str> = flows
                 .iter()
-                .map(|path| {
-                    let name = path.rsplit("::").next().unwrap();
+                .map(|flow| {
+                    let name = flow.path.rsplit("::").next().unwrap();
                     name.strip_prefix("r#").unwrap_or(name)
                 })
                 .collect();

@@ -11,7 +11,7 @@ use crate::is_kaalang_attribute;
 
 /// A `#[kaa]` function among a file's items.
 pub struct FlowItem {
-    /// Its path within the file, which [`Declarations::select`] selects it by:
+    /// Its path within the file, which [`select`] selects it by:
     /// `route`, `review::route`, `Report::approve`,
     /// `<&Report as Approve>::approve`, or `Approve::approve`.
     pub path: String,
@@ -736,6 +736,28 @@ mod tests {
         impl Approve for &Report { #[kaa] fn approve(&self) {} }
         mod nested { #[kaa] fn route() {} }
     ";
+
+    #[test]
+    fn flows_are_listed_in_source_order_across_traits_impls_and_modules() {
+        let file = syn::parse_file(METHODS).expect("the source parses");
+        let paths: Vec<String> = declarations(&file.items)
+            .flows
+            .into_iter()
+            .map(|flow| flow.path)
+            .collect();
+        assert_eq!(
+            paths,
+            [
+                "Approve::approve",
+                "Approve::check",
+                "Review::approve",
+                "Report::approve",
+                "<Report as Approve>::approve",
+                "<&Report as Approve>::approve",
+                "nested::route",
+            ]
+        );
+    }
 
     #[test]
     fn a_free_function_is_selected_by_its_modules_and_name() {
