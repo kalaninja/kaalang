@@ -145,7 +145,8 @@ pub struct TypeCard<'a> {
 /// # Errors
 ///
 /// Returns [`RenderError::InvalidLabelCharacter`] when a card's text contains
-/// a character XML 1.0 cannot represent.
+/// a character XML 1.0 cannot represent, for the focus before the incoming
+/// cards in their order.
 ///
 /// # Panics
 ///

@@ -16,12 +16,14 @@ pub(crate) fn render(
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
 ) -> Result<String, RenderError> {
+    // The focus first: an error names the first card that fails, in the
+    // order a caller lists them.
+    let focus = read(focus)?;
     let groups = incoming
         .iter()
         .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    let focus = read(focus)?;
     Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
 }
 

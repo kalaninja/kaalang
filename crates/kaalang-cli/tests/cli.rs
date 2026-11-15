@@ -1788,6 +1788,40 @@ fn a_type_path_in_two_packages_fails_until_one_is_selected() {
 }
 
 #[test]
+fn a_card_that_cannot_be_drawn_is_named_with_its_own_file() {
+    let report = "use crate::Member;\n#[kaa]\npub struct Report {\n    #[kaa::refer(Member, \"m\")]\n    m: Vec</*\0*/ u8>,\n}\n";
+    let directory = package(
+        "cli-type-card-error",
+        "pub mod report;\npub struct Member {\n    id: Vec</*\0*/ u8>,\n}\n",
+    );
+    write(&directory, "src/report.rs", report);
+    let stderr = |directory: &Path| {
+        let failed = run(directory, "diagram --type Member");
+        assert!(!failed.status.success());
+        // Windows separates the listed paths with backslashes.
+        String::from_utf8_lossy(&failed.stderr).replace('\\', "/")
+    };
+
+    // Both cards fail: the focus is checked first.
+    let both = stderr(&directory);
+    assert!(
+        both.contains("src/lib.rs: kaalang label of type `Member`"),
+        "{both}"
+    );
+    write(
+        &directory,
+        "src/lib.rs",
+        "pub mod report;\npub struct Member;\n",
+    );
+    let incoming = stderr(&directory);
+    assert!(
+        incoming.contains("src/report.rs: kaalang label of type `Report`"),
+        "{incoming}"
+    );
+    assert!(!directory.join("Member.svg").exists());
+}
+
+#[test]
 fn the_type_option_does_not_find_a_flow() {
     let directory = package("cli-type-flow", SOURCE);
     let failed = run(&directory, "diagram --type route");
