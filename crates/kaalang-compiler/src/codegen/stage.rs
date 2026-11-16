@@ -13,17 +13,19 @@ fn state_name() -> Ident {
 
 /// A balanced sum uses existing enum variants without introducing type names
 /// into authored scopes. The same path constructs and matches a stage payload.
-fn variant(index: usize, count: usize, value: TokenStream2, span: Span) -> TokenStream2 {
+/// The variants keep the macro's own span: one at an authored name would make
+/// an editor read that name as `core` or `Result`.
+fn variant(index: usize, count: usize, value: TokenStream2) -> TokenStream2 {
     if count == 1 {
         return value;
     }
     let left = count.div_ceil(2);
     if index < left {
-        let value = variant(index, left, value, span);
-        quote_spanned!(span=> ::core::result::Result::Ok(#value))
+        let value = variant(index, left, value);
+        quote!(::core::result::Result::Ok(#value))
     } else {
-        let value = variant(index - left, count - left, value, span);
-        quote_spanned!(span=> ::core::result::Result::Err(#value))
+        let value = variant(index - left, count - left, value);
+        quote!(::core::result::Result::Err(#value))
     }
 }
 
@@ -57,7 +59,7 @@ pub(super) fn transition(flow: &Flow, bindings: &Bindings, index: usize) -> Toke
     } else {
         value
     };
-    let destination = variant(target, bindings.stages, value, block.span);
+    let destination = variant(target, bindings.stages, value);
     let state = state_name();
     match &flow.kind {
         FlowKind::Preparation => {
@@ -163,7 +165,7 @@ pub(super) fn expand(mut function: ItemFn, analysis: &Analysis) -> Result<ItemFn
         let entry = &stage_analysis.entry;
         let bindings = bindings(&stage_analysis.analysis, &prepared, index);
         let value = bindings.wire(entry);
-        let pattern = variant(index, prepared.stages, quote!(#value), entry.span());
+        let pattern = variant(index, prepared.stages, quote!(#value));
         let body = super::flow(
             &stage_analysis.analysis.flow,
             &stage_analysis.analysis.execution_plan,
