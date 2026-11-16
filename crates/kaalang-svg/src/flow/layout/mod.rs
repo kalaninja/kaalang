@@ -15,10 +15,11 @@ use kaalang_compiler::{
 use self::label::{label_rect, vertical_gaps};
 pub(crate) use self::{
     cycle::CAP_CHAMFER,
+    label::name_rects,
     staged::{StagedScene, layout_staged},
 };
 use crate::{
-    flow::captions::Captions,
+    flow::captions::{Captions, WireList},
     markup::{DOT_RADIUS, MARGIN},
     text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
 };
@@ -132,7 +133,7 @@ pub(crate) struct CycleRegion {
 
 impl CycleRegion {
     /// Left, top, right, bottom, like `Scene::bounds`.
-    pub(super) const fn bounds(&self) -> (i32, i32, i32, i32) {
+    pub(crate) const fn bounds(&self) -> (i32, i32, i32, i32) {
         (self.left, self.top, self.right, self.bottom)
     }
 
@@ -193,21 +194,22 @@ pub(crate) struct Label {
 
 #[derive(Clone, Copy)]
 pub(crate) enum LabelKind {
-    Wire,
+    /// The names of one wire list.
+    Wire(WireList),
     Branch,
 }
 
 impl LabelKind {
     pub(crate) const fn font_size(self) -> i32 {
         match self {
-            Self::Wire => CONNECTION_LABEL_FONT,
+            Self::Wire(_) => CONNECTION_LABEL_FONT,
             Self::Branch => BRANCH_LABEL_FONT,
         }
     }
 
     pub(crate) const fn line_height(self) -> i32 {
         match self {
-            Self::Wire => CONNECTION_LINE_HEIGHT,
+            Self::Wire(_) => CONNECTION_LINE_HEIGHT,
             Self::Branch => BRANCH_LINE_HEIGHT,
         }
     }
@@ -862,7 +864,7 @@ impl Scene {
             .expect("every projected node is placed")
     }
 
-    pub(super) const fn bounds(node: &Node) -> (i32, i32, i32, i32) {
+    pub(crate) const fn bounds(node: &Node) -> (i32, i32, i32, i32) {
         (
             node.x - node.width / 2,
             node.y - node.height / 2,

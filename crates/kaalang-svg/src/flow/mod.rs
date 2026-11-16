@@ -3,13 +3,15 @@ use std::rc::Rc;
 use kaalang_compiler::{FlowItem, SourceFlow};
 use syn::{ReturnType, Signature, spanned::Spanned};
 
-use crate::{RenderError, validate_description, validate_label, with_visibility};
+use crate::{Hotspot, RenderError, validate_description, validate_label, with_visibility};
 
 mod captions;
 pub(crate) mod layout;
+mod navigation;
 mod svg;
 
-pub(crate) fn render(flow: SourceFlow) -> Result<String, RenderError> {
+/// Renders a flow and lists its hotspots.
+pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderError> {
     let SourceFlow {
         item,
         mut model,
@@ -23,6 +25,7 @@ pub(crate) fn render(flow: SourceFlow) -> Result<String, RenderError> {
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
     }
+    let mut hotspots = Vec::new();
     let start = start_text(&item, &header);
     validate_labels(&model, signature, &start, &parameters, &return_type)?;
     let unroutable = |reason| RenderError::UnroutableTopology {
@@ -37,18 +40,23 @@ pub(crate) fn render(flow: SourceFlow) -> Result<String, RenderError> {
         }
         let scene =
             layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
-        return Ok(svg::serialize_staged(&scene, &model.analysis));
+        let parts = std::iter::once(None).chain((0..model.stages.len()).map(Some));
+        for ((local, placement), part) in scene.parts.iter().zip(parts) {
+            navigation::collect(local, &model.analysis, part, *placement, &mut hotspots);
+        }
+        return Ok((svg::serialize_staged(&scene, &model.analysis), hotspots));
     }
     // Each formula is laid out once, here rather than per layout attempt.
     // Validation above has already parsed the same descriptions, without their
     // math, to read the characters a reader would see.
     let captions = Rc::new(captions::derive(&model, &start, &return_type));
     let scene = layout::layout(&model, &captions, &parameters).map_err(unroutable)?;
+    let origin = layout::Point { x: 0, y: 0 };
+    navigation::collect(&scene, &model.analysis, None, origin, &mut hotspots);
 
-    Ok(svg::serialize(
-        &scene,
-        &model.analysis.name.to_string(),
-        None,
+    Ok((
+        svg::serialize(&scene, &model.analysis.name.to_string(), None),
+        hotspots,
     ))
 }
 

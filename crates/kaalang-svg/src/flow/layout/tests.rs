@@ -690,7 +690,7 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
             .all(|label| joined(&label.lines, "") != "yes")
     );
     assert!(scene.labels.iter().any(|label| {
-        matches!(label.kind, LabelKind::Wire) && joined(&label.lines, "") == "no"
+        matches!(label.kind, LabelKind::Wire(_)) && joined(&label.lines, "") == "no"
     }));
     let connection = scene
         .connections
@@ -1328,7 +1328,7 @@ fn clearing_one_label_can_take_more_than_one_lane() {
         .unwrap();
     scene.labels = vec![Label {
         owner: Vertex::Node(NodeId::Start),
-        kind: LabelKind::Wire,
+        kind: LabelKind::Wire(WireList::Capture(NodeId::Start)),
         lines: vec![RichText::literal("wwwwwwwwww")],
         at: Point {
             x: climb[0].x - 3 * LANE,

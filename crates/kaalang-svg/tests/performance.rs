@@ -42,7 +42,9 @@ fn draw(source: &str, position: usize, collapse_cycles: bool) -> Result<String, 
     let flow = SourceFile::parse(source, Target::EMPTY)
         .and_then(|file| file.flow(position, collapse_cycles))
         .map_err(|error| error.to_string())?;
-    kaalang_svg::render_flow(flow).map_err(|error| error.to_string())
+    kaalang_svg::render_flow(flow)
+        .map(|(svg, _)| svg)
+        .map_err(|error| error.to_string())
 }
 
 /// The path of every flow `source` declares, read for no target, in the order
@@ -56,43 +58,21 @@ fn flow_paths(source: &str) -> Vec<String> {
 }
 
 fn check_renderer_corpus_budgets(suite: Suite, tier: &str, allowance: Duration, limit: Duration) {
-    // Each diagram's flow, its position and source, and whether it is collapsed.
-    let diagrams: Vec<(String, usize, String, bool)> = corpus::files(suite)
-        .into_iter()
-        .flat_map(|(_, source)| {
-            let names = flow_paths(&source);
-            // Matches what `diagrams.rs` draws: a cycle fixture gets both views.
-            let views = std::iter::once(false)
-                .chain(source.contains("#[kaa::cycle(").then_some(true))
-                .collect::<Vec<_>>();
-            names
-                .into_iter()
-                .enumerate()
-                .flat_map(|(position, name)| {
-                    views
-                        .iter()
-                        .map(move |&collapse_cycles| (name.clone(), position, collapse_cycles))
-                })
-                .map(|(name, position, collapse_cycles)| {
-                    (name, position, source.clone(), collapse_cycles)
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect();
+    let diagrams = corpus::diagrams(suite);
 
     assert_pass_budget(
         &format!("renderer, {tier}"),
         "diagrams",
         &diagrams,
         allowance * u32::try_from(diagrams.len()).expect("the diagram count fits in u32"),
-        |(name, _, _, collapse_cycles)| ItemBudget {
-            name: format!("{name} (collapsed={collapse_cycles})"),
+        |diagram| ItemBudget {
+            name: diagram.to_string(),
             limit,
             report: matches!(suite, Suite::Stress),
         },
-        |(name, position, source, collapse_cycles)| {
-            draw(source, *position, *collapse_cycles)
-                .unwrap_or_else(|error| panic!("{name}: {error}"));
+        |diagram| {
+            draw(&diagram.source, diagram.position, diagram.collapse_cycles)
+                .unwrap_or_else(|error| panic!("{diagram}: {error}"));
         },
     );
 }

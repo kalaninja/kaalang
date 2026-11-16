@@ -782,9 +782,14 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
 
 /// Whether one of a block's captures is spelled `name`, raw or not.
 pub(super) fn captured(inputs: &[Input], name: &Ident) -> bool {
+    capture(inputs, name).is_some()
+}
+
+/// The block's capture spelled `name`, raw or not.
+pub(crate) fn capture<'a>(inputs: &'a [Input], name: &Ident) -> Option<&'a Input> {
     inputs
         .iter()
-        .any(|input| input.alias.unraw() == name.unraw())
+        .find(|input| input.alias.unraw() == name.unraw())
 }
 
 /// Rejects transfers out of the body's own control-flow scope. A nested

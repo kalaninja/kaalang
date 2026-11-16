@@ -6,7 +6,7 @@
 //! Positions come from `proc-macro2`'s `span-locations`, which the `source`
 //! feature enables. The macro leaves it off: rustc gives it tokens, not text.
 
-use std::{cell::OnceCell, error::Error, fmt};
+use std::{cell::OnceCell, error::Error, fmt, ops::Range};
 
 use proc_macro2::Span;
 use syn::{Generics, Item, Meta, ReturnType, Signature, spanned::Spanned};
@@ -17,6 +17,7 @@ use crate::{
     is_kaalang_attribute, type_declaration, type_items,
 };
 
+mod spans;
 mod target;
 
 /// An error produced while reading a flow or a type from a source file.
@@ -102,6 +103,8 @@ pub struct SourceFile<'a> {
     /// text without a byte order mark or a shebang line. The newline that ends
     /// a shebang line stays, so line numbers match the given text.
     tokenized: &'a str,
+    /// How many bytes of the given text precede the tokenized text.
+    prefix: usize,
     /// What the target compiles of the file.
     items: Vec<Item>,
     /// Every type declaration with its path within the file, listed on first
@@ -132,6 +135,7 @@ impl<'a> SourceFile<'a> {
             .map_or(tokenized, |shebang| &tokenized[shebang.len()..]);
         Ok(Self {
             tokenized,
+            prefix: text.len() - tokenized.len(),
             items: file.items,
             types: OnceCell::new(),
         })
@@ -142,6 +146,15 @@ impl<'a> SourceFile<'a> {
     #[must_use]
     pub fn items(&self) -> &[Item] {
         &self.items
+    }
+
+    /// The bytes under `span`, a span of what was read from this file,
+    /// counted from the start of the text as given: a byte order mark and a
+    /// shebang line count.
+    #[must_use]
+    pub fn range(&self, span: Span) -> Range<usize> {
+        let range = span.byte_range();
+        self.prefix + range.start..self.prefix + range.end
     }
 
     /// Reads the flow at `position` among the file's flows, counted in source

@@ -15,7 +15,8 @@
   semantic model, decides the diagram, exposes its common arrangement checks,
   and lowers the verified plan to Rust. It also parses type declarations and
   expands datatypes. Behind its `source` feature it reads flows and types from
-  the text of a file for the renderers, which read no source themselves.
+  the text of a file for the renderers, which read no source themselves, and
+  says what each drawn element of a flow stands for there.
 - `crates/kaalang-macros/` holds only the procedural macro entry point: a
   `proc-macro` crate exports only macros, so anything else here could not be
   called, tested, or measured from another crate.
@@ -23,8 +24,8 @@
   arrangement into the shared rows, columns, and routes every renderer starts
   from.
 - `crates/kaalang-svg/` measures the shared arrangement and renders standalone
-  SVG without changing its structural layout, and lays out and renders type
-  diagrams.
+  SVG without changing its structural layout, lists what each part of a flow
+  diagram stands for in the source, and lays out and renders type diagrams.
 - `crates/kaalang-testing/` holds the shared test material: the fixture corpus,
   generated performance probes and cycle shapes, and the budget harness. Only
   tests depend on it.

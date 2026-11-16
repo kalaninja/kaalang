@@ -18,6 +18,7 @@ kaalang-macros = { workspace = true }
 [dev-dependencies]
 kaalang-compiler = { workspace = true, features = ["source"] }
 kaalang-svg = { workspace = true }
+kaalang-testing = { workspace = true }
 trybuild = { workspace = true }
 
 [lints]

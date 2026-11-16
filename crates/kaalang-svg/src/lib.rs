@@ -4,6 +4,8 @@
 
 use std::{error::Error, fmt, num::NonZeroUsize};
 
+#[cfg(doc)]
+use kaalang_compiler::{Analysis, SourceFile};
 use kaalang_compiler::{SourceFlow, SourceType, line_and_column};
 use proc_macro2::Span;
 use syn::Visibility;
@@ -81,7 +83,9 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders a flow as it was read from its source file.
+/// Renders a flow as it was read from its source file. Returns the SVG and its
+/// hotspots: every node that draws a source construct, every drawn cycle
+/// boundary, and every wire name in a label.
 ///
 /// # Errors
 ///
@@ -90,8 +94,41 @@ impl Error for RenderError {}
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
 /// arrangement cannot route every connection or place every label. A flow is
 /// named by its path within the file.
-pub fn render_flow(flow: SourceFlow) -> Result<String, RenderError> {
+pub fn render_flow(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderError> {
     flow::render(flow)
+}
+
+/// What a [`Hotspot`] shows. It states what the drawing stands for and leaves
+/// what a click does to the reader.
+#[derive(Clone, Copy, Debug)]
+pub enum HotspotKind {
+    /// A node, or a drawn cycle boundary. Its span is the source the node
+    /// draws, as [`Analysis::node_span`] places it; a boundary's is its cycle.
+    /// A boundary's hotspot holds its body's.
+    Node,
+    /// A call node: a node whose call names `callee`, the last segment of the
+    /// callee path.
+    Call { callee: Span },
+    /// One wire name in a label. Its span is where its producer binds the
+    /// wire, as [`Analysis::binding`] places it.
+    Wire,
+}
+
+/// One element of a rendered flow that stands for something in its source.
+#[derive(Clone, Copy, Debug)]
+pub struct Hotspot {
+    pub kind: HotspotKind,
+    /// The element's rectangle in the SVG's user units. A wire name that wraps
+    /// has one hotspot per line.
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+    /// The source the element stands for, a span of the flow as it was read.
+    /// [`SourceFile::range`] gives its bytes, but only while proc-macro2 still
+    /// holds the parsed text: it forgets every span when its source map is
+    /// cleared.
+    pub span: Span,
 }
 
 /// Reads the flow at `path` within `source` for no target, for tests that
@@ -119,7 +156,7 @@ pub(crate) fn render_path(
 ) -> Result<String, RenderError> {
     let flow = read_path(source, path, collapse_cycles)
         .unwrap_or_else(|error| panic!("`{path}` does not read: {error}"));
-    render_flow(flow)
+    render_flow(flow).map(|(svg, _)| svg)
 }
 
 /// One card of a type diagram.

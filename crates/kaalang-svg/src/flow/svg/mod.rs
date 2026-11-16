@@ -178,8 +178,8 @@ fn write_connection_label(svg: &mut String, label: &Label) {
     let source = source(&label.lines);
     let lines = source.as_deref().unwrap_or(&label.lines);
     let class = match (label.kind, source.is_some()) {
-        (LabelKind::Wire, false) => "connection-label",
-        (LabelKind::Wire, true) => "connection-label code",
+        (LabelKind::Wire(_), false) => "connection-label",
+        (LabelKind::Wire(_), true) => "connection-label code",
         (LabelKind::Branch, false) => "connection-label branch-label",
         (LabelKind::Branch, true) => "connection-label branch-label code",
     };

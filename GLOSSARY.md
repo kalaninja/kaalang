@@ -110,6 +110,9 @@
   wires labeled there, and the shared segment a select's cases fan out from.
 - **label**, **parameter panel**: text on a node or connection, and the panel
   beside start listing the flow's Rust parameters.
+- **hotspot**: the rectangle of one node, cycle boundary, or wire name in a
+  label, with the source it stands for: what the node draws, with a call's
+  callee, or the wire where its producer binds it.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
   align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body

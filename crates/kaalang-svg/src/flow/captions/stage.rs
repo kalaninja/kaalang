@@ -5,7 +5,7 @@ use kaalang_compiler::{
     topology::{ExitId, NodeId},
 };
 
-use super::{Captions, derive_with_parameters, named_parameters, provided};
+use super::{Captions, NamedWires, derive_with_parameters, named_parameters, provided};
 use crate::text::RichText;
 
 /// Reuses ordinary captions, then resolves stage labels from their destinations.
@@ -38,7 +38,7 @@ pub(crate) fn derive_stage(
             })
             .collect();
     }
-    let mut captions = derive_with_parameters(model, start, return_type, &parameters);
+    let mut captions = derive_with_parameters(model, root, part, start, return_type, &parameters);
     if let Some(index) = part {
         captions.label.insert(
             NodeId::Start,
@@ -46,7 +46,7 @@ pub(crate) fn derive_stage(
         );
         captions
             .handover
-            .insert(ExitId::of(NodeId::Start), Vec::new());
+            .insert(ExitId::of(NodeId::Start), NamedWires::default());
         if root.stages.iter().enumerate().any(|(from, stage)| {
             stage
                 .analysis
@@ -67,7 +67,7 @@ pub(crate) fn derive_stage(
             .label
             .insert(node, RichText::markdown(&root.stages[target].description));
         captions.capture.insert(node, Vec::new());
-        captions.capture_label.insert(node, Vec::new());
+        captions.capture_label.insert(node, NamedWires::default());
         if part.is_some_and(|from| target <= from) {
             captions.back_marker.insert(node);
         }
@@ -83,19 +83,17 @@ pub(crate) fn derive_stage(
         .collect::<BTreeSet<_>>();
     let is_signal = |producer| signals.contains(flow.wire(producer));
     for exit in &model.topology.exits {
-        let mut producers = exit.provides.iter();
         captions
             .handover
             .get_mut(&exit.id)
             .expect("each exit has a hand-over caption")
-            .retain(|_| !is_signal(*producers.next().expect("each hand-over names a producer")));
+            .retain_at(|position| !is_signal(exit.provides[position]));
     }
-    for (junction, names) in model.topology.junctions.iter().zip(&mut captions.junction) {
-        let mut merges = junction.merges.iter();
-        names.retain(|_| {
-            let merge = *merges.next().expect("each junction label names a merge");
-            !is_signal(model.analysis.merges[merge].producers[0])
-        });
+    for (junction, merged) in model.topology.junctions.iter().enumerate() {
+        let kept = |position: usize| {
+            !is_signal(model.analysis.merges[merged.merges[position]].producers[0])
+        };
+        captions.junction[junction].retain_at(kept);
     }
     captions
 }

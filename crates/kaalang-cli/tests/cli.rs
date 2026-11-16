@@ -151,6 +151,7 @@ fn explicit_output_replaces_an_existing_file() {
                 .unwrap_or_else(|error| panic!("{error}"))
         )
         .unwrap()
+        .0
     );
 }
 

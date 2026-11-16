@@ -94,7 +94,7 @@ impl Diagram {
                 }
                 located(&error)
             })?;
-        let svg = kaalang_svg::render_flow(flow).map_err(|mut error| {
+        let (svg, _) = kaalang_svg::render_flow(flow).map_err(|mut error| {
             if let RenderError::UnroutableTopology { name, .. } = &mut error {
                 path.clone_into(name);
             }

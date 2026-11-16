@@ -124,12 +124,9 @@ fn flow_diagrams(
 ) -> Vec<(String, String)> {
     let mut diagrams: Vec<(String, String)> = Vec::new();
     for (position, name) in names.iter().enumerate() {
-        for (suffix, collapse_cycles) in std::iter::once(("", false)).chain(
-            source
-                .contains("#[kaa::cycle(")
-                .then_some(("_collapsed", true)),
-        ) {
-            let svg = file
+        for collapse_cycles in kaalang_testing::corpus::views(source) {
+            let suffix = if collapse_cycles { "_collapsed" } else { "" };
+            let (svg, _) = file
                 .flow(position, collapse_cycles)
                 .map_err(|error| error.to_string())
                 .and_then(|flow| kaalang_svg::render_flow(flow).map_err(|error| error.to_string()))

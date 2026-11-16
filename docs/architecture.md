@@ -4,15 +4,15 @@ The language and algorithm contracts live in [the RFCs](rfcs/).
 
 ## Crate boundaries
 
-| Crate                                                       | Responsibility                                                                                                                                                                                                                                                                              |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                                                                                                                    |
-| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                                                                                                                                                  |
-| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. Behind the `source` feature, read flows and types from the text of a file for the renderers.                                 |
-| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                                                                                                                            |
-| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, lay out type diagrams, and serialize standalone SVG.                                                                                                                                                                    |
-| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read the cargo workspace as cargo compiles it for one compilation target, find the selected flow or type there, resolve every `refer` target to find the type's incoming types, read the flow or the types through the compiler, call the SVG entry point, and write the completed diagram. |
-| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                                                                       |
+| Crate                                                       | Responsibility                                                                                                                                                                                                                                                                                                          |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                                                                                                                                                |
+| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                                                                                                                                                                              |
+| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. Behind the `source` feature, read flows and types from the text of a file for the renderers, and say what each drawn element of a flow stands for there. |
+| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                                                                                                                                                        |
+| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, list a flow diagram's hotspots, lay out type diagrams, and serialize standalone SVG.                                                                                                                                                                |
+| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read the cargo workspace as cargo compiles it for one compilation target, find the selected flow or type there, resolve every `refer` target to find the type's incoming types, read the flow or the types through the compiler, call the SVG entry point, and write the completed diagram.                             |
+| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                                                                                                   |
 
 ```mermaid
 flowchart TD
@@ -162,6 +162,19 @@ diagram quotes from its signature. The entry point
 reads no source text; it reports a label's position from the span it received,
 with the compiler's `line_and_column`. Positions need the compiler's `source`
 feature, which the macro leaves off, since rustc gives it tokens.
+
+Between verification and serialization `kaalang-svg` reads the hotspots it
+returns beside the SVG from the verified scene in
+[`flow/navigation.rs`](../crates/kaalang-svg/src/flow/navigation.rs): a
+rectangle for every node, drawn cycle boundary, and wire name, with the source
+it stands for. What a node draws, where a producer binds its wire, and what a
+`return` hands to end are the compiler's facts, in
+[`source/spans.rs`](../crates/kaalang-compiler/src/source/spans.rs). Neither
+crate decides what a click does: that is the reader's. `Captions` keeps, with
+every list of wire names a label draws, where each producer binds its wire; a
+wire label records which list it draws, and the label module finds each name's
+rectangle on its lines. `SourceFile::range` turns a hotspot's span into bytes of
+the text as given.
 
 ## Type diagrams
 

@@ -2,7 +2,7 @@
 
 use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
-use syn::{Expr, FnArg, Pat, PatIdent, ReturnType, ext::IdentExt};
+use syn::{Expr, ExprPath, FnArg, Pat, PatIdent, ReturnType, ext::IdentExt};
 
 use crate::{construct::Arrangement, executions::Executions, topology::Topology};
 
@@ -166,6 +166,30 @@ impl Block {
     /// Panics unless this block is a call, whose body `parse::call` validated.
     #[must_use]
     pub fn callee(&self) -> String {
+        let mut text = String::new();
+        write_tokens(&mut text, self.callee_path().to_token_stream());
+        text
+    }
+
+    /// The callee's name: the last segment of its path, without generic
+    /// arguments.
+    ///
+    /// # Panics
+    ///
+    /// Panics unless this block is a call, whose body `parse::call` validated.
+    #[must_use]
+    pub fn callee_name(&self) -> &Ident {
+        &self
+            .callee_path()
+            .path
+            .segments
+            .last()
+            .expect("a path has a segment")
+            .ident
+    }
+
+    /// The callee path as authored.
+    fn callee_path(&self) -> &ExprPath {
         let Expr::Call(application) = &self.body else {
             unreachable!("parse::call validates a call body as one application")
         };
@@ -173,9 +197,7 @@ impl Block {
         let Expr::Path(path) = crate::parse::ungrouped(&application.func) else {
             unreachable!("parse::call validates a callee as a path")
         };
-        let mut text = String::new();
-        write_tokens(&mut text, path.to_token_stream());
-        text
+        path
     }
 }
 

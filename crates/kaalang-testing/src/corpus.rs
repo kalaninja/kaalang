@@ -2,7 +2,7 @@
 //! performance corpus in sync with flow fixtures and stress fixtures.
 
 use std::{
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
 };
 
@@ -34,6 +34,69 @@ pub fn files(suite: Suite) -> Vec<(PathBuf, String)> {
     collect(&tests, suite, &mut files);
     files.sort_unstable();
     files
+}
+
+/// One diagram the fixture diagrams draw: a flow of a fixture, in one view.
+pub struct Diagram {
+    /// The flow's path within its file.
+    pub path: String,
+    /// The fixture's source text.
+    pub source: String,
+    /// The flow's position among its file's flows, as
+    /// [`kaalang_compiler::flows`] lists them.
+    pub position: usize,
+    /// Whether the diagram draws each cycle as one node.
+    pub collapse_cycles: bool,
+}
+
+impl fmt::Display for Diagram {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "{} (collapsed={})",
+            self.path, self.collapse_cycles
+        )
+    }
+}
+
+/// Every diagram the selected fixtures draw: each flow expanded, and collapsed
+/// too in a fixture with a cycle. No fixture declares a flow under `cfg`, so
+/// the flows are listed as no compilation target removes any.
+///
+/// # Panics
+///
+/// Panics when a fixture stops parsing.
+#[must_use]
+pub fn diagrams(suite: Suite) -> Vec<Diagram> {
+    files(suite)
+        .into_iter()
+        .flat_map(|(path, source)| {
+            let file = syn::parse_file(&source)
+                .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+            let views = views(&source);
+            let mut diagrams = Vec::new();
+            for (position, flow) in kaalang_compiler::flows(&file.items).into_iter().enumerate() {
+                for &collapse_cycles in &views {
+                    diagrams.push(Diagram {
+                        path: flow.path.clone(),
+                        source: source.clone(),
+                        position,
+                        collapse_cycles,
+                    });
+                }
+            }
+            diagrams
+        })
+        .collect()
+}
+
+/// The views a fixture's flows are drawn in: expanded, and collapsed too when
+/// the fixture has a cycle.
+#[must_use]
+pub fn views(source: &str) -> Vec<bool> {
+    std::iter::once(false)
+        .chain(source.contains("#[kaa::cycle(").then_some(true))
+        .collect()
 }
 
 /// Selected fixture flows in name order, with their stress-suite flag.

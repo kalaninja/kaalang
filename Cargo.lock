@@ -219,6 +219,7 @@ dependencies = [
  "kaalang-compiler",
  "kaalang-macros",
  "kaalang-svg",
+ "kaalang-testing",
  "trybuild",
 ]
 
