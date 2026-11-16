@@ -941,14 +941,27 @@ pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String
             format!("a {subject} description must be a string literal"),
         )
     })?;
-    if description.value().trim().is_empty() {
+    let text = literal_text(&description);
+    if text.trim().is_empty() {
         return Err(Error::new_spanned(
             description,
             format!("a {subject} requires a non-empty description"),
         ));
     }
 
-    Ok(description.value())
+    Ok(text)
+}
+
+/// A string literal's value as rustc reads it. rustc turns a file's CRLF into
+/// a line feed before it reads anything; syn does so in a cooked string and
+/// leaves a raw one as the file has it.
+pub(crate) fn literal_text(literal: &LitStr) -> String {
+    let text = literal.value();
+    if text.contains("\r\n") && literal.token().to_string().starts_with('r') {
+        text.replace("\r\n", "\n")
+    } else {
+        text
+    }
 }
 
 /// Extracts an identifier binding, optionally permitting an authored `mut`.
@@ -974,8 +987,17 @@ mod tests {
     use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
-    use super::{block_input, block_outputs, flow, reject_control_transfers};
+    use super::{block_input, block_outputs, flow, literal_text, reject_control_transfers};
     use crate::model::BlockKind;
+
+    #[test]
+    fn a_literal_reads_a_crlf_in_the_file_as_a_line_feed() {
+        let text = |literal: &str| literal_text(&syn::parse_str(literal).expect("a string"));
+        assert_eq!(text("r\"one\r\ntwo\""), "one\ntwo");
+        assert_eq!(text("\"one\r\ntwo\""), "one\ntwo");
+        // An escape is the author's own carriage return.
+        assert_eq!(text(r#""one\r\ntwo""#), "one\r\ntwo");
+    }
 
     #[test]
     fn captures_preserve_borrowing_mutability_and_authored_spelling() {

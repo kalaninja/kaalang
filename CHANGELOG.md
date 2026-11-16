@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - unreleased
+
+### Fixed
+
+- `cargo kaalang diagram` no longer keeps the carriage returns of a description
+  written as a raw string in a file with CRLF line endings.
+
 ## 0.3.0 - 2026-11-12
 
 ### Breaking

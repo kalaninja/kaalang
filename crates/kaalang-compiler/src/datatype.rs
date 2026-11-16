@@ -13,7 +13,7 @@ use syn::{
 use crate::{
     configure::split_at_commas,
     is_kaalang_attribute,
-    parse::{annotation_name, description, path_annotation_name},
+    parse::{annotation_name, description, literal_text, path_annotation_name},
 };
 
 /// A struct, enum, union, or type alias, with its annotations if it has any.
@@ -599,7 +599,8 @@ fn relationship(
             Ok((target, input.parse::<LitStr>()?))
         })
         .map_err(|_| malformed())?;
-    if description.value().trim().is_empty() {
+    let text = literal_text(&description);
+    if text.trim().is_empty() {
         return Err(Error::new_spanned(
             description,
             "a kaalang relationship requires a non-empty description",
@@ -637,7 +638,7 @@ fn relationship(
     }
     Ok(Relationship {
         target,
-        description: description.value(),
+        description: text,
         cfgs,
     })
 }
