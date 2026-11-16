@@ -13,12 +13,6 @@
   picks the package. The default output is named after the last path segment.
 - Only Rust 2024 crates are supported.
 - The minimum supported Rust version is 1.99.
-- `kaalang-svg`: `render_source` and `render_source_with_options` are removed;
-  `render_flow` renders the flow at a position from `flow_names`, which lists
-  flows by their path within the file and takes a `Target`. `RenderOptions`
-  gains `target`, and `RenderError` gains `TypeNotFound` and `InvalidType`.
-- `kaalang-compiler`: `flows` returns `FlowItem`s with their paths and descends
-  into inline modules; `is_flow_attribute` is renamed `is_kaalang_attribute`.
 
 ### Added
 
@@ -32,11 +26,6 @@
   and `cfg_attr` hold.
 - Diagrams mark visibility before a name as UML does: `+` for `pub`, `~` for a
   restricted form, `-` for private.
-- `kaalang-compiler`: `declarations`, `FlowPath`, and `select` resolve a flow
-  path; `type_items`, `type_declaration`, and `expand_type` read and expand type
-  declarations; `configure` removes what a cfg set excludes.
-- `kaalang-svg`: `render_type` draws a type diagram from `TypeCard`s with
-  `TypeOptions`; `Target` holds a target's cfg set.
 
 ### Changed
 
@@ -62,23 +51,13 @@
   [RFC 0008](docs/rfcs/0008-cycle-forms.md).
 - A block body can no longer read or assign a flow parameter it does not
   capture.
-- The `--collapse-loops` option and `kaalang-svg`'s
-  `RenderOptions::collapse_loops` are renamed `--collapse-cycles` and
-  `collapse_cycles`.
+- The `--collapse-loops` option is renamed `--collapse-cycles`.
 - Descriptions are restricted Markdown: existing `*`, `_`, `` ` ``, `~`, `^`,
   `$`, supported tags, a leading `>`, backslash escapes, and `&...;` character
   references render as notation unless escaped with a backslash. See
   [RFC 0005](docs/rfcs/0005-markdown.md).
 - In SVG output, a collapsed cycle node has the `cycle` class instead of `loop`,
   and the back-edge arrow marker is `back-edge-arrow` instead of `loop-arrow`.
-- The public types of `kaalang-compiler` follow the cycle terminology and the
-  new cycle forms, for example `BlockKind::Cycle`, `ExecutionPlan::Cycle`,
-  `topology::Cycle`, and `ExecutionOutcome::Repeat { cycle_index }`;
-  loop-specific items such as `ProducerId::CycleInput`, `Execution::repeats`,
-  and `SemanticModel::body_vertices` are removed. In `kaalang-render`,
-  `ArrangementVerifier::may_rise_beside` and `body_vertices` are no longer
-  public. `Analysis::executions` is now `Executions`, and `Branch` is an alias
-  for `Box<ExecutionPlan>`.
 
 ### Added
 
