@@ -6,6 +6,10 @@
 
 - `cargo kaalang diagram` no longer keeps the carriage returns of a description
   written as a raw string in a file with CRLF line endings.
+- rust-analyzer no longer reads a stage's entry or signal name as `core` or
+  `Result`, so hover and go-to-definition on it reach the wire's own type.
+- A staged flow's diagram no longer lists a signal, or drops another name, in a
+  hand-over that also passes an unnamed output.
 
 ## 0.3.0 - 2026-11-12
 
