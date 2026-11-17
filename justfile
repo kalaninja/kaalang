@@ -13,6 +13,9 @@ mod rust 'just/rust.just'
 # Tooling image commands
 mod tooling 'just/tooling.just'
 
+# WebAssembly commands
+mod wasm 'just/wasm.just'
+
 # List the available recipes.
 [default]
 list:

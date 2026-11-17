@@ -22,17 +22,21 @@ RUN mkdir -p /opt/cargo /workspace/.cache/cargo/git /workspace/.cache/cargo/regi
 
 FROM base AS rust
 
+ENV MISE_ENV=wasm
+
 # Only a linker: no dependency builds C code.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends gcc libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY mise/config.toml mise/config.toml
+COPY mise/config.toml mise/config.wasm.toml mise/
 
 RUN mise install \
     && chmod -R a+rwX /opt/cargo /opt/rustup /mise \
     && mise exec -- cargo clippy --version \
-    && mise exec -- sh -c 'test -d "$(rustc --print sysroot)/lib/rustlib/src/rust/library"'
+    && mise exec -- sh -c 'test -d "$(rustc --print sysroot)/lib/rustlib/src/rust/library"' \
+    && mise exec -- wasm-bindgen --version \
+    && mise exec -- node --version
 
 FROM base AS fmt
 

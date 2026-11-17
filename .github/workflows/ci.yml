@@ -51,7 +51,7 @@ jobs:
       - uses: extractions/setup-just@v3
       - run: just rust clippy
       - run: just rust test
-      - run: just rust wasm
+      - run: just wasm test
       - run: just rust svg
       - run: git add -A && git diff --cached --exit-code
 

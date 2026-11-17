@@ -204,7 +204,7 @@ fn collect_types(items: &[Item], prefix: &str, types: &mut Vec<(String, Item)>) 
 }
 
 /// The attributes, name, and generics of a supported declaration form.
-fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
+pub(crate) fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
     match item {
         Item::Struct(declaration) => Some((
             &declaration.attrs,

@@ -6,14 +6,16 @@
 //! Positions come from `proc-macro2`'s `span-locations`, which the `source`
 //! feature enables. The macro leaves it off: rustc gives it tokens, not text.
 
-use std::{cell::OnceCell, error::Error, fmt, ops::Range};
+use std::{cell::OnceCell, collections::BTreeMap, error::Error, fmt, ops::Range};
 
-use proc_macro2::Span;
-use syn::{Generics, Item, Meta, ReturnType, Signature, spanned::Spanned};
+use proc_macro2::{Ident, Span};
+use syn::{
+    Attribute, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem, spanned::Spanned,
+};
 
 pub use self::target::Target;
 use crate::{
-    FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, flows,
+    FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts, flows,
     is_kaalang_attribute, type_declaration, type_items,
 };
 
@@ -107,6 +109,10 @@ pub struct SourceFile<'a> {
     prefix: usize,
     /// What the target compiles of the file.
     items: Vec<Item>,
+    /// Where each function and type the file declares starts, at its first
+    /// attribute, a `cfg` the target removed included, by where its name
+    /// starts.
+    starts: BTreeMap<usize, usize>,
     /// Every type declaration with its path within the file, listed on first
     /// use: a flow's diagram needs none.
     types: OnceCell<Vec<(String, Item)>>,
@@ -127,6 +133,8 @@ impl<'a> SourceFile<'a> {
                 message: error.to_string(),
             }
         })?;
+        let mut starts = BTreeMap::new();
+        collect_starts(&file.items, &mut starts);
         target.configure(&mut file);
         let tokenized = text.strip_prefix('\u{feff}').unwrap_or(text);
         let tokenized = file
@@ -137,8 +145,49 @@ impl<'a> SourceFile<'a> {
             tokenized,
             prefix: text.len() - tokenized.len(),
             items: file.items,
+            starts,
             types: OnceCell::new(),
         })
+    }
+
+    /// What is declared at `offset`, a byte of the text as given, that
+    /// kaalang draws: a flow, by its position as [`SourceFile::flow`] counts
+    /// it, or a type, by its path as [`SourceFile::ty`] takes it. A
+    /// declaration runs from its first attribute, a `cfg` that holds included,
+    /// to just past its last character, where an editor's caret still stands in
+    /// it. Nothing is declared in a byte order mark or a shebang line, between
+    /// declarations, or in what the target does not compile.
+    #[must_use]
+    pub fn declared_at(&self, offset: usize) -> Option<Declared> {
+        let offset = offset.checked_sub(self.prefix)?;
+        let start = |name: &Ident| {
+            let named = name.span().byte_range().start;
+            self.starts.get(&named).copied()
+        };
+        // A flow's `#[kaa]` recorded its start.
+        if let Some(position) = flows(&self.items).iter().position(|flow| {
+            let function = &flow.function;
+            start(&function.sig.ident).is_some_and(|start| start <= offset)
+                && offset <= function.block.brace_token.span.close().byte_range().end
+        }) {
+            return Some(Declared::Flow(position));
+        }
+        // A type's whole span rebuilds its tokens, so it is read only for a
+        // type that may hold the offset, or one without a recorded start.
+        let types = self.types.get_or_init(|| type_items(&self.items));
+        types
+            .iter()
+            .find(|(_, item)| {
+                parts(item).is_some_and(|(_, name, _)| {
+                    if let Some(start) = start(name) {
+                        start <= offset && offset <= item.span().byte_range().end
+                    } else {
+                        let whole = item.span().byte_range();
+                        (whole.start..=whole.end).contains(&offset)
+                    }
+                })
+            })
+            .map(|(path, _)| Declared::Type(path.clone()))
     }
 
     /// What the target compiles of the file, for a caller to list its flows
@@ -324,6 +373,63 @@ impl<'a> SourceFile<'a> {
             // An empty `repr()` leaves the default, as Rust reads it.
             .filter(|representation| !representation.is_empty())
             .collect()
+    }
+}
+
+/// What a place in a source file declares that kaalang draws.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Declared {
+    /// A flow, by its position among the file's flows.
+    Flow(usize),
+    /// A type, by its path within the file.
+    Type(String),
+}
+
+/// Records where each function and type among `items` that has attributes
+/// starts, at its first one, by where its name starts, before the target
+/// removes any of them. One without attributes starts where its span does.
+fn collect_starts(items: &[Item], starts: &mut BTreeMap<usize, usize>) {
+    for item in items {
+        let (attributes, name) = match item {
+            Item::Fn(function) => (&function.attrs, &function.sig.ident),
+            Item::Mod(module) => {
+                if let Some((_, items)) = &module.content {
+                    collect_starts(items, starts);
+                }
+                continue;
+            }
+            Item::Impl(block) => {
+                for item in &block.items {
+                    if let ImplItem::Fn(function) = item {
+                        record(&function.attrs, &function.sig.ident, starts);
+                    }
+                }
+                continue;
+            }
+            Item::Trait(declaration) => {
+                for item in &declaration.items {
+                    if let TraitItem::Fn(function) = item {
+                        record(&function.attrs, &function.sig.ident, starts);
+                    }
+                }
+                continue;
+            }
+            item => match parts(item) {
+                Some((attributes, name, _)) => (attributes, name),
+                None => continue,
+            },
+        };
+        record(attributes, name, starts);
+    }
+}
+
+/// Records where a declaration named `name` starts, at its first attribute.
+fn record(attributes: &[Attribute], name: &Ident, starts: &mut BTreeMap<usize, usize>) {
+    if let Some(first) = attributes.first() {
+        starts.insert(
+            name.span().byte_range().start,
+            first.pound_token.span.byte_range().start,
+        );
     }
 }
 
@@ -528,6 +634,95 @@ mod tests {
         assert_eq!(
             flow_error("#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n"),
             SourceError::FlowNotFound(0)
+        );
+    }
+
+    /// What `source`, read for `target`, declares where `marker` starts.
+    fn declared(source: &str, target: &Target, marker: &str) -> Option<Declared> {
+        let offset = source.find(marker).expect("the source has the marker");
+        SourceFile::parse(source, target)
+            .unwrap()
+            .declared_at(offset)
+    }
+
+    const DECLARED: &str = "/// A flow.\n#[kaa]\nfn first(input: u8) -> u8 {\n    |input| return input;\n}\n\nmod model {\n    pub struct Member { id: u8 }\n    impl Member {\n        #[kaa]\n        fn second(input: u8) -> u8 {\n            |input| return input;\n        }\n    }\n}\n";
+
+    #[test]
+    fn a_flow_is_declared_from_its_first_attribute_to_just_past_its_end() {
+        for marker in ["/// A flow", "#[kaa]\nfn first", "first(", "\n\nmod"] {
+            assert_eq!(
+                declared(DECLARED, Target::EMPTY, marker),
+                Some(Declared::Flow(0)),
+                "{marker:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_method_in_a_module_is_declared_as_a_flow() {
+        assert_eq!(
+            declared(DECLARED, Target::EMPTY, "fn second"),
+            Some(Declared::Flow(1))
+        );
+    }
+
+    #[test]
+    fn a_type_in_a_module_is_declared_by_its_path() {
+        assert_eq!(
+            declared(DECLARED, Target::EMPTY, "id: u8"),
+            Some(Declared::Type("model::Member".into()))
+        );
+    }
+
+    #[test]
+    fn nothing_is_declared_between_declarations_or_in_a_module_header() {
+        for marker in ["\nmod", "mod model", "impl Member"] {
+            assert_eq!(
+                declared(DECLARED, Target::EMPTY, marker),
+                None,
+                "{marker:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_cfg_that_holds_starts_its_declaration() {
+        let source = "#[cfg(unix)]\n#[kaa]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n#[cfg(unix)]\nstruct Kept;\n#[cfg(windows)]\nstruct Removed;\n";
+        let unix: Target = "unix".parse().unwrap();
+
+        assert_eq!(
+            declared(source, &unix, "#[cfg(unix)]"),
+            Some(Declared::Flow(0))
+        );
+        assert_eq!(
+            declared(source, &unix, "#[cfg(unix)]\nstruct"),
+            Some(Declared::Type("Kept".into()))
+        );
+        assert_eq!(declared(source, &unix, "struct Removed"), None);
+    }
+
+    #[test]
+    fn a_flow_marked_through_a_cfg_attr_is_declared_from_it() {
+        let source =
+            "#[cfg_attr(unix, kaa)]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n";
+        let unix: Target = "unix".parse().unwrap();
+
+        assert_eq!(
+            declared(source, &unix, "#[cfg_attr"),
+            Some(Declared::Flow(0))
+        );
+        assert_eq!(declared(source, Target::EMPTY, "fn flow"), None);
+    }
+
+    #[test]
+    fn offsets_count_the_byte_order_mark_and_the_shebang() {
+        let source = format!("\u{feff}#!/usr/bin/env rustx\n{DECLARED}");
+
+        assert_eq!(declared(&source, Target::EMPTY, "\u{feff}"), None);
+        assert_eq!(declared(&source, Target::EMPTY, "rustx"), None);
+        assert_eq!(
+            declared(&source, Target::EMPTY, "first("),
+            Some(Declared::Flow(0))
         );
     }
 

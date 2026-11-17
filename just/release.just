@@ -7,15 +7,15 @@ list:
 
 # Package and verify every publishable crate together.
 package:
-    cargo package --workspace --exclude kaalang-testing --allow-dirty
+    cargo package --workspace --exclude kaalang-testing --exclude kaalang-js --allow-dirty
 
 # Verify the complete publication without uploading.
 publish-dry-run:
-    cargo publish --workspace --exclude kaalang-testing --dry-run
+    cargo publish --workspace --exclude kaalang-testing --exclude kaalang-js --dry-run
 
 # Publish every crate in dependency order.
 publish:
-    cargo publish --workspace --exclude kaalang-testing
+    cargo publish --workspace --exclude kaalang-testing --exclude kaalang-js
 
 # Publish one crate when resuming a partial release.
 publish-crate crate:

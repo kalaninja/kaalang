@@ -95,8 +95,8 @@ just ci run
 ```
 
 It checks formatting, then runs `cargo clippy` with warnings denied,
-`cargo test`, `just rust wasm`, `just rust svg`, and `git diff --check`.
-`just rust` and `just docs` list the per-step recipes.
+`cargo test`, `just wasm test`, `just rust svg`, and `git diff --check`.
+`just rust`, `just wasm`, and `just docs` list the per-step recipes.
 
 One comparison is too slow for the baseline and sits behind `#[ignore]`:
 
@@ -113,6 +113,10 @@ shapes in `kaalang-testing`, or any rule those answers rest on.
 `just rust svg` redraws every generated diagram and shows the diff; review it
 before committing. The diagram generator is an ignored test, so `cargo test`
 leaves the SVG files untouched.
+
+`just wasm test` builds the WebAssembly bindings as a page loads them and runs
+them in Node: every fixture flow draws its golden diagram there, memory stays
+level, and positions count UTF-16 code units.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A
@@ -165,7 +169,7 @@ just release publish
 To resume a partial release, publish one crate at a time with
 `just release publish-crate <crate>`, in dependency order: `kaalang-compiler`,
 `kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
-`kaalang-cli`. `kaalang-testing` is never published.
+`kaalang-cli`. `kaalang-testing` and `kaalang-js` are never published.
 
 Then tag the released commit and push the tag:
 

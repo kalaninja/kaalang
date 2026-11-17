@@ -104,7 +104,8 @@ pub fn render_flow(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderErr
 pub enum HotspotKind {
     /// A node, or a drawn cycle boundary. Its span is the source the node
     /// draws, as [`Analysis::node_span`] places it; a boundary's is its cycle.
-    /// A boundary's hotspot holds its body's.
+    /// A boundary's hotspot holds its body's, so under a point the innermost
+    /// hotspot is the one meant, whatever the order of the list.
     Node,
     /// A call node: a node whose call names `callee`, the last segment of the
     /// callee path.
