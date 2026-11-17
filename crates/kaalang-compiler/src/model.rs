@@ -37,6 +37,8 @@ pub struct StageAnalysis {
     pub entry: Ident,
     pub entry_alias: Ident,
     pub analysis: Box<Analysis>,
+    /// The stage's attribute.
+    pub span: Span,
 }
 
 /// An analyzed flow with a verified diagram arrangement. See [`Analysis`].

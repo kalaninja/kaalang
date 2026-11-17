@@ -49,10 +49,9 @@ impl Analysis {
 
     /// The source `node`, a node of the local flow `part`, draws: where its
     /// block starts, at its kind attribute. Start draws the flow's name, a
-    /// stage's entry the name the stage's header gives it, end the `return`, a
-    /// for cycle's caps their cycle, a transition the block that produces its
-    /// signal, and a case its `match` arm. End draws nothing in a part without a
-    /// `return`.
+    /// stage's entry its stage and a transition the stage it selects, each at the
+    /// stage's attribute, end the `return`, a for cycle's caps their cycle, and a
+    /// case its `match` arm. End draws nothing in a part without a `return`.
     ///
     /// # Panics
     ///
@@ -63,7 +62,7 @@ impl Analysis {
         let index = match node.id {
             NodeId::Start => {
                 return Some(
-                    part.map_or_else(|| self.name.span(), |stage| self.stages[stage].entry.span()),
+                    part.map_or_else(|| self.name.span(), |stage| self.stages[stage].span),
                 );
             }
             NodeId::Case { choice, branch } => {
@@ -81,10 +80,12 @@ impl Analysis {
                 flow.blocks[block.parent.expect("a for cycle's cap stands in its body")].span
             }
             NodeKind::End => self.part(part).returning()?.span,
-            NodeKind::StageTransition => match flow.producer(&block.inputs[0].ident) {
-                Some(ProducerId::BlockOutput { block, .. }) => flow.blocks[block].span,
-                _ => block.span,
-            },
+            NodeKind::StageTransition => {
+                let target = block
+                    .transition_target
+                    .expect("a transition selects a stage");
+                self.stages[target].span
+            }
             _ => block.span,
         })
     }

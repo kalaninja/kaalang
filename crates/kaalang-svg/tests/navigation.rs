@@ -749,48 +749,36 @@ fn a_cycle_its_boundary_and_its_caps_lead_to_the_cycle() {
 }
 
 #[test]
-fn a_stage_entry_and_a_transition_lead_into_the_stages() {
+fn a_stage_entry_and_a_transition_draw_their_stage() {
     let (_, hotspots) = draw(STAGED, 0, false).unwrap();
-    let prepare = r#"#[kaa::action("Prepare the first value.")]"#;
+    let first = r#"#[kaa::stage("Use the value.")]"#;
+    let second = r#"#[kaa::stage("Return it.")]"#;
     assert_eq!(
         code(STAGED, &hotspots),
         [
             "staged",
-            // The action, and the transition its `go` selects.
-            prepare,
-            prepare,
-            "go",
-            // The call's transition: the call itself leads to its callee.
-            "#[kaa::call]",
-            "finish",
+            r#"#[kaa::action("Prepare the first value.")]"#,
+            // Each stage's entry, and the transition that selects it.
+            first,
+            first,
+            second,
+            second,
             "return finish",
         ]
     );
 }
 
 #[test]
-fn a_transition_from_a_parameter_draws_the_parameter() {
-    let source = include_str!("../../kaalang/tests/flow/stage/mutable_initial_parameter.rs");
-    let (_, hotspots) = draw(source, 0, false).unwrap();
-    let parameter = within(source, "(mut go: u8)", "go");
-    assert!(
-        hotspots
-            .iter()
-            .any(|hotspot| hotspot.kind == Kind::Node && hotspot.source == parameter),
-        "{:?}",
-        code(source, &hotspots)
-    );
-}
-
-#[test]
-fn a_transition_a_stage_selects_again_draws_its_producer() {
+fn a_transition_a_stage_selects_again_draws_that_stage() {
     let source = include_str!("../../kaalang/tests/flow/stage/mutable_self_output.rs");
     let (_, hotspots) = draw(source, 0, false).unwrap();
-    assert!(
-        code(source, &hotspots)
-            .contains(&r#"#[kaa::action("Create a mutable self-transition value.")]"#),
-        "{:?}",
-        code(source, &hotspots)
+    let code = code(source, &hotspots);
+    let stage = r#"#[kaa::stage("Increment until two.")]"#;
+    // Its entry and its transition to itself.
+    assert_eq!(
+        code.iter().filter(|code| **code == stage).count(),
+        2,
+        "{code:?}"
     );
 }
 

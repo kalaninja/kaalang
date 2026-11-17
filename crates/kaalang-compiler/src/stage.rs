@@ -171,7 +171,6 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
         .collect::<BTreeSet<_>>();
 
     let mut stages = Vec::new();
-    let mut stage_spans = Vec::new();
     let mut used_common = BTreeSet::new();
     for mut stage in parsed.stages.drain(..) {
         stage
@@ -216,13 +215,13 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
                 .filter(|name| common.contains(*name))
                 .cloned(),
         );
-        stage_spans.push(stage.span);
         let analysis = analyze_local(function, stage.flow, true)?;
         stages.push(StageAnalysis {
             description: stage.description,
             entry: stage.entry,
             entry_alias: stage.entry_alias,
             analysis: Box::new(analysis),
+            span: stage.span,
         });
     }
 
@@ -246,7 +245,7 @@ pub(crate) fn analyze(function: &ItemFn, mut parsed: ParsedStaged) -> Result<Ana
     let order = visit_order(&preparation, &stages);
     if let Some(index) = (0..stages.len()).find(|stage| !order.contains(stage)) {
         return Err(Error::new(
-            stage_spans[index],
+            stages[index].span,
             "this kaalang stage is unreachable from preparation",
         ));
     }
