@@ -3,8 +3,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::{
-    Analysis, Input, ProducerId, SemanticModel,
-    topology::{Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology},
+    Analysis, Flow, Input, ProducerId, SemanticModel,
+    topology::{Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology},
 };
 use proc_macro2::Span;
 use syn::{FnArg, Pat, PatIdent, ext::IdentExt};
@@ -326,17 +326,7 @@ fn derive_with_parameters(
     }
 
     for exit in &topology.exits {
-        let wires = exit
-            .provides
-            .iter()
-            .filter(|&&producer| match producer {
-                ProducerId::BlockOutput { block, output } => !model.analysis.flow.blocks[block]
-                    .unnamed_outputs
-                    .contains(&output),
-                ProducerId::FlowInput(_) => true,
-            })
-            .map(|&producer| produced(producer))
-            .collect();
+        let wires = handed_over(flow, exit).map(produced).collect();
         captions.handover.insert(exit.id, wires);
         if let (NodeId::Block(block), Some(branch)) = (exit.id.node, exit.id.branch)
             && let Some(description) = model.analysis.flow.blocks[block]
@@ -363,6 +353,20 @@ fn derive_with_parameters(
         .collect();
 
     captions
+}
+
+/// The producers whose names an exit's hand-over caption lists, in its order:
+/// an unnamed output has no name to list.
+fn handed_over<'a>(flow: &'a Flow, exit: &'a Exit) -> impl Iterator<Item = ProducerId> + 'a {
+    exit.provides
+        .iter()
+        .copied()
+        .filter(|&producer| match producer {
+            ProducerId::BlockOutput { block, output } => {
+                !flow.blocks[block].unnamed_outputs.contains(&output)
+            }
+            ProducerId::FlowInput(_) => true,
+        })
 }
 
 /// The value transferred into end, each wire with where its producer binds it.

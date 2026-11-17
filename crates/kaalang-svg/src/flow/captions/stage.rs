@@ -5,7 +5,9 @@ use kaalang_compiler::{
     topology::{ExitId, NodeId},
 };
 
-use super::{Captions, NamedWires, derive_with_parameters, named_parameters, provided};
+use super::{
+    Captions, NamedWires, derive_with_parameters, handed_over, named_parameters, provided,
+};
 use crate::text::RichText;
 
 /// Reuses ordinary captions, then resolves stage labels from their destinations.
@@ -83,11 +85,12 @@ pub(crate) fn derive_stage(
         .collect::<BTreeSet<_>>();
     let is_signal = |producer| signals.contains(flow.wire(producer));
     for exit in &model.topology.exits {
+        let listed: Vec<_> = handed_over(flow, exit).collect();
         captions
             .handover
             .get_mut(&exit.id)
             .expect("each exit has a hand-over caption")
-            .retain_at(|position| !is_signal(exit.provides[position]));
+            .retain_at(|position| !is_signal(listed[position]));
     }
     for (junction, merged) in model.topology.junctions.iter().enumerate() {
         let kept = |position: usize| {
