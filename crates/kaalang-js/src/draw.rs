@@ -1,6 +1,6 @@
 //! What [`crate::draw_flow`] answers: a flow's SVG and its hotspots.
 
-use kaalang_compiler::SourceFile;
+use kaalang_compiler::{SourceError, SourceFile};
 use kaalang_svg::HotspotKind;
 use serde::Serialize;
 
@@ -30,7 +30,8 @@ struct Spot {
     callee_end: Option<u32>,
 }
 
-/// The answer as JSON, or why the flow cannot be drawn.
+/// The answer as JSON, `null` when no flow stands at `position`, or why the flow
+/// cannot be drawn.
 pub(crate) fn flow(
     text: &str,
     cfg: &str,
@@ -38,9 +39,10 @@ pub(crate) fn flow(
     collapse_cycles: bool,
 ) -> Result<String, String> {
     let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
-    let flow = file
-        .flow(position, collapse_cycles)
-        .map_err(|error| error.to_string())?;
+    let flow = match file.flow(position, collapse_cycles) {
+        Err(SourceError::FlowNotFound(_)) => return Ok("null".into()),
+        flow => flow.map_err(|error| error.to_string())?,
+    };
     let (svg, hotspots) = kaalang_svg::render_flow(flow).map_err(|error| error.to_string())?;
     let offsets = utf16::Offsets::new(text);
     let range = |span| {
@@ -110,12 +112,8 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_flow_names_its_position() {
-        assert!(
-            flow(SOURCE, "", 1, false)
-                .unwrap_err()
-                .contains("position 1")
-        );
+    fn no_flow_at_a_position_draws_nothing() {
+        assert_eq!(flow(SOURCE, "", 1, false), Ok("null".into()));
     }
 
     #[test]

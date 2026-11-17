@@ -8,9 +8,6 @@ import { innermost, request } from "./hotspots.js";
 /** How long typing pauses before the page draws again, in milliseconds. */
 const PAUSE = 100;
 
-/** What the diagram shows before a flow is drawn. */
-const EMPTY = '<p class="kaalang-empty">Put the cursor in a flow.</p>';
-
 /**
  * @typedef {object} Host
  * @property {(message: object) => void} send Carries a message to the host.
@@ -48,7 +45,7 @@ export function start(root, host) {
       <button type="button" class="kaalang-collapse" aria-pressed="false">Collapse cycles</button>
     </div>
     <p class="kaalang-banner" role="status" hidden></p>
-    <div class="kaalang-diagram">${EMPTY}</div>`;
+    <div class="kaalang-diagram"></div>`;
   const collapse = root.querySelector(".kaalang-collapse");
   const banner = root.querySelector(".kaalang-banner");
   const diagram = root.querySelector(".kaalang-diagram");
@@ -59,7 +56,7 @@ export function start(root, host) {
     text: "",
     cursor: 0,
     cfg: "",
-    /** The flow drawn, by its position in the text; kept while the cursor is outside every flow. */
+    /** The flow the cursor was last in, by its position in the text; until then the first is drawn. */
     position: null,
     collapseCycles: false,
   };
@@ -85,11 +82,7 @@ export function start(root, host) {
       if (declared?.flow !== undefined) {
         state.position = declared.flow;
       }
-      const { position } = state;
-      if (position === null) {
-        show(null);
-        return;
-      }
+      const position = state.position ?? 0;
       if (
         drawn?.text === text &&
         drawn.cfg === cfg &&
@@ -103,14 +96,24 @@ export function start(root, host) {
       if (current !== generation) {
         return;
       }
-      diagram.innerHTML = result.svg;
-      outline(diagram.querySelector("svg"), result.hotspots);
+      if (result === null && position !== 0) {
+        // The flow the cursor was last in is gone: the first one stands in.
+        state.position = null;
+        schedule(0);
+        return;
+      }
+      if (result === null) {
+        diagram.innerHTML = '<p class="kaalang-empty">No flow to draw.</p>';
+      } else {
+        diagram.innerHTML = result.svg;
+        outline(diagram.querySelector("svg"), result.hotspots);
+      }
       drawn = {
         text,
         cfg,
         position,
         collapseCycles,
-        hotspots: result.hotspots,
+        hotspots: result?.hotspots ?? [],
       };
       show(null);
     } catch (error) {
@@ -225,7 +228,7 @@ export function start(root, host) {
           state.uri = message.uri;
           state.position = null;
           drawn = null;
-          diagram.innerHTML = EMPTY;
+          diagram.innerHTML = "";
         }
         state.text = message.text;
         state.cursor = message.cursor;

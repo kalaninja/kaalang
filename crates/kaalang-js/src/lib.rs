@@ -20,12 +20,13 @@ mod utf16;
 /// `{"svg": …, "hotspots": [{"kind", "left", "top", "right", "bottom",
 /// "start", "end", and for a call "calleeStart", "calleeEnd"}]}`. `kind` is
 /// `node`, `call`, or `wire`; a rectangle is in the SVG's user units. `cfg` is
-/// the target's cfg set as `rustc --print cfg` prints it, empty for none.
+/// the target's cfg set as `rustc --print cfg` prints it, empty for none. The
+/// answer is `null` when no flow stands at `position`.
 ///
 /// # Errors
 ///
-/// Throws why the flow cannot be drawn: `cfg` or `text` does not parse, no flow
-/// stands at `position`, or the flow is not valid.
+/// Throws why the flow cannot be drawn: `cfg` or `text` does not parse, or the
+/// flow is not valid.
 #[wasm_bindgen(js_name = drawFlow)]
 pub fn draw_flow(
     text: &str,

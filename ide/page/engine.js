@@ -98,7 +98,7 @@ export function createEngine(wasm) {
      */
     declaredAt: (text, cfg, offset) => call("declaredAt", text, cfg, offset),
     /**
-     * @returns {Promise<{svg: string, hotspots: Hotspot[]}>}
+     * @returns {Promise<{svg: string, hotspots: Hotspot[]} | null>}
      */
     drawFlow: (text, cfg, position, collapseCycles) =>
       call("drawFlow", text, cfg, position, collapseCycles),

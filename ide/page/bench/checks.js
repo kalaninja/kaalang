@@ -15,6 +15,9 @@ const missing = new URL("missing", built).href;
 const flow =
   "#[kaa]\nfn settle(first: u8) -> u8 {\n    |first| return first;\n}\n";
 const inFlow = flow.indexOf("return");
+/** Two flows named `first` and `second`. */
+const two = (first, second) =>
+  `${flow.replace("settle", first)}${flow.replace("settle", second)}`;
 const nested = 200_000;
 const deep = flow.replace(
   "return first",
@@ -78,23 +81,45 @@ function open(overrides = {}) {
       receive({ type: "document", uri, text, cursor }),
     banner: () => (banner.hidden ? null : banner.textContent),
     drawn: () => root.querySelector(".kaalang-diagram svg") !== null,
+    /** The name of the flow drawn. */
+    flow: () =>
+      root
+        .querySelector(".kaalang-diagram svg title")
+        ?.textContent.split(" ")
+        .at(-1),
   };
 }
 
 const checks = {
   async "an answer about the last document is not drawn on the next"() {
     const page = open();
+    let late;
     on("posted", "drawFlow", () => page.show("struct X;\n", 0, "b"));
+    // What shows once the last document's diagram has arrived.
+    on("answering", "drawFlow", () => setTimeout(() => (late = page.drawn())));
     page.show(flow, inFlow);
     await settled();
-    return !page.drawn();
+    return late === false && !page.drawn();
   },
   async "a flow found in the last document is not drawn from the next"() {
     const page = open();
-    on("answering", "declaredAt", () => page.show(`// b\n${flow}`, 0, "b"));
-    page.show(flow, inFlow);
+    const last = two("alpha", "beta");
+    on("answering", "declaredAt", () =>
+      page.show(`// b\n${two("gamma", "delta")}`, 0, "b"),
+    );
+    // The cursor in the last document's second flow; the next draws its first.
+    page.show(last, last.lastIndexOf("return"));
     await settled();
-    return !page.drawn();
+    return page.flow() === "gamma";
+  },
+  async "the first flow stands in for the one the cursor left and deleted"() {
+    const page = open();
+    const both = two("alpha", "beta");
+    page.show(both, both.lastIndexOf("return"));
+    await settled();
+    page.show(`// a\n${flow.replace("settle", "alpha")}`, 0);
+    await settled();
+    return page.flow() === "alpha";
   },
   async "the banner goes once the text parses, the cursor outside every flow"() {
     const page = open();

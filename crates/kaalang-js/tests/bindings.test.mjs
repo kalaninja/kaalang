@@ -28,16 +28,9 @@ function* directories(directory) {
   }
 }
 
-/** The flow a fixture declares, drawn, or nothing for one that declares none. */
+/** The flow a fixture declares, drawn, or `null` for one that declares none. */
 function draw(source, collapsed) {
-  try {
-    return JSON.parse(kaalang.drawFlow(source, target, 0, collapsed));
-  } catch (error) {
-    if (error.message.includes("stands at position 0")) {
-      return null;
-    }
-    throw error;
-  }
+  return JSON.parse(kaalang.drawFlow(source, target, 0, collapsed));
 }
 
 test("every fixture flow draws its golden diagrams", () => {
