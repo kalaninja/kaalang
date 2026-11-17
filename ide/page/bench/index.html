@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>kaalang page bench</title>
+    <link rel="stylesheet" href="../page.css" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        display: grid;
+        grid-template-columns: minmax(320px, 2fr) 3fr;
+        font-family: system-ui, sans-serif;
+      }
+      #editor-pane {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        border-right: 1px solid #d1d5db;
+        min-height: 0;
+      }
+      #editor {
+        flex: 1;
+        font:
+          13px/1.4 ui-monospace,
+          monospace;
+        tab-size: 4;
+      }
+      #page {
+        min-width: 0;
+        height: 100vh;
+      }
+      /* Variables a dark VS Code theme sets on the webview. */
+      #page.dark {
+        --vscode-editor-background: #1e1e1e;
+        --vscode-editor-foreground: #d4d4d4;
+        --vscode-descriptionForeground: rgba(204, 204, 204, 0.7);
+        --vscode-charts-red: #f14c4c;
+        --vscode-charts-green: #89d185;
+        --vscode-charts-blue: #3794ff;
+        --vscode-charts-purple: #b180d7;
+        --vscode-textLink-foreground: #3794ff;
+        --vscode-errorForeground: #f48771;
+      }
+      #log {
+        height: 8em;
+        margin: 0;
+        overflow: auto;
+        font:
+          12px ui-monospace,
+          monospace;
+        background: #f3f4f6;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="editor-pane">
+      <label>Open a file: <input id="file" type="file" accept=".rs" /></label>
+      <span>
+        <label><input id="dark" type="checkbox" /> Dark theme</label>
+        <label><input id="outlines" type="checkbox" /> Show hotspots</label>
+        <a href="checks.html">Race checks</a>
+      </span>
+      <textarea
+        id="editor"
+        wrap="off"
+        spellcheck="false"
+        aria-label="Source"
+      ></textarea>
+      <pre id="log" aria-label="Messages to the host"></pre>
+    </section>
+    <main id="page"></main>
+    <script type="module" src="bench.js"></script>
+  </body>
+</html>

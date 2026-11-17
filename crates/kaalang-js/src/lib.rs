@@ -57,3 +57,16 @@ pub fn declared_at(text: &str, cfg: &str, offset: u32) -> Result<String, JsError
 fn forget_parsed_text() {
     proc_macro2::extra::invalidate_current_thread_spans();
 }
+
+/// Writes a panic's message to `console.error` before the module traps, since
+/// the trap itself says only "unreachable". Instantiating the module runs it.
+#[wasm_bindgen(start)]
+fn report_panics() {
+    std::panic::set_hook(Box::new(|info| console_error(&info.to_string())));
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console, js_name = error)]
+    fn console_error(message: &str);
+}

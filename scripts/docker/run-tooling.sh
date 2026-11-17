@@ -18,6 +18,10 @@ run=(
   --env RUST_BACKTRACE
   --env RUST_LOG
 )
+# A server publishes its port on the loopback interface only.
+if [[ -n "${TOOLING_PORT:-}" ]]; then
+  run+=(--publish "127.0.0.1:${TOOLING_PORT}:${TOOLING_PORT}")
+fi
 if [[ -t 0 && -t 1 ]]; then
   run+=(--interactive --tty)
 fi

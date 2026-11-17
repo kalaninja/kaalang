@@ -71,12 +71,12 @@ For syntax or semantic changes:
 ## Validation
 
 Recipes live in `justfile` and `just/` and run from the repository root with
-[just](https://just.systems). The Rust and Markdown recipes run in Docker images
-built from `Dockerfile`, so the host needs only just and Docker; the release
-recipes run cargo on the host for its crates.io credentials. The images install
-the tools pinned in `mise/` with [mise](https://mise.jdx.dev). The nightly
-rustfmt in the `fmt` image applies the import options in `rustfmt.toml`. A
-recipe rebuilds its image when those files change. Downloaded crates and npm
+[just](https://just.systems). Every recipe but the release ones runs in a Docker
+image built from `Dockerfile`, so the host needs only just and Docker; the
+release recipes run cargo on the host for its crates.io credentials. The images
+install the tools pinned in `mise/` with [mise](https://mise.jdx.dev). The
+nightly rustfmt in the `fmt` image applies the import options in `rustfmt.toml`.
+A recipe rebuilds its image when those files change. Downloaded crates and npm
 packages stay in the ignored `.cache/`.
 
 Format sources:
@@ -86,7 +86,7 @@ just fmt
 ```
 
 It runs [Prettier](https://prettier.io/docs/cli), pinned in `just/docs.just`, on
-Markdown and the nightly `cargo fmt` on Rust.
+Markdown, JavaScript, CSS, and HTML, and the nightly `cargo fmt` on Rust.
 
 Run the full baseline before committing:
 
@@ -95,8 +95,9 @@ just ci run
 ```
 
 It checks formatting, then runs `cargo clippy` with warnings denied,
-`cargo test`, `just wasm test`, `just rust svg`, and `git diff --check`.
-`just rust`, `just wasm`, and `just docs` list the per-step recipes.
+`cargo test`, `just wasm test`, `just ide test`, `just rust svg`, and
+`git diff --check`. `just rust`, `just wasm`, `just ide`, and `just docs` list
+the per-step recipes.
 
 One comparison is too slow for the baseline and sits behind `#[ignore]`:
 
@@ -116,7 +117,20 @@ leaves the SVG files untouched.
 
 `just wasm test` builds the WebAssembly bindings as a page loads them and runs
 them in Node: every fixture flow draws its golden diagram there, memory stays
-level, and positions count UTF-16 code units.
+level, and positions count UTF-16 code units. `just ide test` checks in Node
+which hotspot a click on the IDE page takes and what it asks of the host.
+
+Try a change to the IDE page in a browser before committing it:
+
+```sh
+just ide bench
+```
+
+It serves the page at <http://127.0.0.1:8080/ide/page/bench/> with a stub host:
+a text field stands for the editor, a log shows what the page asks of the host,
+and switches show a dark theme and every hotspot.
+<http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's races
+against the real worker; every check must pass.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A

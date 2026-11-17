@@ -190,3 +190,11 @@ each card draws into the focus.
 | [Reading](../crates/kaalang-svg/src/datatype/mod.rs)                                                      | Read each card's form, representation, and tiles from its type as the compiler read it, with the text it quotes from the declaration, and validate every label for XML.                                                                                                                                                                                                                                                                                                                                          |
 | [Card layout](../crates/kaalang-svg/src/datatype/layout.rs)                                               | Wrap and measure each card, place the incoming cards in rows above the focus, each target group from a new row and each row as wide as a screen or the focus, and route each drawn relationship without crossings: an incoming card lists its tiles, whose lines start on its right side and join its column's trunk down into the focus; the focus's own lines leave a struct's row below it, a union field from its side, and a variant through its groove and port, and join its trunk, which climbs over it. |
 | [Serialization](../crates/kaalang-svg/src/datatype/svg.rs), [markup](../crates/kaalang-svg/src/markup.rs) | Write the cards, their rules and text, and the routes to one standalone SVG string.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
+## IDEs
+
+kaalang supports VS Code and RustRover. Every supported IDE shows
+[`ide/page/`](../ide/page/page.js), a page in plain JavaScript. It runs
+`kaalang-js` in a worker, draws the flow at the editor's cursor, and asks its
+host to reveal a range or to run the editor's own go-to action at a position; a
+host gives the text, the cursor, and the target's cfg set.

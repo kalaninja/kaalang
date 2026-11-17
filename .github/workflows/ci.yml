@@ -52,6 +52,7 @@ jobs:
       - run: just rust clippy
       - run: just rust test
       - run: just wasm test
+      - run: just ide test
       - run: just rust svg
       - run: git add -A && git diff --cached --exit-code
 
