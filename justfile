@@ -4,7 +4,7 @@ mod ci 'just/ci.just'
 # Documentation commands
 mod docs 'just/docs.just'
 
-# IDE page commands
+# IDE commands
 mod ide 'just/ide.just'
 
 # Release commands

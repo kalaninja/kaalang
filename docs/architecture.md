@@ -198,3 +198,9 @@ kaalang supports VS Code and RustRover. Every supported IDE shows
 `kaalang-js` in a worker, draws the flow at the editor's cursor, and asks its
 host to reveal a range or to run the editor's own go-to action at a position; a
 host gives the text, the cursor, and the target's cfg set.
+
+In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
+rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
+cargo's configuration applied, the extra cfgs its settings list, the features
+cargo enables for the file's package, and `rust_analyzer` and `test` for a
+workspace crate.

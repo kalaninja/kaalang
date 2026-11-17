@@ -1,0 +1,56 @@
+{
+  "name": "kaalang",
+  "displayName": "kaalang",
+  "description": "Flow diagrams of kaalang code, drawn as you type.",
+  "version": "0.4.0",
+  "publisher": "kaalang",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "kaalang.showDiagram",
+        "title": "Show Diagram",
+        "category": "kaalang"
+      },
+      {
+        "command": "kaalang.showDiagramToSide",
+        "title": "Show Diagram to the Side",
+        "category": "kaalang",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "kaalang.showSource",
+        "title": "Show Source",
+        "category": "kaalang",
+        "icon": "$(go-to-file)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "kaalang.showDiagramToSide",
+          "when": "editorLangId == rust",
+          "group": "navigation"
+        },
+        {
+          "command": "kaalang.showSource",
+          "when": "activeWebviewPanelId == 'kaalang.diagram'",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@types/node": "18.19.130",
+    "@types/vscode": "1.82.0",
+    "typescript": "7.0.2"
+  }
+}

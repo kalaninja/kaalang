@@ -3,8 +3,8 @@ set working-directory := '..'
 mod tooling
 
 prettier := 'prettier@3.6.2'
-# Markdown, and the page's and the bindings' web sources.
-sources := "'**/*.md' 'ide/**/*.{js,mjs,css,html}' 'crates/kaalang-js/tests/*.mjs'"
+# Markdown, and the web sources of the IDE page, its hosts, and the bindings.
+sources := "'**/*.md' 'ide/**/*.{js,mjs,css,html,ts}' 'crates/kaalang-js/tests/*.mjs'"
 
 # List the available recipes.
 [default]

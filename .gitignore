@@ -13,3 +13,7 @@ Thumbs.db
 
 # Tooling caches
 /.cache/
+
+# The VS Code extension's dependencies and build
+/ide/vscode/node_modules/
+/ide/vscode/out/

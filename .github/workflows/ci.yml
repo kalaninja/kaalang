@@ -27,6 +27,7 @@ jobs:
           cache-to: type=gha,scope=fmt,mode=max
       - uses: extractions/setup-just@v3
       - run: just fmt-check
+      - run: just ide check
 
   validate:
     needs: fmt

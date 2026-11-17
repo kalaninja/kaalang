@@ -11,5 +11,5 @@ list:
     @just --list ci
 
 # Run the full validation baseline.
-run: docs::fmt-check rust::fmt-check rust::clippy rust::test wasm::test ide::test rust::svg
+run: docs::fmt-check rust::fmt-check ide::check rust::clippy rust::test wasm::test ide::test rust::svg
     git diff --check

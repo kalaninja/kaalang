@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-# The images the `just` recipes run in: `rust` builds and tests, `fmt` formats.
+# The images the `just` recipes run in: `rust` builds and tests, `fmt` formats
+# and type-checks the VS Code extension.
 # Versions live in mise/; the base image tag pins mise itself.
 FROM ghcr.io/jdx/mise:2026.10.0-debian AS base
 

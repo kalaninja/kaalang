@@ -71,13 +71,15 @@ For syntax or semantic changes:
 ## Validation
 
 Recipes live in `justfile` and `just/` and run from the repository root with
-[just](https://just.systems). Every recipe but the release ones runs in a Docker
-image built from `Dockerfile`, so the host needs only just and Docker; the
-release recipes run cargo on the host for its crates.io credentials. The images
-install the tools pinned in `mise/` with [mise](https://mise.jdx.dev). The
-nightly rustfmt in the `fmt` image applies the import options in `rustfmt.toml`.
-A recipe rebuilds its image when those files change. Downloaded crates and npm
-packages stay in the ignored `.cache/`.
+[just](https://just.systems). Every recipe runs in a Docker image built from
+`Dockerfile`, so the host needs only just and Docker, but for two: the release
+recipes run cargo on the host for its crates.io credentials, and
+`just ide vscode` opens the host's VS Code. The images install the tools pinned
+in `mise/` with [mise](https://mise.jdx.dev). The nightly rustfmt in the `fmt`
+image applies the import options in `rustfmt.toml`. A recipe rebuilds its image
+when those files change. Downloaded crates and npm packages stay in the ignored
+`.cache/`, and the VS Code extension's dependencies in
+`ide/vscode/node_modules/`.
 
 Format sources:
 
@@ -86,7 +88,8 @@ just fmt
 ```
 
 It runs [Prettier](https://prettier.io/docs/cli), pinned in `just/docs.just`, on
-Markdown, JavaScript, CSS, and HTML, and the nightly `cargo fmt` on Rust.
+Markdown, JavaScript, TypeScript, CSS, and HTML, and the nightly `cargo fmt` on
+Rust.
 
 Run the full baseline before committing:
 
@@ -94,10 +97,10 @@ Run the full baseline before committing:
 just ci run
 ```
 
-It checks formatting, then runs `cargo clippy` with warnings denied,
-`cargo test`, `just wasm test`, `just ide test`, `just rust svg`, and
-`git diff --check`. `just rust`, `just wasm`, `just ide`, and `just docs` list
-the per-step recipes.
+It checks formatting and the VS Code extension's types and tests, then runs
+`cargo clippy` with warnings denied, `cargo test`, `just wasm test`,
+`just ide test`, `just rust svg`, and `git diff --check`. `just rust`,
+`just wasm`, `just ide`, and `just docs` list the per-step recipes.
 
 One comparison is too slow for the baseline and sits behind `#[ignore]`:
 
@@ -131,6 +134,15 @@ a text field stands for the editor, a log shows what the page asks of the host,
 and switches show a dark theme and every hotspot.
 <http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's races
 against the real worker; every check must pass.
+
+Try a change to the VS Code extension, or to the page it shows, in VS Code:
+
+```sh
+just ide vscode
+```
+
+It builds the extension, with the page and the bindings, into `ide/vscode/out/`
+and opens this repository in a VS Code window that runs it.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A
