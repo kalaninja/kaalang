@@ -13,6 +13,11 @@
   padding: 6px 8px;
 }
 
+/* A type's diagram has no cycle to collapse. */
+.kaalang-toolbar[hidden] {
+  display: none;
+}
+
 /* A button as the editor draws its own, or plain outside VS Code. */
 .kaalang-collapse {
   padding: 2px 10px;
@@ -184,6 +189,31 @@
 
 .kaalang-diagram svg :is(.cycle-caption, .loop-marker) {
   fill: var(--kaalang-cycle);
+}
+
+/* A type's cards, which the SVG paints white with slate rules and text. */
+.kaalang-diagram svg :is(.card-shape, .port) {
+  fill: var(--kaalang-background);
+}
+
+.kaalang-diagram svg .card-groove {
+  fill: color-mix(
+    in srgb,
+    var(--kaalang-foreground) 4%,
+    var(--kaalang-background)
+  );
+}
+
+.kaalang-diagram svg .card-rules {
+  stroke: color-mix(
+    in srgb,
+    var(--kaalang-foreground) 20%,
+    var(--kaalang-background)
+  );
+}
+
+.kaalang-diagram svg :is(.type-kind, .field-name, .target) {
+  fill: var(--kaalang-muted);
 }
 
 .kaalang-diagram svg .stage-connections {

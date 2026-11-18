@@ -70,6 +70,7 @@ export function start(root, host) {
     </div>
     <p class="kaalang-banner" role="status" hidden></p>
     <div class="kaalang-diagram"></div>`;
+  const toolbar = root.querySelector(".kaalang-toolbar");
   const collapse = root.querySelector(".kaalang-collapse");
   const banner = root.querySelector(".kaalang-banner");
   const diagram = root.querySelector(".kaalang-diagram");
@@ -165,6 +166,7 @@ export function start(root, host) {
         schedule(0);
         return;
       }
+      toolbar.hidden = shown.type !== undefined;
       let outlines = new Map();
       if (result === null) {
         redraw('<p class="kaalang-empty">No flow to draw.</p>');
