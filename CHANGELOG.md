@@ -2,6 +2,12 @@
 
 ## 0.4.0 - unreleased
 
+### Added
+
+- The VS Code extension shows the flow or type at the cursor. Click a connection
+  or merge to inspect the wires it carries. Ctrl-click (Cmd-click on macOS) a
+  node, wire name, or type path to open its source or definition.
+
 ### Fixed
 
 - `cargo kaalang diagram` no longer keeps the carriage returns of a description

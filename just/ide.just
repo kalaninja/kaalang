@@ -25,7 +25,8 @@ vscode-build: wasm::build (tooling::build "fmt")
     mkdir -p ide/vscode/out/page ide/vscode/out/wasm
     cp ide/page/*.js ide/page/page.css ide/vscode/out/page/
     cp ide/vscode/src/webview.js ide/vscode/out/
-    cp target/wasm/web/kaalang_js.js target/wasm/web/kaalang_js_bg.wasm ide/vscode/out/wasm/
+    cp target/wasm/web/kaalang_js.js ide/vscode/out/wasm/kaalang_js.mjs
+    cp target/wasm/web/kaalang_js_bg.wasm ide/vscode/out/wasm/
 
 # Open this repository in VS Code with the extension from ide/vscode.
 vscode: vscode-build

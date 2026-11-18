@@ -1,16 +1,25 @@
 // The cfg set rust-analyzer analyzes a file with, as `rustc --print cfg`
 // prints it, so that the diagram counts the code the editor shows as active.
-// rust-analyzer exposes no such set, so this one is read as it reads its own:
+// rust-analyzer exposes no structured cfg set, so this one is read as it reads its own:
 // rustc's cfgs for the target with cargo's configuration applied, the extra
-// cfgs of its settings, then the features cargo enables for the file's package
-// and, for a workspace crate, `rust_analyzer` and `test`.
+// flags of a local crate and its settings, then the package's active features.
 
 import { execFile } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 
-import { addPackageCfgs, applyExtraCfgs, type Metadata } from "./cfgs";
+import { fileCfgs } from "./cfgs";
+import {
+  type CargoRoot as CargoTarget,
+  type Metadata,
+  workspaceTargets,
+} from "./metadata";
+
+/** Each crate reads its module tree with its package's active features. */
+export interface CargoRoot extends CargoTarget {
+  cfg: string;
+}
 
 /** The settings of rust-analyzer that decide the set. */
 const SECTIONS = ["rust-analyzer.cargo", "rust-analyzer.cfg"];
@@ -20,6 +29,9 @@ interface Options {
   target: string | null;
   features: string[] | "all";
   noDefaultFeatures: boolean;
+  noDeps: boolean;
+  metadataArgs: string[];
+  configPath?: string;
   cfgs: unknown[];
   setTest: boolean;
   extraEnv: Record<string, string | null>;
@@ -27,9 +39,10 @@ interface Options {
 
 /** What a cargo workspace gives every file in it. */
 interface Workspace {
-  /** rustc's cfgs with the extra ones applied. */
+  /** rustc's cfgs for the compilation target. */
   cfgs: string[];
   metadata: Metadata | undefined;
+  roots: CargoRoot[];
 }
 
 /** The root of each source directory's cargo workspace, if it has one. */
@@ -51,15 +64,25 @@ export function forgetCfg(): void {
   workspaces.clear();
 }
 
+/** The additional Cargo configuration selected for the rust-analyzer session. */
+export function cargoConfig(): string | undefined {
+  const configured = vscode.workspace
+    .getConfiguration("rust-analyzer")
+    .get<string | null>("cargo.configPath");
+  return configured
+    ? path.resolve(
+        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+        configured,
+      )
+    : undefined;
+}
+
 /**
  * The set for `file`; whatever cannot be read is left out and `log`ged. Empty
  * in Restricted Mode: cargo and rustc run whatever binaries the workspace's
  * configuration names.
  */
-export async function cfg(
-  file: vscode.Uri,
-  log: (line: string) => void,
-): Promise<string> {
+export async function target(file: vscode.Uri, log: (line: string) => void) {
   if (!vscode.workspace.isTrusted) {
     if (!restricted) {
       restricted = true;
@@ -67,14 +90,17 @@ export async function cfg(
         "Restricted Mode: the diagram is drawn without the target's cfg set.",
       );
     }
-    return "";
+    return { cfg: "", roots: [], cfgForRoot: () => "" };
   }
-  const settings = vscode.workspace.getConfiguration("rust-analyzer", file);
+  const settings = vscode.workspace.getConfiguration("rust-analyzer");
   const options: Options = {
     target: settings.get<string | null>("cargo.target") ?? null,
     features: settings.get<string[] | "all">("cargo.features") ?? [],
     noDefaultFeatures:
       settings.get<boolean>("cargo.noDefaultFeatures") ?? false,
+    noDeps: settings.get<boolean>("cargo.noDeps") ?? false,
+    metadataArgs: settings.get<string[]>("cargo.metadataExtraArgs") ?? [],
+    configPath: cargoConfig(),
     // rust-analyzer's own default, for when it is not installed.
     cfgs: settings.get<unknown[]>("cargo.cfgs") ?? ["debug_assertions", "miri"],
     setTest: settings.get<boolean>("cfg.setTest") ?? true,
@@ -101,14 +127,16 @@ export async function cfg(
     JSON.stringify([root ?? null, options]),
     () => read(root, options, env, log),
   );
-  const lines = new Set(workspace.cfgs);
   // shortcut: no cfg a build script sets with `cargo:rustc-cfg`, which
   // rust-analyzer learns by running build scripts; run them too if flows behind
   // such cfgs turn up.
-  if (source !== undefined && workspace.metadata !== undefined) {
-    addPackageCfgs(lines, workspace.metadata, source, options.setTest);
-  }
-  return [...lines].join("\n");
+  const cfgForRoot = (path: string | undefined) =>
+    fileCfgs(workspace.cfgs, workspace.metadata, path, options, log);
+  return {
+    cfg: cfgForRoot(source),
+    roots: workspace.roots,
+    cfgForRoot,
+  };
 }
 
 /** What `map` holds at `key`, made first if it holds nothing. */
@@ -172,47 +200,104 @@ async function read(
 ): Promise<Workspace> {
   const directory =
     root ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-  const target = options.target ? ["--target", options.target] : [];
-  const lines = new Set(await printed(root, directory, target, env, log));
-  applyExtraCfgs(lines, options.cfgs, log);
+  const config = options.configPath ? ["--config", options.configPath] : [];
+  const targets = options.target
+    ? [options.target]
+    : root === undefined
+      ? []
+      : await configuredTargets(root, config, env);
+  const target = targets.length > 0 ? ["--target", targets[0]] : [];
+  const cfgs = await printed(root, directory, config, target, env, log);
   let metadata: Metadata | undefined;
   if (root !== undefined) {
+    const features =
+      options.features === "all"
+        ? ["--all-features"]
+        : options.features.length > 0
+          ? ["--features", options.features.join(",")]
+          : [];
+    const noDeps = options.noDeps || options.metadataArgs.includes("--no-deps");
+    const args = [
+      ...config,
+      "metadata",
+      "--locked",
+      "--format-version",
+      "1",
+      ...targets.flatMap((triple) => ["--filter-platform", triple]),
+      ...features,
+      ...(options.noDefaultFeatures ? ["--no-default-features"] : []),
+      ...options.metadataArgs.filter(
+        (arg) => arg !== "--locked" && arg !== "--no-deps",
+      ),
+    ];
     try {
-      const triple =
-        options.target ??
-        (await run("rustc", ["-vV"], directory, env)).match(
-          /^host: (.+)$/m,
-        )?.[1] ??
-        "";
-      const features =
-        options.features === "all"
-          ? ["--all-features"]
-          : options.features.length > 0
-            ? ["--features", options.features.join(",")]
-            : [];
       metadata = JSON.parse(
-        await run(
-          "cargo",
-          [
-            "metadata",
-            // Cargo writes no lock file into a crate it only reads.
-            "--locked",
-            "--format-version",
-            "1",
-            "--filter-platform",
-            triple,
-            ...features,
-            ...(options.noDefaultFeatures ? ["--no-default-features"] : []),
-          ],
-          root,
-          env,
-        ),
-      ) as Metadata;
+        await run("cargo", noDeps ? [...args, "--no-deps"] : args, root, env),
+      );
     } catch (error) {
       log(`Could not read the features: ${(error as Error).message}`);
+      // Even without a current lock file, cargo can list the workspace's own targets.
+      if (!noDeps) {
+        try {
+          metadata = JSON.parse(
+            await run("cargo", [...args, "--no-deps"], root, env),
+          );
+        } catch {
+          /* The full metadata error above already names the workspace. */
+        }
+      }
     }
   }
-  return { cfgs: [...lines], metadata };
+  const packageCfg = new Map<string, string>();
+  for (const pkg of metadata?.packages ?? []) {
+    if (metadata?.workspace_members.includes(pkg.id)) {
+      packageCfg.set(
+        pkg.name,
+        fileCfgs(cfgs, metadata, pkg.manifest_path, options, log),
+      );
+    }
+  }
+  const roots = metadata
+    ? workspaceTargets(metadata).map((target) => ({
+        ...target,
+        cfg: packageCfg.get(target.package)!,
+        root: vscode.Uri.file(target.root).toString(),
+      }))
+    : [];
+  return { cfgs, metadata, roots };
+}
+
+/** Cargo may select several targets. rust-analyzer draws cfgs from the first
+ * and resolves dependencies for all of them. */
+async function configuredTargets(
+  root: string,
+  config: string[],
+  env: NodeJS.ProcessEnv,
+): Promise<string[]> {
+  try {
+    const text = await run(
+      "cargo",
+      [
+        ...config,
+        "-Z",
+        "unstable-options",
+        "config",
+        "get",
+        "build.target",
+        "--format",
+        "json",
+      ],
+      root,
+      { ...env, __CARGO_TEST_CHANNEL_OVERRIDE_DO_NOT_USE_THIS: "nightly" },
+    );
+    const configured: string | string[] = JSON.parse(text).build.target;
+    return typeof configured === "string" ? [configured] : configured;
+  } catch {
+    // Cargo reports an error when the setting is absent.
+    const version = await run("rustc", ["-vV"], root, env).catch(() => "");
+    const host = /^host: (.+)$/m.exec(version)?.[1];
+    return host ? [host] : [];
+  }
 }
 
 /**
@@ -222,6 +307,7 @@ async function read(
 async function printed(
   root: string | undefined,
   directory: string,
+  config: string[],
   target: string[],
   env: NodeJS.ProcessEnv,
   log: (line: string) => void,
@@ -233,6 +319,7 @@ async function printed(
         await run(
           "cargo",
           [
+            ...config,
             "rustc",
             "--locked",
             "-Z",

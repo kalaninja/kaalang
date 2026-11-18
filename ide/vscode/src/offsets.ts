@@ -11,6 +11,11 @@
 export function offsets(
   text: string,
 ): (line: number, character: number) => number {
+  return coordinates(text).offsetAt;
+}
+
+/** Bidirectional UTF-16 positions for offsets in the same snapshot. */
+export function coordinates(text: string) {
   const starts = [0];
   const ends: number[] = [];
   for (const end of text.matchAll(/\r\n|\r|\n/g)) {
@@ -18,8 +23,23 @@ export function offsets(
     starts.push(end.index + end[0].length);
   }
   ends.push(text.length);
-  return (line, character) =>
-    line < starts.length
-      ? Math.min(starts[line] + character, ends[line])
-      : text.length;
+  return {
+    offsetAt: (line: number, character: number) =>
+      line < starts.length
+        ? Math.min(starts[line] + character, ends[line])
+        : text.length,
+    positionAt(offset: number) {
+      let line = 0;
+      let after = starts.length;
+      while (line + 1 < after) {
+        const middle = Math.floor((line + after) / 2);
+        if (starts[middle] <= offset) line = middle;
+        else after = middle;
+      }
+      return {
+        line,
+        character: Math.max(0, Math.min(offset, ends[line]) - starts[line]),
+      };
+    },
+  };
 }

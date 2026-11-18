@@ -47,8 +47,7 @@ export class Crash extends Error {}
  * @param {Wasm} wasm
  */
 export function createEngine(wasm) {
-  /** Started at once, so that compiling overlaps the first pause. */
-  let compiled = compile(wasm.module);
+  let compiled;
   /** @type {Worker | null} */
   let worker = null;
   let next = 0;
@@ -113,19 +112,21 @@ export function createEngine(wasm) {
 
   return {
     /**
-     * @returns {Promise<{flow: number} | {type: string} | null>}
+     * @returns {Promise<{flow: number, path: string} | {type: string} | null>}
      */
     declaredAt: (text, cfg, offset) => call("declaredAt", text, cfg, offset),
     /**
      * @returns {Promise<{svg: string, hotspots: Hotspot[], wires: Wire[]} | null>}
      */
-    drawFlow: (text, cfg, position, collapseCycles) =>
-      call("drawFlow", text, cfg, position, collapseCycles),
+    drawFlow: (text, cfg, position, collapseCycles, path) =>
+      call("drawFlow", text, cfg, position, collapseCycles, path),
     /**
      * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[]} | null>}
      */
     drawType: (text, cfg, path, context) =>
       call("drawType", text, cfg, path, context),
+    /** @returns {Promise<number[]>} The last identifiers of valid relationship targets. */
+    relationshipTargets: (text, cfg) => call("relationshipTargets", text, cfg),
   };
 }
 

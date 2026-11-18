@@ -5,11 +5,19 @@
 // and a type's module from the editor's hover, and finds the references to a
 // type.
 
+import * as path from "node:path";
 import * as vscode from "vscode";
 
-import { hoverModule, hoverType } from "./hover";
-import { offsets } from "./offsets";
-import { affectsCfg, cfg, forgetCfg } from "./target";
+import { cardPlacements } from "./card-places";
+import { hoverType, moduleHovers } from "./hover";
+import { stopModuleWorker } from "./module-sources";
+import { navigate, type Navigation } from "./navigation";
+import {
+  definitionMatches,
+  forgetReferences,
+  referringFiles,
+} from "./references";
+import { affectsCfg, cargoConfig, forgetCfg, target } from "./target";
 
 /** The panel's type, which the `when` clauses in package.json name. */
 const VIEW_TYPE = "kaalang.diagram";
@@ -17,20 +25,25 @@ const VIEW_TYPE = "kaalang.diagram";
 /** The language server that answers the editor's go-to actions and hovers on Rust. */
 const RUST_ANALYZER = "rust-lang.rust-analyzer";
 
-/** The provider that finds the targets of each go-to request. */
-const PROVIDERS = {
-  definition: "vscode.executeDefinitionProvider",
-  typeDefinition: "vscode.executeTypeDefinitionProvider",
-};
-
 /** What the page asks of the host; `page.js` documents each message. */
 type Request =
   | { type: "ready" }
-  | { type: "reveal"; start: number; end: number; uri?: string }
-  | { type: keyof typeof PROVIDERS; offset: number; uri?: string }
-  | { type: "types"; id: number; offsets: number[] }
+  | Navigation
+  | { type: "types"; id: number; uri: string; offsets: number[] }
   | { type: "referrers"; id: number; uri: string; offset: number }
-  | { type: "modules"; id: number; places: { uri: string; offset: number }[] }
+  | {
+      type: "definitions";
+      id: number;
+      uri: string;
+      offset: number;
+      places: { uri: string; offset: number }[];
+    }
+  | {
+      type: "modules";
+      id: number;
+      uri: string;
+      places: { uri: string; offset: number; path?: string }[];
+    }
   | { type: "back" | "forward" };
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -44,10 +57,18 @@ export function activate(context: vscode.ExtensionContext): void {
   let source: vscode.TextEditor | undefined;
   /** Counts the questions for a cfg set; only the latest answer is sent. */
   let asked = 0;
+  /** A newer click or a switch to another source overtakes a pending go-to. */
+  let navigation = 0;
   const log = vscode.window.createOutputChannel("kaalang");
 
   /** Follows `editor`, unless it shows a document outside the workspace. */
   function follow(editor: vscode.TextEditor | undefined): void {
+    if (
+      editor &&
+      editor.document.uri.toString() !== source?.document.uri.toString()
+    ) {
+      ++navigation;
+    }
     if (
       editor?.document.languageId !== "rust" ||
       (vscode.workspace.workspaceFolders?.length &&
@@ -69,9 +90,11 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const question = ++asked;
-    const set = await cfg(source.document.uri, (line) => log.appendLine(line));
+    const { cfg } = await target(source.document.uri, (line) =>
+      log.appendLine(line),
+    );
     if (question === asked && panel !== undefined) {
-      void panel.webview.postMessage({ type: "target", cfg: set });
+      void panel.webview.postMessage({ type: "target", cfg });
     }
   }
 
@@ -81,7 +104,7 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const { document } = source;
-    panel.title = `Diagram ${document.uri.path.slice(document.uri.path.lastIndexOf("/") + 1)}`;
+    panel.title = `Diagram ${path.posix.basename(document.uri.path)}`;
     void panel.webview.postMessage({
       type: "document",
       uri: document.uri.toString(),
@@ -105,241 +128,65 @@ export function activate(context: vscode.ExtensionContext): void {
         send();
         void sendCfg();
         break;
-      case "reveal":
-        await reveal(request.start, request.end, request.uri);
-        break;
       case "definition":
       case "typeDefinition":
-        void offerRustAnalyzer();
-        await goTo(request.type, request.offset, request.uri);
+      case "reveal": {
+        if (source !== undefined) {
+          if (request.type !== "reveal") {
+            void offerRustAnalyzer();
+          }
+          const id = ++navigation;
+          await navigate(source, request, () => navigation === id);
+        }
         break;
+      }
       case "types":
         void offerRustAnalyzer();
-        sendTypes(request.id, request.offsets, reply);
+        for (const offset of request.offsets) {
+          void hoverAt(request.uri, offset).then((text) =>
+            reply({
+              type: "types",
+              id: request.id,
+              types: { [offset]: hoverType(text) },
+            }),
+          );
+        }
         break;
-      case "referrers":
-        void sendReferrers(request, reply);
+      case "referrers": {
+        const files = await referringFiles(
+          request.uri,
+          request.offset,
+          (line) => log.appendLine(line),
+        );
+        if (files !== undefined) {
+          reply({ type: "referrers", id: request.id, files });
+        }
         break;
-      case "modules":
-        void sendModules(request.id, request.places, reply);
+      }
+      case "definitions": {
+        const matches = await definitionMatches(request, request.places);
+        if (matches) reply({ type: "definitions", id: request.id, matches });
         break;
+      }
+      case "modules": {
+        const { roots } = await target(vscode.Uri.parse(request.uri), (line) =>
+          log.appendLine(line),
+        );
+        const placements = await cardPlacements(request.places, roots);
+        const modules = await moduleHovers(request.places, placements, hoverAt);
+        reply({ type: "modules", id: request.id, modules, placements });
+        break;
+      }
       case "back":
+        ++navigation;
         await vscode.commands.executeCommand("workbench.action.navigateBack");
         break;
       case "forward":
+        ++navigation;
         await vscode.commands.executeCommand(
           "workbench.action.navigateForward",
         );
         break;
-    }
-  }
-
-  /**
-   * Runs the go-to request `type` at `offset` of the followed document, or of
-   * the one at `uri`, and opens what it finds as the editor's own go-to does,
-   * without first moving the cursor to the place asked about: the diagram
-   * follows only the target. None found is said.
-   */
-  async function goTo(
-    type: keyof typeof PROVIDERS,
-    offset: number,
-    uri?: string,
-  ): Promise<void> {
-    if (source === undefined) {
-      return;
-    }
-    const document = uri === undefined ? source.document : await open(uri);
-    const found = await vscode.commands
-      .executeCommand<
-        (vscode.Location | vscode.LocationLink)[] | undefined
-      >(PROVIDERS[type], document.uri, document.positionAt(offset))
-      .then(
-        (found) => found ?? [],
-        () => [],
-      );
-    if (found.length === 0) {
-      void vscode.window.showInformationMessage(
-        type === "definition"
-          ? "No definition found."
-          : "No type definition found.",
-      );
-      return;
-    }
-    await jump(
-      found.map((target) =>
-        "targetUri" in target
-          ? new vscode.Location(
-              target.targetUri,
-              target.targetSelectionRange ?? target.targetRange,
-            )
-          : target,
-      ),
-    );
-  }
-
-  /**
-   * Opens `locations` as the editor's own go-to does, from where the followed
-   * editor's cursor stands, so that going back returns there: a single one at
-   * once, several in a peek.
-   */
-  async function jump(locations: vscode.Location[]): Promise<void> {
-    if (source === undefined) {
-      return;
-    }
-    // The go-to runs from the editor that has focus; a closed one reopens.
-    const editor = await vscode.window.showTextDocument(source.document, {
-      viewColumn: source.viewColumn,
-    });
-    await vscode.commands.executeCommand(
-      "editor.action.goToLocations",
-      editor.document.uri,
-      editor.selection.active,
-      locations,
-      "peek",
-      "",
-    );
-  }
-
-  /**
-   * Answers the page's request for the references to the type named at an
-   * offset of a document: each document whose text holds a `refer`, where
-   * alone they can draw a card, with its text, its cfg set, and where each
-   * reference starts. Documents not open are read from disk, so that the
-   * engine is not told of them and analyzes nothing anew. A search that the
-   * document's next edit cancels is not answered: the page asks again.
-   */
-  async function sendReferrers(
-    request: { id: number; uri: string; offset: number },
-    reply: (message: object) => void,
-  ): Promise<void> {
-    const document = await open(request.uri).catch(() => undefined);
-    if (document === undefined) {
-      return;
-    }
-    const { version } = document;
-    const locations = await vscode.commands
-      .executeCommand<
-        vscode.Location[] | undefined
-      >("vscode.executeReferenceProvider", document.uri, document.positionAt(request.offset))
-      .then(
-        (found) => found ?? [],
-        () => [],
-      );
-    const found = new Map<string, vscode.Range[]>();
-    for (const { uri, range } of locations) {
-      found.set(uri.toString(), [...(found.get(uri.toString()) ?? []), range]);
-    }
-    const files = await Promise.all(
-      [...found].map(async ([uri, ranges]) => {
-        try {
-          const opened = vscode.workspace.textDocuments.find(
-            (open) => open.uri.toString() === uri,
-          );
-          const text =
-            opened?.getText() ??
-            new TextDecoder().decode(
-              await vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
-            );
-          if (!text.includes("refer")) {
-            return null;
-          }
-          const at = offsets(text);
-          return {
-            uri,
-            text,
-            cfg: await cfg(vscode.Uri.parse(uri), (line) =>
-              log.appendLine(line),
-            ),
-            offsets: ranges.map((range) =>
-              at(range.start.line, range.start.character),
-            ),
-          };
-        } catch {
-          return null;
-        }
-      }),
-    );
-    if (document.version === version) {
-      reply({
-        type: "referrers",
-        id: request.id,
-        files: files.filter((file) => file !== null),
-      });
-    }
-  }
-
-  /**
-   * Answers the page's request `id` with the module path of the type named at
-   * each place, as the editor's hover gives it, or `null`.
-   */
-  async function sendModules(
-    id: number,
-    places: { uri: string; offset: number }[],
-    reply: (message: object) => void,
-  ): Promise<void> {
-    const modules = await Promise.all(
-      places.map(async ({ uri, offset }) => {
-        try {
-          const document = await open(uri);
-          return hoverModule(await hoverAt(document, offset));
-        } catch {
-          return null;
-        }
-      }),
-    );
-    reply({ type: "modules", id, modules });
-  }
-
-  /** The followed document when `uri` names it, or the document at `uri`. */
-  async function open(uri: string): Promise<vscode.TextDocument> {
-    return source?.document.uri.toString() === uri
-      ? source.document
-      : vscode.workspace.openTextDocument(vscode.Uri.parse(uri));
-  }
-
-  /**
-   * Answers the page's request `id` with the type at each offset of the
-   * document it follows, each as soon as it is known.
-   */
-  function sendTypes(
-    id: number,
-    offsets: number[],
-    reply: (message: object) => void,
-  ): void {
-    if (source === undefined) {
-      return;
-    }
-    const { document } = source;
-    for (const offset of offsets) {
-      void typeAt(document, offset).then((type) => {
-        reply({ type: "types", id, types: { [offset]: type } });
-      });
-    }
-  }
-
-  /**
-   * Selects a range of the followed document, or of the one at `uri`, as a
-   * jump going back returns from.
-   */
-  async function reveal(
-    start: number,
-    end: number,
-    uri?: string,
-  ): Promise<void> {
-    if (source === undefined) {
-      return;
-    }
-    // The text the page counted the offsets in; a closed document stays readable.
-    const document = uri === undefined ? source.document : await open(uri);
-    const range = new vscode.Range(
-      document.positionAt(start),
-      document.positionAt(end),
-    );
-    await jump([new vscode.Location(document.uri, range)]);
-    // The jump leaves the cursor at the start; the range shows what was asked.
-    const editor = vscode.window.activeTextEditor;
-    if (editor?.document === document) {
-      editor.selection = new vscode.Selection(range.start, range.end);
     }
   }
 
@@ -357,21 +204,40 @@ export function activate(context: vscode.ExtensionContext): void {
     panel.webview.html = html(panel.webview, out);
     panel.webview.onDidReceiveMessage(receive);
     panel.onDidDispose(() => {
+      ++navigation;
       panel = undefined;
     });
   }
 
   /** The files the cfg set is read from, whoever changes them. */
   const manifests = vscode.workspace.createFileSystemWatcher(
-    "**/{Cargo.toml,Cargo.lock,.cargo/config.toml,.cargo/config}",
+    "**/{Cargo.toml,Cargo.lock,.cargo/config.toml,.cargo/config,rust-toolchain,rust-toolchain.toml}",
   );
+  let configWatcher: vscode.FileSystemWatcher | undefined;
+  function watchConfig(): void {
+    configWatcher?.dispose();
+    const file = vscode.workspace.isTrusted && cargoConfig();
+    if (file) {
+      configWatcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(
+          vscode.Uri.file(path.dirname(file)),
+          path.basename(file),
+        ),
+      );
+      configWatcher.onDidCreate(reread);
+      configWatcher.onDidChange(reread);
+      configWatcher.onDidDelete(reread);
+    }
+  }
   let rereading: ReturnType<typeof setTimeout> | undefined;
   /** Reads the set again once changes pause: cargo unpacking crates makes hundreds. */
   function reread(): void {
     clearTimeout(rereading);
     rereading = setTimeout(() => {
       forgetCfg();
+      forgetReferences();
       void sendCfg();
+      changed();
     }, 500);
   }
 
@@ -387,9 +253,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }, 1000);
   }
 
+  function sourcesChanged(): void {
+    forgetReferences();
+    changed();
+  }
+  const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
+  watchConfig();
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(
     log,
+    { dispose: stopModuleWorker },
     vscode.commands.registerCommand("kaalang.showDiagram", () =>
       show(vscode.ViewColumn.Active),
     ),
@@ -398,7 +271,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand("kaalang.showSource", () => {
       if (source !== undefined) {
-        void vscode.window.showTextDocument(source.document, {
+        return vscode.window.showTextDocument(source.document.uri, {
           viewColumn: source.viewColumn,
         });
       }
@@ -413,26 +286,45 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     // A save changes no text but reports a change too.
     vscode.workspace.onDidChangeTextDocument(({ document, contentChanges }) => {
-      if (document === source?.document && contentChanges.length > 0) {
-        send();
+      if (contentChanges.length > 0) {
+        if (document.languageId === "rust") {
+          sourcesChanged();
+        }
+        if (document === source?.document) {
+          send();
+        }
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (affectsCfg(event)) {
+        watchConfig();
+        forgetCfg();
         void sendCfg();
+        sourcesChanged();
       }
     }),
     vscode.languages.onDidChangeDiagnostics(changed),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      watchConfig();
+      reread();
+    }),
     vscode.workspace.onDidSaveTextDocument((document) => {
       if (document.languageId === "rust") {
-        changed();
+        sourcesChanged();
       }
     }),
     vscode.workspace.onDidGrantWorkspaceTrust(() => {
       offered = false;
+      watchConfig();
       void sendCfg();
+      sourcesChanged();
     }),
     manifests,
+    sources,
+    sources.onDidCreate(sourcesChanged),
+    sources.onDidChange(sourcesChanged),
+    sources.onDidDelete(sourcesChanged),
+    { dispose: () => configWatcher?.dispose() },
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
     manifests.onDidDelete(reread),
@@ -468,7 +360,7 @@ function html(webview: vscode.Webview, out: vscode.Uri): string {
     <main
       id="page"
       data-worker="${asset("page/worker.js")}"
-      data-glue="${asset("wasm/kaalang_js.js")}"
+      data-glue="${asset("wasm/kaalang_js.mjs")}"
       data-module="${asset("wasm/kaalang_js_bg.wasm")}"
     ></main>
     <script type="module" src="${asset("webview.js")}"></script>
@@ -476,36 +368,29 @@ function html(webview: vscode.Webview, out: vscode.Uri): string {
 </html>`;
 }
 
-/** The type the editor's hover gives the value bound at `offset`, or `null`. */
-async function typeAt(
-  document: vscode.TextDocument,
-  offset: number,
-): Promise<string | null> {
-  if (document.isClosed) {
-    return null;
-  }
+/** The Markdown of the editor's hover at this place, empty when unavailable. */
+async function hoverAt(uri: string, offset: number): Promise<string> {
   try {
-    return hoverType(await hoverAt(document, offset));
+    const document = await vscode.workspace.openTextDocument(
+      vscode.Uri.parse(uri),
+    );
+    const position = document.positionAt(offset);
+    if (document.offsetAt(position) !== offset) {
+      return "";
+    }
+    const hovers =
+      (await vscode.commands.executeCommand<vscode.Hover[] | undefined>(
+        "vscode.executeHoverProvider",
+        document.uri,
+        position,
+      )) ?? [];
+    return hovers
+      .flatMap((hover) => hover.contents)
+      .map((part) => (typeof part === "string" ? part : part.value))
+      .join("\n");
   } catch {
-    return null;
+    return "";
   }
-}
-
-/** The text of the editor's hover at `offset`, as Markdown. */
-async function hoverAt(
-  document: vscode.TextDocument,
-  offset: number,
-): Promise<string> {
-  const hovers =
-    (await vscode.commands.executeCommand<vscode.Hover[] | undefined>(
-      "vscode.executeHoverProvider",
-      document.uri,
-      document.positionAt(offset),
-    )) ?? [];
-  return hovers
-    .flatMap((hover) => hover.contents)
-    .map((part) => (typeof part === "string" ? part : part.value))
-    .join("\n");
 }
 
 /**

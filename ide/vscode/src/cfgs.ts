@@ -4,15 +4,10 @@
 
 import * as path from "node:path";
 
-/** An entry of `rust-analyzer.cargo.cfgs`: `name` or `name=value`, `!` before one to leave it out. */
-const EXTRA_CFG = /^(!?)([A-Za-z_][A-Za-z0-9_]*)(?:=([^"]*))?$/;
+import type { Metadata } from "./metadata";
 
-/** The part of `cargo metadata`'s answer the set needs. */
-export interface Metadata {
-  packages: { id: string; manifest_path: string }[];
-  workspace_members: string[];
-  resolve: { nodes: { id: string; features: string[] }[] } | null;
-}
+/** An entry of `rust-analyzer.cargo.cfgs`: `name` or `name=value`, `!` before one to leave it out. */
+const EXTRA_CFG = /^(!?)([A-Za-z_][A-Za-z0-9_]*)(?:=([^"\r\n]*))?$/;
 
 /**
  * Applies the entries of `rust-analyzer.cargo.cfgs` to `lines`, as rust-analyzer
@@ -24,6 +19,8 @@ export function applyExtraCfgs(
   entries: unknown[],
   log: (line: string) => void,
 ): void {
+  const enabled = new Set<string>();
+  const disabled = new Set<string>();
   for (const entry of entries) {
     const match = typeof entry === "string" ? EXTRA_CFG.exec(entry) : null;
     if (match === null) {
@@ -34,41 +31,51 @@ export function applyExtraCfgs(
     }
     const [, remove, name, value] = match;
     const line = value === undefined ? name : `${name}="${value}"`;
-    if (remove) {
-      lines.delete(line);
-    } else {
+    (remove ? disabled : enabled).add(line);
+  }
+  // rust-analyzer cancels an override that is both enabled and disabled.
+  for (const line of enabled) {
+    if (!disabled.has(line)) {
       lines.add(line);
+    }
+  }
+  for (const line of disabled) {
+    if (!enabled.has(line)) {
+      lines.delete(line);
     }
   }
 }
 
 /**
- * Adds to `lines` what the package holding `file`, a real path, gives it: the
- * features cargo enables for it, and for a workspace crate `rust_analyzer`, as
- * rust-analyzer sets it, and `test` when `setTest` asks.
+ * rust-analyzer sets the local crate's flags, applies the configured
+ * overrides, then adds the package features from cargo.
  */
-export function addPackageCfgs(
-  lines: Set<string>,
-  metadata: Metadata,
-  file: string,
-  setTest: boolean,
-): void {
+export function fileCfgs(
+  rustc: string[],
+  metadata: Metadata | undefined,
+  file: string | undefined,
+  options: { cfgs: unknown[]; setTest: boolean },
+  log: (line: string) => void,
+): string {
+  const lines = new Set(rustc);
   // The package whose directory holds the file most closely.
-  const owner = metadata.packages
+  const source = file === undefined ? undefined : path.normalize(file);
+  const owner = metadata?.packages
     .filter((candidate) =>
-      file.startsWith(path.dirname(candidate.manifest_path) + path.sep),
+      source?.startsWith(
+        path.join(path.dirname(candidate.manifest_path), path.sep),
+      ),
     )
     .sort((a, b) => b.manifest_path.length - a.manifest_path.length)[0];
-  if (owner === undefined) {
-    return;
-  }
-  metadata.resolve?.nodes
-    .find((node) => node.id === owner.id)
-    ?.features.forEach((feature) => lines.add(`feature="${feature}"`));
-  if (metadata.workspace_members.includes(owner.id)) {
+  if (owner?.source === null) {
     lines.add("rust_analyzer");
-    if (setTest) {
+    if (options.setTest) {
       lines.add("test");
     }
   }
+  applyExtraCfgs(lines, options.cfgs, log);
+  metadata?.resolve?.nodes
+    .find((node) => node.id === owner?.id)
+    ?.features.forEach((feature) => lines.add(`feature="${feature}"`));
+  return [...lines].join("\n");
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import test from "node:test";
 
-import { hoverModule, hoverType } from "../out/hover.js";
+import { hoverModule, hoverType, moduleHovers } from "../out/hover.js";
 
 // Hovers rust-analyzer 0.3.3121 gave in the repository's fixtures, with the
 // macro expanded and, for the last two, before it expands, cut after the parts
@@ -92,6 +92,36 @@ test("a type at its crate's root is in the crate itself", () => {
     ),
     "spike",
   );
+});
+
+test("a module named with a raw identifier keeps its spelling", () => {
+  assert.equal(
+    hoverModule("```rust\nshop::r#type\n```\n\n```rust\npub struct Raw;\n```"),
+    "shop::r#type",
+  );
+});
+
+test("hover fills an unknown module or chooses among the focus's crate roots", async () => {
+  const places = [1, 2, 3].map((offset) => ({
+    uri: "file:///model.rs",
+    offset,
+  }));
+  const asked = [];
+  const hover = async (_uri, offset) => {
+    asked.push(offset);
+    return "```rust\nshop::model\n```\n\n```rust\nstruct Focus;\n```";
+  };
+  assert.deepEqual(
+    await moduleHovers(places, [[{}, {}], [{}, {}], null], hover),
+    ["shop::model", null, "shop::model"],
+  );
+  assert.deepEqual(asked, [1, 3]);
+  assert.deepEqual(await moduleHovers(places, [[{}], [{}], [{}]], hover), [
+    null,
+    null,
+    null,
+  ]);
+  assert.deepEqual(asked, [1, 3]);
 });
 
 test("a hover at a binding gives no module", () => {

@@ -120,7 +120,8 @@ leaves the SVG files untouched.
 
 `just wasm test` builds the WebAssembly bindings as a page loads them and runs
 them in Node: every fixture flow draws its golden diagram there, memory stays
-level, and positions count UTF-16 code units. `just ide test` checks in Node
+level, and positions count UTF-16 code units. A multi-target workspace checks
+the editor's type diagram against the CLI's SVG. `just ide test` checks in Node
 which hotspots a click on the IDE page takes and what it asks of the host.
 
 Try a change to the IDE page in a browser before committing it:
@@ -163,8 +164,8 @@ every type its `mod.rs` declares, datatype or plain type, named after the type
 in snake case. The first type is the case's subject, and its diagram is named
 after the directory instead, as `many_incoming_types/many_incoming_types.svg`. A
 type's incoming types there are those in the same file that refer to it by its
-bare name. Every fixture is read for 64-bit Linux, fixed in `tests/diagrams.rs`,
-so the diagrams do not depend on the machine that draws them.
+bare name. The Rust and WebAssembly tests draw the fixtures for the same 64-bit
+Linux target from `crates/kaalang/tests/diagram-target.cfg`.
 
 Hand-written stress fixtures live in `crates/kaalang/tests/stress/<flow>/mod.rs`
 with their tests and diagrams. They combine language features heavily and get

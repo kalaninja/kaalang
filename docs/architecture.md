@@ -186,14 +186,15 @@ A type diagram has no arrangement to decide or compact. The entry point
 [`render_type`](../crates/kaalang-svg/src/lib.rs) takes the focus card and the
 incoming cards from its caller, which reads each card's type through the
 compiler's `SourceFile` for its compilation target and decides the relationships
-each card draws into the focus, and the header each shows; `card_headers`
-shortens them by RFC 0010 for the CLI and the bindings alike. Beside the SVG it
-returns the hotspots of
+each card draws into the focus. The CLI and bindings use `CardCrate` for target
+order and row groups and `card_headers` for the paths in RFC 0010. Rendering
+errors identify the card so the CLI can name its file and the editor can omit an
+invalid incoming card. Beside the SVG the renderer returns the hotspots of
 [`datatype/navigation.rs`](../crates/kaalang-svg/src/datatype/navigation.rs):
 every path a tile's type names, every relationship's target, and every incoming
 card's header, each with its card. Where each path stands in a field's type,
-where a target names its type, and which relationships of a file an engine's
-references to a type reach are the compiler's facts, in
+where each relationship names its target, and which relationships an editor's
+source offsets identify are the compiler's facts, in
 [`source/cards.rs`](../crates/kaalang-compiler/src/source/cards.rs).
 
 | Step                                                                                                      | Work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -209,21 +210,26 @@ kaalang supports VS Code. Every supported IDE shows
 `kaalang-js` in a worker, draws the flow or the type at the editor's cursor,
 lists the ribbon of a clicked connection or merge, and asks its host to reveal a
 range, to run the editor's own go-to action at a position, for the types of
-values, for the references to a type, or for a type's module; a host gives the
-text, the cursor, the target's cfg set, and what the editor knows. A type
-diagram draws as incoming cards the types whose relationships the references
-reach, from every text the host gives with them.
+values, and for a type's references and places in the module tree. The host
+supplies the text, cursor, target cfgs and editor results. The page accepts
+references, definitions, and module positions for the current type and source
+snapshot.
 
 In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
 rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
-cargo's configuration applied, the extra cfgs its settings list, the features
-cargo enables for the file's package, and `rust_analyzer` and `test` for a
-workspace crate. It reads a value's type from rust-analyzer's hover at its
-binding, and a type's module from the hover at its name. It follows only the
-workspace's documents, so a type from outside it opens in the editor alone. It
-opens what a click finds as the editor's own go-to does, from where the cursor
-stands, so that the diagram follows only the target and going back returns. In
-Restricted Mode it runs neither cargo nor rustc, whose binaries the workspace's
-configuration may name: the diagram goes without the set, and what rust-analyzer
-gives, the types, incoming cards, module paths, and go-to actions, waits for
-trust, as rust-analyzer does.
+cargo's configuration applied, local crate flags, settings overrides and the
+package's active features. It reads a value's type from rust-analyzer's hover at
+its binding. Cargo identifies workspace targets. The CLI and VS Code follow the
+same compiler rules for module files and `#[path]`. The extension reads unsaved
+text from the editor and runs the compiler in a Node worker. When a reference
+search misses a renamed type, the host can resolve the relationship at the
+position the compiler gives it. The bindings use module positions to put
+incoming cards in source order, including across files. A file shared by targets
+contributes its card at the first place in diagram order. The panel follows Rust
+editors in the VS Code workspace folders. A go-to can open a file outside those
+folders. It opens what a click finds as the editor's own go-to does, from where
+the cursor stands, so that the diagram follows only the target and going back
+returns. In Restricted Mode it runs neither cargo nor rustc, whose binaries the
+workspace's configuration may name: the diagram goes without the set, and what
+rust-analyzer gives, the types, incoming cards, module paths, and go-to actions,
+waits for trust, as rust-analyzer does.

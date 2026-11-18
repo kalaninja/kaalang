@@ -107,29 +107,31 @@ function area(hotspot) {
  * What a navigating click on `hotspot` asks of the host: a call goes to its
  * callee's definition, a wire name to its value's type, a path in a card or a
  * relationship's target to its definition, any other node to its block's code,
- * and an incoming card's header to its type's name. A hotspot from a type
- * diagram's other text names it by its uri among `uris`.
+ * and an incoming card's header to its type's name. Each names the text its
+ * offsets count in, even if the editor has switched documents since the click.
  *
  * @param {Hotspot} hotspot
- * @param {string[]} [uris]
+ * @param {string[]} uris
+ * @param {string[]} [texts] Each card's source snapshot, for a jump outside the focus.
  */
-export function request(hotspot, uris = []) {
-  let message;
+export function request(hotspot, uris, texts) {
+  const source = hotspot.source ?? 0;
+  const file = { uri: uris[source] };
+  if (source > 0 && texts) file.text = texts[source];
   switch (hotspot.kind) {
     case "call":
-      message = { type: "definition", offset: hotspot.calleeStart };
-      break;
+      return { type: "definition", ...file, offset: hotspot.calleeStart };
     case "wire":
-      message = { type: "typeDefinition", offset: hotspot.start };
-      break;
+      return { type: "typeDefinition", ...file, offset: hotspot.start };
     case "path":
     case "target":
-      message = { type: "definition", offset: hotspot.start };
-      break;
+      return { type: "definition", ...file, offset: hotspot.start };
     default:
-      message = { type: "reveal", start: hotspot.start, end: hotspot.end };
+      return {
+        type: "reveal",
+        ...file,
+        start: hotspot.start,
+        end: hotspot.end,
+      };
   }
-  return hotspot.source > 0
-    ? { ...message, uri: uris[hotspot.source] }
-    : message;
 }

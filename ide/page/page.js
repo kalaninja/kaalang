@@ -7,6 +7,7 @@
 
 import { Crash, createEngine } from "./engine.js";
 import { carryingAt, innermost, request, wires } from "./hotspots.js";
+import { TypeContext } from "./type-context.js";
 
 /** How long typing pauses before the page draws again, in milliseconds. */
 const PAUSE = 100;
@@ -33,27 +34,30 @@ let cells = 0;
  *   each offset answered maps to the type's text, or to `null` when the host
  *   learns none;
  * - `{type: "referrers", id, files: [{uri, text, cfg, offsets}]}` in answer to
- *   `referrers`: each text where the engine finds references to the type, the
- *   followed document's included, with the cfg set it is read for and the
- *   references' starts;
- * - `{type: "modules", id, modules}` in answer to `modules`: each place's
- *   module path, starting with its crate's name, or `null`;
+ *   `referrers`: candidate texts in the workspace, each with its cfg and the
+ *   starts of the references the engine already found;
+ * - `{type: "definitions", id, matches}` in answer to `definitions`: a boolean
+ *   per place saying whether its definition is the focus;
+ * - `{type: "modules", id, modules, placements}` in answer to `modules`: each
+ *   place's module path from hover and its positions in the Cargo targets;
  * - `{type: "changed"}` when the engine may answer `referrers` otherwise: it
  *   has analyzed more, or a document was saved.
  *
  * To the host:
  * - `{type: "ready"}` once started;
- * - `{type: "reveal", start, end}` to select a node's code;
- * - `{type: "definition", offset}` and `{type: "typeDefinition", offset}` to
- *   run the editor's own go-to action there. The editor's cursor moves to the
- *   target, and the diagram follows it. Each of these three may name another
- *   document by its `uri`, which its offsets count in;
- * - `{type: "types", id, offsets}` for the types of the values bound at these
+ * - `{type: "reveal", uri, start, end}` to select a node's code;
+ * - `{type: "definition", uri, offset}` and `{type: "typeDefinition", uri, offset}`
+ *   to run the editor's own go-to action in the document drawn. The editor's
+ *   cursor moves to the target, and the diagram follows it. A go-to or reveal
+ *   from a card in another file includes its drawn `text`;
+ * - `{type: "types", id, uri, offsets}` for the types of the values bound at these
  *   offsets, as the editor's hover gives them; each answer repeats `id`;
  * - `{type: "referrers", id, uri, offset}` for the references to the type
  *   named at this offset of that document, as the editor's engine finds them;
- * - `{type: "modules", id, places: [{uri, offset}]}` for the module path of
- *   the type named at each place, as the editor's hover gives it;
+ * - `{type: "definitions", id, uri, offset, places: [{uri, offset}]}` to check
+ *   which relationship targets resolve to the focus type;
+ * - `{type: "modules", id, uri, places: [{uri, path, offset}]}` for each card's module
+ *   and its positions in the focus document's workspace;
  * - `{type: "back"}` and `{type: "forward"}` for a mouse's back and forward
  *   buttons, which go through the editor's own history.
  *
@@ -84,44 +88,35 @@ export function start(root, host) {
     cursor: 0,
     cfg: "",
     /**
-     * What the cursor was last in, `{flow}` by its position in the text or
-     * `{type}` by its path; until then the first flow is drawn.
+     * What the cursor was last in, by its path in the file. Until then the
+     * first flow is drawn.
      */
     declared: null,
     collapseCycles: false,
   };
-  /** What the host found about types, for the diagram of one. */
-  const known = {
-    /** The newest references the host answered: `{id, uri, path, files}`. */
-    referrers: null,
-    /** Each type's module path, by its text's uri, then its path within it. */
-    modules: new Map(),
-    /** Counts what was learned, so that a type's diagram is drawn again. */
-    version: 0,
-  };
-  /** Numbers the requests for what the host knows of types. */
-  let asking = 0;
-  /** What the last `referrers` asked about: `{uri, path, text}`. */
-  let askedFor = null;
-  /** The `{uri, path}` of each `referrers` request without an answer, by id. */
-  const referrersAsked = new Map();
-  /** The places of each `modules` request without an answer, by its id. */
-  const modulesAsked = new Map();
-  /** The types whose module path was asked, by uri, then path. */
-  const askedModules = new Map();
+  /** References and module paths belong to one type in one source snapshot. */
+  let type = null;
   /** What the diagram on screen was drawn from. */
   let drawn = null;
   /** Counts updates, so that an answer an update has overtaken is dropped. */
   let generation = 0;
   let timer;
+  let drawing = false;
 
   function schedule(delay) {
+    ++generation;
     clearTimeout(timer);
-    timer = setTimeout(update, delay);
+    timer = setTimeout(() => {
+      timer = undefined;
+      if (!drawing) {
+        void update();
+      }
+    }, delay);
   }
 
   async function update() {
-    const current = ++generation;
+    drawing = true;
+    const current = generation;
     const { text, cfg, cursor, collapseCycles } = state;
     try {
       const declared = await engine.declaredAt(text, cfg, cursor);
@@ -132,26 +127,38 @@ export function start(root, host) {
         state.declared = declared;
       }
       const shown = state.declared ?? { flow: 0 };
-      const { version } = known;
+      if (shown.type !== type?.path) {
+        type = shown.type === undefined ? null : new TypeContext(shown.type);
+      }
+      const version = type?.version;
       if (
         drawn?.text === text &&
         drawn.cfg === cfg &&
         drawn.shown.flow === shown.flow &&
+        drawn.shown.path === shown.path &&
         drawn.shown.type === shown.type &&
         drawn.collapseCycles === collapseCycles &&
-        // What the host learns of types redraws only a type's diagram.
-        (shown.type === undefined || drawn.version === version)
+        drawn.type === type &&
+        drawn.version === version
       ) {
         show(null);
         return;
       }
       let uris = [state.uri];
+      let texts;
       let result;
       if (shown.type === undefined) {
-        result = await engine.drawFlow(text, cfg, shown.flow, collapseCycles);
+        result = await engine.drawFlow(
+          text,
+          cfg,
+          shown.flow,
+          collapseCycles,
+          shown.path,
+        );
       } else {
-        const context = typeContext(shown.type);
+        const context = type.sources(state.uri, text);
         uris = context.uris;
+        texts = context.texts;
         result = await engine.drawType(
           text,
           cfg,
@@ -180,16 +187,19 @@ export function start(root, host) {
         text,
         cfg,
         shown,
+        type,
         collapseCycles,
         version,
         hotspots: result?.hotspots ?? [],
         wires: result?.wires ?? [],
+        cards: result?.cards,
         uris,
+        texts,
         outlines,
       };
       show(null);
-      if (shown.type !== undefined && result !== null) {
-        learn(shown.type, text, result.cards, uris);
+      if (drawn.cards) {
+        type.ask(host, drawn.cards, uris);
       }
     } catch (error) {
       if (current !== generation) {
@@ -200,6 +210,12 @@ export function start(root, host) {
           ? `Internal error: ${error.message}. Edit the text to try again.`
           : error.message,
       );
+    } finally {
+      drawing = false;
+      // If typing paused while the worker was busy, draw just the latest text.
+      if (current !== generation && timer === undefined) {
+        void update();
+      }
     }
   }
 
@@ -211,80 +227,6 @@ export function start(root, host) {
     close();
     highlight([]);
     diagram.innerHTML = html;
-  }
-
-  /**
-   * What `drawType` takes beside the text, from the host's latest references
-   * to the type at `path` of the followed document, and the uri of each text
-   * its sources number. The references in the followed text keep their
-   * offsets while it changes, until the host answers for the new text.
-   */
-  function typeContext(path) {
-    const { uri } = state;
-    const files =
-      known.referrers?.uri === uri && known.referrers.path === path
-        ? known.referrers.files
-        : [];
-    const others = files.filter((file) => file.uri !== uri);
-    const modules = (of) => Object.fromEntries(known.modules.get(of) ?? []);
-    return {
-      uris: [uri, ...others.map((file) => file.uri)],
-      context: {
-        offsets: files.find((file) => file.uri === uri)?.offsets ?? [],
-        modules: modules(uri),
-        files: others.map((file) => ({
-          text: file.text,
-          cfg: file.cfg,
-          offsets: file.offsets,
-          modules: modules(file.uri),
-        })),
-      },
-    };
-  }
-
-  /**
-   * Asks the host for the references to the type at `path`, drawn from `text`,
-   * once per text, and for the module path of each of its `cards` not asked
-   * for since the type or the engine changed. The offsets count in the text
-   * drawn, so a text the host has since changed asks once it is drawn.
-   */
-  function learn(path, text, cards, uris) {
-    const { uri } = state;
-    if (text !== state.text) {
-      return;
-    }
-    if (askedFor?.uri !== uri || askedFor.path !== path) {
-      askedModules.clear();
-    }
-    if (
-      askedFor?.uri !== uri ||
-      askedFor.path !== path ||
-      askedFor.text !== text
-    ) {
-      askedFor = { uri, path, text };
-      const id = ++asking;
-      referrersAsked.set(id, { uri, path });
-      host.send({ type: "referrers", id, uri, offset: cards[0].start });
-    }
-    const places = cards
-      .map((card) => ({
-        uri: uris[card.source],
-        path: card.path,
-        offset: card.start,
-      }))
-      .filter(({ uri, path }) => !askedModules.get(uri)?.has(path));
-    if (places.length > 0) {
-      const id = ++asking;
-      for (const { uri, path } of places) {
-        askedModules.set(uri, (askedModules.get(uri) ?? new Set()).add(path));
-      }
-      modulesAsked.set(id, places);
-      host.send({
-        type: "modules",
-        id,
-        places: places.map(({ uri, offset }) => ({ uri, offset })),
-      });
-    }
   }
 
   /** Shows `message` over the last diagram, dimmed, or clears it. */
@@ -308,7 +250,7 @@ export function start(root, host) {
    */
   function targets(event, navigate) {
     const svg = diagram.querySelector("svg");
-    if (svg === null || drawn?.text !== state.text) {
+    if (svg === null || drawn?.text !== state.text || drawn.cfg !== state.cfg) {
       return [];
     }
     const { x, y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(
@@ -338,8 +280,8 @@ export function start(root, host) {
       rect.setAttribute("height", hotspot.bottom - hotspot.top);
       rect.dataset.kind = hotspot.kind;
       outlines.set(hotspot, rect);
+      group.append(rect);
     }
-    group.append(...outlines.values());
     svg.append(group);
     return outlines;
   }
@@ -382,6 +324,7 @@ export function start(root, host) {
   function open(listed, event) {
     close();
     const id = ++listing;
+    const uri = drawn.uris[0];
     popup = document.createElement("div");
     popup.className = "kaalang-popup";
     popup.setAttribute("role", "dialog");
@@ -395,7 +338,7 @@ export function start(root, host) {
       name.textContent = wire.name;
       name.addEventListener("click", () => {
         close();
-        host.send({ type: "typeDefinition", offset: wire.start });
+        host.send({ type: "typeDefinition", uri, offset: wire.start });
       });
       const type = document.createElement("span");
       type.id = `kaalang-type-${++cells}`;
@@ -423,6 +366,7 @@ export function start(root, host) {
       host.send({
         type: "types",
         id,
+        uri,
         offsets: listed.map((wire) => wire.start),
       });
     }
@@ -455,7 +399,7 @@ export function start(root, host) {
     const found = targets(event, navigate);
     if (found.length > 0 && navigate) {
       event.preventDefault();
-      host.send(request(found[0], drawn.uris));
+      host.send(request(found[0], drawn.uris, drawn.texts));
     } else if (found.length > 0) {
       open(wires(found, drawn.wires), event);
     }
@@ -493,8 +437,8 @@ export function start(root, host) {
     switch (message.type) {
       case "document":
         if (message.uri !== state.uri) {
-          // An answer about the last document must not reach this one.
-          ++generation;
+          type = null;
+          state.cfg = "";
           state.uri = message.uri;
           state.declared = null;
           drawn = null;
@@ -503,74 +447,42 @@ export function start(root, host) {
         if (message.text !== state.text) {
           // A list's offsets count in the text it was opened on.
           close();
+          type = null;
         }
         state.text = message.text;
         state.cursor = message.cursor;
         schedule(PAUSE);
         break;
       case "target":
-        state.cfg = message.cfg;
-        schedule(0);
+        if (message.cfg !== state.cfg) {
+          state.cfg = message.cfg;
+          type = null;
+          close();
+          schedule(0);
+        }
         break;
       case "changed":
-        // Only a type's diagram asks the engine. It asks again for the
-        // references, as for a new text, and for the module paths the engine
-        // did not know, keeping what it knows until the answers come.
-        if (drawn?.shown.type !== undefined) {
-          if (askedFor !== null) {
-            askedFor = { ...askedFor, text: null };
-          }
-          for (const [uri, paths] of askedModules) {
-            for (const path of paths) {
-              if (!known.modules.get(uri)?.has(path)) {
-                paths.delete(path);
-              }
-            }
-          }
-          ++known.version;
+        if (type !== null && drawn?.type === type) {
+          type.ask(host, drawn.cards, drawn.uris, true);
+        }
+        break;
+      case "referrers":
+      case "definitions":
+      case "modules":
+        if (type?.receive(message)) {
           schedule(0);
-        }
-        break;
-      case "referrers": {
-        const asked = referrersAsked.get(message.id);
-        // An older request, answered or not, is overtaken.
-        for (const id of referrersAsked.keys()) {
-          if (id <= message.id) {
-            referrersAsked.delete(id);
-          }
-        }
-        // A newer answer stands over an older one that arrives late.
-        if (asked !== undefined && !(known.referrers?.id > message.id)) {
-          known.referrers = { id: message.id, ...asked, files: message.files };
-          ++known.version;
-          schedule(0);
-        }
-        break;
-      }
-      case "modules": {
-        const places = modulesAsked.get(message.id);
-        if (places !== undefined) {
-          modulesAsked.delete(message.id);
-          // Only a module learned redraws, so that the unknown ones are not
-          // asked again at once.
-          let learned = false;
-          places.forEach(({ uri, path }, index) => {
-            const module = message.modules[index];
-            if (typeof module === "string") {
-              known.modules.set(
-                uri,
-                (known.modules.get(uri) ?? new Map()).set(path, module),
-              );
-              learned = true;
-            }
-          });
-          if (learned) {
-            ++known.version;
-            schedule(0);
+          if (message.type === "referrers") {
+            const context = type;
+            void context.checkDefinitions(
+              engine,
+              host,
+              state.text,
+              state.cfg,
+              () => type === context,
+            );
           }
         }
         break;
-      }
       case "types":
         if (message.id !== listing) {
           break;

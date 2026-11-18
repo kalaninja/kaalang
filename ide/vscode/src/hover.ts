@@ -33,7 +33,7 @@ export function hoverType(markdown: string): string | null {
 
 /** A path of names: `shop`, `shop::model::inner`. */
 const MODULE =
-  /^[\p{ID_Start}_]\p{ID_Continue}*(?:::[\p{ID_Start}_]\p{ID_Continue}*)*$/u;
+  /^(?:r#)?[\p{ID_Start}_]\p{ID_Continue}*(?:::(?:r#)?[\p{ID_Start}_]\p{ID_Continue}*)*$/u;
 
 /** The declaration of a type, after its visibility. */
 const DECLARATION = /^(?:pub(?:\([^)]*\))?\s+)?(?:struct|enum|union|type)\s/;
@@ -54,4 +54,19 @@ export function hoverModule(markdown: string): string | null {
   return MODULE.test(module ?? "") && DECLARATION.test(declaration ?? "")
     ? module
     : null;
+}
+
+/** Consult hover for an unknown module or to choose among a focus's crate roots. */
+export function moduleHovers(
+  places: { uri: string; offset: number }[],
+  placements: (unknown[] | null)[],
+  hover: (uri: string, offset: number) => Promise<string>,
+): Promise<(string | null)[]> {
+  return Promise.all(
+    places.map(async ({ uri, offset }, index) => {
+      const count = placements[index]?.length;
+      if (count && (index > 0 || count === 1)) return null;
+      return hoverModule(await hover(uri, offset));
+    }),
+  );
 }

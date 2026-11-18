@@ -162,15 +162,28 @@ test("a click off every connection lists nothing", () => {
 });
 
 test("a call asks for its callee's definition", () => {
-  assert.deepEqual(request(node), { type: "definition", offset: 30 });
+  assert.deepEqual(request(node, ["a.rs"]), {
+    type: "definition",
+    uri: "a.rs",
+    offset: 30,
+  });
 });
 
 test("a wire name asks for its value's type", () => {
-  assert.deepEqual(request(wire), { type: "typeDefinition", offset: 50 });
+  assert.deepEqual(request(wire, ["a.rs"]), {
+    type: "typeDefinition",
+    uri: "a.rs",
+    offset: 50,
+  });
 });
 
 test("any other node asks to reveal its code", () => {
-  assert.deepEqual(request(boundary), { type: "reveal", start: 0, end: 90 });
+  assert.deepEqual(request(boundary, ["a.rs"]), {
+    type: "reveal",
+    uri: "a.rs",
+    start: 0,
+    end: 90,
+  });
 });
 
 test("a path in a card or a target asks for its definition", () => {
@@ -187,12 +200,13 @@ test("a path in a card or a target asks for its definition", () => {
     };
     assert.deepEqual(request(spot, ["a.rs"]), {
       type: "definition",
+      uri: "a.rs",
       offset: 7,
     });
   }
 });
 
-test("a hotspot from another text names that text", () => {
+test("a hotspot from another file names its drawn text", () => {
   const header = {
     kind: "header",
     left: 0,
@@ -203,10 +217,11 @@ test("a hotspot from another text names that text", () => {
     start: 4,
     end: 10,
   };
-  assert.deepEqual(request(header, ["a.rs", "b.rs"]), {
+  assert.deepEqual(request(header, ["a.rs", "b.rs"], ["focus", "snapshot"]), {
     type: "reveal",
     start: 4,
     end: 10,
     uri: "b.rs",
+    text: "snapshot",
   });
 });

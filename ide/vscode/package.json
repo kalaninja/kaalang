@@ -1,7 +1,7 @@
 {
   "name": "kaalang",
   "displayName": "kaalang",
-  "description": "Flow diagrams of kaalang code, drawn as you type.",
+  "description": "Flow and type diagrams of kaalang code, drawn as you type.",
   "version": "0.4.0",
   "publisher": "kaalang",
   "private": true,

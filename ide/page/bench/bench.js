@@ -73,6 +73,19 @@ const receive = start(page, {
         );
         break;
       }
+      case "definitions": {
+        const name = editor.value.slice(...word(message.offset));
+        receive({
+          type: "definitions",
+          id: message.id,
+          matches: message.places.map(
+            (place) =>
+              place.uri === uri &&
+              editor.value.slice(...word(place.offset)) === name,
+          ),
+        });
+        break;
+      }
       case "modules":
         // Every type at the crate root.
         receive({
