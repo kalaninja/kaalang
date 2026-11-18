@@ -206,6 +206,10 @@ export function activate(context: vscode.ExtensionContext): void {
         void sendCfg();
       }
     }),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      offered = false;
+      void sendCfg();
+    }),
     manifests,
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
@@ -275,15 +279,38 @@ async function typeAt(
   }
 }
 
-/** Whether this session has offered rust-analyzer: once is enough. */
+/**
+ * Whether rust-analyzer, or the trust it needs, was offered since activation or
+ * since trust was granted: once is enough.
+ */
 let offered = false;
 
-/** Offers rust-analyzer, which types and go-to actions need, when it is missing. */
+/**
+ * Offers rust-analyzer, which types and go-to actions need, when it is missing,
+ * or the trust it needs to run in Restricted Mode, unless its settings let it
+ * run there.
+ */
 async function offerRustAnalyzer(): Promise<void> {
-  if (offered || vscode.extensions.getExtension(RUST_ANALYZER) !== undefined) {
+  const trusted = vscode.workspace.isTrusted;
+  const extension = vscode.extensions.getExtension(RUST_ANALYZER);
+  if (
+    offered ||
+    (trusted ? extension !== undefined : extension?.isActive === true)
+  ) {
     return;
   }
   offered = true;
+  if (!trusted) {
+    const trust = "Manage Workspace Trust";
+    const choice = await vscode.window.showInformationMessage(
+      "Types and go-to actions in the diagram need rust-analyzer, which does not run in Restricted Mode.",
+      trust,
+    );
+    if (choice === trust) {
+      await vscode.commands.executeCommand("workbench.trust.manage");
+    }
+    return;
+  }
   const install = "Install";
   const choice = await vscode.window.showInformationMessage(
     "Types and go-to actions in the diagram need rust-analyzer.",

@@ -37,6 +37,9 @@ const roots = new Map<string, Promise<string | undefined>>();
 /** Each workspace read, by its root and the options it was read with. */
 const workspaces = new Map<string, Promise<Workspace>>();
 
+/** Whether Restricted Mode was logged: once is enough. */
+let restricted = false;
+
 /** Whether `event` changes a setting the set depends on. */
 export function affectsCfg(event: vscode.ConfigurationChangeEvent): boolean {
   return SECTIONS.some((section) => event.affectsConfiguration(section));
@@ -48,11 +51,24 @@ export function forgetCfg(): void {
   workspaces.clear();
 }
 
-/** The set for `file`; whatever cannot be read is left out and `log`ged. */
+/**
+ * The set for `file`; whatever cannot be read is left out and `log`ged. Empty
+ * in Restricted Mode: cargo and rustc run whatever binaries the workspace's
+ * configuration names.
+ */
 export async function cfg(
   file: vscode.Uri,
   log: (line: string) => void,
 ): Promise<string> {
+  if (!vscode.workspace.isTrusted) {
+    if (!restricted) {
+      restricted = true;
+      log(
+        "Restricted Mode: the diagram is drawn without the target's cfg set.",
+      );
+    }
+    return "";
+  }
   const settings = vscode.workspace.getConfiguration("rust-analyzer", file);
   const options: Options = {
     target: settings.get<string | null>("cargo.target") ?? null,

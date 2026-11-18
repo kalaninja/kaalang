@@ -209,4 +209,6 @@ rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
 cargo's configuration applied, the extra cfgs its settings list, the features
 cargo enables for the file's package, and `rust_analyzer` and `test` for a
 workspace crate. It reads a value's type from rust-analyzer's hover at its
-binding.
+binding. In Restricted Mode it runs neither cargo nor rustc, whose binaries the
+workspace's configuration may name: the diagram goes without the set, and types
+and go-to actions wait for trust, as rust-analyzer does.

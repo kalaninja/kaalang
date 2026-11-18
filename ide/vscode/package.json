@@ -13,6 +13,12 @@
     "Visualization"
   ],
   "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In Restricted Mode the diagram is drawn without the target's cfg set, since reading it runs cargo and rustc, and types and go-to actions wait for rust-analyzer, which does not run there."
+    }
+  },
   "contributes": {
     "commands": [
       {
