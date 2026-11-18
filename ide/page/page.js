@@ -53,7 +53,9 @@ let cells = 0;
  * - `{type: "referrers", id, uri, offset}` for the references to the type
  *   named at this offset of that document, as the editor's engine finds them;
  * - `{type: "modules", id, places: [{uri, offset}]}` for the module path of
- *   the type named at each place, as the editor's hover gives it.
+ *   the type named at each place, as the editor's hover gives it;
+ * - `{type: "back"}` and `{type: "forward"}` for a mouse's back and forward
+ *   buttons, which go through the editor's own history.
  *
  * A host colors the page with the `--vscode-*` variables `page.css` reads, as a
  * VS Code webview sets them.
@@ -467,6 +469,22 @@ export function start(root, host) {
   });
   window.addEventListener("blur", close);
   diagram.addEventListener("scroll", close);
+
+  // A frame keeps a mouse's back and forward buttons from the editor, which
+  // goes through its history with them everywhere else. Pressed, they and a
+  // navigating click leave the focus in the editor: a diagram that takes it
+  // is a stop in that history where nothing moves, and drops every stop ahead.
+  root.addEventListener("mousedown", (event) => {
+    if (event.button === 3 || event.button === 4 || navigating(event)) {
+      event.preventDefault();
+    }
+  });
+  root.addEventListener("mouseup", (event) => {
+    if (event.button === 3 || event.button === 4) {
+      event.preventDefault();
+      host.send({ type: event.button === 3 ? "back" : "forward" });
+    }
+  });
 
   // After `start` returns, so that the host holds the receiver by then.
   queueMicrotask(() => host.send({ type: "ready" }));

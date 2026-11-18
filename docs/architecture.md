@@ -221,9 +221,9 @@ cargo enables for the file's package, and `rust_analyzer` and `test` for a
 workspace crate. It reads a value's type from rust-analyzer's hover at its
 binding, and a type's module from the hover at its name. It follows only the
 workspace's documents, so a type from outside it opens in the editor alone. It
-opens a go-to request's only target at once, without first moving the cursor to
-the place clicked, which the diagram would follow. In Restricted Mode it runs
-neither cargo nor rustc, whose binaries the workspace's configuration may name:
-the diagram goes without the set, and what rust-analyzer gives, the types,
-incoming cards, module paths, and go-to actions, waits for trust, as
-rust-analyzer does.
+opens what a click finds as the editor's own go-to does, from where the cursor
+stands, so that the diagram follows only the target and going back returns. In
+Restricted Mode it runs neither cargo nor rustc, whose binaries the workspace's
+configuration may name: the diagram goes without the set, and what rust-analyzer
+gives, the types, incoming cards, module paths, and go-to actions, waits for
+trust, as rust-analyzer does.

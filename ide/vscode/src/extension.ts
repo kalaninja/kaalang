@@ -17,12 +17,6 @@ const VIEW_TYPE = "kaalang.diagram";
 /** The language server that answers the editor's go-to actions and hovers on Rust. */
 const RUST_ANALYZER = "rust-lang.rust-analyzer";
 
-/** The editor action each of the page's go-to requests runs. */
-const ACTIONS = {
-  definition: "editor.action.revealDefinition",
-  typeDefinition: "editor.action.goToTypeDefinition",
-};
-
 /** The provider that finds the targets of each go-to request. */
 const PROVIDERS = {
   definition: "vscode.executeDefinitionProvider",
@@ -33,10 +27,11 @@ const PROVIDERS = {
 type Request =
   | { type: "ready" }
   | { type: "reveal"; start: number; end: number; uri?: string }
-  | { type: keyof typeof ACTIONS; offset: number; uri?: string }
+  | { type: keyof typeof PROVIDERS; offset: number; uri?: string }
   | { type: "types"; id: number; offsets: number[] }
   | { type: "referrers"; id: number; uri: string; offset: number }
-  | { type: "modules"; id: number; places: { uri: string; offset: number }[] };
+  | { type: "modules"; id: number; places: { uri: string; offset: number }[] }
+  | { type: "back" | "forward" };
 
 export function activate(context: vscode.ExtensionContext): void {
   const out = vscode.Uri.joinPath(context.extensionUri, "out");
@@ -111,7 +106,7 @@ export function activate(context: vscode.ExtensionContext): void {
         void sendCfg();
         break;
       case "reveal":
-        await select(request.start, request.end, request.uri);
+        await reveal(request.start, request.end, request.uri);
         break;
       case "definition":
       case "typeDefinition":
@@ -128,17 +123,25 @@ export function activate(context: vscode.ExtensionContext): void {
       case "modules":
         void sendModules(request.id, request.places, reply);
         break;
+      case "back":
+        await vscode.commands.executeCommand("workbench.action.navigateBack");
+        break;
+      case "forward":
+        await vscode.commands.executeCommand(
+          "workbench.action.navigateForward",
+        );
+        break;
     }
   }
 
   /**
    * Runs the go-to request `type` at `offset` of the followed document, or of
-   * the one at `uri`, from wherever the cursor is, so that the diagram follows
-   * only the target: a single one opens at once, several as the editor's own
-   * action shows them from the place asked about, and none is said.
+   * the one at `uri`, and opens what it finds as the editor's own go-to does,
+   * without first moving the cursor to the place asked about: the diagram
+   * follows only the target. None found is said.
    */
   async function goTo(
-    type: keyof typeof ACTIONS,
+    type: keyof typeof PROVIDERS,
     offset: number,
     uri?: string,
   ): Promise<void> {
@@ -162,23 +165,39 @@ export function activate(context: vscode.ExtensionContext): void {
       );
       return;
     }
-    if (found.length === 1) {
-      const [target] = found;
-      const [targetUri, selection] =
+    await jump(
+      found.map((target) =>
         "targetUri" in target
-          ? [
+          ? new vscode.Location(
               target.targetUri,
               target.targetSelectionRange ?? target.targetRange,
-            ]
-          : [target.uri, target.range];
-      await vscode.window.showTextDocument(targetUri, {
-        viewColumn: source.viewColumn,
-        selection,
-      });
+            )
+          : target,
+      ),
+    );
+  }
+
+  /**
+   * Opens `locations` as the editor's own go-to does, from where the followed
+   * editor's cursor stands, so that going back returns there: a single one at
+   * once, several in a peek.
+   */
+  async function jump(locations: vscode.Location[]): Promise<void> {
+    if (source === undefined) {
       return;
     }
-    await select(offset, offset, uri);
-    await vscode.commands.executeCommand(ACTIONS[type]);
+    // The go-to runs from the editor that has focus; a closed one reopens.
+    const editor = await vscode.window.showTextDocument(source.document, {
+      viewColumn: source.viewColumn,
+    });
+    await vscode.commands.executeCommand(
+      "editor.action.goToLocations",
+      editor.document.uri,
+      editor.selection.active,
+      locations,
+      "peek",
+      "",
+    );
   }
 
   /**
@@ -299,10 +318,10 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   /**
-   * Selects a range of the followed document, or of the one at `uri`, in the
-   * followed editor's column, which comes to the front.
+   * Selects a range of the followed document, or of the one at `uri`, as a
+   * jump going back returns from.
    */
-  async function select(
+  async function reveal(
     start: number,
     end: number,
     uri?: string,
@@ -311,15 +330,17 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     // The text the page counted the offsets in; a closed document stays readable.
-    const { viewColumn } = source;
     const document = uri === undefined ? source.document : await open(uri);
-    await vscode.window.showTextDocument(document, {
-      viewColumn,
-      selection: new vscode.Range(
-        document.positionAt(start),
-        document.positionAt(end),
-      ),
-    });
+    const range = new vscode.Range(
+      document.positionAt(start),
+      document.positionAt(end),
+    );
+    await jump([new vscode.Location(document.uri, range)]);
+    // The jump leaves the cursor at the start; the range shows what was asked.
+    const editor = vscode.window.activeTextEditor;
+    if (editor?.document === document) {
+      editor.selection = new vscode.Selection(range.start, range.end);
+    }
   }
 
   function show(column: vscode.ViewColumn): void {
