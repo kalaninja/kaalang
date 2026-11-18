@@ -3,7 +3,7 @@
 //! It serves `cargo kaalang` and the bindings an editor's page loads, and its
 //! API may change in any minor release.
 
-use std::{error::Error, fmt, num::NonZeroUsize};
+use std::{error::Error, fmt, num::NonZeroUsize, path::Path};
 
 #[cfg(doc)]
 use kaalang_compiler::{Analysis, SemanticModel, SourceFile};
@@ -206,6 +206,26 @@ pub struct TypeCard<'a> {
     pub relationships: &'a [usize],
 }
 
+/// A card the renderer could not draw, numbered as in its hotspots.
+#[derive(Debug)]
+pub struct CardError {
+    /// Zero for the focus, then the incoming cards in their given order.
+    pub card: usize,
+    pub error: RenderError,
+}
+
+impl fmt::Display for CardError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.error.fmt(formatter)
+    }
+}
+
+impl Error for CardError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.error)
+    }
+}
+
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
 /// Each group of incoming cards starts a new row and wraps into further rows
@@ -216,9 +236,8 @@ pub struct TypeCard<'a> {
 ///
 /// # Errors
 ///
-/// Returns [`RenderError::InvalidLabelCharacter`] when a card's text contains
-/// a character XML 1.0 cannot represent, for the focus before the incoming
-/// cards in their order.
+/// Returns the first [`CardError`] in drawing order when a card's text
+/// contains a character XML 1.0 cannot represent.
 ///
 /// # Panics
 ///
@@ -227,7 +246,7 @@ pub fn render_type(
     focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     options: TypeOptions,
-) -> Result<(String, Vec<Hotspot>), RenderError> {
+) -> Result<(String, Vec<Hotspot>), CardError> {
     datatype::render(focus, incoming, options.columns)
 }
 
@@ -237,6 +256,30 @@ pub fn render_type(
 pub struct CardPath<'a> {
     pub path: &'a str,
     pub other_crate: Option<&'a str>,
+}
+
+/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CardCrate<'a> {
+    pub package: &'a str,
+    /// Library and binaries, tests, examples, then benches.
+    pub group: u8,
+    pub name: &'a str,
+    pub root: &'a Path,
+}
+
+impl<'a> CardCrate<'a> {
+    /// The focus's crate comes first, then the other targets of its package.
+    #[must_use]
+    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
+        (!is_focus, Some(self.package) != focus_package, self)
+    }
+
+    /// Each package's target groups start separate rows in the diagram.
+    #[must_use]
+    pub fn group_key(self) -> (&'a str, u8) {
+        (self.package, self.group)
+    }
 }
 
 /// The header of each incoming card: a path from the focus's crate drops the
@@ -389,7 +432,9 @@ mod tests {
             header: path,
             relationships: &[],
         };
-        render_type(&card, &[], TypeOptions::default()).map(|(svg, _)| svg)
+        render_type(&card, &[], TypeOptions::default())
+            .map(|(svg, _)| svg)
+            .map_err(|error| error.error)
     }
 
     #[test]

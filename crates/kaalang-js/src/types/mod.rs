@@ -3,23 +3,48 @@
 use std::collections::BTreeMap;
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType};
-use kaalang_svg::{CardPath, HotspotKind, TypeCard, TypeOptions};
+use kaalang_svg::{CardError, CardPath, HotspotKind, TypeCard, TypeOptions};
 use serde::{Deserialize, Serialize};
 
+use self::order::{Place, Places};
 use crate::utf16;
+
+mod order;
+
+/// Where the editor can ask for the definitions of a file's relationship targets.
+pub(crate) fn relationship_targets(text: &str, cfg: &str) -> Result<String, String> {
+    let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
+    let offsets = utf16::Offsets::new(text);
+    let targets: Vec<_> = file
+        .relationship_offsets()
+        .into_iter()
+        .map(|byte| offsets.at(byte))
+        .collect();
+    Ok(serde_json::to_string(&targets).expect("source offsets serialize"))
+}
 
 /// What the editor found about the focus beyond its own text.
 #[derive(Default, Deserialize)]
 struct Context {
+    #[serde(flatten)]
+    focus: References,
+    /// Other texts where the engine finds references to the focus.
+    #[serde(default)]
+    files: Vec<File>,
+}
+
+/// What the editor knows about declarations and references in one text.
+#[derive(Default, Deserialize)]
+struct References {
     /// Where the engine finds references to the focus in its own text.
     #[serde(default)]
     offsets: Vec<u32>,
     /// The module path of types of the focus's text, by their path within it.
     #[serde(default)]
     modules: BTreeMap<String, String>,
-    /// Other texts where the engine finds references to the focus.
+    /// Each type's places in the workspace module tree, by its path in this file.
     #[serde(default)]
-    files: Vec<File>,
+    places: Places,
 }
 
 /// Another text, with the target's cfg set it is read for.
@@ -27,9 +52,8 @@ struct Context {
 struct File {
     text: String,
     cfg: String,
-    offsets: Vec<u32>,
-    #[serde(default)]
-    modules: BTreeMap<String, String>,
+    #[serde(flatten)]
+    references: References,
 }
 
 /// A text read for its target, with the references in it as bytes.
@@ -37,22 +61,17 @@ struct Source<'a> {
     file: SourceFile<'a>,
     offsets: utf16::Offsets,
     references: Vec<usize>,
-    modules: &'a BTreeMap<String, String>,
+    editor: &'a References,
 }
 
 impl<'a> Source<'a> {
-    fn read(
-        text: &'a str,
-        cfg: &str,
-        offsets: &[u32],
-        modules: &'a BTreeMap<String, String>,
-    ) -> Result<Self, String> {
+    fn read(text: &'a str, cfg: &str, editor: &'a References) -> Result<Self, String> {
         let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
         Ok(Self {
             file,
             offsets: utf16::Offsets::new(text),
-            references: utf16::bytes(text, offsets),
-            modules,
+            references: utf16::bytes(text, &editor.offsets),
+            editor,
         })
     }
 
@@ -95,10 +114,11 @@ struct Card {
 }
 
 /// One incoming card before it is drawn.
-struct Incoming {
+struct Incoming<'a> {
     source: usize,
     ty: SourceType,
     relationships: Vec<usize>,
+    place: Option<&'a Place>,
 }
 
 /// The answer as JSON, `null` when no type has `path` in `text`, or why the
@@ -110,38 +130,37 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
     } else {
         serde_json::from_str(context).map_err(|error| error.to_string())?
     };
-    let focus_source = Source::read(text, cfg, &context.offsets, &context.modules)?;
+    let focus_source = Source::read(text, cfg, &context.focus)?;
     let focus = match focus_source.file.ty(path) {
         Err(SourceError::TypeNotFound(_)) => return Ok("null".into()),
         focus => focus.map_err(|error| error.to_string())?,
     };
     // Each source by its number: the focus's text, then each file's.
     let sources: Vec<Option<Source>> = std::iter::once(Some(focus_source))
-        .chain(
-            context
-                .files
-                .iter()
-                .map(|file| Source::read(&file.text, &file.cfg, &file.offsets, &file.modules).ok()),
-        )
+        .chain(context.files.iter().map(|file| {
+            if file.references.offsets.is_empty() {
+                return None;
+            }
+            Source::read(&file.text, &file.cfg, &file.references).ok()
+        }))
         .collect();
 
-    let (own, mut incoming) = cards(&sources, &focus);
+    let place = Place::first(
+        &context.focus.places,
+        path,
+        None,
+        context.focus.modules.get(path).map(String::as_str),
+    );
+    let (own, mut incoming) = cards(&sources, &focus, place);
     let source = |number: usize| sources[number].as_ref().expect("a card's source is read");
-    let modules = |number: usize| source(number).modules;
-    let (svg, hotspots) = match draw(&focus, &own, &incoming, modules) {
-        Ok(drawn) => drawn,
-        Err(error) => {
-            // A card whose own text the renderer rejects is left out; the
-            // focus's error stands.
-            incoming.retain(|card| {
-                let alone = TypeCard {
-                    ty: &card.ty,
-                    header: &card.ty.path,
-                    relationships: &[],
-                };
-                kaalang_svg::render_type(&alone, &[], TypeOptions::default()).is_ok()
-            });
-            draw(&focus, &own, &incoming, modules).map_err(|_| error)?
+    let modules = |number: usize| &source(number).editor.modules;
+    let (svg, hotspots) = loop {
+        match draw(&focus, &own, &incoming, place, modules) {
+            Ok(drawn) => break drawn,
+            Err(CardError { card: 0, error }) => return Err(error.to_string()),
+            Err(error) => {
+                incoming.remove(error.card - 1);
+            }
         }
     };
 
@@ -203,10 +222,11 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
 fn draw<'a>(
     focus: &SourceType,
     own: &[usize],
-    incoming: &[Incoming],
+    incoming: &[Incoming<'a>],
+    place: Option<&'a Place>,
     modules: impl Fn(usize) -> &'a BTreeMap<String, String>,
-) -> Result<(String, Vec<kaalang_svg::Hotspot>), String> {
-    let (header, headers) = headers(focus, incoming, modules);
+) -> Result<(String, Vec<kaalang_svg::Hotspot>), CardError> {
+    let (header, headers) = headers(focus, incoming, place, modules);
     let focus_card = TypeCard {
         ty: focus,
         header: &header,
@@ -221,13 +241,25 @@ fn draw<'a>(
             relationships: &card.relationships,
         })
         .collect();
-    kaalang_svg::render_type(&focus_card, &[&incoming_cards], TypeOptions::default())
-        .map_err(|error| error.to_string())
+    let mut groups = Vec::new();
+    let mut start = 0;
+    for group in incoming.chunk_by(|a, b| {
+        a.place.map(|p| p.krate().group_key()) == b.place.map(|p| p.krate().group_key())
+    }) {
+        let end = start + group.len();
+        groups.push(&incoming_cards[start..end]);
+        start = end;
+    }
+    kaalang_svg::render_type(&focus_card, &groups, TypeOptions::default())
 }
 
 /// The relationships of `focus`, from source 0, to itself, and every incoming
 /// card the references in `sources` reach.
-fn cards(sources: &[Option<Source>], focus: &SourceType) -> (Vec<usize>, Vec<Incoming>) {
+fn cards<'a>(
+    sources: &[Option<Source<'a>>],
+    focus: &SourceType,
+    place: Option<&Place>,
+) -> (Vec<usize>, Vec<Incoming<'a>>) {
     // A `Self` target is always the focus's own.
     let mut own: Vec<usize> = (0..)
         .zip(&focus.relationship_targets)
@@ -240,17 +272,34 @@ fn cards(sources: &[Option<Source>], focus: &SourceType) -> (Vec<usize>, Vec<Inc
         for (referring, relationships) in source.file.referring(&source.references) {
             if number == 0 && referring == focus.path {
                 own.extend(relationships);
-            } else if let Ok(ty) = source.file.ty(&referring) {
+                continue;
+            }
+            // A confirmed empty list puts this declaration outside every enabled target.
+            if place.is_some()
+                && source
+                    .editor
+                    .places
+                    .get(&referring)
+                    .is_some_and(Vec::is_empty)
+            {
+                continue;
+            }
+            if let Ok(ty) = source.file.ty(&referring) {
                 incoming.push(Incoming {
                     source: number,
                     ty,
                     relationships,
+                    place: Place::first(&source.editor.places, &referring, place, None),
                 });
             }
         }
     }
     own.sort_unstable();
     own.dedup();
+    if place.is_some() {
+        // Unlocated cards follow the known ones in the order the host supplied.
+        incoming.sort_by_key(|card| (card.place.is_none(), card.place.map(|p| p.key(place))));
+    }
     (own, incoming)
 }
 
@@ -258,14 +307,19 @@ fn cards(sources: &[Option<Source>], focus: &SourceType) -> (Vec<usize>, Vec<Inc
 /// gave every card's module path, else each type's path within its file.
 fn headers<'a>(
     focus: &SourceType,
-    incoming: &[Incoming],
+    incoming: &[Incoming<'a>],
+    place: Option<&'a Place>,
     modules: impl Fn(usize) -> &'a BTreeMap<String, String>,
 ) -> (String, Vec<String>) {
     // A module path starts with its crate's name.
-    let rooted = |number: usize, ty: &SourceType| {
-        let module = modules(number).get(&ty.path)?;
+    let rooted = |number: usize, ty: &SourceType, place: Option<&'a Place>| {
+        let (krate, inner) = if let Some(place) = place {
+            (place.krate().name, place.module.as_str())
+        } else {
+            let module = modules(number).get(&ty.path)?;
+            module.split_once("::").unwrap_or((module, ""))
+        };
         let name = &ty.name;
-        let (krate, inner) = module.split_once("::").unwrap_or((module, ""));
         let module = if inner.is_empty() {
             String::new()
         } else {
@@ -276,15 +330,22 @@ fn headers<'a>(
     };
     let paths: Option<Vec<(&str, String, String)>> = incoming
         .iter()
-        .map(|card| rooted(card.source, &card.ty))
+        .map(|card| rooted(card.source, &card.ty, card.place))
         .collect();
-    match (rooted(0, focus), paths) {
+    match (rooted(0, focus, place), paths) {
         (Some((krate, module, header)), Some(paths)) => {
             let cards: Vec<CardPath> = paths
                 .iter()
-                .map(|(other, _, path)| CardPath {
-                    path,
-                    other_crate: (*other != krate).then_some(*other),
+                .zip(incoming)
+                .map(|((other, _, path), card)| {
+                    let external = match (card.place, place) {
+                        (Some(card), Some(focus)) => card.krate() != focus.krate(),
+                        _ => *other != krate,
+                    };
+                    CardPath {
+                        path,
+                        other_crate: external.then_some(*other),
+                    }
                 })
                 .collect();
             let headers = kaalang_svg::card_headers(&header, &module, &cards);
@@ -366,6 +427,18 @@ pub struct Review {
     }
 
     #[test]
+    fn an_incoming_card_stays_visible_while_its_place_is_unknown() {
+        let mut context = json!({
+            "places": {"Member": [{"package": "shop", "group": 0, "crate": "shop",
+                "root": "src/lib.rs", "module": "model", "order": [0]}]},
+            "files": [{"text": REVIEW, "cfg": "", "offsets": [unit(REVIEW, "Member as")]}],
+        });
+        assert_eq!(cards(&drawn(&context)), ["Member", "Review"]);
+        context["files"][0]["places"] = json!({"Review": []});
+        assert_eq!(cards(&drawn(&context)), ["Member"]);
+    }
+
+    #[test]
     fn a_name_in_a_field_type_counts_in_its_own_text() {
         let drawn = drawn(&json!({}));
         let boxed = drawn["hotspots"]
@@ -394,6 +467,27 @@ pub struct Review {
             "files": [{"text": bad, "cfg": "", "offsets": [unit(bad, "Member")]}],
         }));
         assert_eq!(cards(&drawn), ["Member", "Team"]);
+    }
+
+    #[test]
+    fn an_invalid_header_drops_only_its_card_and_preserves_navigation() {
+        let drawn = drawn(&json!({
+            "offsets": [unit(MODEL, "Member, \"The lead")],
+            "modules": {"Member": "shop", "Team": "shop::bad\u{1}"},
+            "files": [{
+                "text": REVIEW, "cfg": "", "offsets": [unit(REVIEW, "Member as")],
+                "modules": {"Review": "other::review"}
+            }],
+        }));
+        assert_eq!(cards(&drawn), ["Member", "Review"]);
+        let header = drawn["hotspots"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|spot| spot["kind"] == "header")
+            .unwrap();
+        assert_eq!(header["source"], 1);
+        assert_eq!(header["start"], unit(REVIEW, "Review {"));
     }
 
     #[test]

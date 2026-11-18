@@ -13,8 +13,8 @@ use std::{
 };
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
-use kaalang_compiler::{Declarations, FlowPath, Place, Question};
-use syn::{Attribute, Expr, ExprLit, Item, Lit, Meta, UseTree, ext::IdentExt};
+use kaalang_compiler::{Declarations, FlowPath, ModuleDirectory, Place, Question};
+use syn::{Item, UseTree, ext::IdentExt};
 
 use crate::{
     datatype,
@@ -764,13 +764,10 @@ fn walk_file(
         scope,
     });
     if readable {
-        let base = file.parent().unwrap_or(Path::new(""));
-        let directory = match file.file_stem() {
-            Some(stem) if !owns_directory => base.join(stem),
-            _ => base.to_owned(),
-        };
+        let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        let directory = ModuleDirectory::for_file(stem, owns_directory);
         walk.open.push(canonical);
-        walk_items(walk, &shared.items, module, &directory, base);
+        walk_items(walk, &shared.items, module, &directory);
         walk.open.pop();
     }
     Some(module)
@@ -784,15 +781,13 @@ fn read(file: &Path) -> io::Result<(PathBuf, String, syn::File)> {
     Ok((canonical, source, parsed))
 }
 
-/// Declares the names among `items` in `module` and follows its `mod`
-/// declarations. `directory` holds their default files, and a `#[path]` is
-/// relative to `base`.
-fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Path, base: &Path) {
+/// Declares the names among `items` in `module` and follows its `mod` declarations.
+fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &ModuleDirectory) {
     for item in items {
         let name = |ident: &syn::Ident| ident.unraw().to_string();
         let (bound, declared, vis) = match item {
             Item::Mod(declaration) => {
-                let Some(child) = walk_module(walk, declaration, module, directory, base) else {
+                let Some(child) = walk_module(walk, declaration, module, directory) else {
                     continue;
                 };
                 (
@@ -937,43 +932,39 @@ fn walk_module(
     walk: &mut Walk<'_>,
     declaration: &syn::ItemMod,
     parent: usize,
-    directory: &Path,
-    base: &Path,
+    directory: &ModuleDirectory,
 ) -> Option<usize> {
     let path = format!("{}{}::", walk.modules[parent].path, declaration.ident);
-    let name = declaration.ident.unraw().to_string();
-    let attribute = path_attribute(&declaration.attrs);
-    match (&declaration.content, attribute) {
-        (Some((_, items)), attribute) => {
-            // An inline module's `#[path]` names its directory.
-            let directory =
-                attribute.map_or_else(|| directory.join(&name), |attribute| base.join(attribute));
-            let module = walk.modules.len();
-            let outer = &walk.modules[parent];
-            walk.modules.push(Module {
-                path,
-                parent: Some(parent),
-                file: Rc::clone(&outer.file),
-                in_file: format!("{}{}::", outer.in_file, declaration.ident),
-                scope: Scope::default(),
-            });
-            walk_items(walk, items, module, &directory, &directory);
-            Some(module)
-        }
-        (None, attribute) => {
-            let (file, owns_directory) = if let Some(attribute) = attribute {
-                (base.join(attribute), true)
-            } else {
-                let file = directory.join(format!("{name}.rs"));
-                if file.is_file() {
-                    (file, false)
-                } else {
-                    (directory.join(&name).join("mod.rs"), true)
-                }
-            };
-            walk_file(walk, &file, owns_directory, path, Some(parent))
-        }
+    if let Some((_, items)) = &declaration.content {
+        let module = walk.modules.len();
+        let outer = &walk.modules[parent];
+        walk.modules.push(Module {
+            path,
+            parent: Some(parent),
+            file: Rc::clone(&outer.file),
+            in_file: format!("{}{}::", outer.in_file, declaration.ident),
+            scope: Scope::default(),
+        });
+        walk_items(walk, items, module, &directory.inline(declaration));
+        return Some(module);
     }
+    let base = walk.modules[parent]
+        .file
+        .path
+        .parent()
+        .unwrap_or(Path::new(""));
+    let mut candidates = directory.files(declaration).into_iter().map(|file| {
+        let path = base.join(file.parts.iter().collect::<PathBuf>());
+        (path, file.owns_directory)
+    });
+    // A missing file still declares an opaque module at its fallback path.
+    let fallback = candidates
+        .next_back()
+        .expect("every module has a candidate");
+    let (file, owns_directory) = candidates
+        .find(|(file, _)| file.is_file())
+        .unwrap_or(fallback);
+    walk_file(walk, &file, owns_directory, path, Some(parent))
 }
 
 /// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
@@ -1024,26 +1015,6 @@ fn imports(
     }
 }
 
-/// The literal `#[path = "…"]` on a module declaration.
-fn path_attribute(attributes: &[Attribute]) -> Option<String> {
-    attributes
-        .iter()
-        .find_map(|attribute| path_value(&attribute.meta))
-}
-
-fn path_value(meta: &Meta) -> Option<String> {
-    match meta {
-        Meta::NameValue(pair) if pair.path.is_ident("path") => match &pair.value {
-            Expr::Lit(ExprLit {
-                lit: Lit::Str(path),
-                ..
-            }) => Some(path.value()),
-            _ => None,
-        },
-        _ => None,
-    }
-}
-
 /// The target's diagram group.
 fn target_group(target: &Target) -> u8 {
     if target.is_test() {
@@ -1086,8 +1057,7 @@ pub(super) fn library(package: &str, source: &str) -> Crate {
         &mut walk,
         &parsed.items,
         0,
-        Path::new("src"),
-        Path::new("src"),
+        &ModuleDirectory::for_file("lib", true),
     );
     Crate {
         package: package.to_owned(),

@@ -1,10 +1,10 @@
 //! Draws a type diagram: finds the focus type in the workspace, resolves every
 //! relationship there, and renders the focus under the types that refer to it.
 
-use std::{collections::BTreeSet, fmt::Write as _, iter, path::PathBuf};
+use std::{collections::BTreeSet, fmt::Write as _, path::PathBuf};
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
-use kaalang_svg::{CardPath, TypeCard, TypeOptions};
+use kaalang_svg::{CardCrate, CardPath, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::{
@@ -184,34 +184,22 @@ fn render(
             relationships: positions,
         })
         .collect();
-    let cards = || {
-        iter::once((focus, focus_card)).chain(
-            incoming
-                .iter()
-                .map(|(source, _)| *source)
-                .zip(incoming_cards.iter().copied()),
-        )
-    };
     let mut groups: Vec<&[TypeCard]> = Vec::new();
     let mut start = 0;
     for end in 1..=incoming.len() {
-        let group = |index: usize| {
-            let krate = &crates[incoming[index].0.krate];
-            (&krate.package, krate.group)
-        };
+        let group = |index: usize| crates[incoming[index].0.krate].card_crate().group_key();
         if end == incoming.len() || group(end) != group(start) {
             groups.push(&incoming_cards[start..end]);
             start = end;
         }
     }
     let (svg, _) = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
-        // The renderer names no file, so find the card it rejects.
-        let culprit = cards()
-            .find(|(_, card)| kaalang_svg::render_type(card, &[], options).is_err())
-            .map_or(focus, |(source, _)| source);
+        let culprit = error.card.checked_sub(1).map_or(focus, |i| incoming[i].0);
         format!("{}: {error}", file(culprit).display())
     })?;
-    let mut files: Vec<PathBuf> = cards().map(|(source, _)| file(source)).collect();
+    let mut files: Vec<PathBuf> = std::iter::once(file(focus))
+        .chain(incoming.iter().map(|(source, _)| file(*source)))
+        .collect();
     files.sort();
     files.dedup();
     Ok(Drawn { svg, files })
@@ -291,16 +279,20 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..crates.len()).collect();
     order.sort_by_key(|&index| {
         let krate = &crates[index];
-        (
-            index != first,
-            Some(krate.package.as_str()) != package,
-            &krate.package,
-            krate.group,
-            &krate.name,
-            &krate.root,
-        )
+        krate.card_crate().order(package, index == first)
     });
     order
+}
+
+impl Crate {
+    fn card_crate(&self) -> CardCrate<'_> {
+        CardCrate {
+            package: &self.package,
+            group: self.group,
+            name: &self.name,
+            root: &self.root,
+        }
+    }
 }
 
 /// Whether two declarations are one: the same place in the same file, which

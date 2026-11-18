@@ -13,10 +13,7 @@ const module = kaalang.initSync({
   module: fs.readFileSync(path.join(built, "kaalang_js_bg.wasm")),
 });
 const tests = path.join(import.meta.dirname, "../../kaalang/tests");
-// The target the golden diagrams are drawn for, as `diagrams.rs` declares it.
-const target = fs
-  .readFileSync(path.join(tests, "diagrams.rs"), "utf8")
-  .match(/const TARGET: &str = r#"([\s\S]*?)"#;/)[1];
+const target = fs.readFileSync(path.join(tests, "diagram-target.cfg"), "utf8");
 
 /** Every fixture directory, compile-fail fixtures left out. */
 function* directories(directory) {
@@ -103,8 +100,50 @@ test("positions count UTF-16 code units of a JavaScript string", () => {
 
   const declared = (offset) =>
     JSON.parse(kaalang.declaredAt(source, "", offset));
-  assert.deepEqual(declared(source.indexOf("math::add")), { flow: 0 });
+  assert.deepEqual(declared(source.indexOf("math::add")), {
+    flow: 0,
+    path: "settle",
+  });
   assert.equal(declared(source.indexOf("🦀")), null);
+});
+
+test("an active relationship exposes its final identifier in UTF-16", () => {
+  const source = `// 🦀\n#[kaa] struct Review {
+    #[cfg_attr(unix, kaa::refer(crate::names::Author, "The author."))] id: u8,
+}`;
+  assert.deepEqual(JSON.parse(kaalang.relationshipTargets(source, "unix")), [
+    source.indexOf("Author"),
+  ]);
+  assert.deepEqual(JSON.parse(kaalang.relationshipTargets(source, "")), []);
+});
+
+test("one source can own different module files in two Cargo targets", () => {
+  const source = "// 🦀\nstruct Focus;\n#[cfg(test)] enum Extra {}\nmod child;";
+  const items = (cfg, owns) =>
+    JSON.parse(kaalang.moduleItems(source, cfg, "shared", owns));
+  const normal = items("", false);
+  assert.deepEqual(normal.types, [source.indexOf("Focus")]);
+  const [child] = normal.modules;
+  assert.equal(child.module, "child");
+  assert.equal(child.offset, source.indexOf("child"));
+  const files = (entry) =>
+    entry.files.map(({ parts, ownsDirectory }) => [
+      path.posix.join(...parts),
+      ownsDirectory,
+    ]);
+  assert.deepEqual(files(child), [
+    ["shared/child.rs", false],
+    ["shared/child/mod.rs", true],
+  ]);
+  const explicit = items("test", true);
+  assert.deepEqual(explicit.types, [
+    source.indexOf("Focus"),
+    source.indexOf("Extra"),
+  ]);
+  assert.deepEqual(files(explicit.modules[0]), [
+    ["child.rs", false],
+    ["child/mod.rs", true],
+  ]);
 });
 
 test("every fixture's first type draws its golden diagram", () => {

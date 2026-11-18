@@ -13,13 +13,19 @@ use syn::{
     Attribute, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem, spanned::Spanned,
 };
 
-pub use self::{cards::NamedPath, ribbons::Ribbons, target::Target};
+pub use self::{
+    cards::NamedPath,
+    modules::{ExternalModule, ModuleDirectory, ModuleFile},
+    ribbons::Ribbons,
+    target::Target,
+};
 use crate::{
-    FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts, flows,
-    is_kaalang_attribute, type_declaration, type_items,
+    FlowItem, Owner, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts,
+    flows, is_kaalang_attribute, type_declaration, type_items,
 };
 
 mod cards;
+mod modules;
 mod ribbons;
 mod spans;
 mod target;
@@ -153,12 +159,14 @@ impl<'a> SourceFile<'a> {
     }
 
     /// What is declared at `offset`, a byte of the text as given, that
-    /// kaalang draws: a flow, by its position as [`SourceFile::flow`] counts
-    /// it, or a type, by its path as [`SourceFile::ty`] takes it. A
-    /// declaration runs from its first attribute, a `cfg` that holds included,
+    /// kaalang draws: a flow, by its position and path as
+    /// [`SourceFile::flow_named`] takes them, or a type, by its path as
+    /// [`SourceFile::ty`] takes it. A declaration runs from its first
+    /// attribute, a `cfg` that holds included,
     /// to just past its last character, where an editor's caret still stands in
-    /// it. Nothing is declared in a byte order mark or a shebang line, between
-    /// declarations, or in what the target does not compile.
+    /// it. A declaration starting at that same byte takes precedence. Nothing
+    /// is declared in a byte order mark or a shebang line, between declarations,
+    /// or in what the target does not compile.
     #[must_use]
     pub fn declared_at(&self, offset: usize) -> Option<Declared> {
         let offset = offset.checked_sub(self.prefix)?;
@@ -166,29 +174,39 @@ impl<'a> SourceFile<'a> {
             let named = name.span().byte_range().start;
             self.starts.get(&named).copied()
         };
+        let mut ending_here = None;
         // A flow's `#[kaa]` recorded its start.
-        if let Some(position) = flows(&self.items).iter().position(|flow| {
+        for (position, flow) in flows(&self.items).iter().enumerate() {
             let function = &flow.function;
-            start(&function.sig.ident).is_some_and(|start| start <= offset)
-                && offset <= function.block.brace_token.span.close().byte_range().end
-        }) {
-            return Some(Declared::Flow(position));
+            let end = function.block.brace_token.span.close().byte_range().end;
+            if start(&function.sig.ident).is_some_and(|start| start <= offset) && offset <= end {
+                let declared = Declared::Flow(position, flow_path(flow));
+                if offset < end {
+                    return Some(declared);
+                }
+                ending_here = Some(declared);
+            }
         }
         // A type's whole span rebuilds its tokens, so it is read only for a
         // type that may hold the offset, or one without a recorded start.
-        self.type_items()
-            .iter()
-            .find(|(_, item)| {
-                parts(item).is_some_and(|(_, name, _)| {
-                    if let Some(start) = start(name) {
-                        start <= offset && offset <= item.span().byte_range().end
-                    } else {
-                        let whole = item.span().byte_range();
-                        (whole.start..=whole.end).contains(&offset)
-                    }
-                })
-            })
-            .map(|(path, _)| Declared::Type(path.clone()))
+        for (path, item) in self.type_items() {
+            let Some((_, name, _)) = parts(item) else {
+                continue;
+            };
+            let start = start(name);
+            if start.is_some_and(|start| start > offset) {
+                continue;
+            }
+            let range = item.span().byte_range();
+            if (start.unwrap_or(range.start)..=range.end).contains(&offset) {
+                let declared = Declared::Type(path.clone());
+                if offset < range.end {
+                    return Some(declared);
+                }
+                ending_here = Some(declared);
+            }
+        }
+        ending_here
     }
 
     /// What the target compiles of the file, for a caller to list its flows
@@ -217,9 +235,40 @@ impl<'a> SourceFile<'a> {
     /// and [`SourceError::InvalidFlow`] when that function is not a valid
     /// kaalang flow.
     pub fn flow(&self, position: usize, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
-        let Some(item) = flows(&self.items).into_iter().nth(position) else {
-            return Err(SourceError::FlowNotFound(position));
+        let item = flows(&self.items)
+            .into_iter()
+            .nth(position)
+            .ok_or(SourceError::FlowNotFound(position))?;
+        self.read_flow(item, collapse_cycles)
+    }
+
+    /// Reads the flow at the file-local `path` from [`Declared::Flow`], even
+    /// after edits have moved it from `position`. If the path occurs more
+    /// than once, its previous position takes precedence. Returns `None`
+    /// when the file no longer declares that flow.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SourceError::InvalidFlow`] when the selected function is
+    /// not a valid kaalang flow.
+    pub fn flow_named(
+        &self,
+        path: &str,
+        position: usize,
+        collapse_cycles: bool,
+    ) -> Result<Option<SourceFlow>, SourceError> {
+        let mut flows = flows(&self.items);
+        let matches = |flow: &FlowItem| flow_path(flow) == path;
+        let item = if flows.get(position).is_some_and(matches) {
+            Some(flows.swap_remove(position))
+        } else {
+            flows.into_iter().find(matches)
         };
+        item.map(|item| self.read_flow(item, collapse_cycles))
+            .transpose()
+    }
+
+    fn read_flow(&self, item: FlowItem, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
         if let Some(attribute) = item
             .function
             .attrs
@@ -301,11 +350,7 @@ impl<'a> SourceFile<'a> {
                 if target == "Self" {
                     return name.span();
                 }
-                relationship
-                    .target
-                    .segments
-                    .last()
-                    .map_or_else(|| relationship.target.span(), |last| last.ident.span())
+                cards::target_span(&relationship.target)
             })
             .collect();
         Ok(SourceType {
@@ -399,10 +444,19 @@ impl<'a> SourceFile<'a> {
 /// What a place in a source file declares that kaalang draws.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Declared {
-    /// A flow, by its position among the file's flows.
-    Flow(usize),
+    /// A flow, by its position among the file's flows and its file-local path.
+    Flow(usize, String),
     /// A type, by its path within the file.
     Type(String),
+}
+
+/// A method's path names its owner within its module; a free function's
+/// already includes its inline modules.
+fn flow_path(flow: &FlowItem) -> String {
+    match flow.owner {
+        Owner::Module => flow.path.clone(),
+        Owner::Impl(_) | Owner::Trait(_) => format!("{}{}", flow.module, flow.path),
+    }
 }
 
 /// Records where each function and type among `items` that has attributes
@@ -695,7 +749,7 @@ mod tests {
         for marker in ["/// A flow", "#[kaa]\nfn first", "first(", "\n\nmod"] {
             assert_eq!(
                 declared(DECLARED, Target::EMPTY, marker),
-                Some(Declared::Flow(0)),
+                Some(Declared::Flow(0, "first".into())),
                 "{marker:?}"
             );
         }
@@ -705,7 +759,7 @@ mod tests {
     fn a_method_in_a_module_is_declared_as_a_flow() {
         assert_eq!(
             declared(DECLARED, Target::EMPTY, "fn second"),
-            Some(Declared::Flow(1))
+            Some(Declared::Flow(1, "model::Member::second".into()))
         );
     }
 
@@ -735,7 +789,7 @@ mod tests {
 
         assert_eq!(
             declared(source, &unix, "#[cfg(unix)]"),
-            Some(Declared::Flow(0))
+            Some(Declared::Flow(0, "flow".into()))
         );
         assert_eq!(
             declared(source, &unix, "#[cfg(unix)]\nstruct"),
@@ -752,7 +806,7 @@ mod tests {
 
         assert_eq!(
             declared(source, &unix, "#[cfg_attr"),
-            Some(Declared::Flow(0))
+            Some(Declared::Flow(0, "flow".into()))
         );
         assert_eq!(declared(source, Target::EMPTY, "fn flow"), None);
     }
@@ -765,13 +819,54 @@ mod tests {
         assert_eq!(declared(&source, Target::EMPTY, "rustx"), None);
         assert_eq!(
             declared(&source, Target::EMPTY, "first("),
-            Some(Declared::Flow(0))
+            Some(Declared::Flow(0, "first".into()))
         );
     }
 
     #[test]
     fn text_that_is_not_rust_is_a_parse_error() {
         assert!(matches!(flow_error("fn"), SourceError::Parse { .. }));
+    }
+
+    #[test]
+    fn the_next_declaration_owns_the_byte_where_it_starts() {
+        let source = "#[kaa] fn a() {}#[kaa] fn b() {}struct C;struct D;#[kaa] fn e() {}";
+        for (marker, expected) in [
+            ("#[kaa] fn b", Declared::Flow(1, "b".into())),
+            ("struct C", Declared::Type("C".into())),
+            ("struct D", Declared::Type("D".into())),
+            ("#[kaa] fn e", Declared::Flow(2, "e".into())),
+        ] {
+            assert_eq!(declared(source, Target::EMPTY, marker), Some(expected));
+        }
+    }
+
+    #[test]
+    fn a_moved_method_is_found_by_its_path_including_its_module() {
+        let source = "mod a { impl Owner { #[kaa] fn run() { || return; } } }\nmod b { impl Owner { #[kaa] fn run() { || return; } } }";
+        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let Declared::Flow(position, path) =
+            file.declared_at(source.rfind("run").unwrap()).unwrap()
+        else {
+            panic!("the cursor is in a flow");
+        };
+        let edited = format!("#[kaa] fn start() {{ || return; }}\n{source}");
+        let file = SourceFile::parse(&edited, Target::EMPTY).unwrap();
+        let method = file.flow_named(&path, position, false).unwrap().unwrap();
+        assert_eq!(method.item.module, "b::");
+        assert!(
+            file.flow_named("b::Owner::gone", position, false)
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn the_position_disambiguates_a_flow_path_while_editing() {
+        let source = "#[kaa] fn run() { || return; }\n#[kaa] fn run(input: u8) -> u8 { |input| return input; }";
+        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let flow = file.flow_named("run", 1, false).unwrap().unwrap();
+        assert_eq!(flow.parameters, ["input: u8"]);
     }
 
     #[test]

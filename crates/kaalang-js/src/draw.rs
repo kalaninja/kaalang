@@ -54,11 +54,18 @@ pub(crate) fn flow(
     cfg: &str,
     position: usize,
     collapse_cycles: bool,
+    path: Option<String>,
 ) -> Result<String, String> {
     let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
-    let flow = match file.flow(position, collapse_cycles) {
-        Err(SourceError::FlowNotFound(_)) => return Ok("null".into()),
-        flow => flow.map_err(|error| error.to_string())?,
+    let selected = match path {
+        Some(path) => file.flow_named(&path, position, collapse_cycles),
+        None => match file.flow(position, collapse_cycles) {
+            Err(SourceError::FlowNotFound(_)) => Ok(None),
+            flow => flow.map(Some),
+        },
+    };
+    let Some(flow) = selected.map_err(|error| error.to_string())? else {
+        return Ok("null".into());
     };
     let (svg, hotspots) = kaalang_svg::render_flow(flow).map_err(|error| error.to_string())?;
     let offsets = utf16::Offsets::new(text);
@@ -131,7 +138,7 @@ mod tests {
 
     #[test]
     fn a_diagram_reaches_javascript_as_json() {
-        let json: Value = serde_json::from_str(&flow(SOURCE, "", 0, false).unwrap()).unwrap();
+        let json = drawn(SOURCE);
         assert!(json["svg"].as_str().unwrap().starts_with("<svg "));
         let hotspots = json["hotspots"].as_array().unwrap();
         let call = hotspots.iter().find(|spot| spot["kind"] == "call").unwrap();
@@ -141,7 +148,7 @@ mod tests {
 
     #[test]
     fn only_a_call_names_a_callee() {
-        let json: Value = serde_json::from_str(&flow(SOURCE, "", 0, false).unwrap()).unwrap();
+        let json = drawn(SOURCE);
         let hotspots = json["hotspots"].as_array().unwrap();
         assert!(hotspots.iter().any(|spot| spot["kind"] == "node"));
         for spot in hotspots.iter().filter(|spot| spot["kind"] != "call") {
@@ -169,7 +176,7 @@ fn pick(condition: bool, first: u8) -> u8 {
 
     /// The diagram of the first flow in `source`, as JSON.
     fn drawn(source: &str) -> Value {
-        serde_json::from_str(&flow(source, "", 0, false).unwrap()).unwrap()
+        serde_json::from_str(&flow(source, "", 0, false, None).unwrap()).unwrap()
     }
 
     /// The ribbon of a hotspot of `drawn`, from the answer's table.
@@ -240,7 +247,7 @@ fn pick(condition: bool, first: u8) -> u8 {
     #[test]
     fn text_that_does_not_parse_says_so() {
         assert!(
-            flow("fn", "", 0, false)
+            flow("fn", "", 0, false, None)
                 .unwrap_err()
                 .contains("could not parse")
         );
@@ -248,13 +255,13 @@ fn pick(condition: bool, first: u8) -> u8 {
 
     #[test]
     fn no_flow_at_a_position_draws_nothing() {
-        assert_eq!(flow(SOURCE, "", 1, false), Ok("null".into()));
+        assert_eq!(flow(SOURCE, "", 1, false, None), Ok("null".into()));
     }
 
     #[test]
     fn a_cfg_that_does_not_parse_says_so() {
         assert!(
-            flow(SOURCE, "not a cfg", 0, false)
+            flow(SOURCE, "not a cfg", 0, false, None)
                 .unwrap_err()
                 .contains("not a cfg")
         );

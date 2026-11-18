@@ -15,33 +15,7 @@ use kaalang_compiler::{SourceFile, SourceType, Target};
 /// The compilation target every fixture is read for, `x86_64-unknown-linux-gnu`
 /// as rustc 1.99.1 prints its cfg, so that the diagrams depend on neither the
 /// host nor the toolchain, and with `test`, since the fixtures are tests.
-const TARGET: &str = r#"
-debug_assertions
-panic="unwind"
-target_abi=""
-target_arch="x86_64"
-target_endian="little"
-target_env="gnu"
-target_family="unix"
-target_feature="fxsr"
-target_feature="sse"
-target_feature="sse2"
-target_has_atomic="16"
-target_has_atomic="32"
-target_has_atomic="64"
-target_has_atomic="8"
-target_has_atomic="ptr"
-target_has_atomic_primitive_alignment="16"
-target_has_atomic_primitive_alignment="32"
-target_has_atomic_primitive_alignment="64"
-target_has_atomic_primitive_alignment="8"
-target_has_atomic_primitive_alignment="ptr"
-target_os="linux"
-target_pointer_width="64"
-target_vendor="unknown"
-test
-unix
-"#;
+const TARGET: &str = include_str!("diagram-target.cfg");
 
 #[test]
 #[ignore = "run just rust svg to regenerate fixture diagrams"]

@@ -18,4 +18,5 @@ build: (tooling::build "rust")
 
 # Build the bindings and run them in Node.
 test: build
-    ./scripts/docker/run-tooling.sh kaalang-rust node --test crates/kaalang-js/tests/bindings.test.mjs
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo build -p kaalang-cli
+    ./scripts/docker/run-tooling.sh kaalang-rust node --test 'crates/kaalang-js/tests/*.test.mjs'

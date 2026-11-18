@@ -5,8 +5,8 @@ use proc_macro2::Span;
 use syn::{Item, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
-    Hotspot, RenderError, TypeCard, validate_description, validate_label, visibility_marker,
-    with_visibility,
+    CardError, Hotspot, RenderError, TypeCard, validate_description, validate_label,
+    visibility_marker, with_visibility,
 };
 
 mod layout;
@@ -17,13 +17,25 @@ pub(crate) fn render(
     focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
-) -> Result<(String, Vec<Hotspot>), RenderError> {
-    // The focus first: an error names the first card that fails, in the
-    // order a caller lists them.
-    let focus = read(focus)?;
+) -> Result<(String, Vec<Hotspot>), CardError> {
+    let mut position = 0;
+    let mut read_card = |card: &TypeCard<'_>| {
+        let result = read(card).map_err(|error| CardError {
+            card: position,
+            error,
+        });
+        position += 1;
+        result
+    };
+    let focus = read_card(focus)?;
     let groups = incoming
         .iter()
-        .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
+        .map(|group| {
+            group
+                .iter()
+                .map(&mut read_card)
+                .collect::<Result<Vec<_>, _>>()
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
     let scene = layout::layout(&groups, &focus, columns);
