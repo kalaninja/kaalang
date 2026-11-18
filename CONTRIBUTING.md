@@ -121,7 +121,7 @@ leaves the SVG files untouched.
 `just wasm test` builds the WebAssembly bindings as a page loads them and runs
 them in Node: every fixture flow draws its golden diagram there, memory stays
 level, and positions count UTF-16 code units. `just ide test` checks in Node
-which hotspot a click on the IDE page takes and what it asks of the host.
+which hotspots a click on the IDE page takes and what it asks of the host.
 
 Try a change to the IDE page in a browser before committing it:
 
@@ -131,9 +131,9 @@ just ide bench
 
 It serves the page at <http://127.0.0.1:8080/ide/page/bench/> with a stub host:
 a text field stands for the editor, a log shows what the page asks of the host,
-and switches show a dark theme and every hotspot.
-<http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's races
-against the real worker; every check must pass.
+a binding's name stands for its type, and switches show a dark theme and every
+hotspot. <http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's
+races against the real worker; every check must pass.
 
 Try a change to the VS Code extension, or to the page it shows, in VS Code:
 

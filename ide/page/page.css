@@ -71,6 +71,48 @@
   visibility: visible;
 }
 
+/* A connection or a merge reaches well past its line, so it is tinted, not boxed. */
+.kaalang-hotspots > :is([data-kind="connection"], [data-kind="merge"]) {
+  fill: var(--vscode-textLink-foreground, #2563eb);
+  fill-opacity: 0.15;
+  stroke: none;
+}
+
+/* The ribbon clicked, as the editor draws its hover. */
+.kaalang-popup {
+  position: fixed;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  max-width: 50vw;
+  max-height: 50vh;
+  overflow: auto;
+  padding: 4px 8px;
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  color: var(--vscode-editorHoverWidget-foreground, var(--kaalang-foreground));
+  background: var(
+    --vscode-editorHoverWidget-background,
+    var(--kaalang-background)
+  );
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--kaalang-muted));
+  border-radius: 3px;
+}
+
+.kaalang-popup > button {
+  padding: 0;
+  font: inherit;
+  text-align: start;
+  color: var(--vscode-textLink-foreground, #2563eb);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.kaalang-popup > span {
+  color: var(--kaalang-muted);
+  overflow-wrap: anywhere;
+}
+
 /*
  * The diagram in the editor's theme. The SVG's own colors suit a light
  * background; these rules outrank its classes, and each node's fill is a tint

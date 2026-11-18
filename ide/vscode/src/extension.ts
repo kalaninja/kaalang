@@ -1,16 +1,18 @@
 // Shows the shared page in a webview, in place of a Rust editor or beside it,
 // and does for the page what it cannot: hands it the text and the cursor of the
-// Rust document it follows, with the cfg set rust-analyzer sees it under, and
-// carries out a click with the editor's own actions.
+// Rust document it follows, with the cfg set rust-analyzer sees it under,
+// carries out a click with the editor's own actions, and reads a wire's type
+// from the editor's hover.
 
 import * as vscode from "vscode";
 
+import { hoverType } from "./hover";
 import { affectsCfg, cfg, forgetCfg } from "./target";
 
 /** The panel's type, which the `when` clauses in package.json name. */
 const VIEW_TYPE = "kaalang.diagram";
 
-/** The language server that answers the editor's go-to actions on Rust. */
+/** The language server that answers the editor's go-to actions and hovers on Rust. */
 const RUST_ANALYZER = "rust-lang.rust-analyzer";
 
 /** The editor action each of the page's go-to requests runs. */
@@ -23,7 +25,8 @@ const ACTIONS = {
 type Request =
   | { type: "ready" }
   | { type: "reveal"; start: number; end: number }
-  | { type: keyof typeof ACTIONS; offset: number };
+  | { type: keyof typeof ACTIONS; offset: number }
+  | { type: "types"; id: number; offsets: number[] };
 
 export function activate(context: vscode.ExtensionContext): void {
   const out = vscode.Uri.joinPath(context.extensionUri, "out");
@@ -89,12 +92,34 @@ export function activate(context: vscode.ExtensionContext): void {
         break;
       case "definition":
       case "typeDefinition":
-        if (vscode.extensions.getExtension(RUST_ANALYZER) === undefined) {
-          void offerRustAnalyzer();
-        }
+        void offerRustAnalyzer();
         await select(request.offset, request.offset);
         await vscode.commands.executeCommand(ACTIONS[request.type]);
         break;
+      case "types":
+        void offerRustAnalyzer();
+        sendTypes(request.id, request.offsets);
+        break;
+    }
+  }
+
+  /**
+   * Answers the page's request `id` with the type at each offset of the
+   * document it follows, each as soon as it is known.
+   */
+  function sendTypes(id: number, offsets: number[]): void {
+    if (source === undefined) {
+      return;
+    }
+    const { document } = source;
+    for (const offset of offsets) {
+      void typeAt(document, offset).then((type) => {
+        void panel?.webview.postMessage({
+          type: "types",
+          id,
+          types: { [offset]: type },
+        });
+      });
     }
   }
 
@@ -225,18 +250,43 @@ function html(webview: vscode.Webview, out: vscode.Uri): string {
 </html>`;
 }
 
+/** The type the editor's hover gives the value bound at `offset`, or `null`. */
+async function typeAt(
+  document: vscode.TextDocument,
+  offset: number,
+): Promise<string | null> {
+  if (document.isClosed) {
+    return null;
+  }
+  try {
+    const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+      "vscode.executeHoverProvider",
+      document.uri,
+      document.positionAt(offset),
+    );
+    const parts = hovers.flatMap((hover) => hover.contents);
+    return hoverType(
+      parts
+        .map((part) => (typeof part === "string" ? part : part.value))
+        .join("\n"),
+    );
+  } catch {
+    return null;
+  }
+}
+
 /** Whether this session has offered rust-analyzer: once is enough. */
 let offered = false;
 
-/** Offers rust-analyzer, which the go-to actions need, at the first that asks. */
+/** Offers rust-analyzer, which types and go-to actions need, when it is missing. */
 async function offerRustAnalyzer(): Promise<void> {
-  if (offered) {
+  if (offered || vscode.extensions.getExtension(RUST_ANALYZER) !== undefined) {
     return;
   }
   offered = true;
   const install = "Install";
   const choice = await vscode.window.showInformationMessage(
-    "Going to a definition from the diagram needs rust-analyzer.",
+    "Types and go-to actions in the diagram need rust-analyzer.",
     install,
   );
   if (choice === install) {

@@ -42,7 +42,7 @@ pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderE
             layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
         let parts = std::iter::once(None).chain((0..model.stages.len()).map(Some));
         for ((local, placement), part) in scene.parts.iter().zip(parts) {
-            navigation::collect(local, &model.analysis, part, *placement, &mut hotspots);
+            navigation::collect(local, &model, part, *placement, &mut hotspots);
         }
         return Ok((svg::serialize_staged(&scene, &model.analysis), hotspots));
     }
@@ -52,7 +52,7 @@ pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderE
     let captions = Rc::new(captions::derive(&model, &start, &return_type));
     let scene = layout::layout(&model, &captions, &parameters).map_err(unroutable)?;
     let origin = layout::Point { x: 0, y: 0 };
-    navigation::collect(&scene, &model.analysis, None, origin, &mut hotspots);
+    navigation::collect(&scene, &model, None, origin, &mut hotspots);
 
     Ok((
         svg::serialize(&scene, &model.analysis.name.to_string(), None),

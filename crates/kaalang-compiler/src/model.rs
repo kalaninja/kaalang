@@ -485,7 +485,7 @@ impl Flow {
 
     /// The displayed name of a wire, without internal scope keys or raw prefixes.
     #[must_use]
-    pub(crate) fn wire_name(&self, wire: &Ident) -> String {
+    pub fn wire_name(&self, wire: &Ident) -> String {
         match self.producer(wire) {
             Some(ProducerId::BlockOutput { block, output }) => self.blocks[block]
                 .output_binding(output)

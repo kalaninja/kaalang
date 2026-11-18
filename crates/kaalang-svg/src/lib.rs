@@ -5,7 +5,7 @@
 use std::{error::Error, fmt, num::NonZeroUsize};
 
 #[cfg(doc)]
-use kaalang_compiler::{Analysis, SourceFile};
+use kaalang_compiler::{Analysis, SemanticModel, SourceFile};
 use kaalang_compiler::{SourceFlow, SourceType, line_and_column};
 use proc_macro2::Span;
 use syn::Visibility;
@@ -85,7 +85,8 @@ impl Error for RenderError {}
 
 /// Renders a flow as it was read from its source file. Returns the SVG and its
 /// hotspots: every node that draws a source construct, every drawn cycle
-/// boundary, and every wire name in a label.
+/// boundary, every wire name in a label, and every segment of a connection and
+/// every merge, with its ribbon.
 ///
 /// # Errors
 ///
@@ -100,7 +101,7 @@ pub fn render_flow(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderErr
 
 /// What a [`Hotspot`] shows. It states what the drawing stands for and leaves
 /// what a click does to the reader.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum HotspotKind {
     /// A node, or a drawn cycle boundary. Its span is the source the node
     /// draws, as [`Analysis::node_span`] places it; a boundary's is its cycle.
@@ -113,10 +114,28 @@ pub enum HotspotKind {
     /// One wire name in a label. Its span is where its producer binds the
     /// wire, as [`Analysis::binding`] places it.
     Wire,
+    /// A strip centred on one segment of a drawn connection, with its ribbon,
+    /// as [`SemanticModel::ribbons`] gives it. It reaches past a corner or a
+    /// junction but stops at a node. Strips of shared segments
+    /// overlap, and so do those of neighbouring ones. It has no span: no one
+    /// place in the source stands for it.
+    Connection { ribbon: Vec<RibbonWire> },
+    /// The square on a merge, with its ribbon, as [`SemanticModel::ribbons`]
+    /// gives it. It overlaps the strips of the connections that meet there,
+    /// and has no span.
+    Merge { ribbon: Vec<RibbonWire> },
+}
+
+/// One wire of a ribbon: its displayed name, and where its producer binds it,
+/// as [`Analysis::binding`] places it.
+#[derive(Clone, Debug)]
+pub struct RibbonWire {
+    pub name: String,
+    pub binding: Span,
 }
 
 /// One element of a rendered flow that stands for something in its source.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Hotspot {
     pub kind: HotspotKind,
     /// The element's rectangle in the SVG's user units. A wire name that wraps
@@ -125,11 +144,11 @@ pub struct Hotspot {
     pub top: i32,
     pub right: i32,
     pub bottom: i32,
-    /// The source the element stands for, a span of the flow as it was read.
-    /// [`SourceFile::range`] gives its bytes, but only while proc-macro2 still
-    /// holds the parsed text: it forgets every span when its source map is
-    /// cleared.
-    pub span: Span,
+    /// The source the element stands for, a span of the flow as it was read,
+    /// or none for a connection or a merge. [`SourceFile::range`] gives its
+    /// bytes, but only while proc-macro2 still holds the parsed text: it
+    /// forgets every span when its source map is cleared.
+    pub span: Option<Span>,
 }
 
 /// Reads the flow at `path` within `source` for no target, for tests that

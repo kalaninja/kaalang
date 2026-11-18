@@ -1,6 +1,6 @@
 // A stub host for trying the page in a browser: a text field stands for the
-// editor, a log shows what the page asks of the host, and a search for
-// `fn <name>` in the same text stands for the engine.
+// editor, a log shows what the page asks of the host, a search for `fn <name>`
+// in the same text stands for the engine, and a binding's name for its type.
 
 import { start } from "../page.js";
 
@@ -37,6 +37,21 @@ const receive = start(page, {
         // No engine knows the type here: show the binding it would ask about.
         select(...word(message.offset));
         break;
+      case "types": {
+        // No engine knows the types here: name each after its binding, late
+        // as an engine answers.
+        const types = message.offsets.map((offset) => [
+          offset,
+          `type of ${editor.value.slice(...word(offset))}`,
+        ]);
+        const { id } = message;
+        setTimeout(
+          () =>
+            receive({ type: "types", id, types: Object.fromEntries(types) }),
+          300,
+        );
+        break;
+      }
     }
   },
   wasm: {

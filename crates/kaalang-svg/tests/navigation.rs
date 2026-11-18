@@ -12,6 +12,9 @@ use kaalang_testing::corpus::{self, Suite};
 
 /// Font size of a wire label, which lifts a name's hotspot above its baseline.
 const WIRE_FONT: i32 = 12;
+/// How far a connection's strip reaches either side of its line, and a merge's
+/// square from its centre.
+const REACH: i32 = 12;
 
 /// The numbers of one `name="…"` attribute after `name`, such as the two of
 /// `translate(60 24)`.
@@ -29,7 +32,8 @@ fn numbers(line: &str, name: &str) -> Vec<i32> {
 
 /// What an SVG draws, in drawing order and on the whole canvas: the centre of
 /// every node but a merge, the rectangle of every call node and of every cycle
-/// boundary, and the anchor and the lines of every wire label.
+/// boundary, the anchor and the lines of every wire label, the centre of every
+/// merge, and every segment of every connection.
 struct Drawn {
     width: i32,
     height: i32,
@@ -37,6 +41,8 @@ struct Drawn {
     calls: Vec<(i32, i32, i32, i32)>,
     boundaries: Vec<(i32, i32, i32, i32)>,
     labels: Vec<((i32, i32), Vec<String>)>,
+    merges: Vec<(i32, i32)>,
+    segments: Vec<((i32, i32), (i32, i32))>,
 }
 
 fn drawn(svg: &str) -> Drawn {
@@ -47,11 +53,39 @@ fn drawn(svg: &str) -> Drawn {
         calls: Vec::new(),
         boundaries: Vec::new(),
         labels: Vec::new(),
+        merges: Vec::new(),
+        segments: Vec::new(),
     };
     // A staged diagram draws each part inside a translated group.
     let mut part = (0, 0);
+    let mut in_connection = false;
     let mut lines = svg.lines();
     while let Some(line) = lines.next() {
+        if line.contains("<path class=\"connection\" d=\"") {
+            in_connection = true;
+            continue;
+        }
+        if in_connection {
+            if line.trim_start().starts_with('M') {
+                let numbers: Vec<i32> = line
+                    .split_whitespace()
+                    .filter_map(|token| token.parse().ok())
+                    .collect();
+                let points: Vec<(i32, i32)> = numbers
+                    .chunks(2)
+                    .map(|point| (part.0 + point[0], part.1 + point[1]))
+                    .collect();
+                drawn
+                    .segments
+                    .extend(points.windows(2).map(|pair| (pair[0], pair[1])));
+                continue;
+            }
+            in_connection = false;
+        }
+        if line.contains("<g class=\"node merge\"") {
+            let center = numbers(line, "transform");
+            drawn.merges.push((part.0 + center[0], part.1 + center[1]));
+        }
         if line.starts_with("<g transform=\"translate(") {
             let offset = numbers(line, "transform");
             part = (offset[0], offset[1]);
@@ -107,6 +141,8 @@ enum Kind {
     Node,
     Call,
     Wire,
+    Connection,
+    Merge,
 }
 
 /// A hotspot with the bytes of the text its spans cover.
@@ -120,6 +156,8 @@ struct Located {
     right: i32,
     bottom: i32,
     source: Range<usize>,
+    /// A ribbon: each wire's name, and the bytes where its producer binds it.
+    ribbon: Vec<(String, Range<usize>)>,
 }
 
 /// Checks that every node but a merge, and every boundary, has one hotspot on
@@ -127,7 +165,7 @@ struct Located {
 fn assert_every_node_has_one_hotspot(what: &str, drawn: &Drawn, hotspots: &[Located]) {
     let mut unmatched: Vec<&Located> = hotspots
         .iter()
-        .filter(|hotspot| hotspot.kind != Kind::Wire)
+        .filter(|hotspot| !matches!(hotspot.kind, Kind::Wire | Kind::Connection | Kind::Merge))
         .collect();
     let mut take = |matches: &dyn Fn(&Located) -> bool, what_on: String| {
         let at = unmatched
@@ -157,6 +195,77 @@ fn assert_every_node_has_one_hotspot(what: &str, drawn: &Drawn, hotspots: &[Loca
     );
 }
 
+/// Checks that one strip lies along every segment of every connection, ending
+/// where the segment meets a node and reaching `REACH` past any other end, that
+/// one square sits on every merge, and that each wire they list is named where
+/// its producer binds it.
+fn assert_ribbons_match_the_drawing(what: &str, source: &str, drawn: &Drawn, hotspots: &[Located]) {
+    let bounds = |hotspot: &&Located| (hotspot.left, hotspot.top, hotspot.right, hotspot.bottom);
+    let carrying: Vec<&Located> = hotspots
+        .iter()
+        .filter(|hotspot| matches!(hotspot.kind, Kind::Connection | Kind::Merge))
+        .collect();
+    let (squares, strips): (Vec<&Located>, Vec<&Located>) = carrying
+        .iter()
+        .partition(|hotspot| hotspot.kind == Kind::Merge);
+    let nodes: Vec<_> = hotspots
+        .iter()
+        .filter(|hotspot| matches!(hotspot.kind, Kind::Node | Kind::Call))
+        .map(|hotspot| bounds(&hotspot))
+        .filter(|node| !drawn.boundaries.contains(node))
+        .collect();
+    let reach = |(x, y): (i32, i32)| {
+        let at_node = nodes
+            .iter()
+            .any(|&(left, top, right, bottom)| left <= x && x <= right && top <= y && y <= bottom);
+        if at_node { 0 } else { REACH }
+    };
+    let mut strips: Vec<_> = strips.iter().map(bounds).collect();
+    let mut segments: Vec<_> = drawn
+        .segments
+        .iter()
+        .filter(|(from, to)| from != to)
+        .map(|&(from, to)| {
+            let (low, high) = (from.min(to), from.max(to));
+            if low.1 == high.1 {
+                (
+                    low.0 - reach(low),
+                    low.1 - REACH,
+                    high.0 + reach(high),
+                    high.1 + REACH,
+                )
+            } else {
+                (
+                    low.0 - REACH,
+                    low.1 - reach(low),
+                    high.0 + REACH,
+                    high.1 + reach(high),
+                )
+            }
+        })
+        .collect();
+    strips.sort_unstable();
+    segments.sort_unstable();
+    assert_eq!(strips, segments, "{what}: one strip along each segment");
+    let mut squares: Vec<_> = squares.iter().map(bounds).collect();
+    let mut merges: Vec<_> = drawn
+        .merges
+        .iter()
+        .map(|&(x, y)| (x - REACH, y - REACH, x + REACH, y + REACH))
+        .collect();
+    squares.sort_unstable();
+    merges.sort_unstable();
+    assert_eq!(squares, merges, "{what}: one square on each merge");
+    for (name, binding) in carrying.iter().flat_map(|hotspot| &hotspot.ribbon) {
+        let bound = &source[binding.clone()];
+        assert_eq!(
+            bound.strip_prefix("r#").unwrap_or(bound),
+            name,
+            "{what}: a connection or a merge names each wire where it binds"
+        );
+    }
+}
+
 /// Checks every hotspot of one diagram against what its SVG draws.
 fn assert_hotspots_match_the_drawing(what: &str, source: &str, svg: &str, hotspots: &[Located]) {
     let drawn = drawn(svg);
@@ -171,6 +280,8 @@ fn assert_hotspots_match_the_drawing(what: &str, source: &str, svg: &str, hotspo
             "{what}: {hotspot:?} leaves the canvas"
         );
     }
+
+    assert_ribbons_match_the_drawing(what, source, &drawn, hotspots);
 
     let calls: Vec<&Located> = hotspots
         .iter()
@@ -279,16 +390,25 @@ fn draw(
                 HotspotKind::Node => Kind::Node,
                 HotspotKind::Call { .. } => Kind::Call,
                 HotspotKind::Wire => Kind::Wire,
+                HotspotKind::Connection { .. } => Kind::Connection,
+                HotspotKind::Merge { .. } => Kind::Merge,
             },
             callee: match hotspot.kind {
                 HotspotKind::Call { callee } => Some(file.range(callee)),
                 _ => None,
             },
+            ribbon: match &hotspot.kind {
+                HotspotKind::Connection { ribbon } | HotspotKind::Merge { ribbon } => ribbon
+                    .iter()
+                    .map(|wire| (wire.name.clone(), file.range(wire.binding)))
+                    .collect(),
+                _ => Vec::new(),
+            },
             left: hotspot.left,
             top: hotspot.top,
             right: hotspot.right,
             bottom: hotspot.bottom,
-            source: file.range(hotspot.span),
+            source: hotspot.span.map_or(0..0, |span| file.range(span)),
         })
         .collect();
     Ok((svg, located))
@@ -345,13 +465,17 @@ A second paragraph.")]
     assert_eq!(
         draw(&crlf, 0, false),
         draw(source, 0, false).map(|(svg, hotspots)| {
-            let moved = hotspots.into_iter().map(|hotspot| {
-                let line = |offset: usize| source[..offset].matches('\n').count();
-                Located {
-                    source: hotspot.source.start + line(hotspot.source.start)
-                        ..hotspot.source.end + line(hotspot.source.end),
-                    ..hotspot
-                }
+            let line = |offset: usize| source[..offset].matches('\n').count();
+            let moved =
+                |range: Range<usize>| range.start + line(range.start)..range.end + line(range.end);
+            let moved = hotspots.into_iter().map(|hotspot| Located {
+                source: moved(hotspot.source),
+                ribbon: hotspot
+                    .ribbon
+                    .into_iter()
+                    .map(|(name, binding)| (name, moved(binding)))
+                    .collect(),
+                ..hotspot
             });
             (svg, moved.collect())
         })
@@ -805,10 +929,85 @@ fn ranges_count_the_byte_order_mark_and_the_shebang() {
     let (prefixed_svg, prefixed_hotspots) = draw(&prefixed, 0, false).unwrap();
     assert_eq!(svg, prefixed_svg);
     assert_eq!(hotspots.len(), prefixed_hotspots.len());
-    for (hotspot, prefixed_hotspot) in hotspots.iter().zip(&prefixed_hotspots) {
+    let spanned = |hotspot: &&Located| !matches!(hotspot.kind, Kind::Connection | Kind::Merge);
+    for (hotspot, prefixed_hotspot) in hotspots
+        .iter()
+        .filter(spanned)
+        .zip(prefixed_hotspots.iter().filter(spanned))
+    {
         assert_eq!(
             prefixed_hotspot.source,
             hotspot.source.start + prefix.len()..hotspot.source.end + prefix.len()
         );
     }
+}
+
+/// A flow whose second block takes the first's wire and the flow's.
+const CHAIN: &str = r#"#[kaa]
+fn chain(first: u8) -> u8 {
+    #[kaa::action("Double it.")]
+    let second = |first| first * 2;
+
+    #[kaa::action("Add them.")]
+    let third = |first, second| first + second;
+
+    |third| return third;
+}
+"#;
+
+/// The ribbons of a diagram's connections and merges, each once, as names.
+fn ribbons(source: &str) -> Vec<Vec<String>> {
+    let (_, hotspots) = draw(source, 0, false).expect("the flow draws");
+    let mut ribbons: Vec<Vec<String>> = hotspots
+        .into_iter()
+        .filter(|hotspot| matches!(hotspot.kind, Kind::Connection | Kind::Merge))
+        .map(|hotspot| hotspot.ribbon.into_iter().map(|(name, _)| name).collect())
+        .collect();
+    ribbons.sort();
+    ribbons.dedup();
+    ribbons
+}
+
+#[test]
+fn a_connection_lists_its_ribbon() {
+    assert_eq!(
+        ribbons(CHAIN),
+        [vec!["first"], vec!["first", "second"], vec!["third"]]
+    );
+}
+
+#[test]
+fn a_merge_lists_its_ribbon() {
+    let source = r#"#[kaa]
+fn pick(condition: bool, first: u8) -> u8 {
+    #[kaa::question("Take the yes branch?")]
+    let (no, yes) = |condition| condition;
+
+    #[kaa::action("Keep it.")]
+    let value = |no, first| first;
+
+    #[kaa::action("Raise it.")]
+    let value = |yes, first| first + 1;
+
+    |value| return value;
+}
+"#;
+    let (svg, hotspots) = draw(source, 0, false).unwrap();
+    let merge = drawn(svg.as_str()).merges[0];
+    let at_merge = hotspots
+        .iter()
+        .find(|hotspot| {
+            hotspot.kind == Kind::Merge
+                && (
+                    i32::midpoint(hotspot.left, hotspot.right),
+                    i32::midpoint(hotspot.top, hotspot.bottom),
+                ) == merge
+        })
+        .expect("the merge has a hotspot");
+    let names: Vec<&str> = at_merge
+        .ribbon
+        .iter()
+        .map(|(name, _)| name.as_str())
+        .collect();
+    assert_eq!(names, ["value"]);
 }

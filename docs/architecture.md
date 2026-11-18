@@ -168,9 +168,12 @@ Between verification and serialization `kaalang-svg` reads the hotspots it
 returns beside the SVG from the verified scene in
 [`flow/navigation.rs`](../crates/kaalang-svg/src/flow/navigation.rs): a
 rectangle for every node, drawn cycle boundary, and wire name, with the source
-it stands for. What a node draws, where a producer binds its wire, and what a
-`return` hands to end are the compiler's facts, in
-[`source/spans.rs`](../crates/kaalang-compiler/src/source/spans.rs). Neither
+it stands for, and for every segment of a connection and every merge, with its
+ribbon. What a node draws, where a producer binds its wire, and what a `return`
+hands to end are the compiler's facts, in
+[`source/spans.rs`](../crates/kaalang-compiler/src/source/spans.rs), and so is
+the ribbon of each connection and merge, in
+[`source/ribbons.rs`](../crates/kaalang-compiler/src/source/ribbons.rs). Neither
 crate decides what a click does: that is the reader's. `Captions` keeps, with
 every list of wire names a label draws, where each producer binds its wire; a
 wire label records which list it draws, and the label module finds each name's
@@ -195,12 +198,15 @@ each card draws into the focus.
 
 kaalang supports VS Code and RustRover. Every supported IDE shows
 [`ide/page/`](../ide/page/page.js), a page in plain JavaScript. It runs
-`kaalang-js` in a worker, draws the flow at the editor's cursor, and asks its
-host to reveal a range or to run the editor's own go-to action at a position; a
-host gives the text, the cursor, and the target's cfg set.
+`kaalang-js` in a worker, draws the flow at the editor's cursor, lists the
+ribbon of a clicked connection or merge, and asks its host to reveal a range, to
+run the editor's own go-to action at a position, or for the types of values; a
+host gives the text, the cursor, the target's cfg set, and the types the editor
+knows.
 
 In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
 rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
 cargo's configuration applied, the extra cfgs its settings list, the features
 cargo enables for the file's package, and `rust_analyzer` and `test` for a
-workspace crate.
+workspace crate. It reads a value's type from rust-analyzer's hover at its
+binding.

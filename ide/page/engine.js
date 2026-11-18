@@ -6,15 +6,24 @@ export class Crash extends Error {}
 
 /**
  * @typedef {object} Hotspot
- * @property {'node' | 'call' | 'wire'} kind
+ * @property {'node' | 'call' | 'wire' | 'connection' | 'merge'} kind
  * @property {number} left
  * @property {number} top
  * @property {number} right
  * @property {number} bottom
- * @property {number} start
- * @property {number} end
+ * @property {number} [start] Absent on a connection and a merge.
+ * @property {number} [end]
  * @property {number} [calleeStart]
  * @property {number} [calleeEnd]
+ * @property {number[]} [ribbon] A connection's or a merge's ribbon, as
+ *   positions in the answer's `wires`.
+ */
+
+/**
+ * @typedef {object} Wire One wire of a ribbon.
+ * @property {string} name
+ * @property {number} start Where its producer binds it.
+ * @property {number} end
  */
 
 /**
@@ -98,7 +107,7 @@ export function createEngine(wasm) {
      */
     declaredAt: (text, cfg, offset) => call("declaredAt", text, cfg, offset),
     /**
-     * @returns {Promise<{svg: string, hotspots: Hotspot[]} | null>}
+     * @returns {Promise<{svg: string, hotspots: Hotspot[], wires: Wire[]} | null>}
      */
     drawFlow: (text, cfg, position, collapseCycles) =>
       call("drawFlow", text, cfg, position, collapseCycles),

@@ -13,12 +13,13 @@ use syn::{
     Attribute, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem, spanned::Spanned,
 };
 
-pub use self::target::Target;
+pub use self::{ribbons::Ribbons, target::Target};
 use crate::{
     FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts, flows,
     is_kaalang_attribute, type_declaration, type_items,
 };
 
+mod ribbons;
 mod spans;
 mod target;
 

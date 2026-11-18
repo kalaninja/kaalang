@@ -69,12 +69,20 @@ async function settled() {
   }
 }
 
-/** A page of its own, with the bindings' files `wasm` overrides. */
+/**
+ * A page of its own, with the bindings' files `wasm` overrides. It lays out
+ * unseen, so that it takes clicks, and keeps the `types` requests it sends.
+ */
 function open(overrides = {}) {
   const root = document.createElement("div");
-  root.hidden = true;
+  root.style.cssText =
+    "position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none";
   document.body.append(root);
-  const receive = start(root, { send() {}, wasm: { ...wasm, ...overrides } });
+  const requests = [];
+  const receive = start(root, {
+    send: (message) => message.type === "types" && requests.push(message),
+    wasm: { ...wasm, ...overrides },
+  });
   const banner = root.querySelector(".kaalang-banner");
   return {
     show: (text, cursor, uri = "a") =>
@@ -87,6 +95,32 @@ function open(overrides = {}) {
         .querySelector(".kaalang-diagram svg title")
         ?.textContent.split(" ")
         .at(-1),
+    /** Clicks the middle of the first vertical connection. */
+    click() {
+      const strip = [...root.querySelectorAll(".kaalang-hotspots > rect")].find(
+        (rect) =>
+          rect.dataset.kind === "connection" &&
+          rect.getAttribute("width") === "24",
+      );
+      const { x, y, width, height } = strip.getBoundingClientRect();
+      const [clientX, clientY] = [x + width / 2, y + height / 2];
+      strip.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, clientX, clientY }),
+      );
+    },
+    requests,
+    /** Answers `request` with `type` for each offset. */
+    answer: (request, type) =>
+      receive({
+        type: "types",
+        id: request.id,
+        types: Object.fromEntries(request.offsets.map((at) => [at, type])),
+      }),
+    /** The types the open list shows, or `null` when none is open. */
+    types: () =>
+      root.querySelector(".kaalang-popup")?.querySelector("span").textContent ??
+      null,
+    collapse: () => root.querySelector(".kaalang-collapse").click(),
   };
 }
 
@@ -141,6 +175,27 @@ const checks = {
     page.show(flow, inFlow);
     await settled();
     return page.banner()?.startsWith("Internal error") ?? false;
+  },
+  async "a type asked for an earlier list does not fill a later one"() {
+    const page = open();
+    page.show(flow, inFlow);
+    await settled();
+    page.click();
+    page.click();
+    const [early, late] = page.requests;
+    page.answer(early, "u16");
+    const kept = page.types();
+    page.answer(late, "u8");
+    return kept === "" && page.types() === "u8";
+  },
+  async "a list opened while the diagram updates closes with it"() {
+    const page = open();
+    page.show(flow, inFlow);
+    await settled();
+    on("posted", "drawFlow", () => page.click());
+    page.collapse();
+    await settled();
+    return page.requests.length === 1 && page.types() === null;
   },
   async "after a trap, the next text draws"() {
     const page = open();

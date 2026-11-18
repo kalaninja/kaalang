@@ -18,10 +18,13 @@ mod utf16;
 /// Draws the flow at `position` among those that the target `cfg` compiles in
 /// `text`, with each cycle as one node when `collapse_cycles` is set, as JSON:
 /// `{"svg": …, "hotspots": [{"kind", "left", "top", "right", "bottom",
-/// "start", "end", and for a call "calleeStart", "calleeEnd"}]}`. `kind` is
-/// `node`, `call`, or `wire`; a rectangle is in the SVG's user units. `cfg` is
-/// the target's cfg set as `rustc --print cfg` prints it, empty for none. The
-/// answer is `null` when no flow stands at `position`.
+/// "start", "end", for a call "calleeStart", "calleeEnd", and for a connection
+/// or a merge "ribbon", its positions in the answer's "wires", instead of
+/// "start" and "end"}], "wires": [{"name", "start", "end"}]}`. `kind` is
+/// `node`, `call`, `wire`, `connection`, or `merge`; a rectangle is in the
+/// SVG's user units, and a wire's range is its binding. `cfg` is the target's
+/// cfg set as `rustc --print cfg` prints it, empty for none. The answer is
+/// `null` when no flow stands at `position`.
 ///
 /// # Errors
 ///

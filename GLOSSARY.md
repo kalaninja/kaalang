@@ -106,13 +106,16 @@
   cycle, for-entry, for-end, transition, merge, end. A return draws only its
   route to end.
 - **connection**: one drawn control-flow link; not a wire.
+- **ribbon**: the wires a connection or a merge carries: those in scope there
+  that a block further along captures. The diagram does not draw it.
 - **exit**, **hand-over**, **distributor**: where connections leave a node, the
   wires labeled there, and the shared segment a select's cases fan out from.
 - **label**, **parameter panel**: text on a node or connection, and the panel
   beside start listing the flow's Rust parameters.
 - **hotspot**: the rectangle of one node, cycle boundary, or wire name in a
   label, with the source it stands for: what the node draws, with a call's
-  callee, or the wire where its producer binds it.
+  callee, or the wire where its producer binds it; or of one segment of a
+  connection, or of a merge, with its ribbon.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
   align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body
