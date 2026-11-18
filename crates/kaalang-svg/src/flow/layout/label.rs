@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     flow::captions::WireList,
-    text::{RichText, block_metrics, joined, line_ink, text_width, wrap_text},
+    text::{RichText, block_metrics, code_ranges, joined, line_ink, text_width, wrap_text},
 };
 
 /// A label beside a vertical run must fit before the next column's node,
@@ -355,34 +355,29 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
 pub(crate) fn name_rects(label: &Label, names: &[String]) -> Vec<(usize, (i32, i32, i32, i32))> {
     let font_size = label.kind.font_size();
     let baselines = block_metrics(&label.lines, font_size, label.kind.line_height()).baselines;
-    let width = |text: &str| text_width(&RichText::code(text), font_size);
+    let ranges = names.iter().scan(0, |start, name| {
+        let range = *start..*start + name.len();
+        *start = range.end + NAME_SEPARATOR.len();
+        Some(range)
+    });
     let mut rects = Vec::new();
-    // The lines hold the names joined, cut wherever the label wraps, so a name
-    // is found by its position in that text.
-    let mut name_start = 0;
-    for (position, name) in names.iter().enumerate() {
-        let name_end = name_start + name.len();
-        let mut line_start = 0;
-        for (line, baseline) in label.lines.iter().zip(&baselines) {
-            let text: &str = line.as_ref();
-            let from = name_start.max(line_start);
-            let to = name_end.min(line_start + text.len());
-            if from < to {
-                let y = label.at.y + baseline - baselines[0];
-                rects.push((
-                    position,
-                    (
-                        label.at.x + width(&text[..from - line_start]),
-                        y - font_size,
-                        label.at.x + width(&text[..to - line_start]),
-                        y + font_size / 2,
-                    ),
-                ));
-            }
-            line_start += text.len();
-        }
-        name_start = name_end + NAME_SEPARATOR.len();
-    }
+    code_ranges(
+        &label.lines,
+        font_size,
+        ranges,
+        |position, line, left, right| {
+            let y = label.at.y + baselines[line] - baselines[0];
+            rects.push((
+                position,
+                (
+                    label.at.x + left,
+                    y - font_size,
+                    label.at.x + right,
+                    y + font_size / 2,
+                ),
+            ));
+        },
+    );
     rects
 }
 

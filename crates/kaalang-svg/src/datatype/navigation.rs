@@ -2,15 +2,13 @@
 //! relationship's target, and each incoming card's header, with the source
 //! each stands for.
 
-use std::ops::Range;
-
 use super::{
     Card,
     layout::{Bounds, Text, TextBlock, TypeScene},
 };
 use crate::{
     Hotspot, HotspotKind,
-    text::{RichText, Style, block_metrics, text_width},
+    text::{RichText, Style, block_metrics, code_ranges, text_width},
 };
 
 /// The hotspots of `scene`, drawn for `focus` under `incoming`, the cards in
@@ -45,11 +43,20 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                     );
                 }
                 (Text::Type, Some(tile)) => {
-                    for path in &tiles[tile].paths {
-                        for rect in rects(block, path.range.clone()) {
-                            push(HotspotKind::Path { card: number }, rect, path.span);
-                        }
-                    }
+                    let paths = &tiles[tile].paths;
+                    let font = block.text.font();
+                    let baselines =
+                        block_metrics(&block.lines, font, block.text.line_height()).baselines;
+                    code_ranges(
+                        &block.lines,
+                        font,
+                        paths.iter().map(|path| path.range.clone()),
+                        |index, line, left, right| {
+                            let y = block.top + baselines[line];
+                            let rect = (block.x + left, y - font, block.x + right, y + font / 2);
+                            push(HotspotKind::Path { card: number }, rect, paths[index].span);
+                        },
+                    );
                 }
                 (Text::Target, Some(tile)) => {
                     if let (Some(target), Some(span)) =
@@ -67,35 +74,6 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
         }
     }
     hotspots
-}
-
-/// The rectangle of the text at `range` of a block of source on each line it
-/// is drawn on, set in code, from its first glyph's left edge to its last
-/// one's right edge, and from a font size above its baseline to half of one
-/// below, as a wire name's.
-fn rects(block: &TextBlock, range: Range<usize>) -> Vec<Bounds> {
-    let font = block.text.font();
-    let baselines = block_metrics(&block.lines, font, block.text.line_height()).baselines;
-    let width = |text: &str| text_width(&RichText::code(text), font);
-    let mut rects = Vec::new();
-    // The lines hold the text cut wherever it wraps.
-    let mut line_start = 0;
-    for (line, baseline) in block.lines.iter().zip(&baselines) {
-        let text: &str = line.as_ref();
-        let from = range.start.max(line_start);
-        let to = range.end.min(line_start + text.len());
-        if from < to {
-            let y = block.top + baseline;
-            rects.push((
-                block.x + width(&text[..from - line_start]),
-                y - font,
-                block.x + width(&text[..to - line_start]),
-                y + font / 2,
-            ));
-        }
-        line_start += text.len();
-    }
-    rects
 }
 
 /// The rectangle of a target's path, which ends its line, right-aligned.

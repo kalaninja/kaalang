@@ -1200,6 +1200,37 @@ pub(crate) fn block_metrics(
     TextBlockMetrics { height, baselines }
 }
 
+/// The horizontal ink bounds of ordered, disjoint byte ranges in wrapped code.
+/// A range spanning lines visits each line it occupies.
+pub(crate) fn code_ranges(
+    lines: &[RichText],
+    font: i32,
+    ranges: impl Iterator<Item = Range<usize>>,
+    mut visit: impl FnMut(usize, usize, i32, i32),
+) {
+    let mut ranges = ranges.enumerate().peekable();
+    let mut start = 0;
+    for (line, text) in lines.iter().map(AsRef::<str>::as_ref).enumerate() {
+        let end = start + text.len();
+        while let Some((index, range)) = ranges.peek() {
+            if range.start >= end {
+                break;
+            }
+            let from = range.start.max(start);
+            let to = range.end.min(end);
+            if from < to {
+                let width = |at| text_width(&RichText::code(&text[..at - start]), font);
+                visit(*index, line, width(from), width(to));
+            }
+            if range.end > end {
+                break;
+            }
+            ranges.next();
+        }
+        start = end;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
