@@ -5,10 +5,12 @@
 use std::{collections::BTreeSet, ops::Range};
 
 use proc_macro2::Span;
-use syn::{Item, PathSegment, Type, TypePath, UseTree, spanned::Spanned, visit::Visit};
+use syn::{
+    Item, Path, PathSegment, QSelf, Type, UseTree, ext::IdentExt, spanned::Spanned, visit::Visit,
+};
 
-use super::{SourceFile, collapsed_text};
-use crate::type_declaration;
+use super::SourceFile;
+use crate::{TypeDeclaration, type_declaration};
 
 /// One path a type's text names, as a card quotes the text.
 #[derive(Clone, Debug)]
@@ -24,58 +26,75 @@ impl SourceFile<'_> {
     /// those in its generic arguments, and in `<T as Trait>::Item` the paths of
     /// `T`, then `Trait`, then `Item`.
     pub(super) fn named_paths(&self, ty: &Type) -> Vec<NamedPath> {
-        struct Paths(Vec<(Range<usize>, Span)>);
+        #[derive(Default)]
+        struct Paths {
+            ranges: Vec<(Range<usize>, Span)>,
+            trait_segments: Option<usize>,
+        }
         impl Paths {
-            /// Records the path of `segments`, from `start` when given.
-            fn push<'a>(
+            /// Generic arguments break a path's visible text in two:
+            /// `Type<Arg>::Member` names all three separately.
+            fn segments<'a>(
                 &mut self,
-                start: Option<Span>,
-                segments: impl IntoIterator<Item = &'a PathSegment>,
+                mut start: Option<Span>,
+                mut segments: impl Iterator<Item = &'a PathSegment>,
             ) {
-                let segments: Vec<&PathSegment> = segments.into_iter().collect();
-                if let (Some(first), Some(last)) = (segments.first(), segments.last()) {
-                    let start = start.unwrap_or_else(|| first.ident.span());
+                while let Some(mut last) = segments.next() {
+                    let start = start.take().unwrap_or_else(|| last.ident.span());
+                    while last.arguments.is_none() {
+                        let Some(next) = segments.next() else { break };
+                        last = next;
+                    }
                     let end = last.ident.span();
-                    self.0
+                    self.ranges
                         .push((start.byte_range().start..end.byte_range().end, end));
+                    self.visit_path_arguments(&last.arguments);
                 }
             }
         }
         impl<'ast> Visit<'ast> for Paths {
             fn visit_path(&mut self, path: &'ast syn::Path) {
-                self.push(
+                let named = self.trait_segments.take().unwrap_or(path.segments.len());
+                let mut segments = path.segments.iter();
+                self.segments(
                     path.leading_colon.map(|colon| colon.spans[0]),
-                    &path.segments,
+                    segments.by_ref().take(named),
                 );
-                syn::visit::visit_path(self, path);
+                self.segments(None, segments);
             }
 
-            fn visit_type_path(&mut self, ty: &'ast TypePath) {
-                let Some(qself) = &ty.qself else {
-                    syn::visit::visit_type_path(self, ty);
-                    return;
-                };
-                // A qualified path writes its trait and what follows apart.
+            fn visit_qself(&mut self, qself: &'ast QSelf) {
+                // syn visits a qualified self immediately before its path,
+                // in expressions and patterns as well as types.
                 self.visit_type(&qself.ty);
-                let segments: Vec<&PathSegment> = ty.path.segments.iter().collect();
-                let (named, rest) = segments.split_at(qself.position);
-                self.push(None, named.iter().copied());
-                self.push(None, rest.iter().copied());
-                for segment in &ty.path.segments {
-                    self.visit_path_arguments(&segment.arguments);
-                }
+                self.trait_segments = Some(qself.position);
             }
         }
-        let mut paths = Paths(Vec::new());
+        let mut paths = Paths::default();
         paths.visit_type(ty);
-        let whole = ty.span().byte_range();
-        let text = &self.tokenized[whole.clone()];
+        paths.ranges.sort_unstable_by_key(|(range, _)| range.start);
+        // Count each whitespace run once as the card's quoted text does.
+        let mut byte = ty.span().byte_range().start;
+        let mut collapsed = 0;
+        let mut space = true;
+        let mut advance = |end| {
+            for ch in self.tokenized[byte..end].chars() {
+                if ch.is_whitespace() {
+                    collapsed += usize::from(!space);
+                    space = true;
+                } else {
+                    collapsed += ch.len_utf8();
+                    space = false;
+                }
+            }
+            byte = end;
+            collapsed
+        };
         paths
-            .0
+            .ranges
             .into_iter()
             .map(|(range, span)| NamedPath {
-                range: collapsed_offset(text, range.start - whole.start)
-                    ..collapsed_offset(text, range.end - whole.start),
+                range: advance(range.start)..advance(range.end),
                 span,
             })
             .collect()
@@ -85,24 +104,19 @@ impl SourceFile<'_> {
     /// `offsets`, bytes of the text as given, where an engine finds the
     /// references to one type: each by its path within the file, with the
     /// positions of those relationships, in source order. An offset on a `use`
-    /// that renames the type also reaches the relationships of its module that
-    /// name it by the new name, which an engine leaves out. An offset anywhere
-    /// else reaches nothing.
+    /// that renames the type also reaches relationships naming that import by
+    /// a relative path within the file, which an engine leaves out.
     #[must_use]
     pub fn referring(&self, offsets: &[usize]) -> Vec<(String, Vec<usize>)> {
-        let hit = |span: Span| {
-            let range = self.range(span);
-            offsets.iter().any(|offset| range.contains(offset))
-        };
+        if offsets.is_empty() {
+            return Vec::new();
+        }
+        let offsets: BTreeSet<_> = offsets.iter().copied().collect();
+        let hit = |span: Span| offsets.range(self.range(span)).next().is_some();
         let mut renamed = BTreeSet::new();
         renames(&self.items, "", &hit, &mut renamed);
-        let mut seen = BTreeSet::new();
-        self.type_items()
-            .iter()
-            // Only code rustc rejects declares a path twice; `ty` reads the first.
-            .filter(|(path, _)| seen.insert(path.as_str()))
-            .filter_map(|(path, item)| {
-                let declaration = type_declaration(item).ok()?;
+        self.declarations()
+            .filter_map(|(path, declaration)| {
                 let module = path.rsplit_once("::").map_or("", |(module, _)| module);
                 let positions: Vec<usize> = (0..)
                     .zip(declaration.relationships())
@@ -111,41 +125,93 @@ impl SourceFile<'_> {
                         // segment; one before it names a module or the type of
                         // a variant.
                         let target = &relationship.target;
-                        target
-                            .segments
-                            .last()
-                            .is_some_and(|last| hit(last.ident.span()))
-                            || target.get_ident().is_some_and(|name| {
-                                renamed.contains(&(module.to_owned(), name.to_string()))
-                            })
+                        hit(target_span(target)) || names_import(target, module, &renamed)
                     })
                     .map(|(position, _)| position)
                     .collect();
-                (!positions.is_empty()).then(|| (path.clone(), positions))
+                (!positions.is_empty()).then(|| (path.to_owned(), positions))
             })
             .collect()
     }
+
+    /// The byte where each relationship's target names its last segment in
+    /// the given text, so an editor can resolve that name to its definition.
+    #[must_use]
+    pub fn relationship_offsets(&self) -> Vec<usize> {
+        let mut offsets = Vec::new();
+        for (_, declaration) in self.declarations() {
+            for relationship in declaration.relationships() {
+                offsets.push(self.range(target_span(&relationship.target)).start);
+            }
+        }
+        offsets
+    }
+
+    /// The declarations an incoming card can draw, as [`SourceFile::ty`]
+    /// selects them when the current text repeats a type's path.
+    fn declarations(&self) -> impl Iterator<Item = (&str, TypeDeclaration)> {
+        let mut seen = BTreeSet::new();
+        self.type_items().iter().filter_map(move |(path, item)| {
+            if !seen.insert(path.as_str()) {
+                return None;
+            }
+            type_declaration(item)
+                .ok()
+                .map(|declaration| (path.as_str(), declaration))
+        })
+    }
 }
 
-/// Collects, as module path and name, every name a `use` among `items` in
-/// `module`, or in a module inside it, gives a path whose renamed segment
-/// `hit`s.
+/// The final segment of an authored relationship path, including `Self`.
+pub(super) fn target_span(target: &Path) -> Span {
+    target
+        .segments
+        .last()
+        .expect("a relationship names a target")
+        .ident
+        .span()
+}
+
+/// Whether a relative `path` from `module` leads to a renamed import. A
+/// file alone cannot locate the crate root or follow a path out of the file.
+fn names_import(path: &Path, module: &str, renamed: &BTreeSet<String>) -> bool {
+    if renamed.is_empty() || path.leading_colon.is_some() {
+        return false;
+    }
+    let mut parts: Vec<String> = module
+        .split("::")
+        .filter(|part| !part.is_empty())
+        .map(|part| part.trim_start_matches("r#").to_owned())
+        .collect();
+    for segment in &path.segments {
+        match segment.ident.to_string().as_str() {
+            "self" => {}
+            "super" => {
+                if parts.pop().is_none() {
+                    return false;
+                }
+            }
+            "crate" => return false,
+            name => parts.push(name.trim_start_matches("r#").to_owned()),
+        }
+    }
+    renamed.contains(&parts.join("::"))
+}
+
+/// Collects the file-local path of every name a `use` among `items` in
+/// `module`, or in a module inside it, gives a path whose renamed segment `hit`s.
 fn renames(
     items: &[Item],
     module: &str,
     hit: &impl Fn(Span) -> bool,
-    renamed: &mut BTreeSet<(String, String)>,
+    renamed: &mut BTreeSet<String>,
 ) {
     for item in items {
         match item {
             Item::Use(declaration) => renamed_in(&declaration.tree, module, hit, renamed),
             Item::Mod(inner) => {
                 if let Some((_, items)) = &inner.content {
-                    let path = if module.is_empty() {
-                        inner.ident.to_string()
-                    } else {
-                        format!("{module}::{}", inner.ident)
-                    };
+                    let path = format!("{module}{}::", inner.ident.unraw());
                     renames(items, &path, hit, renamed);
                 }
             }
@@ -159,7 +225,7 @@ fn renamed_in(
     tree: &UseTree,
     module: &str,
     hit: &impl Fn(Span) -> bool,
-    renamed: &mut BTreeSet<(String, String)>,
+    renamed: &mut BTreeSet<String>,
 ) {
     match tree {
         UseTree::Path(path) => renamed_in(&path.tree, module, hit, renamed),
@@ -169,22 +235,9 @@ fn renamed_in(
             }
         }
         UseTree::Rename(rename) if hit(rename.ident.span()) => {
-            renamed.insert((module.to_owned(), rename.rename.to_string()));
+            renamed.insert(format!("{module}{}", rename.rename.unraw()));
         }
         _ => {}
-    }
-}
-
-/// Where byte `at` of `text`, the start or the end of a token, falls in
-/// `collapsed_text(text)`: a whitespace run before it counts as one space,
-/// unless nothing precedes it.
-fn collapsed_offset(text: &str, at: usize) -> usize {
-    let before = &text[..at];
-    let collapsed = collapsed_text(before).len();
-    if collapsed > 0 && before.ends_with(char::is_whitespace) {
-        collapsed + 1
-    } else {
-        collapsed
     }
 }
 
@@ -257,6 +310,26 @@ mod tests {
                 ("Member".into(), "Member".into()),
                 ("IntoIterator".into(), "IntoIterator".into()),
                 ("Item".into(), "Item".into()),
+            ]]
+        );
+    }
+
+    #[test]
+    fn paths_in_an_array_length_keep_generic_arguments_and_members_apart() {
+        assert_eq!(
+            names(
+                "type Bytes = [u8; Size::<Item>::N + <Item as ::limits::Bound<Size>>::N];",
+                "Bytes"
+            ),
+            [vec![
+                ("u8".into(), "u8".into()),
+                ("Size".into(), "Size".into()),
+                ("Item".into(), "Item".into()),
+                ("N".into(), "N".into()),
+                ("Item".into(), "Item".into()),
+                ("::limits::Bound".into(), "Bound".into()),
+                ("Size".into(), "Size".into()),
+                ("N".into(), "N".into()),
             ]]
         );
     }
@@ -338,10 +411,73 @@ mod inner {
     }
 
     #[test]
+    fn a_definition_is_requested_at_each_target_the_file_can_draw() {
+        let source = format!(
+            "\u{feff}#!/usr/bin/env rustx\n{}",
+            r#"
+            #[kaa]
+            struct Page {
+                #[cfg_attr(unix, kaa::refer(crate::model::Member, "The author."))]
+                author: u8,
+                #[cfg(windows)] #[kaa::refer(Other, "Other.")] other: u8,
+                #[kaa::refer(Self, "The previous page.")] previous: u8,
+            }
+            #[kaa] struct Broken {
+                #[kaa::refer(Bad, "First.")] #[kaa::refer(Bad, "Second.")] bad: u8,
+            }
+            #[kaa] #[kaa::refer(Page, "The page.")] type Owned = u8;
+        "#
+        );
+        let file = SourceFile::parse(&source, &"unix".parse().unwrap()).unwrap();
+        let offsets = file.relationship_offsets();
+        assert_eq!(
+            offsets,
+            [
+                source.find("Member,").unwrap(),
+                source.find("Self,").unwrap(),
+                source.find("Page,").unwrap(),
+            ]
+        );
+        assert_eq!(
+            file.referring(&offsets),
+            [("Page".into(), vec![0, 1]), ("Owned".into(), vec![0]),]
+        );
+    }
+
+    #[test]
     fn a_renamed_import_reaches_the_relationships_of_its_module_that_use_the_name() {
         assert_eq!(
             referring(&["Member as Person"]),
             [("Review".to_owned(), vec![0])]
+        );
+    }
+
+    #[test]
+    fn a_relative_path_can_reach_a_renamed_import_across_inline_modules() {
+        let source = r#"mod model { pub struct Member; }
+        mod r#labels {
+            pub(crate) use crate::model::Member as r#Person;
+            #[kaa] struct Team {
+                #[kaa::refer(self::Person, "Same module.")] lead: u8,
+            }
+            mod inner {
+                #[kaa] struct Review {
+                    #[kaa::refer(super::r#Person, "Parent module.")] author: u8,
+                }
+            }
+        }
+        #[kaa] struct Group {
+            #[kaa::refer(labels::Person, "Child module.")] lead: u8,
+        }"#;
+        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let name = source.find("Member as").unwrap();
+        assert_eq!(
+            file.referring(&[name]),
+            [
+                ("r#labels::Team".into(), vec![0]),
+                ("r#labels::inner::Review".into(), vec![0]),
+                ("Group".into(), vec![0]),
+            ]
         );
     }
 
