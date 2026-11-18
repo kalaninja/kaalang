@@ -1,6 +1,7 @@
 //! Renders validated kaalang flows and type diagrams as standalone SVG.
 //!
-//! It serves `cargo kaalang`, and its API may change in any minor release.
+//! It serves `cargo kaalang` and the bindings an editor's page loads, and its
+//! API may change in any minor release.
 
 use std::{error::Error, fmt, num::NonZeroUsize};
 
@@ -124,6 +125,17 @@ pub enum HotspotKind {
     /// gives it. It overlaps the strips of the connections that meet there,
     /// and has no span.
     Merge { ribbon: Vec<RibbonWire> },
+    /// One path a tile's type names, on one line it is drawn on, of the type
+    /// `card` draws: 0 for the focus, then the incoming cards in the order
+    /// [`render_type`] takes them. Its span is the path's last segment, as
+    /// [`SourceType::field_paths`] places it.
+    Path { card: usize },
+    /// A relationship's target, of the type `card` draws. Its span names the
+    /// target's type, as [`SourceType::target_spans`] places it.
+    Target { card: usize },
+    /// The header of an incoming card, the type `card` draws. Its span is the
+    /// type's name in its declaration.
+    Header { card: usize },
 }
 
 /// One wire of a ribbon: its displayed name, and where its producer binds it,
@@ -134,20 +146,21 @@ pub struct RibbonWire {
     pub binding: Span,
 }
 
-/// One element of a rendered flow that stands for something in its source.
+/// One element of a rendered diagram that stands for something in its source.
 #[derive(Clone, Debug)]
 pub struct Hotspot {
     pub kind: HotspotKind,
-    /// The element's rectangle in the SVG's user units. A wire name that wraps
-    /// has one hotspot per line.
+    /// The element's rectangle in the SVG's user units. A name that wraps has
+    /// one hotspot per line.
     pub left: i32,
     pub top: i32,
     pub right: i32,
     pub bottom: i32,
-    /// The source the element stands for, a span of the flow as it was read,
-    /// or none for a connection or a merge. [`SourceFile::range`] gives its
-    /// bytes, but only while proc-macro2 still holds the parsed text: it
-    /// forgets every span when its source map is cleared.
+    /// The source the element stands for, a span of the flow or of the type
+    /// as it was read, or none for a connection or a merge.
+    /// [`SourceFile::range`] gives its bytes, but only while proc-macro2 still
+    /// holds the parsed text: it forgets every span when its source map is
+    /// cleared.
     pub span: Option<Span>,
 }
 
@@ -197,7 +210,9 @@ pub struct TypeCard<'a> {
 /// given order, with a line for each relationship they draw into the focus.
 /// Each group of incoming cards starts a new row and wraps into further rows
 /// after `options.columns` cards, or where it would grow wider than a screen,
-/// or than the focus when it is wider.
+/// or than the focus when it is wider. Returns the SVG and its hotspots: every
+/// path a tile's type names, every relationship's target, and every incoming
+/// card's header.
 ///
 /// # Errors
 ///
@@ -212,8 +227,64 @@ pub fn render_type(
     focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     options: TypeOptions,
-) -> Result<String, RenderError> {
+) -> Result<(String, Vec<Hotspot>), RenderError> {
     datatype::render(focus, incoming, options.columns)
+}
+
+/// An incoming card's type for [`card_headers`]: its path from its crate's
+/// root, and the name of its crate when that is not the focus's.
+#[derive(Clone, Copy, Debug)]
+pub struct CardPath<'a> {
+    pub path: &'a str,
+    pub other_crate: Option<&'a str>,
+}
+
+/// The header of each incoming card: a path from the focus's crate drops the
+/// module segments it shares with `module`, the focus's module path with a
+/// trailing `::`, or nothing at the crate root, and gets them back one by one
+/// where it would read as another header or as `focus`, the focus's own; a
+/// path from another crate keeps the crate's name and its whole path.
+#[must_use]
+pub fn card_headers(focus: &str, module: &str, incoming: &[CardPath<'_>]) -> Vec<String> {
+    let mut headers: Vec<String> = incoming
+        .iter()
+        .map(|card| {
+            if let Some(krate) = card.other_crate {
+                return format!("{krate}::{}", card.path);
+            }
+            let shared: usize = module
+                .split_inclusive("::")
+                .zip(card.path.split_inclusive("::"))
+                .take_while(|(left, right)| left == right)
+                .map(|(segment, _)| segment.len())
+                .sum();
+            card.path[shared..].to_owned()
+        })
+        .collect();
+    loop {
+        let mut seen = std::collections::BTreeSet::from([focus]);
+        let collisions: std::collections::BTreeSet<String> = headers
+            .iter()
+            .filter(|header| !seen.insert(header.as_str()))
+            .cloned()
+            .collect();
+        let mut changed = false;
+        for (card, header) in incoming.iter().zip(&mut headers) {
+            if card.other_crate.is_some() || !collisions.contains(header.as_str()) {
+                continue;
+            }
+            let prefix = &card.path[..card.path.len() - header.len()];
+            let Some(prefix) = prefix.strip_suffix("::") else {
+                continue;
+            };
+            let start = prefix.rfind("::").map_or(0, |at| at + 2);
+            card.path[start..].clone_into(header);
+            changed = true;
+        }
+        if !changed {
+            return headers;
+        }
+    }
 }
 
 /// The UML visibility marker.
@@ -270,6 +341,41 @@ const fn valid_xml_character(character: char) -> bool {
 mod tests {
     use kaalang_compiler::{SourceFile, Target};
 
+    use super::{CardPath, card_headers};
+
+    #[test]
+    fn an_incoming_header_drops_the_modules_it_shares_with_the_focus() {
+        let card = |path, other_crate| CardPath { path, other_crate };
+        assert_eq!(
+            card_headers(
+                "shop::orders::Order",
+                "shop::orders::",
+                &[
+                    card("shop::orders::Line", None),
+                    card("shop::payments::Payment", None),
+                    card("shop::orders::Line", Some("external")),
+                ],
+            ),
+            ["Line", "payments::Payment", "external::shop::orders::Line"]
+        );
+    }
+
+    #[test]
+    fn colliding_headers_get_their_modules_back() {
+        let card = |path| CardPath {
+            path,
+            other_crate: None,
+        };
+        assert_eq!(
+            card_headers(
+                "shop::orders::Order",
+                "shop::orders::",
+                &[card("shop::orders::Note"), card("shop::Note")],
+            ),
+            ["orders::Note", "shop::Note"]
+        );
+    }
+
     use super::*;
 
     /// Renders the type at `path` in `source`, read for no target, alone.
@@ -283,7 +389,7 @@ mod tests {
             header: path,
             relationships: &[],
         };
-        render_type(&card, &[], TypeOptions::default())
+        render_type(&card, &[], TypeOptions::default()).map(|(svg, _)| svg)
     }
 
     #[test]

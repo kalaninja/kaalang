@@ -777,7 +777,9 @@ fn crlf_line_endings_draw_the_same_type_diagram() {
                     header: &name,
                     relationships: &[],
                 };
-                render_type(&card, &[], TypeOptions::default()).map_err(|error| error.to_string())
+                render_type(&card, &[], TypeOptions::default())
+                    .map(|(svg, _)| svg)
+                    .map_err(|error| error.to_string())
             };
             let svg_of_lf = svg(&file);
             assert_eq!(svg(&crlf_file), svg_of_lf, "{name} in {}", path.display());

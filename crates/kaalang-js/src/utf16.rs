@@ -36,6 +36,24 @@ pub(crate) fn byte(text: &str, offset: u32) -> Option<usize> {
     (units == offset).then_some(text.len())
 }
 
+/// [`byte`] of each of `offsets` that stands in `text`, in one pass over it,
+/// in no particular order.
+pub(crate) fn bytes(text: &str, offsets: &[u32]) -> Vec<usize> {
+    let mut wanted = offsets.to_vec();
+    wanted.sort_unstable();
+    let mut wanted = wanted.into_iter().peekable();
+    let mut found = Vec::with_capacity(offsets.len());
+    let mut units = 0;
+    for (byte, character) in text.char_indices() {
+        units += character.len_utf16() as u32;
+        while wanted.next_if(|&offset| offset < units).is_some() {
+            found.push(byte);
+        }
+    }
+    found.extend(wanted.filter(|&offset| offset == units).map(|_| text.len()));
+    found
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -57,6 +75,16 @@ mod tests {
         assert_eq!(byte(TEXT, 10), Some(emoji));
         assert_eq!(byte(TEXT, 11), Some(emoji));
         assert_eq!(byte(TEXT, 12), Some(emoji + '🦀'.len_utf8()));
+    }
+
+    #[test]
+    fn many_offsets_find_the_bytes_one_finds() {
+        let offsets: Vec<u32> = (0..16).rev().collect();
+        let mut one_by_one: Vec<usize> = offsets.iter().filter_map(|&at| byte(TEXT, at)).collect();
+        let mut together = bytes(TEXT, &offsets);
+        one_by_one.sort_unstable();
+        together.sort_unstable();
+        assert_eq!(together, one_by_one);
     }
 
     #[test]

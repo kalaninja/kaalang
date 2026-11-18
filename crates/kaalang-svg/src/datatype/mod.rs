@@ -1,21 +1,23 @@
 use std::num::NonZeroUsize;
 
-use kaalang_compiler::{Annotation, Field, SourceType, TypeForm};
+use kaalang_compiler::{Annotation, Field, NamedPath, SourceType, TypeForm};
 use proc_macro2::Span;
 use syn::{Item, Visibility, ext::IdentExt, spanned::Spanned};
 
 use crate::{
-    RenderError, TypeCard, validate_description, validate_label, visibility_marker, with_visibility,
+    Hotspot, RenderError, TypeCard, validate_description, validate_label, visibility_marker,
+    with_visibility,
 };
 
 mod layout;
+mod navigation;
 mod svg;
 
 pub(crate) fn render(
     focus: &TypeCard<'_>,
     incoming: &[&[TypeCard<'_>]],
     columns: Option<NonZeroUsize>,
-) -> Result<String, RenderError> {
+) -> Result<(String, Vec<Hotspot>), RenderError> {
     // The focus first: an error names the first card that fails, in the
     // order a caller lists them.
     let focus = read(focus)?;
@@ -24,7 +26,10 @@ pub(crate) fn render(
         .map(|group| group.iter().map(read).collect::<Result<Vec<_>, _>>())
         .collect::<Result<Vec<_>, _>>()?;
     let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    Ok(svg::serialize(&layout::layout(&groups, &focus, columns)))
+    let scene = layout::layout(&groups, &focus, columns);
+    let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
+    let hotspots = navigation::collect(&scene, &focus, &incoming);
+    Ok((svg::serialize(&scene), hotspots))
 }
 
 /// What one card shows, in source order. Descriptions stay authored
@@ -32,6 +37,8 @@ pub(crate) fn render(
 struct Card {
     /// The caller's name for the type, then its generics as declared.
     name: String,
+    /// The type's own name in its declaration.
+    name_span: Span,
     /// The type's visibility marker, drawn before the name.
     marker: char,
     /// The declaration form and, except on an alias, its representation.
@@ -71,11 +78,17 @@ struct VariantTile {
 
 /// One field, or an alias's right-hand side.
 struct Tile {
+    /// The tile's position among its card's, in source order.
+    index: usize,
     /// The field's name or position; an alias has none.
     label: Option<String>,
     ty: String,
+    /// The paths `ty` names.
+    paths: Vec<NamedPath>,
     description: Option<String>,
     target: Option<String>,
+    /// Where the target names its type.
+    target_span: Option<Span>,
     /// Whether a line leaves this tile for the focus.
     drawn: bool,
 }
@@ -95,6 +108,7 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
 
     let read = Card {
         name: format!("{}{}", card.header, ty.generics),
+        name_span: ty.name.span(),
         marker: visibility_marker(visibility(&ty.item)),
         kind: kind(ty),
         description: ty.declaration.description.clone(),
@@ -108,7 +122,12 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
 /// in source order, as `TypeDeclaration::relationships` lists them.
 fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
     let mut relationships = 0;
-    let mut types = ty.field_types.iter().cloned();
+    let mut types = ty
+        .field_types
+        .iter()
+        .cloned()
+        .zip(ty.field_paths.iter().cloned());
+    let mut index = 0;
     let mut tiles = |fields: &[Field], in_variant: bool| -> Vec<Tile> {
         fields
             .iter()
@@ -132,18 +151,23 @@ fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
                     .name
                     .as_ref()
                     .map_or_else(|| position.to_string(), |name| name.unraw().to_string());
+                let (field_type, paths) = types.next().expect("each field has its authored type");
+                index += 1;
                 Tile {
+                    index: index - 1,
                     // A variant's fields take the enum's visibility.
                     label: Some(if in_variant {
                         name
                     } else {
                         with_visibility(&field.visibility, &name)
                     }),
-                    ty: types.next().expect("each field has its authored type"),
+                    ty: field_type,
+                    paths,
                     description,
                     drawn: target
                         .as_ref()
                         .is_some_and(|(index, _)| drawn.contains(index)),
+                    target_span: target.as_ref().map(|(index, _)| ty.target_spans[*index]),
                     target: target.map(|(_, target)| target),
                 }
             })
@@ -167,10 +191,13 @@ fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
         TypeForm::Alias(_, relationship) => {
             relationships = usize::from(relationship.is_some());
             Structure::Stack(vec![Tile {
+                index: 0,
                 label: None,
                 ty: ty.field_types[0].clone(),
+                paths: ty.field_paths[0].clone(),
                 description: relationship.as_ref().map(|it| it.description.clone()),
                 target: ty.relationship_targets.first().cloned(),
+                target_span: ty.target_spans.first().copied(),
                 drawn: relationship.is_some() && drawn.contains(&0),
             }])
         }

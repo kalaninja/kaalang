@@ -6,7 +6,7 @@ export class Crash extends Error {}
 
 /**
  * @typedef {object} Hotspot
- * @property {'node' | 'call' | 'wire' | 'connection' | 'merge'} kind
+ * @property {'node' | 'call' | 'wire' | 'connection' | 'merge' | 'path' | 'target' | 'header'} kind
  * @property {number} left
  * @property {number} top
  * @property {number} right
@@ -17,6 +17,16 @@ export class Crash extends Error {}
  * @property {number} [calleeEnd]
  * @property {number[]} [ribbon] A connection's or a merge's ribbon, as
  *   positions in the answer's `wires`.
+ * @property {number} [source] In a type diagram, the text `start` and `end`
+ *   count in: 0 for the one drawn, then the files of its context.
+ */
+
+/**
+ * @typedef {object} Card One card of a type diagram.
+ * @property {number} source
+ * @property {string} path The type's path within its text.
+ * @property {number} start Where its name starts.
+ * @property {number} end
  */
 
 /**
@@ -111,6 +121,11 @@ export function createEngine(wasm) {
      */
     drawFlow: (text, cfg, position, collapseCycles) =>
       call("drawFlow", text, cfg, position, collapseCycles),
+    /**
+     * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[]} | null>}
+     */
+    drawType: (text, cfg, path, context) =>
+      call("drawType", text, cfg, path, context),
   };
 }
 

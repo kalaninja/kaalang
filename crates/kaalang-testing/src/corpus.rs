@@ -210,6 +210,18 @@ pub fn is_stress(path: &Path) -> bool {
         .any(|directory| directory.ends_with("tests/stress"))
 }
 
+/// The positions of the relationships of `declaration` whose target is `name`
+/// bare: how the fixture diagrams find a type's incoming cards in its own file,
+/// in place of the resolver of `cargo kaalang`.
+#[must_use]
+pub fn naming(declaration: &kaalang_compiler::TypeDeclaration, name: &str) -> Vec<usize> {
+    (0..)
+        .zip(declaration.relationships())
+        .filter(|(_, relationship)| relationship.target.is_ident(name))
+        .map(|(position, _)| position)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

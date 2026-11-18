@@ -105,18 +105,31 @@ function area(hotspot) {
 
 /**
  * What a navigating click on `hotspot` asks of the host: a call goes to its
- * callee's definition, a wire name to its value's type, any other node to its
- * block's code.
+ * callee's definition, a wire name to its value's type, a path in a card or a
+ * relationship's target to its definition, any other node to its block's code,
+ * and an incoming card's header to its type's name. A hotspot from a type
+ * diagram's other text names it by its uri among `uris`.
  *
  * @param {Hotspot} hotspot
+ * @param {string[]} [uris]
  */
-export function request(hotspot) {
+export function request(hotspot, uris = []) {
+  let message;
   switch (hotspot.kind) {
     case "call":
-      return { type: "definition", offset: hotspot.calleeStart };
+      message = { type: "definition", offset: hotspot.calleeStart };
+      break;
     case "wire":
-      return { type: "typeDefinition", offset: hotspot.start };
+      message = { type: "typeDefinition", offset: hotspot.start };
+      break;
+    case "path":
+    case "target":
+      message = { type: "definition", offset: hotspot.start };
+      break;
     default:
-      return { type: "reveal", start: hotspot.start, end: hotspot.end };
+      message = { type: "reveal", start: hotspot.start, end: hotspot.end };
   }
+  return hotspot.source > 0
+    ? { ...message, uri: uris[hotspot.source] }
+    : message;
 }

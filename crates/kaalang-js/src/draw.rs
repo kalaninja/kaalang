@@ -96,6 +96,9 @@ pub(crate) fn flow(
                 HotspotKind::Wire => ("wire", None, None),
                 HotspotKind::Connection { ribbon } => ("connection", None, Some(list(ribbon))),
                 HotspotKind::Merge { ribbon } => ("merge", None, Some(list(ribbon))),
+                HotspotKind::Path { .. }
+                | HotspotKind::Target { .. }
+                | HotspotKind::Header { .. } => unreachable!("a flow draws no card"),
             };
             Spot {
                 kind,

@@ -13,12 +13,13 @@ use syn::{
     Attribute, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem, spanned::Spanned,
 };
 
-pub use self::{ribbons::Ribbons, target::Target};
+pub use self::{cards::NamedPath, ribbons::Ribbons, target::Target};
 use crate::{
     FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts, flows,
     is_kaalang_attribute, type_declaration, type_items,
 };
 
+mod cards;
 mod ribbons;
 mod spans;
 mod target;
@@ -175,8 +176,7 @@ impl<'a> SourceFile<'a> {
         }
         // A type's whole span rebuilds its tokens, so it is read only for a
         // type that may hold the offset, or one without a recorded start.
-        let types = self.types.get_or_init(|| type_items(&self.items));
-        types
+        self.type_items()
             .iter()
             .find(|(_, item)| {
                 parts(item).is_some_and(|(_, name, _)| {
@@ -266,9 +266,8 @@ impl<'a> SourceFile<'a> {
     /// target compiles and [`SourceError::InvalidType`] when that type's
     /// annotations are not valid.
     pub fn ty(&self, path: &str) -> Result<SourceType, SourceError> {
-        let types = self.types.get_or_init(|| type_items(&self.items));
         // Only code rustc rejects declares a path twice for one target.
-        let Some((_, item)) = types.iter().find(|(listed, _)| listed == path) else {
+        let Some((_, item)) = self.type_items().iter().find(|(listed, _)| listed == path) else {
             return Err(SourceError::TypeNotFound(path.to_owned()));
         };
         let declaration = type_declaration(item).map_err(|error| {
@@ -280,32 +279,52 @@ impl<'a> SourceFile<'a> {
                 message: error.to_string(),
             }
         })?;
-        let field_types = match &declaration.form {
-            TypeForm::Struct(fields) | TypeForm::Union(fields) => fields
-                .iter()
-                .map(|field| self.collapsed(field.ty.span()))
-                .collect(),
-            TypeForm::Enum(variants) => variants
-                .iter()
-                .flat_map(|variant| &variant.fields)
-                .map(|field| self.collapsed(field.ty.span()))
-                .collect(),
-            TypeForm::Alias(ty, _) => vec![self.collapsed(ty.span())],
-        };
-        let relationship_targets = declaration
+        let types = field_types(&declaration.form);
+        let field_types = types.iter().map(|ty| self.collapsed(ty.span())).collect();
+        let field_paths = types.iter().map(|ty| self.named_paths(ty)).collect();
+        let relationship_targets: Vec<String> = declaration
             .relationships()
             .iter()
             .map(|relationship| self.collapsed(relationship.target.span()))
             .collect();
+        // Every form `type_items` lists has a name.
+        let Some((_, name, _)) = parts(item) else {
+            return Err(SourceError::TypeNotFound(path.to_owned()));
+        };
+        let name = name.clone();
+        let target_spans = declaration
+            .relationships()
+            .iter()
+            .zip(&relationship_targets)
+            .map(|(relationship, target)| {
+                // `Self` names the declaring type.
+                if target == "Self" {
+                    return name.span();
+                }
+                relationship
+                    .target
+                    .segments
+                    .last()
+                    .map_or_else(|| relationship.target.span(), |last| last.ident.span())
+            })
+            .collect();
         Ok(SourceType {
             path: path.to_owned(),
+            name,
             generics: self.generics(&declaration.generics),
             representations: self.representations(item),
             field_types,
+            field_paths,
             relationship_targets,
+            target_spans,
             declaration,
             item: item.clone(),
         })
+    }
+
+    /// Every type declaration with its path within the file.
+    fn type_items(&self) -> &[(String, Item)] {
+        self.types.get_or_init(|| type_items(&self.items))
     }
 
     /// The authored text under a span with every whitespace run collapsed to
@@ -458,6 +477,8 @@ pub struct SourceFlow {
 pub struct SourceType {
     /// The type's path within the file.
     pub path: String,
+    /// Its name in its declaration.
+    pub name: Ident,
     /// The declaration as the target compiles it.
     pub item: Item,
     /// Its form, generics, description, and annotations.
@@ -471,9 +492,14 @@ pub struct SourceType {
     /// The authored type of every field in source order, a variant's fields in
     /// its variant's place, or an alias's right-hand side alone.
     pub field_types: Vec<String>,
+    /// The paths each of `field_types` names.
+    pub field_paths: Vec<Vec<NamedPath>>,
     /// The authored target of every relationship, in the order
     /// [`TypeDeclaration::relationships`] lists them.
     pub relationship_targets: Vec<String>,
+    /// Where each of `relationship_targets` names its type, for an engine to
+    /// resolve: its last segment, or the declaring type's name for `Self`.
+    pub target_spans: Vec<Span>,
 }
 
 /// The 1-based line and column where `span` starts in the text its file was
@@ -492,6 +518,22 @@ fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
         line,
         column,
         message: error.to_string(),
+    }
+}
+
+/// The type of every field of `form` in source order, a variant's fields in its
+/// variant's place, or an alias's right-hand side alone.
+fn field_types(form: &TypeForm) -> Vec<&syn::Type> {
+    match form {
+        TypeForm::Struct(fields) | TypeForm::Union(fields) => {
+            fields.iter().map(|field| &field.ty).collect()
+        }
+        TypeForm::Enum(variants) => variants
+            .iter()
+            .flat_map(|variant| &variant.fields)
+            .map(|field| &field.ty)
+            .collect(),
+        TypeForm::Alias(ty, _) => vec![ty.as_ref()],
     }
 }
 

@@ -115,7 +115,8 @@
 - **hotspot**: the rectangle of one node, cycle boundary, or wire name in a
   label, with the source it stands for: what the node draws, with a call's
   callee, or the wire where its producer binds it; or of one segment of a
-  connection, or of a merge, with its ribbon.
+  connection, or of a merge, with its ribbon; or of one path in a tile's type, a
+  relationship's target, or an incoming card's header, with the type it names.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
   align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body

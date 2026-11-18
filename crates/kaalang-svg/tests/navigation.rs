@@ -392,6 +392,9 @@ fn draw(
                 HotspotKind::Wire => Kind::Wire,
                 HotspotKind::Connection { .. } => Kind::Connection,
                 HotspotKind::Merge { .. } => Kind::Merge,
+                HotspotKind::Path { .. }
+                | HotspotKind::Target { .. }
+                | HotspotKind::Header { .. } => unreachable!("a flow draws no card"),
             },
             callee: match hotspot.kind {
                 HotspotKind::Call { callee } => Some(file.range(callee)),

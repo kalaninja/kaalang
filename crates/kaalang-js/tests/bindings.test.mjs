@@ -106,3 +106,31 @@ test("positions count UTF-16 code units of a JavaScript string", () => {
   assert.deepEqual(declared(source.indexOf("math::add")), { flow: 0 });
   assert.equal(declared(source.indexOf("🦀")), null);
 });
+
+test("every fixture's first type draws its golden diagram", () => {
+  const datatypes = path.join(tests, "datatype");
+  let drawn = 0;
+  for (const name of fs.readdirSync(datatypes)) {
+    const directory = path.join(datatypes, name);
+    if (!fs.existsSync(path.join(directory, "mod.rs"))) {
+      continue;
+    }
+    const source = fs.readFileSync(path.join(directory, "mod.rs"), "utf8");
+    const focus = source.match(
+      /^(?:pub(?:\([^)]*\))? )?(?:struct|enum|union|type) ([A-Za-z_]\w*)/m,
+    )[1];
+    // The engine's references, as the fixtures stand in for them: every
+    // relationship that names the type bare.
+    const offsets = [
+      ...source.matchAll(new RegExp(`refer\\(${focus}\\b`, "g")),
+    ].map((found) => found.index + "refer(".length);
+    const context = JSON.stringify({ offsets });
+    const diagram = JSON.parse(
+      kaalang.drawType(source, target, focus, context),
+    );
+    const golden = fs.readFileSync(path.join(directory, `${name}.svg`), "utf8");
+    assert.equal(diagram.svg, golden, directory);
+    drawn += 1;
+  }
+  assert.ok(drawn > 10, `${drawn} type diagrams`);
+});

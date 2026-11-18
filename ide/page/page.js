@@ -1,7 +1,9 @@
-// The page every supported IDE shows: the flow at the editor's cursor, drawn
-// again as the text is typed, and the ribbon of a clicked connection or merge.
-// A host gives the text, the cursor and the wires' types, and carries out what
-// a click asks for; it never touches the module.
+// The page every supported IDE shows: the flow or the type at the editor's
+// cursor, drawn again as the text is typed, and the ribbon of a clicked
+// connection or merge.
+// A host gives the text, the cursor, and what the editor's engine knows: the
+// wires' types, the references to a type, and its module. It carries out what a
+// click asks for and never touches the module.
 
 import { Crash, createEngine } from "./engine.js";
 import { carryingAt, innermost, request, wires } from "./hotspots.js";
@@ -29,16 +31,29 @@ let cells = 0;
  *   prints it, empty until a host sends one;
  * - `{type: "types", id, types}` in answer to `types`, at once or in parts:
  *   each offset answered maps to the type's text, or to `null` when the host
- *   learns none.
+ *   learns none;
+ * - `{type: "referrers", id, files: [{uri, text, cfg, offsets}]}` in answer to
+ *   `referrers`: each text where the engine finds references to the type, the
+ *   followed document's included, with the cfg set it is read for and the
+ *   references' starts;
+ * - `{type: "modules", id, modules}` in answer to `modules`: each place's
+ *   module path, starting with its crate's name, or `null`;
+ * - `{type: "changed"}` when the engine may answer `referrers` otherwise: it
+ *   has analyzed more, or a document was saved.
  *
  * To the host:
  * - `{type: "ready"}` once started;
  * - `{type: "reveal", start, end}` to select a node's code;
  * - `{type: "definition", offset}` and `{type: "typeDefinition", offset}` to
  *   run the editor's own go-to action there. The editor's cursor moves to the
- *   target, and the diagram follows it;
+ *   target, and the diagram follows it. Each of these three may name another
+ *   document by its `uri`, which its offsets count in;
  * - `{type: "types", id, offsets}` for the types of the values bound at these
- *   offsets, as the editor's hover gives them; each answer repeats `id`.
+ *   offsets, as the editor's hover gives them; each answer repeats `id`;
+ * - `{type: "referrers", id, uri, offset}` for the references to the type
+ *   named at this offset of that document, as the editor's engine finds them;
+ * - `{type: "modules", id, places: [{uri, offset}]}` for the module path of
+ *   the type named at each place, as the editor's hover gives it.
  *
  * A host colors the page with the `--vscode-*` variables `page.css` reads, as a
  * VS Code webview sets them.
@@ -65,10 +80,32 @@ export function start(root, host) {
     text: "",
     cursor: 0,
     cfg: "",
-    /** The flow the cursor was last in, by its position in the text; until then the first is drawn. */
-    position: null,
+    /**
+     * What the cursor was last in, `{flow}` by its position in the text or
+     * `{type}` by its path; until then the first flow is drawn.
+     */
+    declared: null,
     collapseCycles: false,
   };
+  /** What the host found about types, for the diagram of one. */
+  const known = {
+    /** The newest references the host answered: `{id, uri, path, files}`. */
+    referrers: null,
+    /** Each type's module path, by its text's uri, then its path within it. */
+    modules: new Map(),
+    /** Counts what was learned, so that a type's diagram is drawn again. */
+    version: 0,
+  };
+  /** Numbers the requests for what the host knows of types. */
+  let asking = 0;
+  /** What the last `referrers` asked about: `{uri, path, text}`. */
+  let askedFor = null;
+  /** The `{uri, path}` of each `referrers` request without an answer, by id. */
+  const referrersAsked = new Map();
+  /** The places of each `modules` request without an answer, by its id. */
+  const modulesAsked = new Map();
+  /** The types whose module path was asked, by uri, then path. */
+  const askedModules = new Map();
   /** What the diagram on screen was drawn from. */
   let drawn = null;
   /** Counts updates, so that an answer an update has overtaken is dropped. */
@@ -88,26 +125,43 @@ export function start(root, host) {
       if (current !== generation) {
         return;
       }
-      if (declared?.flow !== undefined) {
-        state.position = declared.flow;
+      if (declared !== null) {
+        state.declared = declared;
       }
-      const position = state.position ?? 0;
+      const shown = state.declared ?? { flow: 0 };
+      const { version } = known;
       if (
         drawn?.text === text &&
         drawn.cfg === cfg &&
-        drawn.position === position &&
-        drawn.collapseCycles === collapseCycles
+        drawn.shown.flow === shown.flow &&
+        drawn.shown.type === shown.type &&
+        drawn.collapseCycles === collapseCycles &&
+        // What the host learns of types redraws only a type's diagram.
+        (shown.type === undefined || drawn.version === version)
       ) {
         show(null);
         return;
       }
-      const result = await engine.drawFlow(text, cfg, position, collapseCycles);
+      let uris = [state.uri];
+      let result;
+      if (shown.type === undefined) {
+        result = await engine.drawFlow(text, cfg, shown.flow, collapseCycles);
+      } else {
+        const context = typeContext(shown.type);
+        uris = context.uris;
+        result = await engine.drawType(
+          text,
+          cfg,
+          shown.type,
+          JSON.stringify(context.context),
+        );
+      }
       if (current !== generation) {
         return;
       }
-      if (result === null && position !== 0) {
-        // The flow the cursor was last in is gone: the first one stands in.
-        state.position = null;
+      if (result === null && state.declared !== null) {
+        // What the cursor was last in is gone: the first flow stands in.
+        state.declared = null;
         schedule(0);
         return;
       }
@@ -121,13 +175,18 @@ export function start(root, host) {
       drawn = {
         text,
         cfg,
-        position,
+        shown,
         collapseCycles,
+        version,
         hotspots: result?.hotspots ?? [],
         wires: result?.wires ?? [],
+        uris,
         outlines,
       };
       show(null);
+      if (shown.type !== undefined && result !== null) {
+        learn(shown.type, text, result.cards, uris);
+      }
     } catch (error) {
       if (current !== generation) {
         return;
@@ -148,6 +207,80 @@ export function start(root, host) {
     close();
     highlight([]);
     diagram.innerHTML = html;
+  }
+
+  /**
+   * What `drawType` takes beside the text, from the host's latest references
+   * to the type at `path` of the followed document, and the uri of each text
+   * its sources number. The references in the followed text keep their
+   * offsets while it changes, until the host answers for the new text.
+   */
+  function typeContext(path) {
+    const { uri } = state;
+    const files =
+      known.referrers?.uri === uri && known.referrers.path === path
+        ? known.referrers.files
+        : [];
+    const others = files.filter((file) => file.uri !== uri);
+    const modules = (of) => Object.fromEntries(known.modules.get(of) ?? []);
+    return {
+      uris: [uri, ...others.map((file) => file.uri)],
+      context: {
+        offsets: files.find((file) => file.uri === uri)?.offsets ?? [],
+        modules: modules(uri),
+        files: others.map((file) => ({
+          text: file.text,
+          cfg: file.cfg,
+          offsets: file.offsets,
+          modules: modules(file.uri),
+        })),
+      },
+    };
+  }
+
+  /**
+   * Asks the host for the references to the type at `path`, drawn from `text`,
+   * once per text, and for the module path of each of its `cards` not asked
+   * for since the type or the engine changed. The offsets count in the text
+   * drawn, so a text the host has since changed asks once it is drawn.
+   */
+  function learn(path, text, cards, uris) {
+    const { uri } = state;
+    if (text !== state.text) {
+      return;
+    }
+    if (askedFor?.uri !== uri || askedFor.path !== path) {
+      askedModules.clear();
+    }
+    if (
+      askedFor?.uri !== uri ||
+      askedFor.path !== path ||
+      askedFor.text !== text
+    ) {
+      askedFor = { uri, path, text };
+      const id = ++asking;
+      referrersAsked.set(id, { uri, path });
+      host.send({ type: "referrers", id, uri, offset: cards[0].start });
+    }
+    const places = cards
+      .map((card) => ({
+        uri: uris[card.source],
+        path: card.path,
+        offset: card.start,
+      }))
+      .filter(({ uri, path }) => !askedModules.get(uri)?.has(path));
+    if (places.length > 0) {
+      const id = ++asking;
+      for (const { uri, path } of places) {
+        askedModules.set(uri, (askedModules.get(uri) ?? new Set()).add(path));
+      }
+      modulesAsked.set(id, places);
+      host.send({
+        type: "modules",
+        id,
+        places: places.map(({ uri, offset }) => ({ uri, offset })),
+      });
+    }
   }
 
   /** Shows `message` over the last diagram, dimmed, or clears it. */
@@ -318,7 +451,7 @@ export function start(root, host) {
     const found = targets(event, navigate);
     if (found.length > 0 && navigate) {
       event.preventDefault();
-      host.send(request(found[0]));
+      host.send(request(found[0], drawn.uris));
     } else if (found.length > 0) {
       open(wires(found, drawn.wires), event);
     }
@@ -343,7 +476,7 @@ export function start(root, host) {
           // An answer about the last document must not reach this one.
           ++generation;
           state.uri = message.uri;
-          state.position = null;
+          state.declared = null;
           drawn = null;
           redraw("");
         }
@@ -359,6 +492,65 @@ export function start(root, host) {
         state.cfg = message.cfg;
         schedule(0);
         break;
+      case "changed":
+        // Only a type's diagram asks the engine. It asks again for the
+        // references, as for a new text, and for the module paths the engine
+        // did not know, keeping what it knows until the answers come.
+        if (drawn?.shown.type !== undefined) {
+          if (askedFor !== null) {
+            askedFor = { ...askedFor, text: null };
+          }
+          for (const [uri, paths] of askedModules) {
+            for (const path of paths) {
+              if (!known.modules.get(uri)?.has(path)) {
+                paths.delete(path);
+              }
+            }
+          }
+          ++known.version;
+          schedule(0);
+        }
+        break;
+      case "referrers": {
+        const asked = referrersAsked.get(message.id);
+        // An older request, answered or not, is overtaken.
+        for (const id of referrersAsked.keys()) {
+          if (id <= message.id) {
+            referrersAsked.delete(id);
+          }
+        }
+        // A newer answer stands over an older one that arrives late.
+        if (asked !== undefined && !(known.referrers?.id > message.id)) {
+          known.referrers = { id: message.id, ...asked, files: message.files };
+          ++known.version;
+          schedule(0);
+        }
+        break;
+      }
+      case "modules": {
+        const places = modulesAsked.get(message.id);
+        if (places !== undefined) {
+          modulesAsked.delete(message.id);
+          // Only a module learned redraws, so that the unknown ones are not
+          // asked again at once.
+          let learned = false;
+          places.forEach(({ uri, path }, index) => {
+            const module = message.modules[index];
+            if (typeof module === "string") {
+              known.modules.set(
+                uri,
+                (known.modules.get(uri) ?? new Map()).set(path, module),
+              );
+              learned = true;
+            }
+          });
+          if (learned) {
+            ++known.version;
+            schedule(0);
+          }
+        }
+        break;
+      }
       case "types":
         if (message.id !== listing) {
           break;

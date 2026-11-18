@@ -131,9 +131,10 @@ just ide bench
 
 It serves the page at <http://127.0.0.1:8080/ide/page/bench/> with a stub host:
 a text field stands for the editor, a log shows what the page asks of the host,
-a binding's name stands for its type, and switches show a dark theme and every
-hotspot. <http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's
-races against the real worker; every check must pass.
+a search of the same text for a declaration or a `refer` stands for the engine,
+a binding's name for its type, and switches show a dark theme and every hotspot.
+<http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's races
+against the real worker; every check must pass.
 
 Try a change to the VS Code extension, or to the page it shows, in VS Code:
 

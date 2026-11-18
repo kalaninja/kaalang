@@ -173,40 +173,21 @@ fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
 /// resolver of `cargo kaalang`.
 fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(String, String)> {
     let fixture = fixture.display();
-    // Each declaration with the targets of its relationships, in source order.
-    let types: Vec<(SourceType, Vec<String>)> = kaalang_compiler::type_items(file.items())
+    let types: Vec<SourceType> = kaalang_compiler::type_items(file.items())
         .into_iter()
         .map(|(path, _)| {
-            let ty = file
-                .ty(&path)
-                .unwrap_or_else(|error| panic!("{fixture}: {error}"));
-            let targets = ty
-                .declaration
-                .relationships()
-                .iter()
-                .map(|relationship| {
-                    relationship
-                        .target
-                        .get_ident()
-                        .map_or_else(String::new, ToString::to_string)
-                })
-                .collect();
-            (ty, targets)
+            file.ty(&path)
+                .unwrap_or_else(|error| panic!("{fixture}: {error}"))
         })
         .collect();
     types
         .iter()
         .enumerate()
-        .map(|(index, (focus, _))| {
+        .map(|(index, focus)| {
             let name = last_segment(&focus.path);
             let drawn: Vec<(&SourceType, Vec<usize>)> = types
                 .iter()
-                .map(|(ty, targets)| {
-                    let positions = (0..targets.len())
-                        .filter(|&index| targets[index] == name)
-                        .collect();
-                    (ty, positions)
-                })
+                .map(|ty| (ty, kaalang_testing::corpus::naming(&ty.declaration, name)))
                 .collect();
             let incoming: Vec<_> = drawn
                 .iter()
@@ -218,7 +199,7 @@ fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(Stri
                 .find(|(ty, _)| ty.path == focus.path)
                 .map(card)
                 .expect("the focus is a listed type");
-            let svg =
+            let (svg, _) =
                 kaalang_svg::render_type(&own, &[&incoming], kaalang_svg::TypeOptions::default())
                     .unwrap_or_else(|error| panic!("{fixture}: {}: {error}", focus.path));
             let file = if index == 0 {

@@ -10,7 +10,8 @@ use syn::{Error, ItemFn, Result};
 pub(crate) use self::choice::{choice_match, is_todo_body};
 #[cfg(feature = "source")]
 pub use self::source::{
-    Declared, Ribbons, SourceError, SourceFile, SourceFlow, SourceType, Target, line_and_column,
+    Declared, NamedPath, Ribbons, SourceError, SourceFile, SourceFlow, SourceType, Target,
+    line_and_column,
 };
 pub use self::{
     codegen::expand,

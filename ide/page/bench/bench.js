@@ -1,6 +1,7 @@
 // A stub host for trying the page in a browser: a text field stands for the
-// editor, a log shows what the page asks of the host, a search for `fn <name>`
-// in the same text stands for the engine, and a binding's name for its type.
+// editor, a log shows what the page asks of the host, a search for a
+// declaration or a `refer` by name in the same text stands for the engine, and
+// a binding's name for its type.
 
 import { start } from "../page.js";
 
@@ -24,7 +25,9 @@ const receive = start(page, {
       case "definition": {
         const [start, end] = word(message.offset);
         const name = editor.value.slice(start, end);
-        const found = new RegExp(`\\bfn\\s+${name}\\b`).exec(editor.value);
+        const found = new RegExp(
+          `\\b(?:fn|struct|enum|union|type)\\s+${name}\\b`,
+        ).exec(editor.value);
         if (found === null) {
           // A callee declared elsewhere: show the name the engine would resolve.
           select(start, end);
@@ -52,6 +55,32 @@ const receive = start(page, {
         );
         break;
       }
+      case "referrers": {
+        // Every `refer` whose path ends in the type's name, late as an engine
+        // answers.
+        const name = editor.value.slice(...word(message.offset));
+        const offsets = [];
+        for (const found of editor.value.matchAll(/refer\(\s*([\w:]+)/g)) {
+          if (found[1].split("::").at(-1) === name) {
+            offsets.push(found.index + found[0].length - name.length);
+          }
+        }
+        const { id } = message;
+        const file = { uri, text: editor.value, cfg: "", offsets };
+        setTimeout(
+          () => receive({ type: "referrers", id, files: [file] }),
+          300,
+        );
+        break;
+      }
+      case "modules":
+        // Every type at the crate root.
+        receive({
+          type: "modules",
+          id: message.id,
+          modules: message.places.map(() => "bench"),
+        });
+        break;
     }
   },
   wasm: {

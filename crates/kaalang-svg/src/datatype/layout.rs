@@ -100,6 +100,9 @@ pub(super) struct TextBlock {
     pub(super) x: i32,
     pub(super) top: i32,
     pub(super) lines: Vec<RichText>,
+    /// The position of the tile it belongs to, among its card's in source
+    /// order.
+    pub(super) tile: Option<usize>,
 }
 
 /// The kinds of text a card shows, each with its own typography.
@@ -482,6 +485,8 @@ struct SizedVariant {
 
 /// A tile's text, parsed and measured once.
 struct SizedTile {
+    /// The tile's position among its card's, in source order.
+    index: usize,
     /// The width the tile needs for its own text, side by side with others.
     width: i32,
     /// The width of its name and type, listed.
@@ -525,6 +530,7 @@ impl SizedTile {
             .map_or(0, |target| Text::Target.width(target));
         let text = description_width.max(target_width);
         Self {
+            index: tile.index,
             // A target never wraps: its triangle would stand alone on a line.
             width: code
                 .max(description_width)
@@ -544,6 +550,7 @@ impl SizedTile {
     fn wrap(&self, width: i32) -> WrappedTile {
         let budget = width - 2 * TILE_PADDING_X;
         WrappedTile {
+            index: self.index,
             width,
             label: Text::Field.wrap_optional(self.label.as_ref(), budget),
             ty: Text::Type.wrap(&self.ty, budget),
@@ -556,6 +563,7 @@ impl SizedTile {
 
 /// A tile wrapped at the width it is drawn at.
 struct WrappedTile {
+    index: usize,
     width: i32,
     label: Vec<RichText>,
     ty: Vec<RichText>,
@@ -828,7 +836,16 @@ impl Built {
             x,
             top,
             lines,
+            tile: None,
         });
+    }
+
+    /// Places text of the tile at `index`.
+    fn tile_text(&mut self, index: usize, text: Text, x: i32, top: i32, lines: Vec<RichText>) {
+        self.text(text, x, top, lines);
+        if let Some(block) = self.texts.last_mut() {
+            block.tile = Some(index);
+        }
     }
 
     fn rule(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
@@ -882,7 +899,7 @@ impl Built {
         ] {
             if !lines.is_empty() {
                 y += gap;
-                self.text(text, left, y, lines.clone());
+                self.tile_text(tile.index, text, left, y, lines.clone());
                 y += text.height(lines);
             }
         }
@@ -890,7 +907,7 @@ impl Built {
             let bottom = top + height;
             let end = x + tile.width - TILE_PADDING_X;
             let target = bottom - TILE_PADDING_Y - Text::Target.height(&tile.target);
-            self.text(Text::Target, end, target, tile.target.clone());
+            self.tile_text(tile.index, Text::Target, end, target, tile.target.clone());
             if tile.drawn {
                 let at = if side {
                     Point {
@@ -945,7 +962,7 @@ impl Built {
         ] {
             if !lines.is_empty() {
                 let height = text.height(&lines);
-                self.text(text, left, code_bottom, lines);
+                self.tile_text(tile.index, text, left, code_bottom, lines);
                 code_bottom += height;
             }
         }
@@ -970,7 +987,7 @@ impl Built {
                 });
             }
             let height = Text::Target.height(&target);
-            self.text(Text::Target, end, text_bottom, target);
+            self.tile_text(tile.index, Text::Target, end, text_bottom, target);
             text_bottom += height;
         }
         code_bottom.max(text_bottom) + TILE_PADDING_Y - top
@@ -1088,10 +1105,13 @@ mod tests {
 
     fn tile(label: &str, target: Option<&str>, drawn: bool) -> Tile {
         Tile {
+            index: 0,
             label: Some(label.to_owned()),
             ty: "MemberId".to_owned(),
+            paths: Vec::new(),
             description: Some("A description that wraps over a few lines in its tile.".to_owned()),
             target: target.map(str::to_owned),
+            target_span: None,
             drawn,
         }
     }
@@ -1099,6 +1119,7 @@ mod tests {
     fn card(name: &str, structure: Structure) -> Card {
         Card {
             name: name.to_owned(),
+            name_span: proc_macro2::Span::call_site(),
             marker: '+',
             kind: "struct".to_owned(),
             description: Some("A card.".to_owned()),

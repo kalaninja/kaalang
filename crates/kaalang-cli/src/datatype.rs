@@ -4,7 +4,7 @@
 use std::{collections::BTreeSet, fmt::Write as _, iter, path::PathBuf};
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
-use kaalang_svg::{TypeCard, TypeOptions};
+use kaalang_svg::{CardPath, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::{
@@ -204,7 +204,7 @@ fn render(
             start = end;
         }
     }
-    let svg = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
+    let (svg, _) = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
         // The renderer names no file, so find the card it rejects.
         let culprit = cards()
             .find(|(_, card)| kaalang_svg::render_type(card, &[], options).is_err())
@@ -309,8 +309,7 @@ pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
     left.place(crates) == right.place(crates)
 }
 
-/// Shortens incoming paths against the focus, restoring module segments when
-/// labels collide. The focus and other crates keep their full paths.
+/// The focus's header and each incoming card's, by RFC 0010.
 fn headers(
     crates: &[Crate],
     focus: TypeRef,
@@ -318,51 +317,19 @@ fn headers(
 ) -> (String, Vec<String>) {
     let krate = &crates[focus.krate];
     let entry = &krate.types[focus.id];
-    let focus_header = entry.path.clone();
-    let module = &krate.modules[entry.module].path;
-    let mut headers: Vec<String> = incoming
+    let cards: Vec<CardPath> = incoming
         .iter()
         .map(|(source, _)| {
-            let krate = &crates[source.krate];
-            let path = &krate.types[source.id].path;
-            if source.krate != focus.krate {
-                return format!("{}::{path}", krate.name);
+            let other = &crates[source.krate];
+            CardPath {
+                path: &other.types[source.id].path,
+                other_crate: (source.krate != focus.krate).then_some(other.name.as_str()),
             }
-            let shared: usize = module
-                .split_inclusive("::")
-                .zip(path.split_inclusive("::"))
-                .take_while(|(left, right)| left == right)
-                .map(|(segment, _)| segment.len())
-                .sum();
-            path[shared..].to_owned()
         })
         .collect();
-
-    loop {
-        let mut seen = BTreeSet::from([focus_header.as_str()]);
-        let collisions: BTreeSet<String> = headers
-            .iter()
-            .filter(|header| !seen.insert(header.as_str()))
-            .cloned()
-            .collect();
-        let mut changed = false;
-        for ((source, _), header) in incoming.iter().zip(&mut headers) {
-            if source.krate != focus.krate || !collisions.contains(header.as_str()) {
-                continue;
-            }
-            let path = &krate.types[source.id].path;
-            let prefix = &path[..path.len() - header.len()];
-            let Some(prefix) = prefix.strip_suffix("::") else {
-                continue;
-            };
-            let start = prefix.rfind("::").map_or(0, |at| at + 2);
-            path[start..].clone_into(header);
-            changed = true;
-        }
-        if !changed {
-            return (focus_header, headers);
-        }
-    }
+    let module = &krate.modules[entry.module].path;
+    let headers = kaalang_svg::card_headers(&entry.path, module, &cards);
+    (entry.path.clone(), headers)
 }
 
 /// `file:line:column` of `span` in the file of `module`.

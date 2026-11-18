@@ -172,3 +172,41 @@ test("a wire name asks for its value's type", () => {
 test("any other node asks to reveal its code", () => {
   assert.deepEqual(request(boundary), { type: "reveal", start: 0, end: 90 });
 });
+
+test("a path in a card or a target asks for its definition", () => {
+  for (const kind of ["path", "target"]) {
+    const spot = {
+      kind,
+      left: 0,
+      top: 0,
+      right: 9,
+      bottom: 9,
+      source: 0,
+      start: 7,
+      end: 10,
+    };
+    assert.deepEqual(request(spot, ["a.rs"]), {
+      type: "definition",
+      offset: 7,
+    });
+  }
+});
+
+test("a hotspot from another text names that text", () => {
+  const header = {
+    kind: "header",
+    left: 0,
+    top: 0,
+    right: 9,
+    bottom: 9,
+    source: 1,
+    start: 4,
+    end: 10,
+  };
+  assert.deepEqual(request(header, ["a.rs", "b.rs"]), {
+    type: "reveal",
+    start: 4,
+    end: 10,
+    uri: "b.rs",
+  });
+});

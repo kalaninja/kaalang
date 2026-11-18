@@ -71,7 +71,8 @@ async function settled() {
 
 /**
  * A page of its own, with the bindings' files `wasm` overrides. It lays out
- * unseen, so that it takes clicks, and keeps the `types` requests it sends.
+ * unseen, so that it takes clicks, and keeps the `types` and `referrers`
+ * requests it sends.
  */
 function open(overrides = {}) {
   const root = document.createElement("div");
@@ -80,7 +81,8 @@ function open(overrides = {}) {
   document.body.append(root);
   const requests = [];
   const receive = start(root, {
-    send: (message) => message.type === "types" && requests.push(message),
+    send: (message) =>
+      ["types", "referrers"].includes(message.type) && requests.push(message),
     wasm: { ...wasm, ...overrides },
   });
   const banner = root.querySelector(".kaalang-banner");
@@ -88,6 +90,15 @@ function open(overrides = {}) {
     show: (text, cursor, uri = "a") =>
       receive({ type: "document", uri, text, cursor }),
     banner: () => (banner.hidden ? null : banner.textContent),
+    /** How many cards the type diagram drawn shows. */
+    cards: () => root.querySelectorAll(".kaalang-diagram .card-outline").length,
+    /** Answers `request` with the references at `offsets` of `text`. */
+    refer: (request, text, offsets) =>
+      receive({
+        type: "referrers",
+        id: request.id,
+        files: [{ uri: "a", text, cfg: "", offsets }],
+      }),
     drawn: () => root.querySelector(".kaalang-diagram svg") !== null,
     /** The name of the flow drawn. */
     flow: () =>
@@ -128,7 +139,7 @@ const checks = {
   async "an answer about the last document is not drawn on the next"() {
     const page = open();
     let late;
-    on("posted", "drawFlow", () => page.show("struct X;\n", 0, "b"));
+    on("posted", "drawFlow", () => page.show("fn plain() {}\n", 0, "b"));
     // What shows once the last document's diagram has arrived.
     on("answering", "drawFlow", () => setTimeout(() => (late = page.drawn())));
     page.show(flow, inFlow);
@@ -196,6 +207,18 @@ const checks = {
     page.collapse();
     await settled();
     return page.requests.length === 1 && page.types() === null;
+  },
+  async "a type draws the types the host finds referring to it"() {
+    const page = open();
+    const types =
+      '#[kaa]\nstruct Member {\n    id: u8,\n}\n\n#[kaa]\nstruct Team {\n    #[kaa::refer(Member, "The lead.")]\n    lead: u8,\n}\n';
+    page.show(types, types.indexOf("Member {"));
+    await settled();
+    const alone = page.cards();
+    const [asked] = page.requests;
+    page.refer(asked, types, [types.indexOf("Member, ")]);
+    await settled();
+    return asked?.type === "referrers" && alone === 1 && page.cards() === 2;
   },
   async "after a trap, the next text draws"() {
     const page = open();
