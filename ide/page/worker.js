@@ -33,7 +33,13 @@ self.onmessage = async ({ data }) => {
     if (Object.getPrototypeOf(error) === Error.prototype) {
       self.postMessage({ id, error: error.message });
     } else {
-      self.postMessage({ id, crash: panic ?? String(error) });
+      // V8's stack runs out before the module's on a deeply nested text.
+      const deep = /call stack/.test(error.message);
+      self.postMessage({
+        id,
+        crash:
+          panic ?? (deep ? "the text nests too deeply to read" : String(error)),
+      });
       self.close();
     }
   }
