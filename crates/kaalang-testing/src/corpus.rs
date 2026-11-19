@@ -4,9 +4,24 @@
 use std::{
     fmt, fs,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
+use kaalang_compiler::{FlowItem, Target};
 use syn::ItemFn;
+
+/// The cfg of `x86_64-unknown-linux-gnu` printed by rustc 1.99.1, plus `test`.
+pub const TARGET_CFG: &str = include_str!("../../kaalang/tests/diagram-target.cfg");
+
+/// The target used to compile and draw fixture source in the corpus.
+pub static TARGET: LazyLock<Target> =
+    LazyLock::new(|| TARGET_CFG.parse().expect("the fixture target is a cfg set"));
+
+fn fixture_flows(source: &str) -> syn::Result<Vec<FlowItem>> {
+    let mut file = syn::parse_file(source)?;
+    TARGET.configure(&mut file);
+    Ok(kaalang_compiler::flows(&file.items))
+}
 
 /// Fixture suites to load.
 #[derive(Clone, Copy)]
@@ -60,8 +75,7 @@ impl fmt::Display for Diagram {
 }
 
 /// Every diagram the selected fixtures draw: each flow expanded, and collapsed
-/// too in a fixture with a cycle. No fixture declares a flow under `cfg`, so
-/// the flows are listed as no compilation target removes any.
+/// too in a fixture with a cycle, in declaration order for [`TARGET_CFG`].
 ///
 /// # Panics
 ///
@@ -71,11 +85,11 @@ pub fn diagrams(suite: Suite) -> Vec<Diagram> {
     files(suite)
         .into_iter()
         .flat_map(|(path, source)| {
-            let file = syn::parse_file(&source)
+            let flows = fixture_flows(&source)
                 .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             let views = views(&source);
             let mut diagrams = Vec::new();
-            for (position, flow) in kaalang_compiler::flows(&file.items).into_iter().enumerate() {
+            for (position, flow) in flows.into_iter().enumerate() {
                 for &collapse_cycles in &views {
                     diagrams.push(Diagram {
                         path: flow.path.clone(),
@@ -111,9 +125,8 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
     let mut flows: Vec<(String, ItemFn, bool)> = files(suite)
         .iter()
         .flat_map(|(path, source)| {
-            let file = syn::parse_file(source)
-                .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-            kaalang_compiler::flows(&file.items)
+            fixture_flows(source)
+                .unwrap_or_else(|error| panic!("{}: {error}", path.display()))
                 .into_iter()
                 .map(|flow| {
                     let name = flow.function.sig.ident.to_string();
@@ -132,8 +145,8 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
 /// Panics when the source does not parse or declares no such flow.
 #[must_use]
 pub fn flow_named(source: &str, name: &str) -> ItemFn {
-    let file = syn::parse_file(source).expect("the fixture parses");
-    kaalang_compiler::flows(&file.items)
+    fixture_flows(source)
+        .expect("the fixture parses")
         .into_iter()
         .find(|flow| flow.path == name)
         .expect("the fixture declares the flow")
@@ -185,6 +198,7 @@ fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {
 pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)], suite: Suite) {
     if !matches!(suite, Suite::Stress) {
         for expected in [
+            "conditional_parameters",
             "destructure_singleton_tuple",
             "mutate_a_receiver",
             "doubled",

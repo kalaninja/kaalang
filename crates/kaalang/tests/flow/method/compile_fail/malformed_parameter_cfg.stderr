@@ -1,0 +1,31 @@
+error[E0805]: malformed `cfg` attribute input
+ --> tests/flow/method/compile_fail/malformed_parameter_cfg.rs:5:7
+  |
+5 |     #[cfg(all(), any())] _first: u8,
+  |       ^^^--------------
+  |          |
+  |          expected a single argument here
+  |
+  = note: for more information, visit <https://doc.rust-lang.org/reference/conditional-compilation.html#the-cfg-attribute>
+help: if the function param should be enabled when all these predicates are, wrap them in `all`
+  |
+5 -     #[cfg(all(), any())] _first: u8,
+5 +     #[cfg(all(all(), any()))] _first: u8,
+  |
+help: alternately, if the function param should be enabled when any of these predicates are, wrap them in `any`
+  |
+5 -     #[cfg(all(), any())] _first: u8,
+5 +     #[cfg(any(all(), any()))] _first: u8,
+  |
+
+error: expected identifier, found `,`
+ --> tests/flow/method/compile_fail/malformed_parameter_cfg.rs:6:23
+  |
+6 |     #[cfg_attr(all(), , allow(unused))] _second: u8,
+  |                       ^ expected identifier
+  |
+help: remove this comma
+  |
+6 -     #[cfg_attr(all(), , allow(unused))] _second: u8,
+6 +     #[cfg_attr(all(),  allow(unused))] _second: u8,
+  |

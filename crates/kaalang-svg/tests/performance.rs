@@ -5,7 +5,7 @@
 
 use std::time::{Duration, Instant};
 
-use kaalang_compiler::{SourceFile, Target};
+use kaalang_compiler::SourceFile;
 use kaalang_testing::{
     corpus::{self, Suite},
     performance::{ItemBudget, assert_pass_budget, assert_within},
@@ -36,10 +36,9 @@ const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
 /// pays this; a macro expansion never renders.
 const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
 
-/// Reads the flow at `position` in `source` for no target and renders it, the
-/// whole of what a caller pays for a diagram.
+/// Reads the flow at `position` for the fixture target and renders it.
 fn draw(source: &str, position: usize, collapse_cycles: bool) -> Result<String, String> {
-    let flow = SourceFile::parse(source, Target::EMPTY)
+    let flow = SourceFile::parse(source, &corpus::TARGET)
         .and_then(|file| file.flow(position, collapse_cycles))
         .map_err(|error| error.to_string())?;
     kaalang_svg::render_flow(flow)
@@ -47,10 +46,10 @@ fn draw(source: &str, position: usize, collapse_cycles: bool) -> Result<String, 
         .map_err(|error| error.to_string())
 }
 
-/// The path of every flow `source` declares, read for no target, in the order
+/// The path of every flow `source` declares for the fixture target, in the order
 /// `SourceFile::flow` counts them.
 fn flow_paths(source: &str) -> Vec<String> {
-    let file = SourceFile::parse(source, Target::EMPTY).expect("the source parses");
+    let file = SourceFile::parse(source, &corpus::TARGET).expect("the source parses");
     kaalang_compiler::flows(file.items())
         .into_iter()
         .map(|flow| flow.path)

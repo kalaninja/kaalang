@@ -10,18 +10,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use kaalang_compiler::{SourceFile, SourceType, Target};
-
-/// The compilation target every fixture is read for, `x86_64-unknown-linux-gnu`
-/// as rustc 1.99.1 prints its cfg, so that the diagrams depend on neither the
-/// host nor the toolchain, and with `test`, since the fixtures are tests.
-const TARGET: &str = include_str!("diagram-target.cfg");
+use kaalang_compiler::{SourceFile, SourceType};
+use kaalang_testing::corpus::TARGET;
 
 #[test]
 #[ignore = "run just rust svg to regenerate fixture diagrams"]
 fn draws_a_diagram_beside_every_executable_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
-    let target: Target = TARGET.parse().expect("the fixture target is a cfg set");
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
         let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
@@ -46,7 +41,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 );
             }
             let source = fs::read_to_string(fixture).unwrap();
-            let file = SourceFile::parse(&source, &target)
+            let file = SourceFile::parse(&source, &TARGET)
                 .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
             let flows = kaalang_compiler::flows(file.items());
             // A method's diagram is named after the method, without its impl.

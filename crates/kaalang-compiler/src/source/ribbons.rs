@@ -838,10 +838,12 @@ mod tests {
     /// Calls `check` with every local flow the ordinary fixtures draw, in each
     /// view, and its diagram's name.
     fn each_fixture_model(check: impl Fn(&str, &SemanticModel)) {
+        let target: Target = corpus::TARGET_CFG
+            .parse()
+            .expect("the fixture target is a cfg set");
         for diagram in corpus::diagrams(Suite::Ordinary) {
             let what = diagram.to_string();
-            let file =
-                SourceFile::parse(&diagram.source, Target::EMPTY).expect("the fixture parses");
+            let file = SourceFile::parse(&diagram.source, &target).expect("the fixture parses");
             let flow = file
                 .flow(diagram.position, diagram.collapse_cycles)
                 .expect("the fixture is valid");

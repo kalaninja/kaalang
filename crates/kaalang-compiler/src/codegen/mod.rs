@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, ext::IdentExt, token::Mut};
+use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, Stmt, ext::IdentExt, token::Mut};
 
 use crate::{Analysis, Block, BlockKind, Branch, ExecutionPlan, Flow, Input};
 
@@ -326,12 +326,21 @@ fn loop_label(index: usize, span: Span) -> Lifetime {
     )
 }
 
-/// Splices the statements of a block body so lowering adds no extra braces.
+/// Keeps a body's scope when a hoisted item can shadow a capture alias.
+/// A statement macro can introduce such an item too.
 pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
     match body {
         Expr::Block(block) if block.attrs.is_empty() && block.label.is_none() => {
             let statements = &block.block.stmts;
-            quote!(#(#statements)*)
+            if statements
+                .iter()
+                .any(|stmt| matches!(stmt, Stmt::Item(_) | Stmt::Macro(_)))
+            {
+                // This extra block belongs to lowering, including its braces for Rust's lints.
+                quote!({ #(#statements)* })
+            } else {
+                quote!(#(#statements)*)
+            }
         }
         body => quote!(#body),
     }
@@ -372,17 +381,21 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
 /// # Errors
 ///
 /// Returns the same errors as [`crate::build`].
-pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
+pub fn expand(function: ItemFn) -> Result<ItemFn> {
+    expand_in_scope(function, Span::mixed_site())
+}
+
+pub(crate) fn expand_in_scope(mut function: ItemFn, scope: Span) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
     if !analysis.stages.is_empty() {
-        return stage::expand(function, &analysis);
+        return stage::expand(function, &analysis, scope);
     }
     // Diagram realizability is required even when compilation discards the arrangement.
     let topology = crate::project(&analysis, false);
     crate::construct(&analysis, &topology)?;
 
     let bindings = Bindings::new(&analysis);
-    let parameters = parameters::emit(&mut function, &bindings);
+    let parameters = parameters::emit(&mut function, &bindings, scope);
     let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
     // Lower in place to preserve `Self`, enclosing generics, and receiver scope.
     *function.block = syn::parse2(quote!({

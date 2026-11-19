@@ -35,3 +35,23 @@ fn a_generic_target_is_named_without_its_parameters() {
 
     assert_eq!(upload.content.payload.bytes, [1, 2]);
 }
+
+#[test]
+fn self_refers_to_the_owner_even_when_a_generic_shares_its_name() {
+    mod tree {
+        use kaalang::kaa;
+
+        #[kaa]
+        pub struct Node<Node> {
+            #[kaa::refer(Self, "The child nodes.")]
+            pub children: Vec<Self>,
+            pub value: Node,
+        }
+    }
+    let root = tree::Node {
+        value: 7,
+        children: vec![],
+    };
+    assert_eq!(root.value, 7);
+    assert!(root.children.is_empty());
+}

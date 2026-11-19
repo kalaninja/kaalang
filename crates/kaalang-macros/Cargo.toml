@@ -13,7 +13,6 @@ proc-macro = true
 
 [dependencies]
 kaalang-compiler = { workspace = true }
-quote = { workspace = true }
 syn = { workspace = true }
 
 [lints]

@@ -49,6 +49,9 @@ verified plan without checking diagram realizability. `expand` checks the
 expanded diagram before emitting Rust, then discards its arrangement; macro
 expansion runs no compaction or SVG layout.
 
+When a function or datatype has conditional parameters, the attribute lets rustc
+evaluate their predicates before the compiler reads the signature.
+
 For each local flow, `build_with_options` constructs the expanded projection
 first, and a requested collapsed one only after it succeeds.
 

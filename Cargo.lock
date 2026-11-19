@@ -276,7 +276,6 @@ name = "kaalang-macros"
 version = "0.3.0"
 dependencies = [
  "kaalang-compiler",
- "quote",
  "syn",
 ]
 

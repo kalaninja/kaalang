@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use kaalang::kaa;
+use core::prelude::v1::derive as kaa;
 
-#[kaa]
+#[kaalang::kaa]
 #[repr(u8)]
-#[derive(Debug, PartialEq)]
+#[kaa(Debug, PartialEq)]
 enum State {
     #[kaa::case("Not yet published.")]
     Draft,
@@ -17,7 +17,7 @@ enum State {
     Archived(#[kaa::value("The archive reason.")] String),
 }
 
-#[kaa("A document with its publication state.")]
+#[kaalang::kaa("A document with its publication state.")]
 struct Document {
     #[kaa::value("The display title.")]
     title: String,

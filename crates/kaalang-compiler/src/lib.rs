@@ -14,7 +14,9 @@ pub use self::source::{
     SourceFile, SourceFlow, SourceType, Target, line_and_column,
 };
 pub use self::{
+    attribute::{expand_attribute, is_kaalang_attribute},
     codegen::expand,
+    conditional::{configured_parameters, parameter_choices},
     configure::configure,
     construct::{
         Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
@@ -37,8 +39,10 @@ pub use self::{
 };
 
 mod analyze;
+mod attribute;
 mod choice;
 mod codegen;
+mod conditional;
 mod configure;
 mod construct;
 mod datatype;
@@ -102,17 +106,6 @@ fn build_analysis(analysis: Analysis, collapse_cycles: bool) -> Result<SemanticM
     })
 }
 
-/// Whether `attribute` is kaalang's own, written `#[kaa]` or through its
-/// crate path as `#[kaalang::kaa]`. Another crate's `kaa` is not.
-#[must_use]
-pub fn is_kaalang_attribute(attribute: &syn::Attribute) -> bool {
-    let path = attribute.path();
-    path.is_ident("kaa")
-        || path.segments.len() == 2
-            && path.segments[0].ident == "kaalang"
-            && path.segments[1].ident == "kaa"
-}
-
 /// Parses and validates a flow and builds its lowering plan, without checking
 /// diagram realizability.
 ///
@@ -121,6 +114,7 @@ pub fn is_kaalang_attribute(attribute: &syn::Attribute) -> bool {
 /// Returns the first syntax, wire, execution, or convergence error at its
 /// source span.
 pub fn analyze(function: &ItemFn) -> Result<Analysis> {
+    attribute::flow_attributes(&function.attrs)?;
     if let Some(asyncness) = &function.sig.asyncness {
         return Err(Error::new(
             asyncness.span,

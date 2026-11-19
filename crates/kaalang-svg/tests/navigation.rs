@@ -6,7 +6,7 @@
 
 use std::ops::Range;
 
-use kaalang_compiler::{SourceFile, Target};
+use kaalang_compiler::SourceFile;
 use kaalang_svg::{HotspotKind, render_flow};
 use kaalang_testing::corpus::{self, Suite};
 
@@ -371,14 +371,14 @@ fn assert_hotspots_match_the_drawing(what: &str, source: &str, svg: &str, hotspo
     assert_eq!(wires.next(), None, "{what}: a hotspot without a wire name");
 }
 
-/// The SVG and the hotspots of the flow at `position` in `source`, read for no
-/// target, with each cycle as one node when `collapse_cycles` is set.
+/// The SVG and hotspots of the flow at `position` for the fixture target,
+/// with each cycle as one node when `collapse_cycles` is set.
 fn draw(
     source: &str,
     position: usize,
     collapse_cycles: bool,
 ) -> Result<(String, Vec<Located>), String> {
-    let file = SourceFile::parse(source, Target::EMPTY).map_err(|error| error.to_string())?;
+    let file = SourceFile::parse(source, &corpus::TARGET).map_err(|error| error.to_string())?;
     let flow = file
         .flow(position, collapse_cycles)
         .map_err(|error| error.to_string())?;

@@ -7,11 +7,11 @@ use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::{
     Attribute, Error, Generics, Ident, Item, LitStr, Meta, Path, Result, Token, Type, Visibility,
-    parse::ParseStream, spanned::Spanned,
+    ext::IdentExt, parse::ParseStream, spanned::Spanned,
 };
 
 use crate::{
-    configure::split_at_commas,
+    configure::{cfg_attributes, is_cfg_attr, split_at_commas},
     is_kaalang_attribute,
     parse::{annotation_name, description, literal_text, path_annotation_name},
 };
@@ -114,10 +114,12 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
         }
         Some((attribute, Meta::NameValue(_))) => Some(description(attribute, "kaalang type")?),
     };
-    if let Some(duplicate) = kaalang.next() {
+    if let Some(duplicate) = kaalang.next()
+        && !crate::attribute::already_applied(attributes)
+    {
         return Err(Error::new_spanned(
             duplicate,
-            "a type takes one `#[kaa]` attribute",
+            crate::attribute::DUPLICATE_TYPE,
         ));
     }
 
@@ -238,7 +240,12 @@ pub(crate) fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)>
 ///
 /// Rejects unsupported declaration forms. Annotation errors are emitted at
 /// their source spans under the same compilation guards as the annotations.
-pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStream> {
+pub fn expand_type(arguments: &TokenStream, item: Item) -> Result<TokenStream> {
+    let (item, checks) = expansion(arguments, item)?;
+    Ok(quote! { #item #checks })
+}
+
+pub(crate) fn expansion(arguments: &TokenStream, mut item: Item) -> Result<(Item, TokenStream)> {
     // Spanned at the arguments, so that a malformed description points at them.
     let attribute: Attribute = match arguments.clone().into_iter().next() {
         None => syn::parse_quote!(#[kaa]),
@@ -295,7 +302,7 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
         // Without its annotations the item is valid Rust, so its uses still resolve.
         Err(error) => {
             let error = error.into_compile_error();
-            return Ok(quote! { #item #error });
+            return Ok((item, error));
         }
     };
 
@@ -312,7 +319,7 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
             .collect::<TokenStream>(),
     );
     let checks = (!checks.is_empty()).then(|| quote! { const _: () = { #checks }; });
-    Ok(quote! { #item #checks })
+    Ok((item, quote!(#checks)))
 }
 
 fn expand_fields<'a>(
@@ -399,7 +406,7 @@ fn lift_annotations(
             kept.push(attribute.clone());
             continue;
         };
-        if !list.path.is_ident("cfg_attr") {
+        if !is_cfg_attr(&list.path) {
             kept.push(attribute.clone());
             continue;
         }
@@ -439,7 +446,7 @@ fn take_annotations(
     let mut rest = Vec::new();
     for part in parts {
         match syn::parse2::<Meta>(part.clone()) {
-            Ok(Meta::List(nested)) if nested.path.is_ident("cfg_attr") => {
+            Ok(Meta::List(nested)) if is_cfg_attr(&nested.path) => {
                 if let Some(nested) = take_annotations(nested.tokens, predicates, lifted) {
                     rest.push(quote!(cfg_attr(#nested)));
                 }
@@ -545,36 +552,6 @@ fn misplaced_case(attribute: &Attribute) -> Error {
     Error::new_spanned(attribute, "`case` describes an enum variant")
 }
 
-fn cfg_attributes(attributes: &[Attribute]) -> Vec<Attribute> {
-    fn guard(meta: &Meta) -> Option<Meta> {
-        let Meta::List(list) = meta else {
-            return None;
-        };
-        if list.path.is_ident("cfg") {
-            return Some(meta.clone());
-        }
-        if !list.path.is_ident("cfg_attr") {
-            return None;
-        }
-        let mut parts = split_at_commas(list.tokens.clone()).into_iter();
-        let predicate = parts.next()?;
-        let guards: Vec<_> = parts
-            .filter_map(|part| syn::parse2::<Meta>(part).ok().and_then(|meta| guard(&meta)))
-            .collect();
-        (!guards.is_empty())
-            .then(|| syn::parse_quote_spanned!(list.span()=> cfg_attr(#predicate, #(#guards),*)))
-    }
-    attributes
-        .iter()
-        .filter_map(|attribute| {
-            guard(&attribute.meta).map(|meta| Attribute {
-                meta,
-                ..attribute.clone()
-            })
-        })
-        .collect()
-}
-
 /// Parses `refer(Target, "description")` on a field of the type `owner` under
 /// `cfgs`, or on a type alias, which has no owner.
 fn relationship(
@@ -625,11 +602,10 @@ fn relationship(
         let mut name = owner.clone();
         name.set_span(target.span());
         target = name.into();
-    }
-    if let Some(name) = target.get_ident()
+    } else if let Some(name) = target.get_ident()
         && generics
             .type_params()
-            .any(|parameter| parameter.ident == *name)
+            .any(|parameter| parameter.ident.unraw() == name.unraw())
     {
         return Err(Error::new_spanned(
             name,

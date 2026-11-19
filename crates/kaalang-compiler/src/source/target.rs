@@ -31,6 +31,7 @@ impl Target {
     /// crate for its target.
     pub fn configure(&self, file: &mut syn::File) {
         crate::configure(file, &mut |predicate| self.holds(predicate));
+        super::attributes::distinguish_imports(file);
     }
 }
 

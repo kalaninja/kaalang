@@ -1,0 +1,5 @@
+error: a type parameter is not a relationship target
+ --> tests/datatype/compile_fail/raw_type_parameter_target.rs:7:18
+  |
+7 |     #[kaa::refer(Target, "The generic parameter.")]
+  |                  ^^^^^^

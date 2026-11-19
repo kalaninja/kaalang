@@ -21,9 +21,10 @@ pub use self::{
 };
 use crate::{
     FlowItem, Owner, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts,
-    flows, is_kaalang_attribute, type_declaration, type_items,
+    flows, type_declaration, type_items,
 };
 
+mod attributes;
 mod cards;
 mod modules;
 mod ribbons;
@@ -269,25 +270,6 @@ impl<'a> SourceFile<'a> {
     }
 
     fn read_flow(&self, item: FlowItem, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
-        if let Some(attribute) = item
-            .function
-            .attrs
-            .iter()
-            .filter(|attribute| is_kaalang_attribute(attribute))
-            .find(|attribute| match &attribute.meta {
-                Meta::Path(_) => false,
-                Meta::List(arguments) => !arguments.tokens.is_empty(),
-                Meta::NameValue(_) => true,
-            })
-        {
-            return Err(invalid_flow(
-                &item.path,
-                &syn::Error::new_spanned(
-                    attribute,
-                    "#[kaa] on a function does not accept arguments",
-                ),
-            ));
-        }
         let model = build_with_options(&item.function, collapse_cycles)
             .map_err(|error| invalid_flow(&item.path, &error))?;
         let signature = &item.function.sig;
@@ -893,6 +875,61 @@ mod tests {
                     message: "#[kaa] on a function does not accept arguments".into(),
                 }
             );
+        }
+    }
+
+    #[test]
+    fn a_flow_takes_one_active_attribute() {
+        let source = format!("#[kaa]\n#[cfg_attr(unix, kaalang::kaa)]\n{COPY}");
+        let enabled = SourceFile::parse(&source, &"unix".parse().unwrap()).unwrap();
+        assert!(matches!(
+            enabled.flow(0, false),
+            Err(SourceError::InvalidFlow { line: 2, message, .. })
+                if message == "a function takes one `#[kaa]` attribute"
+        ));
+        let disabled = SourceFile::parse(&source, Target::EMPTY).unwrap();
+        assert!(disabled.flow(0, false).is_ok());
+    }
+
+    #[test]
+    fn a_foreign_attribute_and_raw_cfg_keep_their_own_meanings() {
+        let source = r#"
+            mod sample {
+                use other::{helper as kaa};
+                #[kaalang::kaa] #[kaa("a foreign option")]
+                fn flow(#[r#cfg_attr(all(), r#cfg(any()))] (a,b): (u8,u8), value: u8) -> u8 {
+                    |value| return value;
+                }
+                struct Destination;
+                #[kaalang::kaa("The owner.")] #[kaa("a foreign option")]
+                struct Owner<#[r#cfg(any())] Destination> {
+                    #[r#cfg_attr(all(), kaa::refer(Destination, "The destination."))] id: u8,
+                }
+            }
+        "#;
+        let source = SourceFile::parse(source, Target::EMPTY).unwrap();
+        assert_eq!(source.flow(0, false).unwrap().parameters, ["value: u8"]);
+        let owner = source.ty("sample::Owner").unwrap();
+        assert_eq!(owner.declaration.description.as_deref(), Some("The owner."));
+        assert_eq!(owner.declaration.relationships().len(), 1);
+    }
+
+    #[test]
+    fn a_parent_import_preserves_the_identity_of_bare_kaa() {
+        for local in ["super::super::kaa", "crate::kaa"] {
+            for (root, duplicate) in [("kaalang::kaa", true), ("other::kaa", false)] {
+                let source = format!(
+                    "use {root}; mod a {{ mod b {{ use {local}; #[kaa] #[kaalang::kaa] {COPY} }} }}"
+                );
+                let file = SourceFile::parse(&source, Target::EMPTY).unwrap();
+                let flow = file.flow(0, false);
+                if duplicate {
+                    assert!(matches!(flow, Err(SourceError::InvalidFlow { message, .. })
+                        if message == "a function takes one `#[kaa]` attribute"));
+                } else {
+                    assert!(flow.is_ok());
+                }
+            }
         }
     }
 
