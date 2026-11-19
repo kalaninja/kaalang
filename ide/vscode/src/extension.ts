@@ -333,25 +333,31 @@ export function activate(context: vscode.ExtensionContext): void {
 
   let changing: ReturnType<typeof setTimeout> | undefined;
   let sourceCfgChanged = false;
+  let announce = false;
   /**
    * Tells the page, once changes pause, that the engine may find other
-   * references: it publishes diagnostics as it analyzes the workspace.
+   * references: it publishes diagnostics as it analyzes the workspace. The
+   * page asks again by itself after an edit of the text it follows.
    */
-  function changed(): void {
+  function changed(page = true): void {
+    announce ||= page;
     clearTimeout(changing);
     changing = setTimeout(() => {
       if (sourceCfgChanged) {
         sourceCfgChanged = false;
         void sendCfg();
       }
-      void panel?.webview.postMessage({ type: "changed" });
+      if (announce) {
+        announce = false;
+        void panel?.webview.postMessage({ type: "changed" });
+      }
     }, 1000);
   }
 
-  function sourcesChanged(source: vscode.Uri | string): void {
+  function sourcesChanged(source: vscode.Uri | string, page = true): void {
     forgetReferences(source);
     sourceCfgChanged = true;
-    changed();
+    changed(page);
   }
   const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
   watchConfig();
@@ -386,7 +392,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (contentChanges.length > 0) {
         if (document.languageId === "rust" || knownModule(document.uri)) {
           edited.add(document);
-          sourcesChanged(document.uri);
+          sourcesChanged(document.uri, document !== source?.document);
         }
         if (document === source?.document) {
           send();
@@ -402,7 +408,7 @@ export function activate(context: vscode.ExtensionContext): void {
         changed();
       }
     }),
-    vscode.languages.onDidChangeDiagnostics(changed),
+    vscode.languages.onDidChangeDiagnostics(() => changed()),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       clearCfg();
       watchConfig();
