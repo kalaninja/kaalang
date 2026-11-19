@@ -12,7 +12,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { moduleTree, placements } from "../out/card-places.js";
+import { forgetModules, moduleTree, placements } from "../out/card-places.js";
 
 async function workspace(t, sources) {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-modules-"));
@@ -145,6 +145,18 @@ test("shared source has distinct children and source order in each directory", a
     "second::nested",
     "shared::nested",
   ]);
+  const [chosen] = await placements(graph, [
+    {
+      ...card("shared.rs", "nested::Same"),
+      owner: 1,
+      module: "second",
+      cfg: "",
+    },
+  ]);
+  assert.deepEqual(
+    chosen.map((p) => p.module),
+    ["second::nested"],
+  );
   const model = (choices) => choices.find((p) => p.crate === "model");
   assert.deepEqual(
     [model(a).order, model(first).order, model(b).order],
@@ -181,11 +193,21 @@ test("only the targets whose cfg declares the type get a placement", async (t) =
       types: cfg === "test" ? [text.indexOf("OnlyTests")] : [],
     }),
   );
-  const [enabled, file, excluded] = await placements(graph, [
-    card("lib.rs", "OnlyTests"),
-    { uri: uri("lib.rs"), offset: 0 },
-    card("outside.rs", "Other"),
-  ]);
+  const [enabled, file, excluded, onlyTests, onlyDefault] = await placements(
+    graph,
+    [
+      card("lib.rs", "OnlyTests"),
+      { uri: uri("lib.rs"), offset: 0 },
+      card("outside.rs", "Other"),
+      { uri: uri("lib.rs"), offset: 0, cfg: "test" },
+      { ...card("lib.rs", "OnlyTests"), cfg: "" },
+    ],
+  );
+  assert.deepEqual(
+    onlyTests.map((p) => p.crate),
+    ["tests"],
+  );
+  assert.deepEqual(onlyDefault, []);
   assert.deepEqual(
     enabled.map((p) => p.crate),
     ["tests"],
@@ -271,23 +293,26 @@ test("a dot segment is resolved after a symlink in an explicit module path", asy
       "Creating a directory symlink needs this platform's permission",
     );
   }
-  const graph = await moduleTree(
-    [target("lib.rs", "app")],
-    read,
-    async (text) =>
-      text === lib
-        ? {
-            modules: [
-              {
-                module: "selected",
-                offset: lib.indexOf("selected"),
-                files: [candidate(true, "linked/../child.rs")],
-              },
-            ],
-            types: [],
-          }
-        : { modules: [], types: text === good ? [good.indexOf("Chosen")] : [] },
-  );
+  const roots = [target("lib.rs", "app")];
+  const parse = async (text) =>
+    text === lib
+      ? {
+          modules: [
+            {
+              module: "selected",
+              offset: lib.indexOf("selected"),
+              files: [candidate(true, "linked/../child.rs")],
+            },
+          ],
+          types: [],
+        }
+      : { modules: [], types: text === good ? [good.indexOf("Chosen")] : [] };
+  await rm(file("branch/child.rs"));
+  const before = await moduleTree(roots, read, parse);
+  assert.equal(before.files.size, 1);
+  await writeFile(file("branch/child.rs"), good);
+  forgetModules(file("branch/child.rs"));
+  const graph = await moduleTree(roots, read, parse);
   const [chosen, decoy] = await placements(graph, [
     card("branch/child.rs", "Chosen"),
     card("child.rs", "Decoy"),
@@ -348,16 +373,60 @@ test("only an edited source is reparsed in the next snapshot of a workspace", as
           : [],
     };
   };
-  await moduleTree(roots, read, parse);
+  const reads = [];
+  const counted = (uri) => {
+    reads.push(uri);
+    return read(uri);
+  };
+  await moduleTree(roots, counted, parse);
   assert.deepEqual(calls, [root, child]);
-  await moduleTree(roots, read, parse);
+  await moduleTree(roots, counted, parse);
   assert.deepEqual(calls, [root, child]);
   const edited = "// Changed\nstruct B;";
   await writeFile(file("child.rs"), edited);
-  const graph = await moduleTree(roots, read, parse);
+  forgetModules(file("child.rs"));
+  const graph = await moduleTree(roots, counted, parse);
+  assert.deepEqual(reads, [uri("lib.rs"), uri("child.rs"), uri("child.rs")]);
   assert.deepEqual(calls, [root, child, edited]);
   const [card] = await placements(graph, [
     { uri: uri("child.rs"), path: "B", offset: edited.indexOf("B") },
   ]);
   assert.equal(card[0].module, "child");
+});
+
+test("a module with two existing candidates is ambiguous until one path is removed", async (t) => {
+  const { file, uri, target, card } = await workspace(t, {
+    "lib.rs": "mod child;",
+    "child.rs": "struct A;",
+    "child/mod.rs": "struct B;",
+  });
+  const roots = [target("lib.rs", "app")];
+  const parse = async (text) => ({
+    modules: text.startsWith("mod")
+      ? [
+          {
+            module: "child",
+            offset: 4,
+            files: [
+              candidate(false, "child.rs"),
+              candidate(true, "child", "mod.rs"),
+            ],
+          },
+        ]
+      : [],
+    types: text.startsWith("struct") ? [7] : [],
+  });
+  const ambiguous = await moduleTree(roots, read, parse);
+  assert.equal(ambiguous.complete, false);
+  assert.equal(ambiguous.files.size, 1);
+  await rm(file("child.rs"));
+  forgetModules(file("child.rs"));
+  const single = await moduleTree(roots, read, parse);
+  const [chosen] = await placements(single, [card("child/mod.rs", "B")]);
+  assert.equal(chosen[0].module, "child");
+  await writeFile(file("child.rs"), "struct C;");
+  forgetModules(file("child.rs"));
+  const restored = await moduleTree(roots, read, parse);
+  assert.equal(restored.complete, false);
+  assert.equal(restored.files.size, 1);
 });

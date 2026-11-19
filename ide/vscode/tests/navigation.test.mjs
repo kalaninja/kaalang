@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire, registerHooks } from "node:module";
 import test from "node:test";
 
-test("a closed editor reopens its range and a superseded definition never jumps", async (t) => {
+test("jumps preserve the editor's history and require current source and destination snapshots", async (t) => {
   const uri = "file:///workspace/example.rs";
   const document = {
     uri,
@@ -13,6 +13,11 @@ test("a closed editor reopens its range and a superseded definition never jumps"
   };
   const closed = { document: { ...document, isClosed: true }, viewColumn: 1 };
   const editor = { document, selection: { active: 0 } };
+  let externalText = "struct Review;";
+  const external = {
+    uri: "file:///workspace/review.rs",
+    getText: () => externalText,
+  };
   const started = Promise.withResolvers();
   const found = Promise.withResolvers();
   const jumps = [];
@@ -32,7 +37,10 @@ test("a closed editor reopens its range and a superseded definition never jumps"
         this.range = range;
       }
     },
-    workspace: { openTextDocument: async () => document },
+    workspace: {
+      openTextDocument: async () => document,
+      textDocuments: [document, external],
+    },
     window: { showTextDocument: async () => editor, activeTextEditor: editor },
     commands: {
       async executeCommand(command, ...args) {
@@ -41,7 +49,7 @@ test("a closed editor reopens its range and a superseded definition never jumps"
           return found.promise;
         }
         assert.equal(command, "editor.action.goToLocations");
-        jumps.push(args[2]);
+        jumps.push(args);
       },
     },
   };
@@ -90,4 +98,30 @@ test("a closed editor reopens its range and a superseded definition never jumps"
   await pending;
   assert.equal(jumps.length, 1);
   assert.deepEqual(editor.selection, new Range(7, 14));
+  const confirmed = {
+    type: "reveal",
+    uri,
+    start: 7,
+    end: 14,
+    text: document.getText(),
+    origin: { uri: external.uri, text: externalText },
+  };
+  editor.selection = { active: 2 };
+  await navigate(closed, confirmed, () => true);
+  assert.equal(jumps.length, 2);
+  assert.deepEqual(jumps[1].slice(0, 3), [
+    uri,
+    2,
+    [new api.Location(uri, new Range(7, 14))],
+  ]);
+  externalText = "struct Renamed;";
+  await navigate(closed, confirmed, () => true);
+  assert.equal(jumps.length, 2);
+  externalText = confirmed.origin.text;
+  api.window.showTextDocument = async () => {
+    externalText = "struct ChangedDuringTheJump;";
+    return editor;
+  };
+  await navigate(closed, confirmed, () => true);
+  assert.equal(jumps.length, 2);
 });

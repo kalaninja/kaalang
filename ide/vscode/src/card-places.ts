@@ -1,18 +1,23 @@
 // Workspace source files and the places of their declarations in Cargo targets.
 
-import { createHash } from "node:crypto";
+import { realpathSync } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import * as path from "node:path";
+import type * as vscode from "vscode";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { type ExternalModule, moduleItems } from "./module-sources";
+import { cached, fileStamp } from "./cache";
+import { type Body, type ExternalModule, moduleItems } from "./module-sources";
 import type { CargoRoot } from "./target";
 
-interface Place {
+export interface CardPlace {
   uri: string;
   offset: number;
   /** The type's path within its source. Absent when asking about a file alone. */
   path?: string;
+  cfg?: string;
+  owner?: number;
+  module?: string;
 }
 
 interface Placement {
@@ -26,9 +31,23 @@ interface Placement {
   order: number[];
 }
 
-interface Graph {
+export interface Reading {
+  place: Placement;
+  cfg: string;
+  rank: number;
+  types: Set<number> | null;
+  bodies?: Body[];
+}
+
+export interface Graph {
   /** The places in which each physical file was read as a module. */
-  files: Map<string, { place: Placement; types: Set<number> | null }[]>;
+  files: Map<string, Reading[]>;
+  /** Paths consulted, including a missing sibling that would make a module ambiguous. */
+  paths: Set<string>;
+  /** One live text per physical file, including unsaved editor buffers. */
+  texts: Map<string, string | null>;
+  /** Only these workspace sources need a search for relationship targets. */
+  referring: Map<string, string>;
   /** A file that failed to parse or read could declare more modules. */
   complete: boolean;
 }
@@ -36,27 +55,127 @@ interface Graph {
 interface Parsed {
   modules: ExternalModule[];
   types: Set<number>;
+  bodies: Body[];
 }
 
-interface CachedItems {
-  hash: string;
-  items: Parsed;
+/** Every relationship annotation contains this Rust identifier. */
+export const MAY_REFER = /\brefer\b/;
+
+/** Resolve a missing candidate against its nearest existing parent, including directory symlinks. */
+function directoryPath(
+  directory: string,
+  parents: Map<string, Promise<string>>,
+): Promise<string> {
+  return cached(parents, directory, async () => {
+    try {
+      return await realpath(directory);
+    } catch {
+      const parent = path.dirname(directory);
+      if (parent === directory) return directory;
+      return path.join(
+        await directoryPath(parent, parents),
+        path.basename(directory),
+      );
+    }
+  });
 }
 
-/** Parsed declarations survive an edit while their file still has the same contents and cfg. */
-const parsed = new WeakMap<CargoRoot[], Map<string, CachedItems>>();
+/** File identities and configured declarations shared between successive workspace snapshots. */
+class ModuleCache {
+  paths = new Map<string, Promise<string | null>>();
+  stamps = new Map<string, string>();
+  sources = new Map<
+    string,
+    {
+      items: Map<string, Promise<Parsed | null>>;
+      text?: string;
+      mayRefer: boolean;
+    }
+  >();
+  physical = new Map<string, string>();
+  private aliases = new Map<string, Set<string>>();
 
-/** Pending and completed work is shared even by visits to different Cargo roots. */
-function cached<T>(
-  values: Map<string, Promise<T>>,
-  key: string,
-  read: () => Promise<T>,
-): Promise<T> {
-  const existing = values.get(key);
-  if (existing) return existing;
-  const pending = read();
-  values.set(key, pending);
-  return pending;
+  resolve(
+    file: string,
+    parents: Map<string, Promise<string>>,
+  ): Promise<string | null> {
+    const pending: Promise<string | null> = cached(
+      this.paths,
+      file,
+      async () => {
+        let actual: string | null = null;
+        let stamp = "";
+        try {
+          const info = await stat(file);
+          stamp = fileStamp(info);
+          if (info.isFile()) actual = await realpath(file);
+        } catch (error) {
+          const { code } = error as NodeJS.ErrnoException;
+          if (code !== "ENOENT" && code !== "ENOTDIR") {
+            if (this.paths.get(file) === pending) this.paths.delete(file);
+            throw error;
+          }
+        }
+        const key =
+          actual ??
+          path.join(
+            await directoryPath(path.dirname(file), parents),
+            path.basename(file),
+          );
+        if (this.paths.get(file) === pending) {
+          this.stamps.set(file, stamp);
+          this.stamps.set(key, stamp);
+          this.physical.set(file, key);
+          const aliases = this.aliases.get(key) ?? new Set();
+          aliases.add(file);
+          this.aliases.set(key, aliases);
+        }
+        return actual;
+      },
+    );
+    return pending;
+  }
+
+  prune(graph: Graph) {
+    for (const file of this.paths.keys()) {
+      if (graph.paths.has(file)) continue;
+      this.paths.delete(file);
+      const key = this.physical.get(file) ?? path.normalize(file);
+      const aliases = this.aliases.get(key);
+      aliases?.delete(file);
+      if (!aliases?.size) this.aliases.delete(key);
+      this.physical.delete(file);
+    }
+    for (const file of this.stamps.keys()) {
+      if (!graph.paths.has(file) && !graph.files.has(file))
+        this.stamps.delete(file);
+    }
+    for (const file of this.sources.keys()) {
+      if (!graph.files.has(file)) this.sources.delete(file);
+    }
+  }
+
+  forget(file: string, physical: string) {
+    for (const name of [file, physical, this.physical.get(file)]) {
+      if (!name) continue;
+      this.paths.delete(name);
+      this.stamps.delete(name);
+      this.sources.delete(name);
+      for (const alias of this.aliases.get(name) ?? []) {
+        this.paths.delete(alias);
+        this.stamps.delete(alias);
+        this.physical.delete(alias);
+      }
+      this.aliases.delete(name);
+    }
+  }
+}
+
+const caches = new Map<CargoRoot[], ModuleCache>();
+function moduleCache(roots: CargoRoot[]) {
+  const cache = caches.get(roots) ?? new ModuleCache();
+  caches.set(roots, cache);
+  return cache;
 }
 
 interface Visit {
@@ -64,6 +183,7 @@ interface Visit {
   ancestors: Set<string>;
   place: Placement;
   cfg: string;
+  rank: number;
 }
 
 /** Keep `..` for the filesystem: the preceding directory may be a symlink. */
@@ -72,7 +192,9 @@ function moduleFile(parent: string, parts: string[]): string {
   for (const part of parts) {
     const root = path.parse(part).root;
     if (root) file = path.resolve(file, root);
-    const tail = part.slice(root.length);
+    const tail = part
+      .slice(root.length)
+      .replace(path.sep === "\\" ? /[\\/]+/g : /\/+/g, path.sep);
     if (tail) file += (file.endsWith(path.sep) ? "" : path.sep) + tail;
   }
   return file;
@@ -85,63 +207,84 @@ export async function moduleTree(
   parse: typeof moduleItems = moduleItems,
   isCurrent: () => boolean = () => true,
 ): Promise<Graph> {
-  const physical = new Map<string, Promise<string | null>>();
-  const sources = new Map<string, Promise<{ text: string; hash: string }>>();
-  const modules = new Map<string, Promise<Parsed | null>>();
-  const previous = parsed.get(roots) ?? new Map<string, CachedItems>();
-  parsed.set(roots, previous);
-  const graph: Graph = { files: new Map(), complete: true };
+  const cache = moduleCache(roots);
+  const sources = new Map<string, Promise<string>>();
+  const parents = new Map<string, Promise<string>>();
+  const graph: Graph = {
+    files: new Map(),
+    paths: new Set(),
+    texts: new Map(),
+    referring: new Map(),
+    complete: true,
+  };
 
   async function visit({
     files,
     ancestors,
     place,
     cfg,
+    rank,
   }: Visit): Promise<Visit[]> {
-    for (const { file, ownsDirectory } of files) {
-      const actual = await cached(physical, file, async () => {
-        try {
-          return (await stat(file)).isFile() ? await realpath(file) : null;
-        } catch (error) {
-          const { code } = error as NodeJS.ErrnoException;
-          if (code === "ENOENT" || code === "ENOTDIR") return null;
-          throw error;
-        }
-      });
-      if (actual === null) continue;
+    for (const { file } of files) graph.paths.add(file);
+    const candidates = await Promise.all(
+      files.map(async (choice) => {
+        const actual = await cache.resolve(choice.file, parents);
+        const physical = cache.physical.get(choice.file);
+        if (physical) graph.paths.add(physical);
+        return { ...choice, actual };
+      }),
+    );
+    if (!isCurrent()) return [];
+    const existing = candidates.filter((choice) => choice.actual !== null);
+    if (existing.length > 1) {
+      // rustc rejects both foo.rs and foo/mod.rs for the same declaration.
+      graph.complete = false;
+      return [];
+    }
+    const choice = existing[0];
+    if (choice?.actual) {
+      const { actual, file, ownsDirectory } = choice;
       if (ancestors.has(actual)) return [];
       const found = graph.files.get(actual) ?? [];
-      const current: { place: Placement; types: Set<number> | null } = {
+      const current: Reading = {
         place,
+        cfg,
+        rank,
         types: null,
       };
       found.push(current);
       graph.files.set(actual, found);
       const stem = path.parse(file).name;
-      const key = JSON.stringify([actual, cfg, stem, ownsDirectory]);
-      const items = await cached(modules, key, async () => {
+      const key = JSON.stringify([cfg, stem, ownsDirectory]);
+      const source = cache.sources.get(actual) ?? {
+        items: new Map<string, Promise<Parsed | null>>(),
+        text: undefined,
+        mayRefer: false,
+      };
+      cache.sources.set(actual, source);
+      const parsed = source.items;
+      const pending = cached(parsed, key, async () => {
         // A file URI normalizes dot segments before the editor reads it.
         const readable = path.normalize(file) === file ? file : actual;
-        const { text, hash } = await cached(sources, actual, async () => {
-          const text = await read(pathToFileURL(readable).href);
-          return {
-            text,
-            hash: createHash("sha256").update(text, "utf16le").digest("hex"),
-          };
-        });
-        const known = previous.get(key);
-        if (known?.hash === hash) return known.items;
+        const text = await cached(sources, actual, () =>
+          read(pathToFileURL(readable).href),
+        );
+        source.text = text;
+        source.mayRefer = MAY_REFER.test(text);
         const found = await parse(text, cfg, stem, ownsDirectory);
-        if (!found) return null;
-        const items = { modules: found.modules, types: new Set(found.types) };
-        if (isCurrent()) previous.set(key, { hash, items });
-        return items;
+        return found ? { ...found, types: new Set(found.types) } : null;
       });
+      const items = await pending.catch(() => null);
+      graph.texts.set(actual, source.text ?? null);
+      if (source.text !== undefined && source.mayRefer)
+        graph.referring.set(pathToFileURL(actual).href, source.text);
       if (!items) {
+        if (parsed.get(key) === pending) parsed.delete(key);
         graph.complete = false;
         return [];
       }
       current.types = items.types;
+      current.bodies = items.bodies;
       const seen = new Set(ancestors).add(actual);
       return items.modules.map((child) => ({
         files: child.files.map(({ parts, ownsDirectory }) => ({
@@ -150,6 +293,7 @@ export async function moduleTree(
         })),
         ancestors: seen,
         cfg,
+        rank,
         place: {
           ...place,
           module: [place.module, child.module].filter(Boolean).join("::"),
@@ -161,12 +305,13 @@ export async function moduleTree(
     return [];
   }
 
-  let pending: Visit[] = roots.map((target) => {
+  let pending: Visit[] = roots.map((target, rank) => {
     const file = fileURLToPath(target.root);
     return {
       files: [{ file, ownsDirectory: true }],
       ancestors: new Set(),
       cfg: target.cfg,
+      rank,
       place: {
         package: target.package,
         group: target.group,
@@ -181,7 +326,14 @@ export async function moduleTree(
     const next: Visit[] = [];
     // Limit outstanding reads and worker messages on a broad module tree.
     for (let i = 0; i < pending.length; i += 8) {
-      if (!isCurrent()) return { files: new Map(), complete: false };
+      if (!isCurrent())
+        return {
+          files: new Map(),
+          paths: new Set(),
+          texts: new Map(),
+          referring: new Map(),
+          complete: false,
+        };
       const children = await Promise.all(
         pending.slice(i, i + 8).map((item) =>
           visit(item).catch(() => {
@@ -194,29 +346,29 @@ export async function moduleTree(
     }
     pending = next;
   }
-  if (graph.complete && isCurrent()) {
-    for (const key of previous.keys()) {
-      if (!modules.has(key)) previous.delete(key);
-    }
-  }
+  if (isCurrent() && graph.complete) cache.prune(graph);
   return graph;
 }
 
 /** The declaration's inline path and offset extend each of its file's places. */
 export async function placements(
   graph: Graph,
-  cards: Place[],
+  cards: CardPlace[],
 ): Promise<(Placement[] | null)[]> {
   const files = new Map<string, Promise<string>>();
   return Promise.all(
-    cards.map(async ({ uri, path, offset }) => {
+    cards.map(async ({ uri, path, offset, cfg, owner, module }) => {
       try {
         const actual = await cached(files, uri, () =>
           realpath(fileURLToPath(uri)),
         );
         const positions = graph.files.get(actual);
         const active = positions?.filter(
-          ({ types }) => path === undefined || types?.has(offset),
+          (entry) =>
+            (cfg === undefined || cfg === entry.cfg) &&
+            (owner === undefined || owner === entry.rank) &&
+            (module === undefined || module === entry.place.module) &&
+            (path === undefined || entry.types?.has(offset)),
         );
         if (!active?.length) return graph.complete ? [] : null;
         const inline = path?.split("::").slice(0, -1).join("::");
@@ -235,13 +387,38 @@ export async function placements(
 let trees = new WeakMap<CargoRoot[], Promise<Graph>>();
 
 /** Edits or Cargo configuration changes invalidate the cached workspace graphs. */
-export function forgetModules(): void {
+export function forgetModules(file?: string): void {
   trees = new WeakMap();
+  if (file === undefined) {
+    watches?.clear();
+    caches.clear();
+    return;
+  }
+  if (!caches.size) return;
+  let physical = file;
+  // A dirty editor can name a symlink even when Cargo knows only its target.
+  try {
+    physical = realpathSync(file);
+  } catch {
+    /* deletion */
+  }
+  for (const cache of caches.values()) cache.forget(file, physical);
 }
 
-function editorTree(roots: CargoRoot[]): Promise<Graph> | undefined {
+/** Explicit #[path] modules can have an extension VS Code opens as plain text. */
+export function knownModule(uri: vscode.Uri): boolean {
+  if (uri.scheme !== "file") return false;
+  for (const cache of caches.values()) {
+    if (cache.paths.has(uri.fsPath) || cache.sources.has(uri.fsPath))
+      return true;
+  }
+  return false;
+}
+
+export function editorTree(roots: CargoRoot[]): Promise<Graph> | undefined {
+  if (!roots.length) return undefined;
   const vscode: typeof import("vscode") = require("vscode");
-  if (!vscode.workspace.isTrusted || !roots.length) return undefined;
+  if (!vscode.workspace.isTrusted) return undefined;
   const cache = trees;
   const existing = cache.get(roots);
   if (existing) return existing;
@@ -253,6 +430,8 @@ function editorTree(roots: CargoRoot[]): Promise<Graph> | undefined {
     () => trees === cache,
   ).then(
     (graph) => {
+      if (trees === cache)
+        watches?.update(roots, graph.paths, moduleCache(roots).stamps);
       if (!graph.complete) cache.delete(roots);
       return graph;
     },
@@ -265,19 +444,74 @@ function editorTree(roots: CargoRoot[]): Promise<Graph> | undefined {
   return pending;
 }
 
+let watches:
+  | ReturnType<typeof import("./module-watches").moduleWatches>
+  | undefined;
+
+/** Tie extra file watches to the lifetime of the extension. */
+export function watchModuleSources(
+  changed: (file: string) => void,
+): vscode.Disposable {
+  const {
+    moduleWatches,
+  }: typeof import("./module-watches") = require("./module-watches");
+  watches = moduleWatches(changed);
+  return {
+    dispose() {
+      watches?.clear();
+      watches = undefined;
+    },
+  };
+}
+
 /** A declaration's places, an empty list outside the workspace, or null when unknown. */
-export async function cardPlacements(places: Place[], roots: CargoRoot[]) {
+export async function cardPlacements(places: CardPlace[], roots: CargoRoot[]) {
   const graph = await editorTree(roots);
   return graph ? placements(graph, places) : places.map(() => null);
 }
 
-/** The workspace sources, with any uncertainty from files still being edited. */
-export async function moduleFiles(roots: CargoRoot[]) {
+/** Declaration order at successive external module boundaries. A parent precedes its children. */
+export function sourceOrder(
+  a: readonly number[],
+  b: readonly number[],
+): number {
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return a.length - b.length;
+}
+
+/** Every Cargo interpretation of a file, with its own cfg and module path. */
+export async function fileOwners(
+  uris: string[],
+  roots: CargoRoot[],
+  typeOffset?: number,
+) {
+  if (!uris.length) return [];
   const graph = await editorTree(roots);
-  return graph
-    ? {
-        uris: [...graph.files.keys()].map((file) => pathToFileURL(file).href),
-        complete: graph.complete,
-      }
-    : null;
+  return Promise.all(
+    uris.map(async (uri) => {
+      if (!graph) return null;
+      const actual =
+        uri.startsWith("file:") &&
+        (await realpath(fileURLToPath(uri)).catch(() => undefined));
+      const records = actual ? graph.files.get(actual) : undefined;
+      const active =
+        typeOffset === undefined
+          ? records
+          : records?.filter((r) => r.types?.has(typeOffset));
+      if (!active?.length) return graph.complete ? [] : null;
+      return [...active]
+        .sort(
+          (a, b) =>
+            a.rank - b.rank || sourceOrder(a.place.order, b.place.order),
+        )
+        .map(({ cfg, place, rank }) => ({
+          cfg,
+          rank,
+          path: place.module,
+          module: [place.crate, place.module].filter(Boolean).join("::"),
+        }));
+    }),
+  );
 }

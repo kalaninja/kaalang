@@ -4,16 +4,16 @@ The language and algorithm contracts live in [the RFCs](rfcs/).
 
 ## Crate boundaries
 
-| Crate                                                       | Responsibility                                                                                                                                                                                                                                                                                                                                                                 |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                                                                                                                                                                                                       |
-| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                                                                                                                                                                                                                                     |
-| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. Behind the `source` feature, read flows and types from the text of a file for the renderers, say what each drawn element of a flow or a type stands for there, and find the flow or type declared at an offset. |
-| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                                                                                                                                                                                                               |
-| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, list each diagram's hotspots, lay out type diagrams, and serialize standalone SVG.                                                                                                                                                                                                                         |
-| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read the cargo workspace as cargo compiles it for one compilation target, find the selected flow or type there, resolve every `refer` target to find the type's incoming types, read the flow or the types through the compiler, call the SVG entry point, and write the completed diagram.                                                                                    |
-| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                                                                                                                                                          |
-| [`kaalang-js`](../crates/kaalang-js/src/lib.rs)             | Expose drawing a flow or a type and finding the flow or type declared at an offset to JavaScript, as WebAssembly an editor's page loads: offsets and ranges in UTF-16 code units, answers in JSON, and no parsed text kept between calls; unpublished.                                                                                                                         |
+| Crate                                                       | Responsibility                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`kaalang`](../crates/kaalang/src/lib.rs)                   | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                                                                                                                                                                                                                                                                              |
+| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)     | Validate attribute arguments, parse the item, and delegate expanding a flow or a datatype to the compiler.                                                                                                                                                                                                                                                                                                                                            |
+| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs) | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. Behind the `source` feature, read flows and types from the text of a file for the renderers, say what each drawn element of a flow or a type stands for there, and find the flow or type declared at an offset. The `workspace` feature resolves Rust paths across Cargo module trees. |
+| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)     | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks.                                                                                                                                                                                                                                                                                                                                                      |
+| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)           | Derive captions, measure and verify pixel geometry, compose stages, list each diagram's hotspots, lay out type diagrams, and serialize standalone SVG.                                                                                                                                                                                                                                                                                                |
+| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)          | Read Cargo metadata and module files for one compilation target, select the flow or type through the compiler, order its incoming cards, render the SVG, and write it to the selected destination.                                                                                                                                                                                                                                                    |
+| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)   | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                                                                                                                                                                                                                                 |
+| [`kaalang-js`](../crates/kaalang-js/src/lib.rs)             | Expose diagram rendering, declaration ranges, and workspace relationship resolution to JavaScript through WebAssembly. Translate byte positions to UTF-16 offsets; unpublished.                                                                                                                                                                                                                                                                       |
 
 ```mermaid
 flowchart TD
@@ -214,29 +214,45 @@ kaalang supports VS Code. Every supported IDE shows
 lists the ribbon of a clicked connection or merge, and asks its host to reveal a
 range, to run the editor's own go-to action at a position, for the types of
 values, and for a type's references and places in the module tree. The host
-supplies the text, cursor, target cfgs and editor results. The page accepts
-references, definitions, and module positions for the current type and source
-snapshot.
+supplies the text, cursor, target cfgs and editor results. Cursor moves reuse
+the declaration ranges for the current text and cfg. A Cargo type's first
+diagram waits for its target, references, definitions, and module positions. A
+refresh of the same type keeps the last diagram visible until its replacement is
+ready.
 
-In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
-rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
-cargo's configuration applied, local crate flags, settings overrides, package
-features and build-script cfgs. When build scripts are enabled,
-[the extension](../ide/vscode/src/cargo.ts) reads their output by Cargo package
-ID. Cargo reuses fresh results. Saving a script or changing one of its inputs
+In VS Code, [the extension](../ide/vscode/src/target.ts) combines rustc's cfgs
+with Cargo configuration, rust-analyzer settings, package features and
+build-script cfgs. The editor shows the cfgs rust-analyzer uses for the open
+file. The workspace resolver includes `cfg(proc_macro)` for procedural macros.
+With an explicit compilation target, it resolves those macros and their library
+dependencies with Cargo's host graph and host flags. The extension watches the
+lockfile selected by each Cargo command. When a lock needs updating, it can
+resolve against a private copy if that Cargo supports `resolver.lockfile-path`
+and the command permits updates. Saving a script or changing one of its inputs
 refreshes the diagram when rust-analyzer's rebuild-on-save setting is enabled.
 The extension reads a value's type from rust-analyzer's hover at its binding.
 Cargo identifies workspace targets. The CLI and VS Code follow the same compiler
 rules for module files and `#[path]`. The extension reads unsaved text from the
-editor and runs the compiler in a Node worker. When a reference search misses a
-renamed type, the host can resolve the relationship at the position the compiler
-gives it. The bindings use module positions to put incoming cards in source
-order, including across files. A file shared by targets contributes its card at
-the first place in diagram order. The panel follows Rust editors in the VS Code
-workspace folders. A go-to can open a file outside those folders. It opens what
-a click finds as the editor's own go-to does, from where the cursor stands, so
-that the diagram follows only the target and going back returns. In Restricted
-Mode it runs neither cargo nor rustc, whose binaries the workspace's
-configuration may name: the diagram goes without the set, and what rust-analyzer
-gives, the types, incoming cards, module paths, and go-to actions, waits for
-trust, as rust-analyzer does.
+editor, watches the directories containing declared modules, and runs the
+compiler in a Node worker. For files shared by several modules or targets, and
+sources reached outside the package directory, the worker resolves each `refer`
+in its owning module using the compiler's
+[workspace resolver](../crates/kaalang-compiler/src/workspace/mod.rs). Edits
+inside function, trait, and impl bodies reuse the relationship index when type
+name offsets stay fixed. The host caches the last focus's incoming
+relationships. For a shared source, the active declaration at the name's offset
+and its module select the Cargo target for both the focus and its incoming
+cards. For paths the source alone cannot resolve, the host can use
+rust-analyzer's definition when the reference has one owner and the destination
+identifies one type. The bindings use module positions to put incoming cards in
+source order, including across files. A declaration shared by targets
+contributes its card at the first place in diagram order. Two modules in the
+same target that include the same file can declare distinct types. Navigating
+from a relationship connected to the focus opens that focus's declaration. The
+panel follows Rust editors in the workspace folders and sources that their Cargo
+targets include elsewhere. A go-to opens what a click finds as the editor's own
+go-to does, from where the cursor stands, so that the diagram follows only the
+target and going back returns. In Restricted Mode it runs neither cargo nor
+rustc, whose binaries the workspace's configuration may name: the diagram goes
+without the set, and what rust-analyzer gives, the types, incoming cards, module
+paths, and go-to actions, waits for trust, as rust-analyzer does.

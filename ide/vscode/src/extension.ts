@@ -10,8 +10,13 @@ import * as vscode from "vscode";
 
 import { watchBuildInputs } from "./build-inputs";
 import type { BuildInputs } from "./cargo";
-import { cardPlacements } from "./card-places";
-import { hoverType, moduleHovers } from "./hover";
+import {
+  type CardPlace,
+  cardPlacements,
+  knownModule,
+  watchModuleSources,
+} from "./card-places";
+import { hoverModule, hoverType, moduleHovers } from "./hover";
 import { stopModuleWorker } from "./module-sources";
 import { navigate, type Navigation } from "./navigation";
 import {
@@ -44,7 +49,7 @@ type Request =
       type: "modules";
       id: number;
       uri: string;
-      places: { uri: string; offset: number; path?: string }[];
+      places: CardPlace[];
     }
   | { type: "back" | "forward" };
 
@@ -61,6 +66,8 @@ export function activate(context: vscode.ExtensionContext): void {
   let asked = 0;
   /** A newer click or a switch to another source overtakes a pending go-to. */
   let navigation = 0;
+  let following = 0;
+  const edited = new WeakSet<vscode.TextDocument>();
   const log = vscode.window.createOutputChannel("kaalang");
   const buildWatchers = new Map<
     string,
@@ -73,21 +80,32 @@ export function activate(context: vscode.ExtensionContext): void {
     buildWatchers.clear();
   }
 
-  /** Follows `editor`, unless it shows a document outside the workspace. */
+  /** Follow Rust sources in an open folder or declared by one of its Cargo targets. */
   function follow(editor: vscode.TextEditor | undefined): void {
     if (
       editor &&
       editor.document.uri.toString() !== source?.document.uri.toString()
-    ) {
+    )
       ++navigation;
-    }
+    if (editor?.document.languageId !== "rust") return;
+    const question = ++following;
     if (
-      editor?.document.languageId !== "rust" ||
-      (vscode.workspace.workspaceFolders?.length &&
-        vscode.workspace.getWorkspaceFolder(editor.document.uri) === undefined)
+      editor.document !== source?.document &&
+      vscode.workspace.workspaceFolders?.length &&
+      !vscode.workspace.getWorkspaceFolder(editor.document.uri)
     ) {
+      if (panel && vscode.workspace.isTrusted)
+        void target(editor.document.uri, (line) => log.appendLine(line)).then(
+          ({ owned }) => {
+            if (owned && question === following) followSource(editor);
+          },
+        );
       return;
     }
+    followSource(editor);
+  }
+
+  function followSource(editor: vscode.TextEditor): void {
     const moved = editor.document !== source?.document;
     source = editor;
     send();
@@ -103,11 +121,18 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const question = ++asked;
-    const { cfg, buildInputs, workspaceRoot } = await target(
-      source.document.uri,
+    const uri = source.document.uri;
+    const cursor = source.document.offsetAt(source.selection.active);
+    const project = await target(
+      uri,
       (line) => log.appendLine(line),
-    );
+      async () => hoverModule(await hoverAt(uri.toString(), cursor)),
+    ).catch((error) => {
+      log.appendLine(`Could not read the source target: ${String(error)}`);
+      return undefined;
+    });
     if (question === asked && panel !== undefined) {
+      const { workspaceRoot, buildInputs } = project ?? {};
       if (
         workspaceRoot &&
         buildWatchers.get(workspaceRoot)?.inputs !== buildInputs
@@ -120,7 +145,12 @@ export function activate(context: vscode.ExtensionContext): void {
             watcher: watchBuildInputs(buildInputs, reread),
           });
       }
-      void panel.webview.postMessage({ type: "target", cfg });
+      void panel.webview.postMessage({
+        type: "target",
+        uri: uri.toString(),
+        cfg: project?.cfg ?? "",
+        cfgs: project?.owned ? (project.cfgs ?? [project.cfg]) : undefined,
+      });
     }
   }
 
@@ -135,6 +165,10 @@ export function activate(context: vscode.ExtensionContext): void {
       type: "document",
       uri: document.uri.toString(),
       text: document.getText(),
+      waitForTarget:
+        vscode.workspace.isTrusted &&
+        document.uri.scheme === "file" &&
+        !!vscode.workspace.workspaceFolders?.length,
       // By line and character, as the editor keeps it while text before it changes.
       cursor: document.offsetAt(source.selection.active),
     });
@@ -179,13 +213,14 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         break;
       case "referrers": {
-        const files = await referringFiles(
+        const result = await referringFiles(
           request.uri,
           request.offset,
           (line) => log.appendLine(line),
+          async () => hoverModule(await hoverAt(request.uri, request.offset)),
         );
-        if (files !== undefined) {
-          reply({ type: "referrers", id: request.id, files });
+        if (result !== undefined) {
+          reply({ type: "referrers", id: request.id, ...result });
         }
         break;
       }
@@ -221,6 +256,7 @@ export function activate(context: vscode.ExtensionContext): void {
       panel.reveal(column);
       return;
     }
+    const editor = vscode.window.activeTextEditor;
     panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Diagram", column, {
       enableScripts: true,
       // Else every return to the diagram's tab compiles the module again.
@@ -228,8 +264,10 @@ export function activate(context: vscode.ExtensionContext): void {
       localResourceRoots: [out],
     });
     panel.webview.html = html(panel.webview, out);
+    if (editor && editor !== source) follow(editor);
     panel.webview.onDidReceiveMessage(receive);
     panel.onDidDispose(() => {
+      ++following;
       ++navigation;
       panel = undefined;
     });
@@ -274,6 +312,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   let changing: ReturnType<typeof setTimeout> | undefined;
+  let sourceCfgChanged = false;
   /**
    * Tells the page, once changes pause, that the engine may find other
    * references: it publishes diagnostics as it analyzes the workspace.
@@ -281,12 +320,17 @@ export function activate(context: vscode.ExtensionContext): void {
   function changed(): void {
     clearTimeout(changing);
     changing = setTimeout(() => {
+      if (sourceCfgChanged) {
+        sourceCfgChanged = false;
+        void sendCfg();
+      }
       void panel?.webview.postMessage({ type: "changed" });
     }, 1000);
   }
 
-  function sourcesChanged(): void {
-    forgetReferences();
+  function sourcesChanged(source: vscode.Uri | string): void {
+    forgetReferences(source);
+    sourceCfgChanged = true;
     changed();
   }
   const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
@@ -295,6 +339,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     log,
     { dispose: stopModuleWorker },
+    watchModuleSources(sourcesChanged),
     vscode.commands.registerCommand("kaalang.showDiagram", () =>
       show(vscode.ViewColumn.Active),
     ),
@@ -319,8 +364,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // A save changes no text but reports a change too.
     vscode.workspace.onDidChangeTextDocument(({ document, contentChanges }) => {
       if (contentChanges.length > 0) {
-        if (document.languageId === "rust") {
-          sourcesChanged();
+        if (document.languageId === "rust" || knownModule(document.uri)) {
+          edited.add(document);
+          sourcesChanged(document.uri);
         }
         if (document === source?.document) {
           send();
@@ -331,8 +377,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (affectsCfg(event)) {
         watchConfig();
         clearCfg();
+        forgetReferences();
         void sendCfg();
-        sourcesChanged();
+        changed();
       }
     }),
     vscode.languages.onDidChangeDiagnostics(changed),
@@ -341,16 +388,21 @@ export function activate(context: vscode.ExtensionContext): void {
       watchConfig();
       reread();
     }),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      if (edited.has(document)) sourcesChanged(document.uri);
+    }),
     vscode.workspace.onDidSaveTextDocument((document) => {
-      if (document.languageId === "rust") {
-        sourcesChanged();
+      if (document.languageId === "rust" || knownModule(document.uri)) {
+        edited.delete(document);
+        sourcesChanged(document.uri);
       }
     }),
     vscode.workspace.onDidGrantWorkspaceTrust(() => {
       offered = false;
       watchConfig();
+      forgetReferences();
       void sendCfg();
-      sourcesChanged();
+      changed();
     }),
     manifests,
     sources,

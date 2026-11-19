@@ -8,15 +8,26 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 
+import { cached } from "./cache";
 import { forgetBuildScriptRuns } from "./build-scripts";
+import { fileOwners } from "./card-places";
 import { type CargoOptions, readCargoProject } from "./cargo";
 import { configArgs, run } from "./cargo-command";
-import { fileCfgs } from "./cfgs";
-import { type CargoRoot as CargoTarget, workspaceTargets } from "./metadata";
+import { fileCfgs, packageCfgs } from "./cfgs";
+import {
+  type CargoRoot as CargoTarget,
+  type Metadata,
+  hostTargets,
+  workspaceTargets,
+} from "./metadata";
 
 /** Each crate reads its module tree with its package's active features. */
 export interface CargoRoot extends CargoTarget {
   cfg: string;
+  /** An additional Cargo compilation for the host in a cross-target editor. */
+  host?: true;
+  /** The actual compilation of a procedural macro shown with rust-analyzer's target cfg. */
+  semanticOwner?: number;
 }
 
 /** The settings of rust-analyzer that decide the set. */
@@ -34,10 +45,14 @@ interface Options extends CargoOptions {
   extraEnv: Record<string, string | null>;
 }
 
-/** The root of each source directory's cargo workspace, if it has one. */
-const roots = new Map<string, Promise<string | undefined>>();
-/** Each workspace read, by its root and the options it was read with. */
-const workspaces = new Map<string, ReturnType<typeof read>>();
+function cargoCache() {
+  return {
+    roots: new Map<string, Promise<string | undefined>>(),
+    workspaces: new Map<string, ReturnType<typeof read>>(),
+    projects: new Map<string, vscode.Uri>(),
+  };
+}
+let cache = cargoCache();
 
 /** Whether Restricted Mode was logged: once is enough. */
 let restricted = false;
@@ -49,8 +64,7 @@ export function affectsCfg(event: vscode.ConfigurationChangeEvent): boolean {
 
 /** Forgets what was read, after a manifest or a cargo configuration changes. */
 export function forgetCfg(): void {
-  roots.clear();
-  workspaces.clear();
+  cache = cargoCache();
   forgetBuildScriptRuns();
 }
 
@@ -74,7 +88,12 @@ export function cargoConfig(file?: vscode.Uri): string | undefined {
  * in Restricted Mode: cargo and rustc run whatever binaries the workspace's
  * configuration names.
  */
-export async function target(file: vscode.Uri, log: (line: string) => void) {
+export async function target(
+  file: vscode.Uri,
+  log: (line: string) => void,
+  activeModule?: () => Promise<string | null>,
+  typeOffset?: number,
+) {
   if (!vscode.workspace.isTrusted) {
     if (!restricted) {
       restricted = true;
@@ -88,8 +107,118 @@ export async function target(file: vscode.Uri, log: (line: string) => void) {
       cfgForRoot: () => "",
       buildInputs: undefined,
       workspaceRoot: undefined,
+      owned: false,
+      selectedOwner: undefined,
+      displayOwner: undefined,
+      cfgs: undefined,
     };
   }
+  const revision = cache;
+  const folder = vscode.workspace.getWorkspaceFolder(file);
+  const source = file.scheme === "file" ? realFile(file.fsPath) : undefined;
+  const directory = source && folder ? path.dirname(source) : undefined;
+  let primary = directory
+    ? await configuredWorkspace(revision, file, directory, log)
+    : undefined;
+  const checked = new Set<CargoRoot[]>();
+
+  async function from(workspace: Awaited<ReturnType<typeof read>>) {
+    if (!source || !workspace.roots.length || checked.has(workspace.roots))
+      return;
+    checked.add(workspace.roots);
+    function select(rank: number, module: string, cfgs?: string[]) {
+      const root = workspace.roots[rank];
+      return {
+        ...workspace,
+        cfg: root.cfg,
+        owned: true,
+        selectedOwner: { owner: root.semanticOwner ?? rank, module },
+        displayOwner: { owner: rank, module },
+        cfgs,
+      };
+    }
+    const direct = workspace.roots.findIndex(
+      (root) => root.root === file.toString() && !root.host,
+    );
+    // A crate root may also be an external module of another target. Its
+    // Cargo cfg can even equal that target's while the declaration is a different type.
+    if (
+      direct >= 0 &&
+      ((!activeModule && typeOffset === undefined) ||
+        workspace.roots.length === 1)
+    )
+      return select(direct, "");
+    const [readings] = await fileOwners(
+      [file.toString()],
+      workspace.roots,
+      typeOffset,
+    );
+    if (!readings?.length) return direct >= 0 ? select(direct, "") : undefined;
+    const displayed = readings.filter(
+      ({ rank }) => !workspace.roots[rank].host,
+    );
+    const owners = displayed.length ? displayed : readings;
+    let owner = owners[0];
+    if (activeModule && owners.length > 1) {
+      const module = await activeModule();
+      const matching =
+        module &&
+        owners
+          .filter(
+            (other) =>
+              module === other.module || module.startsWith(other.module + "::"),
+          )
+          .sort((a, b) => b.module.length - a.module.length)[0];
+      if (matching) owner = matching;
+    }
+    return select(
+      owner.rank,
+      owner.path,
+      owners.length > 1
+        ? [...new Set(owners.map(({ cfg }) => cfg))]
+        : undefined,
+    );
+  }
+
+  if (primary) {
+    const selected = await from(primary);
+    if (selected) return selected;
+  }
+  // A configured target or #[path] module can live outside its package or folder.
+  // Only start Cargo in directories that belong to a trusted editor workspace.
+  if (source) {
+    const others = new Map(revision.projects);
+    for (const candidate of vscode.workspace.workspaceFolders ?? [])
+      others.set(candidate.uri.fsPath, candidate.uri);
+    for (const [directory, resource] of others) {
+      if (directory === primary?.workspaceRoot) continue;
+      const candidate = await configuredWorkspace(
+        revision,
+        resource,
+        directory,
+        log,
+      );
+      const selected = await from(candidate);
+      if (selected) return selected;
+    }
+  }
+  primary ??= await configuredWorkspace(revision, file, undefined, log);
+  return {
+    ...primary,
+    cfg: primary.cfgForRoot(folder ? source : undefined),
+    owned: false,
+    selectedOwner: undefined,
+    displayOwner: undefined,
+    cfgs: undefined,
+  };
+}
+
+async function configuredWorkspace(
+  revision: typeof cache,
+  file: vscode.Uri,
+  directory: string | undefined,
+  log: (line: string) => void,
+) {
   const settings = vscode.workspace.getConfiguration("rust-analyzer", file);
   const options: Options = {
     target: settings.get<string | null>("cargo.target") ?? null,
@@ -127,51 +256,28 @@ export async function target(file: vscode.Uri, log: (line: string) => void) {
       env[name] = value;
     }
   }
-  const source = workspaceFile(file);
   const root =
-    source === undefined
+    directory === undefined
       ? undefined
-      : await once(roots, path.dirname(source), () =>
-          locate(path.dirname(source), env, log),
+      : await cached(
+          revision.roots,
+          JSON.stringify([directory, options.extraEnv]),
+          () => locate(directory, env, log),
         );
-  const workspace = await once(
-    workspaces,
+  if (root) revision.projects.set(root, file);
+  const workspace = await cached(
+    revision.workspaces,
     JSON.stringify([root ?? null, options]),
     () => read(root, options, env, log),
   );
-  return { ...workspace, cfg: workspace.cfgForRoot(source) };
+  return workspace;
 }
 
-/** What `map` holds at `key`, made first if it holds nothing. */
-function once<T>(
-  map: Map<string, Promise<T>>,
-  key: string,
-  make: () => Promise<T>,
-): Promise<T> {
-  let value = map.get(key);
-  if (value === undefined) {
-    value = make();
-    map.set(key, value);
-  }
-  return value;
-}
-
-/**
- * The real path of `file` when it is one of the workspace's own. Cargo runs
- * only for those: in a dependency's or the standard library's sources it would
- * write a `Cargo.lock`. Cargo names packages by their real paths.
- */
-function workspaceFile(file: vscode.Uri): string | undefined {
-  if (
-    file.scheme !== "file" ||
-    vscode.workspace.getWorkspaceFolder(file) === undefined
-  ) {
-    return undefined;
-  }
+function realFile(file: string): string {
   try {
-    return fs.realpathSync(file.fsPath);
+    return fs.realpathSync(file);
   } catch {
-    return file.fsPath;
+    return file;
   }
 }
 
@@ -212,25 +318,79 @@ async function read(
       : await configuredTargets(root, cargoConfig, env);
   const target = targets.length > 0 ? ["--target", targets[0]] : [];
   const cfgs = await printed(root, directory, cargoConfig, target, env, log);
-  const { metadata, buildCfgs, buildInputs } =
+  const { metadata, hostMetadata, buildCfgs, hostCfgs, buildInputs } =
     root === undefined
       ? {}
       : await readCargoProject(root, targets, config, options, env, log);
   const cfgForRoot = (file: string | undefined) =>
     fileCfgs(cfgs, metadata, file, options, log, buildCfgs);
-  const packageCfg = new Map<string, string>();
-  for (const pkg of metadata?.packages ?? []) {
-    if (metadata?.workspace_members.includes(pkg.id)) {
-      packageCfg.set(pkg.name, cfgForRoot(pkg.manifest_path));
+  function configured(
+    targets: CargoTarget[],
+    metadata: Metadata,
+    printed: string[],
+    host: boolean,
+  ): CargoRoot[] {
+    const packages = new Map(metadata.packages.map((pkg) => [pkg.id, pkg]));
+    const perPackage = new Map<string, string>();
+    return targets.map((target) => {
+      const key = JSON.stringify([target.packageId, !!target.procMacro]);
+      let cfg = perPackage.get(key);
+      if (cfg === undefined) {
+        cfg = packageCfgs(
+          host && target.procMacro ? [...printed, "proc_macro"] : printed,
+          metadata,
+          packages.get(target.packageId),
+          options,
+          log,
+          host || target.procMacro ? hostCfgs : buildCfgs,
+        );
+        perPackage.set(key, cfg);
+      }
+      return {
+        ...target,
+        cfg,
+        ...(host ? { host: true as const } : {}),
+        root: vscode.Uri.file(target.root).toString(),
+      };
+    });
+  }
+  const editorTargets = metadata ? workspaceTargets(metadata) : [];
+  const roots = metadata
+    ? configured(editorTargets, metadata, cfgs, false)
+    : [];
+  const macros = new Map(
+    roots
+      .filter((target) => target.procMacro)
+      .map((target) => [target.packageId, target]),
+  );
+  const actual = hostMetadata ?? (!targets.length ? metadata : undefined);
+  if (actual && macros.size) {
+    // An explicit compilation target separates Cargo's host flags from RUSTFLAGS,
+    // even when the triples coincide. A native macro keeps RUSTFLAGS and still
+    // receives proc_macro, independently of its visible rust-analyzer cfg.
+    const host = hostMetadata
+      ? await run("rustc", ["--print", "cfg", "-O"], directory, env).then(
+          (text) => text.split(/\r?\n/).filter(Boolean),
+          (error) => {
+            log(`Could not read the host's cfgs: ${String(error)}`);
+            return [];
+          },
+        )
+      : cfgs;
+    const compiled = hostMetadata
+      ? hostTargets(actual)
+      : editorTargets.filter((target) => target.procMacro);
+    if (host.length) {
+      for (const target of configured(compiled, actual, host, true)) {
+        const editor = target.procMacro && macros.get(target.packageId);
+        if (editor) {
+          if (!hostMetadata && editor.cfg === target.cfg) continue;
+          editor.semanticOwner = roots.length;
+        }
+        roots.push(target);
+      }
     }
   }
-  const roots = metadata
-    ? workspaceTargets(metadata).map((target) => ({
-        ...target,
-        cfg: packageCfg.get(target.package)!,
-        root: vscode.Uri.file(target.root).toString(),
-      }))
-    : [];
   return { cfgForRoot, roots, buildInputs, workspaceRoot: root };
 }
 

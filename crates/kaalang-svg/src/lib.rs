@@ -131,8 +131,9 @@ pub enum HotspotKind {
     /// [`SourceType::field_paths`] places it.
     Path { card: usize },
     /// A relationship's target, of the type `card` draws. Its span names the
-    /// target's type, as [`SourceType::target_spans`] places it.
-    Target { card: usize },
+    /// target's type, as [`SourceType::target_spans`] places it. `focus` marks
+    /// a tile whose relationship line reaches the focus.
+    Target { card: usize, focus: bool },
     /// The header of an incoming card, the type `card` draws. Its span is the
     /// type's name in its declaration.
     Header { card: usize },
@@ -162,6 +163,10 @@ pub struct Hotspot {
     /// holds the parsed text: it forgets every span when its source map is
     /// cleared.
     pub span: Option<Span>,
+    /// For a field-type path, its line among the SVG's field-type lines and
+    /// its UTF-16 start and end on that line. A browser can measure the actual
+    /// glyphs in its font.
+    pub field_text: Option<[usize; 3]>,
 }
 
 /// Reads the flow at `path` within `source` for no target, for tests that

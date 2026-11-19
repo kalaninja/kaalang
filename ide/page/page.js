@@ -26,16 +26,18 @@ let cells = 0;
  * UTF-16 code units of the text.
  *
  * From the host:
- * - `{type: "document", uri, text, cursor}` on opening a document, on every
- *   edit, and on every cursor move;
- * - `{type: "target", cfg}` with the target's cfg set as `rustc --print cfg`
- *   prints it, empty until a host sends one;
+ * - `{type: "document", uri, text, cursor, waitForTarget?}` on opening a
+ *   document, on every edit, and on every cursor move. A host that will send
+ *   a target can defer the first type drawing until then;
+ * - `{type: "target", uri, cfg, cfgs?}` with the preferred cfg and, for a Cargo
+ *   source, the cfgs that can declare the type under the cursor;
  * - `{type: "types", id, types}` in answer to `types`, at once or in parts:
  *   each offset answered maps to the type's text, or to `null` when the host
  *   learns none;
- * - `{type: "referrers", id, files: [{uri, text, cfg, offsets}]}` in answer to
- *   `referrers`: candidate texts in the workspace, each with its cfg and the
- *   starts of the references the engine already found;
+ * - `{type: "referrers", id, focus?: {cfg, owner, module}, files: [{uri, text, cfg, offsets}]}` in answer to
+ *   `referrers`: each Cargo reading may also identify its crate index `owner`
+ *   and file `module`. A `resolved` reading contains its own confirmed offsets,
+ *   optional `unknown` offsets for the editor, and `focus` on the selected reading;
  * - `{type: "definitions", id, matches}` in answer to `definitions`: a boolean
  *   per place saying whether its definition is the focus;
  * - `{type: "modules", id, modules, placements}` in answer to `modules`: each
@@ -56,8 +58,8 @@ let cells = 0;
  *   named at this offset of that document, as the editor's engine finds them;
  * - `{type: "definitions", id, uri, offset, places: [{uri, offset}]}` to check
  *   which relationship targets resolve to the focus type;
- * - `{type: "modules", id, uri, places: [{uri, path, offset}]}` for each card's module
- *   and its positions in the focus document's workspace;
+ * - `{type: "modules", id, uri, places: [{uri, path, offset, cfg, owner?, module?}]}`
+ *   for each card's module and positions in the focus document's workspace;
  * - `{type: "back"}` and `{type: "forward"}` for a mouse's back and forward
  *   buttons, which go through the editor's own history.
  *
@@ -87,6 +89,8 @@ export function start(root, host) {
     text: "",
     cursor: 0,
     cfg: "",
+    cfgs: undefined,
+    waitingForTarget: false,
     /**
      * What the cursor was last in, by its path in the file. Until then the
      * first flow is drawn.
@@ -119,16 +123,26 @@ export function start(root, host) {
     const current = generation;
     const { text, cfg, cursor, collapseCycles } = state;
     try {
-      const declared = await engine.declaredAt(text, cfg, cursor);
+      const declared = await engine.declaredAt(text, cfg, cursor, state.cfgs);
       if (current !== generation) {
         return;
       }
+      // The first target can uncover a type hidden in the default cfg.
+      if (state.waitingForTarget && declared?.flow === undefined) return;
       if (declared !== null) {
         state.declared = declared;
       }
       const shown = state.declared ?? { flow: 0 };
-      if (shown.type !== type?.path) {
-        type = shown.type === undefined ? null : new TypeContext(shown.type);
+      if (shown.type !== type?.path || shown.start !== type?.start) {
+        type =
+          shown.type === undefined
+            ? null
+            : new TypeContext(
+                shown.type,
+                shown.cfg ?? cfg,
+                shown.start,
+                !!state.cfgs,
+              );
       }
       const version = type?.version;
       if (
@@ -146,6 +160,7 @@ export function start(root, host) {
       }
       let uris = [state.uri];
       let texts;
+      let readings;
       let result;
       if (shown.type === undefined) {
         result = await engine.drawFlow(
@@ -159,9 +174,10 @@ export function start(root, host) {
         const context = type.sources(state.uri, text);
         uris = context.uris;
         texts = context.texts;
+        readings = context.readings;
         result = await engine.drawType(
           text,
-          cfg,
+          type.cfg,
           shown.type,
           JSON.stringify(context.context),
         );
@@ -175,13 +191,26 @@ export function start(root, host) {
         schedule(0);
         return;
       }
+      if (result?.cards) {
+        type.ask(
+          host,
+          result.cards.concat(result.otherPlaces ?? []),
+          uris,
+          false,
+          readings,
+        );
+        if (current !== generation || !type.canPublish()) return;
+      }
       toolbar.hidden = shown.type !== undefined;
       let outlines = new Map();
+      let measured = true;
       if (result === null) {
         redraw('<p class="kaalang-empty">No flow to draw.</p>');
       } else {
         redraw(result.svg);
-        outlines = outline(diagram.querySelector("svg"), result.hotspots);
+        const svg = diagram.querySelector("svg");
+        outlines = outline(svg, result.hotspots);
+        if (result.cards) measured = measureFieldText(svg, outlines);
       }
       drawn = {
         text,
@@ -196,15 +225,14 @@ export function start(root, host) {
         uris,
         texts,
         outlines,
+        measured,
       };
       show(null);
-      if (drawn.cards) {
-        type.ask(host, drawn.cards, uris);
-      }
     } catch (error) {
       if (current !== generation) {
         return;
       }
+      if (!drawn) redraw("");
       show(
         error instanceof Crash
           ? `Internal error: ${error.message}. Edit the text to try again.`
@@ -253,6 +281,8 @@ export function start(root, host) {
     if (svg === null || drawn?.text !== state.text || drawn.cfg !== state.cfg) {
       return [];
     }
+    // A retained editor tab can receive its drawing while hidden.
+    if (!drawn.measured) drawn.measured = measureFieldText(svg, drawn.outlines);
     const { x, y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(
       svg.getScreenCTM().inverse(),
     );
@@ -399,7 +429,7 @@ export function start(root, host) {
     const found = targets(event, navigate);
     if (found.length > 0 && navigate) {
       event.preventDefault();
-      host.send(request(found[0], drawn.uris, drawn.texts));
+      host.send(request(found[0], drawn.uris, drawn.texts, drawn.cards?.[0]));
     } else if (found.length > 0) {
       open(wires(found, drawn.wires), event);
     }
@@ -439,10 +469,17 @@ export function start(root, host) {
         if (message.uri !== state.uri) {
           type = null;
           state.cfg = "";
+          state.cfgs = undefined;
+          state.waitingForTarget = !!message.waitForTarget;
           state.uri = message.uri;
           state.declared = null;
           drawn = null;
-          redraw("");
+          show(null);
+          redraw(
+            state.waitingForTarget
+              ? '<p class="kaalang-empty" role="status">Loading diagram…</p>'
+              : "",
+          );
         }
         if (message.text !== state.text) {
           // A list's offsets count in the text it was opened on.
@@ -454,17 +491,27 @@ export function start(root, host) {
         schedule(PAUSE);
         break;
       case "target":
-        if (message.cfg !== state.cfg) {
+        if (message.uri && message.uri !== state.uri) break;
+        if (
+          state.waitingForTarget ||
+          message.cfg !== state.cfg ||
+          JSON.stringify(message.cfgs) !== JSON.stringify(state.cfgs)
+        ) {
+          state.waitingForTarget = false;
           state.cfg = message.cfg;
+          state.cfgs = message.cfgs;
           type = null;
+          if (
+            state.declared?.type &&
+            !message.cfgs?.includes(state.declared.cfg)
+          )
+            state.declared = { ...state.declared, cfg: state.cfg };
           close();
           schedule(0);
         }
         break;
       case "changed":
-        if (type !== null && drawn?.type === type) {
-          type.ask(host, drawn.cards, drawn.uris, true);
-        }
+        type?.refresh(host);
         break;
       case "referrers":
       case "definitions":
@@ -473,13 +520,17 @@ export function start(root, host) {
           schedule(0);
           if (message.type === "referrers") {
             const context = type;
-            void context.checkDefinitions(
-              engine,
-              host,
-              state.text,
-              state.cfg,
-              () => type === context,
-            );
+            void context
+              .checkDefinitions(
+                engine,
+                host,
+                state.text,
+                context.cfg,
+                () => type === context,
+              )
+              .then((finished) => {
+                if (finished && type === context) schedule(0);
+              });
           }
         }
         break;
@@ -496,4 +547,34 @@ export function start(root, host) {
         break;
     }
   };
+}
+
+/** Fit the clickable source ranges to the glyphs the browser actually drew. */
+function measureFieldText(svg, outlines) {
+  if (!svg.getClientRects().length) return false;
+  const lines = svg.querySelectorAll(".field-type > tspan[x]");
+  for (const spot of outlines.keys()) {
+    if (!spot.fieldText) continue;
+    const [index, start, end] = spot.fieldText;
+    const line = lines[index];
+    if (!line || end > line.getNumberOfChars()) continue;
+    let left = Infinity;
+    let right = -Infinity;
+    for (let at = start; at < end; ++at) {
+      const glyph = line.getExtentOfChar(at);
+      left = Math.min(left, glyph.x);
+      right = Math.max(right, glyph.x + glyph.width);
+    }
+    if (left < right) {
+      spot.left = left;
+      spot.right = right;
+    }
+  }
+  // Finish reading layout before changing any live SVG rectangle.
+  for (const [spot, rect] of outlines) {
+    if (!spot.fieldText) continue;
+    rect.setAttribute("x", spot.left);
+    rect.setAttribute("width", spot.right - spot.left);
+  }
+  return true;
 }

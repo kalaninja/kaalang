@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { openDocument } from "./documents";
+import { documentText, openDocument } from "./documents";
 
 /** The provider that finds the targets of each go-to request. */
 const PROVIDERS = {
@@ -9,7 +9,14 @@ const PROVIDERS = {
 };
 
 export type Navigation =
-  | { type: "reveal"; uri: string; start: number; end: number; text?: string }
+  | {
+      type: "reveal";
+      uri: string;
+      start: number;
+      end: number;
+      text?: string;
+      origin?: { uri: string; text: string };
+    }
   | {
       type: keyof typeof PROVIDERS;
       uri: string;
@@ -41,6 +48,12 @@ export async function navigate(
     return;
   }
   const { version } = document;
+  const origin = request.type === "reveal" && request.origin;
+  const currentOrigin = async () =>
+    !origin ||
+    (await documentText(vscode.Uri.parse(origin.uri)).catch(
+      () => undefined,
+    )) === origin.text;
   let locations: vscode.Location[];
   const last = request.type === "reveal" ? request.end : request.offset;
   if (
@@ -88,11 +101,20 @@ export async function navigate(
         : target,
     );
   }
+  if (
+    origin &&
+    (!(await currentOrigin()) || !current() || document.version !== version)
+  )
+    return;
   // A hidden or closed source editor reopens in its own group.
   const editor = await vscode.window.showTextDocument(source.document.uri, {
     viewColumn: source.viewColumn,
   });
-  if (!current() || document.version !== version) {
+  if (
+    (origin && !(await currentOrigin())) ||
+    !current() ||
+    document.version !== version
+  ) {
     return;
   }
   await vscode.commands.executeCommand(

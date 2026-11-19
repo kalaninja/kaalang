@@ -123,7 +123,7 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
                     );
                 }
                 let drawn_targets = of(|kind| match kind {
-                    HotspotKind::Target { card } => Some(*card),
+                    HotspotKind::Target { card, .. } => Some(*card),
                     _ => None,
                 });
                 assert_eq!(

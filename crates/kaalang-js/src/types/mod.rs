@@ -2,7 +2,10 @@
 
 use std::collections::BTreeMap;
 
-use kaalang_compiler::{SourceError, SourceFile, SourceType};
+use kaalang_compiler::{
+    SourceError, SourceFile, SourceType,
+    workspace::{Inclusion, first_readings},
+};
 use kaalang_svg::{CardError, CardPath, HotspotKind, TypeCard, TypeOptions};
 use serde::{Deserialize, Serialize};
 
@@ -36,6 +39,17 @@ struct Context {
 /// What the editor knows about declarations and references in one text.
 #[derive(Default, Deserialize)]
 struct References {
+    /// Configurations of a shared file use the same URI and source offsets.
+    uri: Option<String>,
+    /// The workspace resolver already distinguished the focus from other
+    /// modules that include the same declaration in this target.
+    #[serde(default)]
+    resolved: bool,
+    owner: Option<usize>,
+    #[serde(default)]
+    module: String,
+    #[serde(default)]
+    repeated: bool,
     /// Where the engine finds references to the focus in its own text.
     #[serde(default)]
     offsets: Vec<u32>,
@@ -75,6 +89,16 @@ impl<'a> Source<'a> {
         })
     }
 
+    fn card(&self, number: usize, ty: &SourceType) -> Card {
+        let (start, end) = self.range(ty.name.span());
+        Card {
+            source: number,
+            path: ty.path.clone(),
+            start,
+            end,
+        }
+    }
+
     /// The UTF-16 range of `span`, a span of this text.
     fn range(&self, span: proc_macro2::Span) -> (u32, u32) {
         let range = self.file.range(span);
@@ -89,12 +113,20 @@ struct Drawn {
     hotspots: Vec<Spot>,
     /// Every card, the focus first, then the incoming ones in drawing order.
     cards: Vec<Card>,
+    /// Other readings of the same declaration can have earlier places in the
+    /// workspace. Locate them before committing to one card.
+    #[serde(rename = "otherPlaces", skip_serializing_if = "Vec::is_empty")]
+    other_places: Vec<Card>,
 }
 
 /// A [`kaalang_svg::Hotspot`] with its span as a UTF-16 range of its source.
 #[derive(Serialize)]
 struct Spot {
+    #[serde(rename = "fieldText", skip_serializing_if = "Option::is_none")]
+    field_text: Option<[usize; 3]>,
     kind: &'static str,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    focus: bool,
     left: i32,
     top: i32,
     right: i32,
@@ -154,6 +186,7 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
     let (own, mut incoming) = cards(&sources, &focus, place);
     let source = |number: usize| sources[number].as_ref().expect("a card's source is read");
     let modules = |number: usize| &source(number).editor.modules;
+    let other_places = keep_first_readings(&focus, &mut incoming, source);
     let (svg, hotspots) = loop {
         match draw(&focus, &own, &incoming, place, modules) {
             Ok(drawn) => break drawn,
@@ -174,7 +207,7 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
         .map(|hotspot| {
             let (kind, card) = match hotspot.kind {
                 HotspotKind::Path { card } => ("path", card),
-                HotspotKind::Target { card } => ("target", card),
+                HotspotKind::Target { card, .. } => ("target", card),
                 HotspotKind::Header { card } => ("header", card),
                 HotspotKind::Node
                 | HotspotKind::Call { .. }
@@ -186,7 +219,9 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
             let (start, end) =
                 source(number).range(hotspot.span.expect("a card's hotspot has a span"));
             Spot {
+                field_text: hotspot.field_text,
                 kind,
+                focus: matches!(hotspot.kind, HotspotKind::Target { focus: true, .. }),
                 left: hotspot.left,
                 top: hotspot.top,
                 right: hotspot.right,
@@ -199,20 +234,13 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
         .collect();
     let cards = std::iter::once((0, &focus))
         .chain(incoming.iter().map(|card| (card.source, &card.ty)))
-        .map(|(number, ty)| {
-            let (start, end) = source(number).range(ty.name.span());
-            Card {
-                source: number,
-                path: ty.path.clone(),
-                start,
-                end,
-            }
-        })
+        .map(|(number, ty)| source(number).card(number, ty))
         .collect();
     Ok(serde_json::to_string(&Drawn {
         svg,
         hotspots,
         cards,
+        other_places,
     })
     .expect("a diagram serializes"))
 }
@@ -301,6 +329,45 @@ fn cards<'a>(
         incoming.sort_by_key(|card| (card.place.is_none(), card.place.map(|p| p.key(place))));
     }
     (own, incoming)
+}
+
+/// A shared declaration contributes the first reading in diagram order. The
+/// editor still needs the other readings' places to establish that order.
+fn keep_first_readings<'a>(
+    focus: &SourceType,
+    incoming: &mut Vec<Incoming<'_>>,
+    source: impl Fn(usize) -> &'a Source<'a>,
+) -> Vec<Card> {
+    let own = source(0);
+    let focus_place = own
+        .editor
+        .uri
+        .as_deref()
+        .map(|uri| (uri, own.range(focus.name.span()).0));
+    let first = first_readings(incoming.iter().enumerate().filter_map(|(index, card)| {
+        let reading = source(card.source);
+        let offset = reading.range(card.ty.name.span()).0;
+        let uri = reading.editor.uri.as_deref();
+        if !reading.editor.resolved && uri.is_some_and(|uri| Some((uri, offset)) == focus_place) {
+            return None;
+        }
+        let inclusion = reading.editor.owner.map(|owner| Inclusion {
+            owner,
+            module: &reading.editor.module,
+            repeated: reading.editor.repeated,
+        });
+        // Contexts without URIs describe each numbered source only once.
+        Some((index, (uri.ok_or(card.source), offset), inclusion))
+    }));
+    let mut other = Vec::new();
+    for (index, card) in std::mem::take(incoming).into_iter().enumerate() {
+        if first.contains(&index) {
+            incoming.push(card);
+        } else {
+            other.push(source(card.source).card(card.source, &card.ty));
+        }
+    }
+    other
 }
 
 /// The focus's header and each incoming card's: by RFC 0010 when the editor

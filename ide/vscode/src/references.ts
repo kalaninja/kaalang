@@ -1,35 +1,27 @@
 import { realpath } from "node:fs/promises";
-import * as path from "node:path";
 import * as vscode from "vscode";
 
 import { analyzerClient, locations } from "./analyzer";
-import { cardPlacements, forgetModules, moduleFiles } from "./card-places";
+import { fileOwners, forgetModules, MAY_REFER } from "./card-places";
 import { documentText, openDocument } from "./documents";
+import type { Matches } from "./module-sources";
 import { coordinates, offsets } from "./offsets";
-import { type CargoRoot, target } from "./target";
+import { referringSources } from "./referring-sources";
+import { target } from "./target";
 
 interface Place {
   uri: string;
   offset: number;
 }
 
-/** Every relationship annotation contains this Rust identifier. */
-const MAY_REFER = /\brefer\b/;
-
 type Definition = {
   uri: string;
   position: { line: number; character: number };
 };
 
-interface Candidates {
-  texts: Map<string, string>;
-  complete: boolean;
-}
-
 /** One revision of the sources and Cargo configuration. Diagnostics can repeat within it. */
 function sourceRevision() {
   return {
-    candidates: new WeakMap<CargoRoot[], Promise<Candidates | null>>(),
     resolved: new Map<string, Promise<Definition[]>>(),
     indexes: new Map<string, Promise<ReturnType<typeof coordinates>>>(),
     paths: new Map<string, Promise<string>>(),
@@ -40,9 +32,10 @@ function sourceRevision() {
 let current = sourceRevision();
 
 /** A source, configuration or workspace change can move declarations and their references. */
-export function forgetReferences(): void {
+export function forgetReferences(source?: vscode.Uri | string): void {
   current = sourceRevision();
-  forgetModules();
+  if (typeof source === "string") forgetModules(source);
+  else if (!source || source.scheme === "file") forgetModules(source?.fsPath);
 }
 
 /** A batch preserves its input order without flooding the language server or file system. */
@@ -62,34 +55,6 @@ async function batch<T, U>(
   return answers;
 }
 
-async function candidateTexts(roots: CargoRoot[]): Promise<Candidates | null> {
-  const cache = current.candidates;
-  const cached = cache.get(roots);
-  if (cached) return cached;
-  const pending = moduleFiles(roots)
-    .then(async (files) => {
-      if (files === null) return null;
-      const texts = new Map<string, string>();
-      let complete = files.complete;
-      await batch(files.uris, async (key) => {
-        const uri = vscode.Uri.parse(key);
-        try {
-          const text = await documentText(uri);
-          if (MAY_REFER.test(text)) texts.set(uri.toString(), text);
-        } catch {
-          complete = false;
-        }
-      });
-      return { texts, complete };
-    })
-    .catch(() => null);
-  cache.set(roots, pending);
-  const texts = await pending;
-  // Retry when the language server finishes indexing or a file becomes readable.
-  if (!texts?.complete) cache.delete(roots);
-  return texts;
-}
-
 /**
  * Workspace texts that can contain relationships and the references the editor
  * already resolved in each. The compiler identifies any targets still to check.
@@ -98,13 +63,14 @@ export async function referringFiles(
   source: string,
   offset: number,
   log: (line: string) => void,
+  activeModule?: () => Promise<string | null>,
 ) {
   const revision = current;
   const document = await openDocument(source);
-  if (document === undefined) return [];
+  if (document === undefined) return { files: [] };
   const { version } = document;
   const [project, references] = await Promise.all([
-    target(document.uri, log),
+    target(document.uri, log, activeModule, offset),
     vscode.commands
       .executeCommand<
         vscode.Location[] | undefined
@@ -133,22 +99,15 @@ export async function referringFiles(
   }
 
   const keys = [...new Set([source, ...found.keys()])];
-  const owners = await cardPlacements(
-    keys.map((uri) => ({ uri, offset: 0 })),
-    project.roots,
-  );
+  const owners = await fileOwners(keys, project.roots);
   const primary = new Map<string, string>();
-  const cfgs = new Map<string, string>();
-  const cfgByRoot = new Map(
-    project.roots.map(({ root, cfg }) => [vscode.Uri.parse(root).fsPath, cfg]),
-  );
+  const cfgs = new Map<string, string[]>();
   let missing = false;
   await batch([...keys.entries()], async ([index, key]) => {
     const owner = owners[index];
     const uri = vscode.Uri.parse(key);
     if (owner?.length) {
-      const cfg = cfgByRoot.get(path.normalize(owner[0].root));
-      if (cfg !== undefined) cfgs.set(key, cfg);
+      cfgs.set(key, [...new Set(owner.map(({ cfg }) => cfg))]);
     } else if (
       key !== source &&
       (owner?.length === 0 || !vscode.workspace.getWorkspaceFolder(uri))
@@ -171,60 +130,66 @@ export async function referringFiles(
       owners[0]?.length !== 1 ||
       primary.size !== found.size ||
       [...primary.values()].some((text) => /\bas\b/.test(text)));
-  const supplemental = secondary ? await candidateTexts(project.roots) : null;
+  const supplemental = await referringSources(
+    project.roots,
+    secondary,
+    source,
+    offset,
+    project.selectedOwner,
+  );
+  const resolved = new Map<string, Matches[]>();
   const texts = new Map<string, string>();
-  for (const [uri, text] of supplemental?.texts ?? []) {
+  for (const [uri, { text, cfgs: active, matches }] of supplemental) {
     const key = aliases.get(await physical(uri, revision)) ?? uri;
     texts.set(key, primary.get(key) ?? text);
+    cfgs.set(key, active);
+    if (matches) resolved.set(key, matches);
     if (!found.has(key)) found.set(key, []);
   }
   if (document.version !== version || revision !== current) return undefined;
-  // Supplementary sources are already confirmed members of the module graph,
-  // including #[path] declarations reaching outside the editor's folder.
-  const external = [...texts.keys()].filter(
-    (key) =>
-      !cfgs.has(key) &&
-      !vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(key)),
-  );
-  const places = await cardPlacements(
-    external.map((uri) => ({ uri, offset: 0 })),
-    project.roots,
-  );
-  external.forEach((key, index) => {
-    const owner = places[index]?.[0];
-    if (owner)
-      cfgs.set(
-        key,
-        cfgByRoot.get(path.normalize(owner.root)) ??
-          project.cfgForRoot(owner.root),
-      );
-  });
   const files = await batch([...found], async ([key, positions]) => {
     try {
       const uri = vscode.Uri.parse(key);
       const text =
         texts.get(key) ?? primary.get(key) ?? (await documentText(uri));
-      if (!MAY_REFER.test(text)) return null;
+      if (!MAY_REFER.test(text)) return [];
+      const owners = resolved.get(key);
+      if (owners)
+        return owners.map((match) => ({
+          ...match,
+          uri: key,
+          text,
+          resolved: true,
+        }));
       const at = offsets(text);
-      return {
+      const references = positions.map((position) =>
+        at(position.line, position.character),
+      );
+      const active = cfgs.get(key) ?? [
+        project.roots.length
+          ? project.cfgForRoot(uri.fsPath)
+          : (await target(uri, log)).cfg,
+      ];
+      return active.map((cfg) => ({
         uri: key,
         text,
-        cfg:
-          cfgs.get(key) ??
-          (project.roots.length
-            ? project.cfgForRoot(uri.fsPath)
-            : (await target(uri, log)).cfg),
-        offsets: positions.map((position) =>
-          at(position.line, position.character),
-        ),
-      };
+        cfg,
+        offsets: references,
+      }));
     } catch {
-      return null;
+      return [];
     }
   });
   if (document.version !== version || revision !== current) return undefined;
   revision.drawings.add(JSON.stringify([source, offset]));
-  return files.filter((file) => file !== null);
+  // The diagram needs the selected cfg and mount even when the focus has no refer of its own.
+  return {
+    files: files.flat(),
+    focus: project.displayOwner && {
+      ...project.displayOwner,
+      cfg: project.cfg,
+    },
+  };
 }
 
 /** A reference and its definition can use a symlink and its real path. */

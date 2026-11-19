@@ -113,11 +113,22 @@ function area(hotspot) {
  * @param {Hotspot} hotspot
  * @param {string[]} uris
  * @param {string[]} [texts] Each card's source snapshot, for a jump outside the focus.
+ * @param {import("./engine.js").Card} [focus] The declaration a drawn relationship reaches.
  */
-export function request(hotspot, uris, texts) {
+export function request(hotspot, uris, texts, focus) {
   const source = hotspot.source ?? 0;
   const file = { uri: uris[source] };
   if (source > 0 && texts) file.text = texts[source];
+  if (hotspot.focus && focus) {
+    return {
+      type: "reveal",
+      uri: uris[0],
+      start: focus.start,
+      end: focus.end,
+      text: texts?.[0],
+      ...(file.uri !== uris[0] && texts && { origin: file }),
+    };
+  }
   switch (hotspot.kind) {
     case "call":
       return { type: "definition", ...file, offset: hotspot.calleeStart };

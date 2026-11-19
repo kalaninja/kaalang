@@ -365,7 +365,7 @@ pub(crate) fn name_rects(label: &Label, names: &[String]) -> Vec<(usize, (i32, i
         &label.lines,
         font_size,
         ranges,
-        |position, line, left, right| {
+        |position, line, _, left, right| {
             let y = label.at.y + baselines[line] - baselines[0];
             rects.push((
                 position,

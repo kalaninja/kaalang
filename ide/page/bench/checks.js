@@ -84,28 +84,73 @@ function open(overrides = {}) {
     "position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none";
   document.body.append(root);
   const requests = [];
+  const modules = [];
+  let holdModules = false;
+  const answerModules = (message) =>
+    receive({
+      type: "modules",
+      id: message.id,
+      modules: message.places.map(() => null),
+      placements: message.places.map(() => null),
+    });
   const receive = start(root, {
-    send: (message) =>
-      ["types", "referrers", "definitions", "reveal"].includes(message.type) &&
-      requests.push(message),
+    send: (message) => {
+      if (message.type === "modules") {
+        modules.push(message);
+        if (!holdModules) queueMicrotask(() => answerModules(message));
+      } else if (
+        ["types", "referrers", "definitions", "reveal", "definition"].includes(
+          message.type,
+        )
+      ) {
+        requests.push(message);
+      }
+    },
     wasm: { ...wasm, ...overrides },
   });
   const banner = root.querySelector(".kaalang-banner");
   return {
     receive,
+    visible: (shown) => {
+      root.style.display = shown ? "" : "none";
+    },
+    delayModules: () => {
+      holdModules = true;
+    },
+    finishModules: () => answerModules(modules.at(-1)),
+    clickType(field, name) {
+      const line = root.querySelectorAll(".field-type")[field];
+      const box = line.getExtentOfChar(line.textContent.lastIndexOf(name));
+      const at = new DOMPoint(
+        box.x + box.width / 2,
+        box.y + box.height / 2,
+      ).matrixTransform(line.getScreenCTM());
+      line.dispatchEvent(
+        new MouseEvent("click", {
+          bubbles: true,
+          ctrlKey: true,
+          clientX: at.x,
+          clientY: at.y,
+        }),
+      );
+    },
     show: (text, cursor, uri = "a") =>
       receive({ type: "document", uri, text, cursor }),
     target: (cfg) => receive({ type: "target", cfg }),
     banner: () => (banner.hidden ? null : banner.textContent),
     /** How many cards the type diagram drawn shows. */
     cards: () => root.querySelectorAll(".kaalang-diagram .card-outline").length,
-    /** A navigating click on the incoming card's header. */
-    header() {
-      const header = root.querySelector(
-        '.kaalang-hotspots rect[data-kind="header"]',
-      );
-      const rect = header.getBoundingClientRect();
-      header.dispatchEvent(
+    fieldNames: () =>
+      [...root.querySelectorAll(".field-name > text:not(.md-badge)")].map(
+        (node) => node.textContent.trim(),
+      ),
+    /** A navigating click on the middle of a card hotspot. */
+    clickCard(kind, index = 0) {
+      const spot = root.querySelectorAll(
+        `.kaalang-hotspots rect[data-kind="${kind}"]`,
+      )[index];
+      const rect = spot.getBoundingClientRect();
+      spot.dispatchEvent(
         new MouseEvent("click", {
           bubbles: true,
           ctrlKey: true,
@@ -122,6 +167,7 @@ function open(overrides = {}) {
         files: [{ uri: "a", text, cfg: "", offsets }],
       }),
     drawn: () => root.querySelector(".kaalang-diagram svg") !== null,
+    loading: () => !!root.querySelector('.kaalang-diagram [role="status"]'),
     /** The name of the flow drawn. */
     flow: () =>
       root
@@ -142,6 +188,7 @@ function open(overrides = {}) {
       );
     },
     requests,
+    modules,
     /** Answers `request` with `type` for each offset. */
     answer: (request, type) =>
       receive({
@@ -193,13 +240,50 @@ const checks = {
   async "a flow found in the last document is not drawn from the next"() {
     const page = open();
     const last = two("alpha", "beta");
-    on("answering", "declaredAt", () =>
+    on("answering", "declaredRanges", () =>
       page.show(`// b\n${two("gamma", "delta")}`, 0, "b"),
     );
     // The cursor in the last document's second flow; the next draws its first.
     page.show(last, last.lastIndexOf("return"));
     await settled();
     return page.flow() === "gamma";
+  },
+  async "cursor moves reuse one declaration index per source and cfg"() {
+    const page = open();
+    let indexes = 0;
+    hooks.posted = (name) => {
+      if (name === "declaredRanges") ++indexes;
+    };
+    const source = two("alpha", "beta");
+    page.show(source, source.indexOf("alpha"));
+    await settled();
+    page.show(source, source.indexOf("beta"));
+    await settled();
+    if (indexes !== 1 || page.flow() !== "beta") return false;
+    page.target("enabled");
+    await settled();
+    page.show("// 🦀\n" + source, 0);
+    await settled();
+    return indexes === 3 && page.flow() === "beta";
+  },
+  async "a click on a visible generic argument uses the browser's glyph geometry"() {
+    const page = open();
+    const source =
+      "struct Profile<T> { a: std::collections::HashMap<AccountId, T>, b: std::collections::HashMap<𐐀ccount, T> }";
+    page.visible(false);
+    page.show(source, source.indexOf("Profile"));
+    await settled();
+    page.visible(true);
+    for (const [field, name, offset] of [
+      [0, "T", source.indexOf(", T>") + 2],
+      [1, "𐐀", source.indexOf("𐐀")],
+      [1, "T", source.lastIndexOf(", T>") + 2],
+    ]) {
+      page.clickType(field, name);
+      const jump = page.requests.at(-1);
+      if (jump.type !== "definition" || jump.offset !== offset) return false;
+    }
+    return true;
   },
   async "the last flow follows its path when another flow moves into its position"() {
     const page = open();
@@ -299,15 +383,97 @@ const checks = {
     });
     await settled();
     if (page.cards() !== 2) return false;
-    page.header();
+    page.clickCard("header");
     const jump = page.requests.at(-1);
+    page.clickCard("target");
+    const target = page.requests.at(-1);
     return (
       jump?.type === "reveal" &&
       jump.uri === "review.rs" &&
       jump.text === review &&
       jump.start === review.indexOf("Review") &&
+      target.type === "reveal" &&
+      target.uri === "a" &&
+      target.text === member &&
+      target.start === member.indexOf("Member") &&
+      target.end === target.start + "Member".length &&
+      target.origin?.uri === "review.rs" &&
+      target.origin.text === review &&
       page.requests.filter(({ type }) => type === "definitions").length === 1
     );
+  },
+  async "both compilations of a shared file contribute their own active declarations"() {
+    const page = open();
+    page.show(member, member.indexOf("Member"));
+    await settled();
+    const text =
+      '#[cfg(not(invoices))] #[kaa] struct Entry { #[kaa::refer(Member, "Owner.")] id: u8 }\n' +
+      '#[cfg(invoices)] #[kaa] struct Entry { #[kaa::refer(Member, "Owner.")] id: u8 }\n' +
+      '#[kaa] struct Common { #[kaa::refer(Member, "Owner.")] id: u8 }';
+    const refs = page.requests.findLast((r) => r.type === "referrers");
+    const offsets = [...text.matchAll(/refer\(Member/g)].map(
+      (m) => m.index + 6,
+    );
+    page.receive({
+      type: "referrers",
+      id: refs.id,
+      files: ["", "invoices"].map((cfg) => ({
+        uri: "shared.rs",
+        text,
+        cfg,
+        offsets,
+      })),
+    });
+    await settled();
+    return page.cards() === 4;
+  },
+  async "the same relationship token opens the focus in its selected Cargo target"() {
+    const page = open();
+    const text =
+      '#[kaa] pub struct Report { #[kaa::refer(crate::Focus, "Owner")] id: u8, #[kaa::refer(crate::Other, "Other")] other: u8 }';
+    for (const [owner, uri] of ["a.rs", "b.rs"].entries()) {
+      const root = `// 🦀 ${uri}\npub struct Focus; pub struct Other; mod shared;`;
+      const start = root.indexOf("Focus");
+      page.show(root, start, uri);
+      await settled();
+      const refs = page.requests.findLast((r) => r.type === "referrers");
+      page.receive({
+        ...refs,
+        files: [0, 1].map((reading) => ({
+          uri: "shared.rs",
+          text,
+          cfg: "",
+          module: "shared",
+          owner: reading,
+          resolved: true,
+          offsets: reading === owner ? [text.indexOf("Focus")] : [],
+        })),
+      });
+      await settled();
+      if (page.cards() !== 2) return false;
+      page.clickCard("target");
+      const jump = page.requests.at(-1);
+      if (
+        jump.type !== "reveal" ||
+        jump.uri !== uri ||
+        jump.text !== root ||
+        jump.start !== start ||
+        jump.end !== start + "Focus".length ||
+        jump.origin?.uri !== "shared.rs" ||
+        jump.origin.text !== text
+      )
+        return false;
+      page.clickCard("target", 1);
+      const other = page.requests.at(-1);
+      if (
+        other.type !== "definition" ||
+        other.uri !== "shared.rs" ||
+        other.text !== text ||
+        other.offset !== text.indexOf("Other")
+      )
+        return false;
+    }
+    return true;
   },
   async "a refreshed type ignores definitions from its older workspace snapshot"() {
     const page = open();
@@ -353,6 +519,116 @@ const checks = {
     return (
       first !== second && second !== page.requests.at(-1) && page.cards() === 1
     );
+  },
+  async "a shared declaration uses the owner selected at its name, including cfg-only types"() {
+    const page = open();
+    const text =
+      "pub struct Focus { #[cfg(red)] red_field: u8, #[cfg(blue)] blue_field: u8 }\n#[cfg(blue)] pub struct Only { blue_only: u8 }\n#[cfg(red)] pub struct Only { red_only: u8 }";
+    const answer = (r, cfg, owner) =>
+      page.receive({
+        type: "referrers",
+        id: r.id,
+        focus: { cfg, owner, module: "" },
+        files: [],
+      });
+    const latest = () => page.requests.findLast((r) => r.type === "referrers");
+    page.receive({
+      type: "document",
+      uri: "a",
+      text,
+      cursor: 0,
+      waitForTarget: true,
+    });
+    await settled();
+    if (page.drawn() || latest()) return false;
+    page.receive({
+      type: "target",
+      uri: "a",
+      cfg: "red",
+      cfgs: ["red", "blue"],
+    });
+    await settled();
+    const old = latest();
+    if (old?.offset !== text.indexOf("Focus") || page.drawn()) return false;
+    page.show(text, text.indexOf("blue_only"));
+    await settled();
+    const only = latest();
+    if (only?.offset !== text.indexOf("Only")) return false;
+    answer(only, "blue", 1);
+    answer(old, "red", 0);
+    await settled();
+    if (!page.fieldNames().includes("blue_only")) return false;
+    page.show(text, text.indexOf("red_only"));
+    await settled();
+    const other = latest();
+    if (other?.offset !== text.lastIndexOf("Only")) return false;
+    answer(other, "red", 0);
+    await settled();
+    if (!page.fieldNames().includes("red_only")) return false;
+    page.show(text, 0);
+    await settled();
+    answer(latest(), "blue", 1);
+    await settled();
+    return (
+      page.fieldNames().includes("blue_field") &&
+      !page.fieldNames().includes("red_field") &&
+      page.modules.at(-1).places[0].owner === 1
+    );
+  },
+  async "a pending Cargo target leaves flows available and only its document's reply shows a type"() {
+    const page = open();
+    const pending = (uri, text, cursor) =>
+      page.receive({
+        type: "document",
+        uri,
+        text,
+        cursor,
+        waitForTarget: true,
+      });
+    pending("flow.rs", flow, inFlow);
+    await settled();
+    if (page.flow() !== "settle" || page.loading()) return false;
+    pending("model.rs", member, member.indexOf("Member"));
+    page.receive({ type: "target", uri: "flow.rs", cfg: "" });
+    await settled();
+    if (
+      !page.loading() ||
+      page.drawn() ||
+      page.requests.some((r) => r.type === "referrers")
+    )
+      return false;
+    // A file without a Cargo owner can draw as soon as the empty target arrives.
+    page.receive({ type: "target", uri: "model.rs", cfg: "" });
+    await settled();
+    return page.cards() === 1 && !page.loading();
+  },
+  async "a finished type stays visible until refreshed definitions and placements settle"() {
+    const page = open();
+    page.show(member, member.indexOf("Member"));
+    await settled();
+    const files = [{ uri: "review.rs", text: review, cfg: "", offsets: [] }];
+    const reply = (type, fields) =>
+      page.receive({
+        type,
+        id: page.requests.findLast((r) => r.type === type).id,
+        ...fields,
+      });
+    reply("referrers", { files });
+    await settled();
+    reply("definitions", { matches: [true] });
+    await settled();
+    if (page.cards() !== 2) return false;
+    page.delayModules();
+    page.receive({ type: "changed" });
+    reply("referrers", { files });
+    await settled();
+    if (page.cards() !== 2) return false;
+    reply("definitions", { matches: [false] });
+    await settled();
+    if (page.cards() !== 2) return false;
+    page.finishModules();
+    await settled();
+    return page.cards() === 1;
   },
   async "after a trap, the next text draws"() {
     const page = open();

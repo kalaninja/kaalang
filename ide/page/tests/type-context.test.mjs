@@ -104,6 +104,7 @@ test("only unconfirmed relationship targets are looked up in their source snapsh
   };
   await context.checkDefinitions(engine, host, "focus", "drawn", () => true);
   assert.deepEqual(reads, [
+    ["focus", "host"],
     ["focus", "drawn"],
     ["invalid", ""],
     ["incoming", "test"],
@@ -216,4 +217,78 @@ test("direct references need no definition lookup and unchanged syntax is read o
     ["direct", ""],
   ]);
   assert.ok(requests.every(({ type }) => type === "referrers"));
+});
+
+test("a target's meaning belongs to its Cargo owner and module even for the same cfg", async () => {
+  const context = new TypeContext("Focus", "unix");
+  const requests = [];
+  const host = { send: (message) => requests.push(message) };
+  const focus = { source: 0, path: "Focus", start: 4 };
+  context.ask(host, [focus], ["lib.rs"]);
+  const shared = {
+    uri: "shared.rs",
+    text: "shared",
+    cfg: "unix",
+    resolved: true,
+  };
+  context.receive({
+    ...requests[0],
+    files: [
+      {
+        uri: "lib.rs",
+        text: "focus",
+        cfg: "unix",
+        owner: 1,
+        module: "",
+        offsets: [1],
+        unknown: [7],
+        resolved: true,
+        focus: true,
+      },
+      { ...shared, owner: 0, module: "left", offsets: [] },
+      { ...shared, owner: 1, module: "left", repeated: true, offsets: [5] },
+      { ...shared, owner: 1, module: "right", repeated: true, offsets: [8] },
+    ],
+  });
+  await context.checkDefinitions({}, host, "focus", "unix", () => true);
+  const lookup = requests.at(-1);
+  assert.deepEqual(lookup.places, [{ uri: "lib.rs", offset: 7 }]);
+  context.receive({ ...lookup, matches: [true] });
+  const { uris, readings, context: drawn } = context.sources("lib.rs", "focus");
+  assert.deepEqual(uris, ["lib.rs", "shared.rs", "shared.rs"]);
+  assert.deepEqual(
+    drawn.files.map(({ owner, module, repeated, offsets }) => [
+      owner,
+      module,
+      repeated,
+      offsets,
+    ]),
+    [
+      [1, "left", true, [5]],
+      [1, "right", true, [8]],
+    ],
+  );
+  assert.deepEqual(drawn.offsets, [1, 7]);
+  const cards = [
+    focus,
+    { source: 1, path: "Incoming", start: 20 },
+    { source: 2, path: "Incoming", start: 20 },
+  ];
+  context.ask(host, cards, uris, false, readings);
+  const modules = requests.at(-1);
+  assert.deepEqual(
+    modules.places.map(({ owner, module }) => [owner, module]),
+    [
+      [1, ""],
+      [1, "left"],
+      [1, "right"],
+    ],
+  );
+  context.receive({ ...modules, modules: [null, "left", "right"] });
+  assert.deepEqual(
+    context
+      .sources("lib.rs", "focus")
+      .context.files.map((file) => file.modules.Incoming),
+    ["left", "right"],
+  );
 });

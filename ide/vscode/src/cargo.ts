@@ -27,7 +27,9 @@ export interface BuildInputs {
 
 interface CargoProject {
   metadata?: Metadata;
+  hostMetadata?: Metadata;
   buildCfgs?: Map<string, string[]>;
+  hostCfgs?: Map<string, string[]>;
   buildInputs?: BuildInputs;
 }
 
@@ -129,6 +131,24 @@ export async function readCargoProject(
       }
     }
     if (!metadata.resolve && metadataError) log(metadataError);
+    if (
+      targets.length &&
+      metadata.packages.some(
+        (pkg) =>
+          members.has(pkg.id) &&
+          pkg.targets.some((target) => target.kind.includes("proc-macro")),
+      )
+    ) {
+      const [host] = await hostPlatform(root, env);
+      if (host)
+        project.hostMetadata =
+          targets.length === 1 && targets[0] === host
+            ? metadata
+            : await readMetadata(noDeps, [host]).catch((error) => {
+                log(`Could not read host dependencies: ${String(error)}`);
+                return undefined;
+              });
+    }
     if (!scripts) return project;
 
     const targetDir =
@@ -200,6 +220,7 @@ export async function readCargoProject(
         : undefined,
     );
     project.buildCfgs = build.cfgs;
+    project.hostCfgs = build.hostCfgs;
     if (options.rebuildOnSave) inputs = build.inputs;
   } catch (error) {
     log(`Could not read build-script cfgs: ${(error as Error).message}`);

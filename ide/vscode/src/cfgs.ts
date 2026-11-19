@@ -58,7 +58,6 @@ export function fileCfgs(
   log: (line: string) => void,
   buildCfgs?: ReadonlyMap<string, string[]>,
 ): string {
-  const lines = new Set(rustc);
   // The package whose directory holds the file most closely.
   const source = file === undefined ? undefined : path.normalize(file);
   const owner = metadata?.packages
@@ -68,6 +67,19 @@ export function fileCfgs(
       ),
     )
     .sort((a, b) => b.manifest_path.length - a.manifest_path.length)[0];
+  return packageCfgs(rustc, metadata, owner, options, log, buildCfgs);
+}
+
+/** A target always uses the package that declares it, even if its source lives elsewhere. */
+export function packageCfgs(
+  rustc: string[],
+  metadata: Metadata | undefined,
+  owner: Metadata["packages"][number] | undefined,
+  options: { cfgs: unknown[]; setTest: boolean },
+  log: (line: string) => void,
+  buildCfgs?: ReadonlyMap<string, string[]>,
+): string {
+  const lines = new Set(rustc);
   if (owner?.source === null) {
     lines.add("rust_analyzer");
     if (options.setTest) {

@@ -19,6 +19,8 @@ export class Crash extends Error {}
  *   positions in the answer's `wires`.
  * @property {number} [source] In a type diagram, the text `start` and `end`
  *   count in: 0 for the one drawn, then the files of its context.
+ * @property {number[]} [fieldText] Field-type line, start and end in its UTF-16 text.
+ * @property {boolean} [focus] A relationship target whose line leads to the focus.
  */
 
 /**
@@ -51,6 +53,7 @@ export function createEngine(wasm) {
   /** @type {Worker | null} */
   let worker = null;
   let next = 0;
+  let declarations;
   /** @type {Map<number, {resolve: (value: any) => void, reject: (error: Error) => void}>} */
   const pending = new Map();
 
@@ -112,16 +115,51 @@ export function createEngine(wasm) {
 
   return {
     /**
-     * @returns {Promise<{flow: number, path: string} | {type: string} | null>}
+     * @returns {Promise<{flow: number, path: string} | {type: string, cfg: string, start: number} | null>}
      */
-    declaredAt: (text, cfg, offset) => call("declaredAt", text, cfg, offset),
+    async declaredAt(text, cfg, offset, cfgs) {
+      if (
+        declarations?.text !== text ||
+        declarations.cfg !== cfg ||
+        declarations.cfgs !== cfgs
+      ) {
+        const ranges = new Map([[cfg, null]]);
+        for (const enabled of cfgs ?? []) ranges.set(enabled, null);
+        declarations = { text, cfg, cfgs, ranges };
+      }
+      const { ranges } = declarations;
+      for (const enabled of ranges.keys()) {
+        if (!ranges.get(enabled))
+          ranges.set(enabled, call("declaredRanges", text, enabled));
+        let items;
+        try {
+          items = await ranges.get(enabled);
+        } catch (error) {
+          if (error instanceof Crash) ranges.set(enabled, null);
+          throw error;
+        }
+        let low = 0;
+        let high = items.length;
+        while (low < high) {
+          const middle = Math.floor((low + high) / 2);
+          if (items[middle][0] <= offset) low = middle + 1;
+          else high = middle;
+        }
+        const at = items[low - 1];
+        if (!at || offset > at[1]) continue;
+        if (at[2].type !== undefined)
+          return { ...at[2], cfg: enabled, start: at[0] };
+        if (enabled === cfg) return at[2];
+      }
+      return null;
+    },
     /**
      * @returns {Promise<{svg: string, hotspots: Hotspot[], wires: Wire[]} | null>}
      */
     drawFlow: (text, cfg, position, collapseCycles, path) =>
       call("drawFlow", text, cfg, position, collapseCycles, path),
     /**
-     * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[]} | null>}
+     * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[], otherPlaces?: Card[]} | null>}
      */
     drawType: (text, cfg, path, context) =>
       call("drawType", text, cfg, path, context),

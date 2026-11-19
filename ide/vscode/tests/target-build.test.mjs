@@ -20,14 +20,18 @@ const uri = (fsPath) => ({
   toString: () => pathToFileURL(fsPath).href,
 });
 
-async function targetHost(workspace) {
+async function targetHost(workspace, cardPlaces) {
   const built = new URL("../out/target.js", import.meta.url);
   const require = createRequire(built);
   const host = {};
   compileFunction(await readFile(built, "utf8"), ["exports", "require"], {
     filename: fileURLToPath(built),
   })(host, (name) =>
-    name === "vscode" ? { workspace, Uri: { file: uri } } : require(name),
+    name === "vscode"
+      ? { workspace, Uri: { file: uri } }
+      : name === "./card-places" && cardPlaces
+        ? cardPlaces
+        : require(name),
   );
   return host;
 }
@@ -178,6 +182,169 @@ fn main() {
   );
   assert.equal(await readFile(file("Cargo.lock"), "utf8"), oldLock);
   assert.equal(await readFile(alternate, "utf8"), oldLock);
+});
+
+test("the hover at a Cargo root can select its mount in another target even at identical cfg", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-root-owner-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(path.join(root, "src"));
+  await writeFile(
+    path.join(root, "Cargo.toml"),
+    '[package]\nname="hub"\nversion="0.1.0"\nedition="2024"\n[[bin]]\nname="view"\npath="src/main.rs"\n',
+  );
+  await writeFile(path.join(root, "src/lib.rs"), "pub struct Focus;");
+  await writeFile(
+    path.join(root, "src/main.rs"),
+    '#[path="lib.rs"] mod mount; fn main() {}',
+  );
+  const folder = { uri: uri(root) };
+  const workspace = {
+    isTrusted: true,
+    workspaceFolders: [folder],
+    getWorkspaceFolder: () => folder,
+    getConfiguration: () => ({ get: () => undefined }),
+  };
+  const { target } = await targetHost(workspace, {
+    fileOwners: async (uris, roots, typeOffset) => {
+      assert.deepEqual(uris, [uri(path.join(root, "src/lib.rs")).toString()]);
+      return [
+        roots
+          .map(({ cfg, name }, rank) => ({
+            cfg,
+            rank,
+            path: name === "view" ? "mount" : "",
+            module: name === "view" ? "view::mount" : "hub",
+          }))
+          .filter((owner) => typeOffset !== 17 || owner.path === "mount"),
+      ];
+    },
+  });
+  const source = uri(path.join(root, "src/lib.rs"));
+  const read = await target(
+    source,
+    () => {},
+    async () => "view::mount::inner",
+  );
+  assert.equal(read.roots[read.selectedOwner.owner].name, "view");
+  assert.equal(read.selectedOwner.module, "mount");
+  assert.deepEqual(read.displayOwner, read.selectedOwner);
+  assert.deepEqual(read.cfgs, [read.cfg]);
+  const direct = await target(
+    source,
+    () => {},
+    async () => "hub",
+  );
+  assert.equal(direct.roots[direct.selectedOwner.owner].name, "hub");
+  assert.equal(direct.selectedOwner.module, "");
+  assert.equal(direct.cfg, read.cfg);
+  const conditional = await target(
+    source,
+    () => {},
+    async () => "hub",
+    17,
+  );
+  assert.deepEqual(conditional.displayOwner, read.displayOwner);
+});
+
+test("cross-target resolution follows transitive dependencies of a proc macro on the host", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-host-deps-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const system =
+    process.platform === "win32"
+      ? "windows"
+      : process.platform === "darwin"
+        ? "macos"
+        : process.platform;
+  await writeFile(
+    path.join(root, "Cargo.toml"),
+    '[workspace]\nmembers=["model","bridge","mac"]\nresolver="2"\n',
+  );
+  for (const [pkg, dependency] of [
+    ["model", null],
+    ["bridge", "model"],
+    ["mac", "bridge"],
+  ]) {
+    const directory = path.join(root, pkg);
+    await mkdir(path.join(directory, "src"), { recursive: true });
+    const manifest =
+      `[package]\nname="${pkg}"\nversion="0.1.0"\nedition="2024"\n` +
+      (pkg === "mac" ? "[lib]\nproc-macro=true\n" : "") +
+      (dependency
+        ? `[target.'cfg(target_os="${system}")'.dependencies]\n${dependency}={path="../${dependency}"}\n`
+        : "");
+    await writeFile(path.join(directory, "Cargo.toml"), manifest);
+    await writeFile(
+      path.join(directory, "src/lib.rs"),
+      dependency ? `use ${dependency}::Item;` : "pub struct Item;",
+    );
+  }
+  const folder = { uri: uri(root) };
+  const cfg = {
+    "cargo.target": "wasm32-unknown-unknown",
+    "cargo.extraEnv": { CARGO_NET_OFFLINE: "true" },
+  };
+  const workspace = {
+    isTrusted: true,
+    workspaceFolders: [folder],
+    getWorkspaceFolder: () => folder,
+    getConfiguration: () => ({ get: (key) => cfg[key] }),
+  };
+  const { target, forgetCfg } = await targetHost(workspace);
+  const logs = [];
+  const read = await target(uri(path.join(root, "mac/src/lib.rs")), (line) =>
+    logs.push(line),
+  );
+  const host = read.roots.filter((x) => x.host);
+  assert.deepEqual(
+    host.map(({ name }) => name).sort(),
+    ["bridge", "mac", "model"],
+    logs.join("\n"),
+  );
+  assert.ok(read.cfg.split("\n").includes('target_os="unknown"'));
+  assert.ok(!read.cfg.split("\n").includes("proc_macro"));
+  const mac = read.roots[read.selectedOwner.owner];
+  assert.equal(mac.host, true);
+  assert.ok(mac.cfg.split("\n").includes("proc_macro"));
+  assert.ok(mac.cfg.split("\n").includes(`target_os="${system}"`));
+  const bridge = host.find((x) => x.name === "bridge"),
+    model = host.find((x) => x.name === "model");
+  assert.deepEqual(mac.dependencies, [["bridge", bridge.packageId]]);
+  assert.deepEqual(bridge.dependencies, [["model", model.packageId]]);
+  assert.ok(model.cfg.split("\n").includes(`target_os="${system}"`));
+  const displayed = await target(
+    uri(path.join(root, "model/src/lib.rs")),
+    () => {},
+  );
+  assert.ok(!displayed.roots[displayed.selectedOwner.owner].host);
+  assert.ok(displayed.cfg.split("\n").includes('target_os="unknown"'));
+
+  const triple = /^host: (.+)$/m.exec(
+    (await command("rustc", ["-vV"])).stdout,
+  )[1];
+  const source = uri(path.join(root, "mac/src/lib.rs"));
+  cfg["cargo.extraEnv"].RUSTFLAGS = "--cfg public_flag";
+  for (const selection of ["setting", "config", "implicit"]) {
+    delete cfg["cargo.target"];
+    if (selection === "setting") cfg["cargo.target"] = triple;
+    cfg["cargo.extraArgs"] =
+      selection === "config" ? ["--config", `build.target="${triple}"`] : [];
+    forgetCfg();
+    const chosen = await target(source, (line) => logs.push(line));
+    assert.ok(chosen.cfg.split("\n").includes("public_flag"));
+    const macro = chosen.roots[chosen.selectedOwner.owner];
+    assert.ok(macro.host && macro.cfg.split("\n").includes("proc_macro"));
+    const compiled = chosen.roots.filter((root) => root.host);
+    assert.deepEqual(
+      compiled.map((root) => root.name).sort(),
+      selection === "implicit" ? ["mac"] : ["bridge", "mac", "model"],
+    );
+    for (const root of compiled)
+      assert.equal(
+        root.cfg.split("\n").includes("public_flag"),
+        selection === "implicit",
+      );
+  }
+  assert.equal(existsSync(path.join(root, "Cargo.lock")), false);
 });
 
 test("a new project without build scripts resolves default features and gated targets privately", async (t) => {

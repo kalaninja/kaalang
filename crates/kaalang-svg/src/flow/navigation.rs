@@ -35,6 +35,7 @@ pub(crate) fn collect(
             right: origin.x + right,
             bottom: origin.y + bottom,
             span,
+            field_text: None,
         });
     };
     let analysis = &root.analysis;

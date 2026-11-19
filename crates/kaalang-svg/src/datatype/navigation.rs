@@ -16,6 +16,7 @@ use crate::{
 /// the incoming cards in that order.
 pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Vec<Hotspot> {
     let mut hotspots = Vec::new();
+    let mut first_line = 0;
     for (index, shape) in scene.cards.iter().enumerate() {
         let (number, card) = if index == scene.focus {
             (0, focus)
@@ -23,7 +24,7 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
             (index + 1, incoming[index])
         };
         let tiles = card.structure.tiles();
-        let mut push = |kind, (left, top, right, bottom): Bounds, span| {
+        let mut push = |kind, (left, top, right, bottom): Bounds, span, field_text| {
             hotspots.push(Hotspot {
                 kind,
                 left,
@@ -31,6 +32,7 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                 right,
                 bottom,
                 span: Some(span),
+                field_text,
             });
         };
         for block in &shape.texts {
@@ -40,6 +42,7 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                         HotspotKind::Header { card: number },
                         header(block),
                         card.name_span,
+                        None,
                     );
                 }
                 (Text::Type, Some(tile)) => {
@@ -51,21 +54,34 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                         &block.lines,
                         font,
                         paths.iter().map(|path| path.range.clone()),
-                        |index, line, left, right| {
+                        |index, line, bytes, left, right| {
                             let y = block.top + baselines[line];
                             let rect = (block.x + left, y - font, block.x + right, y + font / 2);
-                            push(HotspotKind::Path { card: number }, rect, paths[index].span);
+                            let text = block.lines[line].as_ref();
+                            let first = text[..bytes.start].encode_utf16().count();
+                            let end = first + text[bytes].encode_utf16().count();
+                            push(
+                                HotspotKind::Path { card: number },
+                                rect,
+                                paths[index].span,
+                                Some([first_line + line, first, end]),
+                            );
                         },
                     );
+                    first_line += block.lines.len();
                 }
                 (Text::Target, Some(tile)) => {
                     if let (Some(target), Some(span)) =
                         (&tiles[tile].target, tiles[tile].target_span)
                     {
                         push(
-                            HotspotKind::Target { card: number },
+                            HotspotKind::Target {
+                                card: number,
+                                focus: tiles[tile].drawn,
+                            },
                             target_rect(block, target),
                             span,
+                            None,
                         );
                     }
                 }

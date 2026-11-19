@@ -8,8 +8,9 @@ import { createInterface } from "node:readline";
 import type { Metadata } from "./metadata";
 
 interface BuildScripts {
-  /** Flags for each workspace package, keyed by its Cargo package ID. */
+  /** Each package's target compilation and its compilation for a procedural macro on the host. */
   cfgs: Map<string, string[]>;
+  hostCfgs: Map<string, string[]>;
   /** Absolute input files and directories, including paths that do not exist yet. */
   inputs: string[];
 }
@@ -60,6 +61,7 @@ export async function readBuildScripts(
   const { outputs, units } = await pending;
   const inputs = new Set<string>();
   const cfgs = new Map<string, string[]>();
+  const hostCfgs = new Map<string, string[]>();
   localDependencies(metadata, members, inputs);
   for (const pkg of metadata.packages) {
     if (!members.has(pkg.id)) continue;
@@ -76,14 +78,12 @@ export async function readBuildScripts(
       if (scripts.length) inputs.add(directory);
       continue;
     }
-    const procMacro = pkg.targets.some((target) =>
-      target.kind.includes("proc-macro"),
-    );
-    cfgs.set(pkg.id, selectOutput(found, procMacro, selectedTarget).cfgs);
+    cfgs.set(pkg.id, selectOutput(found, false, selectedTarget).cfgs);
+    hostCfgs.set(pkg.id, selectOutput(found, true, selectedTarget).cfgs);
     for (const output of found)
       await readInputs(output.outDir, directory, inputs);
   }
-  return { cfgs, inputs: [...inputs] };
+  return { cfgs, hostCfgs, inputs: [...inputs] };
 }
 
 /** Only local dependencies that compile into a workspace build script can change its flags. */

@@ -33,6 +33,7 @@ test("a renamed reference in a closed workspace target resolves once per source 
   let scans = 0,
     queries = 0;
   let references = [root];
+  let resolved;
   const modules = {
     vscode: {
       Uri: { parse: uri },
@@ -51,19 +52,46 @@ test("a renamed reference in a closed workspace target resolves once per source 
           })),
       },
     },
-    "./target": { target: async () => ({ roots, cfgForRoot: () => "" }) },
+    "./target": {
+      target: async (_uri, _log, _hover, offset) => {
+        assert.equal(offset, 7);
+        return {
+          roots,
+          cfgForRoot: () => "",
+          cfg: "selected",
+          displayOwner: { owner: 2, module: "nested" },
+        };
+      },
+    },
     "./documents": {
       openDocument,
       documentText: async (uri) => texts.get(uri.toString()),
     },
     "./card-places": {
-      cardPlacements: async (places) =>
-        places.map(() => [{ root: uri(root).fsPath }]),
-      moduleFiles: async () => {
-        ++scans;
-        return { uris: [...texts.keys()], complete: true };
-      },
+      MAY_REFER: /\brefer\b/,
+      fileOwners: async (places) =>
+        places.map((key) =>
+          key === review
+            ? [{ cfg: "left" }, { cfg: "right" }, { cfg: "left" }]
+            : [{ cfg: "" }],
+        ),
       forgetModules: () => {},
+    },
+    "./referring-sources": {
+      referringSources: async (_, all) => {
+        if (!all) return new Map();
+        ++scans;
+        return new Map([
+          [
+            review,
+            {
+              text: texts.get(review),
+              cfgs: ["left", "right"],
+              matches: resolved,
+            },
+          ],
+        ]);
+      },
     },
     "./analyzer": {
       analyzerClient: () => ({}),
@@ -88,20 +116,42 @@ test("a renamed reference in a closed workspace target resolves once per source 
   const { referringFiles, definitionMatches, forgetReferences } = host;
   const focus = { uri: root, offset: 7 },
     place = { uri: review, offset: texts.get(review).indexOf("Author") };
-  assert.deepEqual(await referringFiles(root, focus.offset, () => {}), []);
+  assert.deepEqual(await referringFiles(root, focus.offset, () => {}), {
+    files: [],
+    focus: { owner: 2, module: "nested", cfg: "selected" },
+  });
   assert.equal(scans, 0);
   references = [root, alias];
-  const files = await referringFiles(root, focus.offset, () => {});
+  const { files } = await referringFiles(root, focus.offset, () => {});
   assert.deepEqual(
-    files.map(({ uri, offsets }) => [uri, offsets]),
-    [[review, []]],
+    files.map(({ uri, cfg, offsets }) => [uri, cfg, offsets]),
+    [
+      [review, "left", []],
+      [review, "right", []],
+    ],
   );
   assert.deepEqual(await definitionMatches(focus, [place]), [true]);
   assert.equal(queries, 2, "opens a missing file's text model and retries");
   await referringFiles(root, focus.offset, () => {});
   assert.deepEqual(await definitionMatches(focus, [place]), [true]);
-  assert.equal(scans, 1);
+  assert.equal(scans, 2);
   assert.equal(queries, 2);
+  resolved = [
+    { uri: review, cfg: "left", owner: 0, module: "one", offsets: [] },
+    {
+      uri: review,
+      cfg: "right",
+      owner: 1,
+      module: "two",
+      offsets: [place.offset],
+      unknown: [4],
+    },
+  ];
+  const { files: checked } = await referringFiles(root, focus.offset, () => {});
+  assert.deepEqual(
+    checked.map(({ text, ...file }) => file),
+    resolved.map((match) => ({ ...match, resolved: true })),
+  );
   forgetReferences();
   assert.equal(await definitionMatches(focus, [place]), undefined);
 });

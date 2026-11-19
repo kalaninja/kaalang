@@ -208,6 +208,10 @@ test("a duplicate script output chooses the selected target for a library and th
   const { root, pkg, run, output } = await project(t);
   const lib = pkg("build"),
     mac = pkg("derive", "proc-macro");
+  mac.targets.push({
+    kind: ["bin"],
+    src_path: path.join(root, "derive/src/main.rs"),
+  });
   const triple = "thumbv8m.main-none-eabi";
   const base = path.join(root, triple),
     target = path.join(base, triple);
@@ -242,7 +246,7 @@ test("a duplicate script output chooses the selected target for a library and th
     ),
   ];
   for (const messages of [entries, [...entries].reverse()]) {
-    const { cfgs, inputs } = await run(
+    const { cfgs, hostCfgs, inputs } = await run(
       [lib, mac],
       [lib, mac],
       messages,
@@ -250,7 +254,8 @@ test("a duplicate script output chooses the selected target for a library and th
       path.join(root, triple + ".json"),
     );
     assert.deepEqual(cfgs.get(lib.id), ["library_target"]);
-    assert.deepEqual(cfgs.get(mac.id), ["macro_host"]);
+    assert.deepEqual(cfgs.get(mac.id), ["macro_target"]);
+    assert.deepEqual(hostCfgs.get(mac.id), ["macro_host"]);
     assert.ok(inputs.includes(path.join(root, "build/host.input")));
     assert.ok(inputs.includes(path.join(root, "build/target.input")));
   }

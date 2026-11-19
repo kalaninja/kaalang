@@ -34,11 +34,12 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
   write(
     "app/Cargo.toml",
     manifest("app") +
-      '[features]\ngated = []\n[[bin]]\nname = "gated"\npath = "tools/gated.rs"\nrequired-features = ["gated"]\n',
+      '[features]\ngated = []\ninvoices = []\n[[bin]]\nname = "gated"\npath = "tools/gated.rs"\nrequired-features = ["gated"]\n',
   );
   write(
     "other/Cargo.toml",
-    manifest("other") + '[dependencies]\napp = {path = "../app"}\n',
+    manifest("other") +
+      '[dependencies]\napp = {path = "../app"}\n[features]\ndefault = ["invoices"]\ninvoices = []\n',
   );
   const refers = (name, member) =>
     `#[kaa] pub struct ${name} { #[kaa::refer(${member}, "Member")] id: u8 }\n`;
@@ -46,7 +47,7 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
     "app/src/lib.rs",
     "pub struct Member;\npub mod names;\npub mod other_names;\nmod zebra;\n" +
       refers("Middle", "Member") +
-      "mod alpha;\n",
+      'mod alpha;\n#[path="../../shared.rs"] mod shared;\n',
   );
   write("app/src/names.rs", "pub use crate::Member as Person;\n");
   write("app/src/other_names.rs", "pub use crate::names::Person as Author;\n");
@@ -62,7 +63,21 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
     refers("After", "crate::other_names::Author"),
   );
   const check = write("app/tests/check.rs", refers("FromTest", "app::Member"));
-  const other = write("other/src/lib.rs", refers("FromOther", "app::Member"));
+  const other = write(
+    "other/src/lib.rs",
+    'pub use app::Member;\n#[path="../../shared.rs"] mod shared;\n' +
+      refers("FromOther", "app::Member"),
+  );
+  // Both packages compile this file. The two Exclusive declarations occupy
+  // different source positions; Common is drawn once with its preferred cfg.
+  const shared = write(
+    "shared.rs",
+    '#[cfg(not(feature="invoices"))]\n' +
+      refers("Exclusive", "crate::Member") +
+      '#[cfg(feature="invoices")]\n' +
+      refers("Exclusive", "crate::Member") +
+      '#[kaa] pub struct Common { #[cfg(feature="invoices")] invoice: bool, #[kaa::refer(crate::Member, "Member")] id: u8 }\n',
+  );
   const gated = write(
     "app/tools/gated.rs",
     refers("Gated", "app::Member") + "fn main() {}\n",
@@ -100,6 +115,37 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
   // The host can discover files in either order. The shared declaration has
   // two module paths and the library and binary have the same crate name.
   const files = [
+    ...[false, true].map((enabled) => {
+      const cfg = enabled ? 'feature="invoices"' : "";
+      const owner = (offset) =>
+        enabled
+          ? place(
+              "other",
+              0,
+              "other",
+              "other/src/lib.rs",
+              "shared",
+              other.indexOf("mod shared"),
+              offset,
+            )
+          : inLib("shared", lib.indexOf("mod shared"), offset);
+      return {
+        uri: "shared.rs",
+        text: shared,
+        cfg,
+        offsets: JSON.parse(relationshipTargets(shared, cfg)),
+        places: {
+          Exclusive: [
+            owner(
+              enabled
+                ? shared.lastIndexOf("Exclusive")
+                : shared.indexOf("Exclusive"),
+            ),
+          ],
+          Common: [owner(shared.indexOf("Common"))],
+        },
+      };
+    }),
     references(gated, { Gated: [] }),
     references(other, {
       FromOther: [
