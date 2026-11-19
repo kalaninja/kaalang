@@ -9,7 +9,8 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 
 import { forgetBuildScriptRuns } from "./build-scripts";
-import { type CargoOptions, readCargoProject, run } from "./cargo";
+import { type CargoOptions, readCargoProject } from "./cargo";
+import { configArgs, run } from "./cargo-command";
 import { fileCfgs } from "./cfgs";
 import { type CargoRoot as CargoTarget, workspaceTargets } from "./metadata";
 
@@ -203,13 +204,14 @@ async function read(
   const directory =
     root ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
   const config = options.configPath ? ["--config", options.configPath] : [];
+  const cargoConfig = [...config, ...configArgs(options.extraArgs)];
   const targets = options.target
     ? [options.target]
     : root === undefined
       ? []
-      : await configuredTargets(root, config, env);
+      : await configuredTargets(root, cargoConfig, env);
   const target = targets.length > 0 ? ["--target", targets[0]] : [];
-  const cfgs = await printed(root, directory, config, target, env, log);
+  const cfgs = await printed(root, directory, cargoConfig, target, env, log);
   const { metadata, buildCfgs, buildInputs } =
     root === undefined
       ? {}
@@ -258,10 +260,7 @@ async function configuredTargets(
     const configured: string | string[] = JSON.parse(text).build.target;
     return typeof configured === "string" ? [configured] : configured;
   } catch {
-    // Cargo reports an error when the setting is absent.
-    const version = await run("rustc", ["-vV"], root, env).catch(() => "");
-    const host = /^host: (.+)$/m.exec(version)?.[1];
-    return host ? [host] : [];
+    return [];
   }
 }
 

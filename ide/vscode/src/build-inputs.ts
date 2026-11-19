@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 
@@ -14,7 +14,7 @@ function within(file: string, directory: string): boolean {
   );
 }
 
-/** Watches Cargo's declared inputs, including files outside the open folders. */
+/** Watch the declared inputs, including missing files and files outside the open folders. */
 export function watchBuildInputs(
   { paths, ignored }: BuildInputs,
   changed: () => void,
@@ -31,8 +31,14 @@ export function watchBuildInputs(
     }
     if (directory) directories.push(input);
     else files.add(input);
-    const parent = directory ? input : path.dirname(input);
-    bases.set(parent, directory || bases.get(parent) === true);
+    let parent = directory ? input : path.dirname(input);
+    let recursive = directory;
+    // A declared build input can be created along with its parent.
+    while (!existsSync(parent) && parent !== path.dirname(parent)) {
+      parent = path.dirname(parent);
+      recursive = true;
+    }
+    bases.set(parent, recursive || bases.get(parent) === true);
   }
   function notify(uri: vscode.Uri) {
     if (uri.scheme !== "file") return;
