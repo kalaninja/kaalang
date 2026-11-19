@@ -6,6 +6,7 @@ use crate::diagram::Diagram;
 
 mod datatype;
 mod diagram;
+mod output;
 mod workspace;
 
 /// The binary's name from its `[[bin]]` entry.

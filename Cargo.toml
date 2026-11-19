@@ -30,17 +30,21 @@ cargo_metadata = "0.23.1"
 clap = "4.6.7"
 # Pin formula layout and SVG output; upgrades may change glyph geometry.
 latex-rust = "=3.0.3"
+objc2-foundation = { version = "0.3.2", default-features = false }
 proc-macro2 = "1.0.107"
 pulldown-cmark = { version = "0.13.6", default-features = false }
 quote = "1.0.47"
+rustix = "1.1.3"
 same-file = "1.0.6"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 syn = { version = "3.0.10", features = ["full"] }
+tempfile = "3.27"
 trybuild = "1.0.122"
 unicode-segmentation = "1.13.3"
 # Pinned: the wasm-bindgen CLI in mise/ must be this exact version.
 wasm-bindgen = "=0.2.130"
+windows-namespace-request-sys = "0.5.4"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

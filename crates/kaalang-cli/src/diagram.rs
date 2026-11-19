@@ -1,15 +1,11 @@
-use std::{
-    fs,
-    num::NonZeroUsize,
-    path::{Path, PathBuf},
-};
+use std::{num::NonZeroUsize, path::PathBuf};
 
 use clap::{ArgGroup, builder::NonEmptyStringValueParser};
 use kaalang_compiler::{SourceError, SourceFile};
 use kaalang_svg::RenderError;
 use syn::ext::IdentExt;
 
-use crate::{datatype, workspace};
+use crate::{datatype, output, workspace};
 
 #[derive(clap::Args)]
 #[command(group(ArgGroup::new("item").required(true).args(["flow", "type"])))]
@@ -70,13 +66,7 @@ impl Diagram {
             .iter()
             .flat_map(|krate| &krate.sources)
             .map(PathBuf::as_path);
-        for source in sources {
-            if overwrites(source, &output)? {
-                return Err("the output path would overwrite the source file".to_owned());
-            }
-        }
-        // Rendering finished in memory, so a failed render never touches the output.
-        fs::write(&output, &svg)
+        output::write(&output, &svg, sources)
             .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
 
         println!("{}", output.display());
@@ -103,18 +93,6 @@ impl Diagram {
             located(&error)
         })?;
         Ok(svg)
-    }
-}
-
-/// Whether writing `output` would replace `source`, even through a link.
-fn overwrites(source: &Path, output: &Path) -> Result<bool, String> {
-    match same_file::is_same_file(source, output) {
-        Ok(same) => Ok(same),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(format!(
-            "could not check output `{}`: {error}",
-            output.display()
-        )),
     }
 }
 

@@ -206,6 +206,340 @@ fn failed_render_keeps_the_existing_output() {
 }
 
 #[test]
+fn skipped_module_paths_allow_replacing_an_unrelated_diagram() {
+    let directory = package(
+        "cli-skipped-paths",
+        "#[path = \"plain/part.rs\"] mod missing; #[path = \"loop.rs\"] mod cycle; pub struct Root;",
+    );
+    write(&directory, "src/plain", "a file, not a directory");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink("loop.rs", directory.join("src/loop.rs")).unwrap();
+
+    for _ in 0..2 {
+        let result = run(&directory, "diagram --type Root -o out.svg");
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
+    assert!(
+        fs::read_to_string(directory.join("out.svg"))
+            .unwrap()
+            .starts_with("<svg")
+    );
+}
+
+#[test]
+fn an_export_protects_modules_besides_the_drawn_file() {
+    let root = "pub mod model;\npub mod sibling;\n";
+    let directory = package("cli-protect-workspace", root);
+    write(
+        &directory,
+        "src/model.rs",
+        &format!("{SOURCE}\npub struct Record;"),
+    );
+    write(&directory, "src/sibling.rs", "pub struct Sibling;");
+    fs::hard_link(
+        directory.join("src/sibling.rs"),
+        directory.join("other.svg"),
+    )
+    .unwrap();
+
+    for query in ["--type model::Record", "--flow model::route"] {
+        for output in ["src/lib.rs", "other.svg"] {
+            let failed = run(&directory, &format!("diagram {query} -o {output}"));
+            assert!(!failed.status.success());
+            assert!(String::from_utf8_lossy(&failed.stderr).contains("overwrite the source"));
+        }
+    }
+    assert_eq!(
+        fs::read_to_string(directory.join("src/lib.rs")).unwrap(),
+        root
+    );
+    assert_eq!(
+        fs::read_to_string(directory.join("src/sibling.rs")).unwrap(),
+        "pub struct Sibling;"
+    );
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn an_unreadable_module_does_not_prevent_replacing_an_unrelated_export() {
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
+    let directory = package(
+        "cli-unreadable-module",
+        "mod private_file; pub struct Root;",
+    );
+    write(&directory, "src/private_file.rs", "pub struct Private;");
+    let source = directory.join("src/private_file.rs");
+    fs::hard_link(&source, directory.join("alias.svg")).unwrap();
+    #[cfg(unix)]
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o200)).unwrap();
+    #[cfg(windows)]
+    let writer = {
+        use std::os::windows::fs::OpenOptionsExt;
+        const FILE_SHARE_WRITE: u32 = 2;
+        fs::File::options()
+            .write(true)
+            .share_mode(FILE_SHARE_WRITE)
+            .open(&source)
+            .unwrap()
+    };
+    write(&directory, "chosen.svg", "previous diagram");
+
+    let rendered = run(&directory, "diagram --type Root -o chosen.svg");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(
+        fs::read_to_string(directory.join("chosen.svg"))
+            .unwrap()
+            .contains("<svg")
+    );
+    let failed = run(&directory, "diagram --type Root -o alias.svg");
+    assert!(!failed.status.success());
+    assert!(String::from_utf8_lossy(&failed.stderr).contains("overwrite the source"));
+    #[cfg(unix)]
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o600)).unwrap();
+    #[cfg(windows)]
+    drop(writer);
+    assert_eq!(fs::read_to_string(source).unwrap(), "pub struct Private;");
+}
+
+#[cfg(unix)]
+#[test]
+fn an_inaccessible_module_directory_allows_repeated_exports() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = package("cli-inaccessible-module", "mod private; pub struct Root;");
+    write(&directory, "src/private/mod.rs", "pub struct Private;");
+    let private = directory.join("src/private");
+    fs::set_permissions(&private, fs::Permissions::from_mode(0o000)).unwrap();
+    let first = run(&directory, "diagram --type Root -o out.svg");
+    let second = run(&directory, "diagram --type Root -o out.svg");
+    fs::set_permissions(private, fs::Permissions::from_mode(0o700)).unwrap();
+    for rendered in [first, second] {
+        assert!(rendered.status.success(), "{rendered:?}");
+    }
+    assert!(
+        fs::read_to_string(directory.join("out.svg"))
+            .unwrap()
+            .starts_with("<svg")
+    );
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[test]
+fn replacing_an_export_retains_its_acl_even_under_a_different_directory_default() {
+    use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+    use rustix::{
+        fs::{XattrFlags, getxattr, setxattr},
+        io::Errno,
+    };
+
+    const ACCESS: &str = "system.posix_acl_access";
+    let directory = package("cli-output-acl", SOURCE);
+    let output = directory.join("out.svg");
+    write(&directory, "out.svg", "earlier export");
+    fs::set_permissions(&output, fs::Permissions::from_mode(0o640)).unwrap();
+    // Linux ACL v2 with owner rw, named user r, owning group denied, mask r, others denied.
+    let mut acl = 2_u32.to_le_bytes().to_vec();
+    let uid = output.metadata().unwrap().uid();
+    for (tag, perm, id) in [
+        (1_u16, 6_u16, u32::MAX),
+        (2, 4, uid),
+        (4, 0, u32::MAX),
+        (16, 4, u32::MAX),
+        (32, 0, u32::MAX),
+    ] {
+        acl.extend(tag.to_le_bytes());
+        acl.extend(perm.to_le_bytes());
+        acl.extend(id.to_le_bytes());
+    }
+    match setxattr(
+        &directory,
+        "system.posix_acl_default",
+        &acl,
+        XattrFlags::empty(),
+    ) {
+        Ok(()) => {}
+        Err(Errno::NOTSUP) => return,
+        Err(err) => panic!("could not set the directory's default ACL: {err}"),
+    }
+    let mut read = [0; 128];
+    let render = || {
+        let result = run(&directory, "diagram --flow route -o out.svg");
+        assert!(result.status.success(), "{result:?}");
+    };
+    render();
+    assert_eq!(getxattr(&output, ACCESS, &mut read[..]), Err(Errno::NODATA));
+    setxattr(&output, ACCESS, &acl, XattrFlags::empty()).unwrap();
+    render();
+    let len = getxattr(&output, ACCESS, &mut read[..]).unwrap();
+    assert_eq!(&read[..len], acl);
+}
+
+#[cfg(unix)]
+#[test]
+fn a_failed_write_keeps_the_previous_export_and_removes_the_temporary_file() {
+    let directory = package("cli-write-failure", SOURCE);
+    let output = directory.join("route.svg");
+    assert!(run(&directory, "diagram --flow route").status.success());
+    let previous = fs::read(&output).unwrap();
+    let result = Command::new("sh")
+        .args([
+            "-c",
+            "ulimit -f 1 && trap '' XFSZ && exec \"$0\" diagram --flow route",
+        ])
+        .arg(env!("CARGO_BIN_EXE_cargo-kaalang"))
+        .current_dir(&directory)
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("could not write"),
+        "{result:?}"
+    );
+    assert_eq!(fs::read(output).unwrap(), previous);
+    assert!(fs::read_dir(directory).unwrap().all(|file| {
+        !file
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".kaalang-")
+    }));
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn replacing_an_export_keeps_its_macos_acl_under_an_inheritable_allow_entry() {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    let directory = package("cli-macos-output-acl", SOURCE);
+    let output = directory.join("out.svg");
+    write(&directory, "out.svg", "previous diagram");
+    fs::set_permissions(&output, fs::Permissions::from_mode(0o600)).unwrap();
+    let chmod = |path: &Path, args: &[&str]| {
+        let result = Command::new("/bin/chmod")
+            .args(args)
+            .arg(path)
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "{result:?}");
+    };
+    let acl = || {
+        let result = Command::new("/bin/ls")
+            .arg("-lde")
+            .arg(&output)
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "{result:?}");
+        String::from_utf8(result.stdout)
+            .unwrap()
+            .lines()
+            .skip(1)
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    chmod(&output, &["-N"]);
+    chmod(
+        &directory,
+        &["+a", "group:everyone allow read,file_inherit"],
+    );
+    for explicit in [false, true] {
+        if explicit {
+            chmod(&output, &["+a", "user:nobody deny read"]);
+        }
+        let before = acl();
+        let rendered = run(&directory, "diagram --flow route -o out.svg");
+        assert!(rendered.status.success(), "{rendered:?}");
+        assert_eq!(acl(), before);
+        assert_eq!(
+            output.metadata().unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn replacing_an_export_keeps_inherited_and_protected_windows_dacls() {
+    use std::os::windows::io::AsHandle as _;
+
+    use windows_namespace_request_sys::security::{
+        ObjectType, SecurityInformation, get_security_info,
+    };
+
+    let directory = package("cli-windows-output-acl", SOURCE);
+    let output = directory.join("out.svg");
+    write(&directory, "out.svg", "previous diagram");
+    let acl = || {
+        let parts =
+            SecurityInformation::OWNER | SecurityInformation::GROUP | SecurityInformation::DACL;
+        get_security_info(
+            fs::File::open(&output).unwrap().as_handle(),
+            ObjectType::FILE,
+            parts,
+        )
+        .unwrap()
+        .to_sddl(parts)
+        .unwrap()
+    };
+    let render = || {
+        let rendered = run(&directory, "diagram --flow route -o out.svg");
+        assert!(rendered.status.success(), "{rendered:?}");
+        assert!(fs::read_to_string(&output).unwrap().starts_with("<svg"));
+    };
+    let inherited = acl();
+    render();
+    assert_eq!(acl(), inherited);
+    let changed = Command::new("icacls.exe")
+        .arg(&output)
+        .args(["/inheritance:d", "/deny", "*S-1-5-32-546:(R)"])
+        .output()
+        .unwrap();
+    assert!(changed.status.success(), "{changed:?}");
+    let protected = acl();
+    assert_ne!(protected, inherited);
+    render();
+    assert_eq!(acl(), protected);
+    assert!(fs::read_dir(directory).unwrap().all(|file| {
+        !file
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".kaalang-")
+    }));
+}
+
+#[cfg(unix)]
+#[test]
+fn exporting_through_a_symlink_updates_its_target_and_keeps_its_permissions() {
+    use std::os::unix::fs::{PermissionsExt as _, symlink};
+
+    let directory = package("cli-output-link", SOURCE);
+    fs::create_dir(directory.join("drawings")).unwrap();
+    let target = directory.join("drawings/actual.svg");
+    let link = directory.join("chosen.svg");
+    symlink("drawings/actual.svg", &link).unwrap();
+    for existing in [false, true] {
+        let rendered = run(&directory, "diagram --flow route -o chosen.svg");
+        assert!(rendered.status.success(), "{:?}", rendered.stderr);
+        assert!(link.is_symlink());
+        assert!(fs::read_to_string(&target).unwrap().starts_with("<svg"));
+        if existing {
+            assert_eq!(
+                fs::metadata(&target).unwrap().permissions().mode() & 0o777,
+                0o640
+            );
+        } else {
+            fs::set_permissions(&target, fs::Permissions::from_mode(0o640)).unwrap();
+        }
+    }
+}
+
+#[test]
 fn collapsed_default_output_has_a_collapsed_suffix() {
     let directory = package("cli-collapsed", CYCLE_SOURCE);
     let rendered = run(&directory, "diagram --flow route --collapse-cycles");
