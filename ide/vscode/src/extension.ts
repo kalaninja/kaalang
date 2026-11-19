@@ -213,12 +213,16 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         break;
       case "referrers": {
+        // A failed search draws the focus alone rather than none at all.
         const result = await referringFiles(
           request.uri,
           request.offset,
           (line) => log.appendLine(line),
           async () => hoverModule(await hoverAt(request.uri, request.offset)),
-        );
+        ).catch((error: unknown) => {
+          log.appendLine(`Could not find the referring types: ${error}`);
+          return { files: [] };
+        });
         if (result !== undefined) {
           reply({ type: "referrers", id: request.id, ...result });
         }
@@ -230,12 +234,28 @@ export function activate(context: vscode.ExtensionContext): void {
         break;
       }
       case "modules": {
-        const { roots } = await target(vscode.Uri.parse(request.uri), (line) =>
-          log.appendLine(line),
-        );
-        const placements = await cardPlacements(request.places, roots);
-        const modules = await moduleHovers(request.places, placements, hoverAt);
-        reply({ type: "modules", id: request.id, modules, placements });
+        try {
+          const { roots } = await target(
+            vscode.Uri.parse(request.uri),
+            (line) => log.appendLine(line),
+          );
+          const placements = await cardPlacements(request.places, roots);
+          const modules = await moduleHovers(
+            request.places,
+            placements,
+            hoverAt,
+          );
+          reply({ type: "modules", id: request.id, modules, placements });
+        } catch (error) {
+          // Headers fall back to paths within the file.
+          log.appendLine(`Could not place the cards: ${error}`);
+          reply({
+            type: "modules",
+            id: request.id,
+            modules: [],
+            placements: [],
+          });
+        }
         break;
       }
       case "back":
