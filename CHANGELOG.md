@@ -17,6 +17,13 @@
   `Result`, so hover and go-to-definition on it reach the wire's own type.
 - A staged flow's diagram no longer lists a signal, or drops another name, in a
   hand-over that also passes an unnamed output.
+- A flow's parameter, or a datatype's generic parameter, that a `#[cfg]` leaves
+  out no longer counts: a block cannot capture it, and it no longer hides a
+  relationship target of the same name.
+- `cargo kaalang diagram --type` draws a type that two modules include through
+  `#[path]` as two types, one in each module, as rustc compiles them, and
+  reports a module that has both `name.rs` and `name/mod.rs` instead of reading
+  one of them.
 
 ## 0.3.0 - 2026-11-12
 
