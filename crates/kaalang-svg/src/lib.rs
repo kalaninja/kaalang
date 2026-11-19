@@ -3,7 +3,7 @@
 //! It serves `cargo kaalang` and the bindings an editor's page loads, and its
 //! API may change in any minor release.
 
-use std::{error::Error, fmt, num::NonZeroUsize, path::Path};
+use std::{error::Error, fmt, num::NonZeroUsize};
 
 #[cfg(doc)]
 use kaalang_compiler::{Analysis, SemanticModel, SourceFile};
@@ -163,10 +163,20 @@ pub struct Hotspot {
     /// holds the parsed text: it forgets every span when its source map is
     /// cleared.
     pub span: Option<Span>,
-    /// For a field-type path, its line among the SVG's field-type lines and
-    /// its UTF-16 start and end on that line. A browser can measure the actual
-    /// glyphs in its font.
-    pub field_text: Option<[usize; 3]>,
+    /// For a field-type path, where it stands in the SVG's field-type text,
+    /// so that a browser can measure the glyphs it draws in its own font.
+    pub field_text: Option<FieldText>,
+}
+
+/// Where a path stands on one line of a type diagram's field-type text.
+#[derive(Clone, Debug)]
+pub struct FieldText {
+    /// The line among the SVG's field-type lines.
+    pub line: usize,
+    /// The text of that line.
+    pub text: String,
+    /// The path's bytes in that text.
+    pub range: std::ops::Range<usize>,
 }
 
 /// Reads the flow at `path` within `source` for no target, for tests that
@@ -261,30 +271,6 @@ pub fn render_type(
 pub struct CardPath<'a> {
     pub path: &'a str,
     pub other_crate: Option<&'a str>,
-}
-
-/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CardCrate<'a> {
-    pub package: &'a str,
-    /// Library and binaries, tests, examples, then benches.
-    pub group: u8,
-    pub name: &'a str,
-    pub root: &'a Path,
-}
-
-impl<'a> CardCrate<'a> {
-    /// The focus's crate comes first, then the other targets of its package.
-    #[must_use]
-    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
-        (!is_focus, Some(self.package) != focus_package, self)
-    }
-
-    /// Each package's target groups start separate rows in the diagram.
-    #[must_use]
-    pub fn group_key(self) -> (&'a str, u8) {
-        (self.package, self.group)
-    }
 }
 
 /// The header of each incoming card: a path from the focus's crate drops the

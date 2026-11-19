@@ -2,7 +2,7 @@
 
 use std::{collections::BTreeMap, path::Path};
 
-use kaalang_svg::CardCrate;
+use kaalang_compiler::workspace::CardCrate;
 use serde::Deserialize;
 
 pub(super) type Places = BTreeMap<String, Vec<Place>>;

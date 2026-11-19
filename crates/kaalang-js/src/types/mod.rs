@@ -123,7 +123,7 @@ struct Drawn {
 #[derive(Serialize)]
 struct Spot {
     #[serde(rename = "fieldText", skip_serializing_if = "Option::is_none")]
-    field_text: Option<[usize; 3]>,
+    field_text: Option<[u32; 3]>,
     kind: &'static str,
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     focus: bool,
@@ -219,7 +219,14 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
             let (start, end) =
                 source(number).range(hotspot.span.expect("a card's hotspot has a span"));
             Spot {
-                field_text: hotspot.field_text,
+                field_text: hotspot.field_text.as_ref().map(|field| {
+                    let offsets = utf16::Offsets::new(&field.text);
+                    [
+                        u32::try_from(field.line).expect("a diagram has few lines"),
+                        offsets.at(field.range.start),
+                        offsets.at(field.range.end),
+                    ]
+                }),
                 kind,
                 focus: matches!(hotspot.kind, HotspotKind::Target { focus: true, .. }),
                 left: hotspot.left,

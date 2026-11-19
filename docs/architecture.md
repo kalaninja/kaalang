@@ -189,10 +189,11 @@ A type diagram has no arrangement to decide or compact. The entry point
 [`render_type`](../crates/kaalang-svg/src/lib.rs) takes the focus card and the
 incoming cards from its caller, which reads each card's type through the
 compiler's `SourceFile` for its compilation target and decides the relationships
-each card draws into the focus. The CLI and bindings use `CardCrate` for target
-order and row groups and `card_headers` for the paths in RFC 0010. Rendering
-errors identify the card so the CLI can name its file and the editor can omit an
-invalid incoming card. Beside the SVG the renderer returns the hotspots of
+each card draws into the focus. For the CLI and the bindings alike, the
+compiler's `CardCrate` orders the cards' targets and starts their row groups,
+and `card_headers` shortens their paths by RFC 0010. A rendering error names its
+card, so the CLI can name its file and the editor can leave an invalid incoming
+card out. Beside the SVG the renderer returns the hotspots of
 [`datatype/navigation.rs`](../crates/kaalang-svg/src/datatype/navigation.rs):
 every path a tile's type names, every relationship's target, and every incoming
 card's header, each with its card. Where each path stands in a field's type,

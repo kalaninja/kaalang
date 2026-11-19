@@ -14,6 +14,30 @@ pub use self::resolve::{Def, Inclusion, Resolution, Resolver, TypeRef, first_rea
 use crate::{ModuleDirectory, ModuleFile, Target};
 mod resolve;
 
+/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CardCrate<'a> {
+    pub package: &'a str,
+    /// Library and binaries, tests, examples, then benches.
+    pub group: u8,
+    pub name: &'a str,
+    pub root: &'a Path,
+}
+
+impl<'a> CardCrate<'a> {
+    /// The focus's crate comes first, then the other targets of its package.
+    #[must_use]
+    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
+        (!is_focus, Some(self.package) != focus_package, self)
+    }
+
+    /// Each package's target groups start separate rows in the diagram.
+    #[must_use]
+    pub fn group_key(self) -> (&'a str, u8) {
+        (self.package, self.group)
+    }
+}
+
 /// A compiled crate and the libraries it can name.
 pub struct Crate {
     pub package_id: String,

@@ -7,7 +7,7 @@ use super::{
     layout::{Bounds, Text, TextBlock, TypeScene},
 };
 use crate::{
-    Hotspot, HotspotKind,
+    FieldText, Hotspot, HotspotKind,
     text::{RichText, Style, block_metrics, code_ranges, text_width},
 };
 
@@ -57,14 +57,15 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                         |index, line, bytes, left, right| {
                             let y = block.top + baselines[line];
                             let rect = (block.x + left, y - font, block.x + right, y + font / 2);
-                            let text = block.lines[line].as_ref();
-                            let first = text[..bytes.start].encode_utf16().count();
-                            let end = first + text[bytes].encode_utf16().count();
                             push(
                                 HotspotKind::Path { card: number },
                                 rect,
                                 paths[index].span,
-                                Some([first_line + line, first, end]),
+                                Some(FieldText {
+                                    line: first_line + line,
+                                    text: block.lines[line].as_ref().to_owned(),
+                                    range: bytes,
+                                }),
                             );
                         },
                     );

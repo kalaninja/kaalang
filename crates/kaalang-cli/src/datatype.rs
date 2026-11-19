@@ -8,9 +8,9 @@ use std::{
 
 use kaalang_compiler::{
     SourceError, SourceFile, SourceType, TypeDeclaration,
-    workspace::{Def, Resolution, Resolver, TypeRef, first_readings},
+    workspace::{CardCrate, Def, Resolution, Resolver, TypeRef, first_readings},
 };
-use kaalang_svg::{CardCrate, CardPath, TypeCard, TypeOptions};
+use kaalang_svg::{CardPath, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
 use crate::workspace::{self, Crate};
