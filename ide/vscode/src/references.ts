@@ -129,7 +129,9 @@ export async function referringFiles(
       missing ||
       owners[0]?.length !== 1 ||
       primary.size !== found.size ||
-      [...primary.values()].some((text) => /\bas\b/.test(text)));
+      [...found].some(([key, positions]) =>
+        renames(primary.get(key), positions),
+      ));
   const supplemental = await referringSources(
     project.roots,
     secondary,
@@ -192,6 +194,20 @@ export async function referringFiles(
   };
 }
 
+/** Whether a reference among `positions` of `text` is a `use` that renames the type. */
+function renames(
+  text: string | undefined,
+  positions: vscode.Position[],
+): boolean {
+  if (text === undefined) return false;
+  const at = offsets(text);
+  const renamed = /(?:r#)?\p{ID_Continue}+\s+as\b/uy;
+  return positions.some((position) => {
+    renamed.lastIndex = at(position.line, position.character);
+    return renamed.test(text);
+  });
+}
+
 /** A reference and its definition can use a symlink and its real path. */
 function physical(uri: string, revision: typeof current): Promise<string> {
   const cached = revision.paths.get(uri);
@@ -236,21 +252,12 @@ export async function definitionMatches(
         }
         answer = index.then(async (at) => {
           const position = at.positionAt(offset);
-          const request = () =>
-            locations(client, "textDocument/definition", uri, position);
-          const first = await request().catch(() => []);
-          // Another loaded workspace can omit a closed integration target
-          // from the server's VFS. Opening its text model loads it without
-          // revealing an editor. The next diagnostics can finish this lookup.
-          if (
-            !first.length &&
-            !vscode.workspace.textDocuments.some(
-              (doc) => doc.uri.toString() === uri,
-            )
-          ) {
-            if (await openDocument(uri)) return request();
-          }
-          return first;
+          return locations(
+            client,
+            "textDocument/definition",
+            uri,
+            position,
+          ).catch(() => []);
         });
         resolved.set(key, answer);
       }
