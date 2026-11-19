@@ -1,6 +1,6 @@
 // Reads the per-package cfgs and change inputs of Cargo's build scripts.
 
-import { spawn } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { open, readdir } from "node:fs/promises";
 import * as path from "node:path";
 import { createInterface } from "node:readline";
@@ -27,11 +27,15 @@ interface CargoMessages {
   units: Map<string, Set<string>>;
 }
 
-const sharedRuns = new Map<string, Promise<CargoMessages>>();
-
 /** An override with invocationStrategy=once supplies all projects in the window. */
+const sharedRuns = new Map<string, Promise<CargoMessages>>();
+const running = new Set<ChildProcess>();
+
+/** A new revision reads its own: an older run would only hold Cargo's lock. */
 export function forgetBuildScriptRuns(): void {
   sharedRuns.clear();
+  for (const cargo of running) cargo.kill();
+  running.clear();
 }
 
 /** Cargo reports the cfgs even for fresh scripts. Its saved stdout also lists their change inputs. */
@@ -74,10 +78,8 @@ export async function readBuildScripts(
     for (const script of scripts) inputs.add(path.resolve(script.src_path));
     const directory = path.dirname(pkg.manifest_path);
     const found = outputs.get(pkg.id);
-    if (!found) {
-      if (scripts.length) inputs.add(directory);
-      continue;
-    }
+    // A script that did not run declared nothing; its source is already an input.
+    if (!found) continue;
     cfgs.set(pkg.id, selectOutput(found, false, selectedTarget).cfgs);
     hostCfgs.set(pkg.id, selectOutput(found, true, selectedTarget).cfgs);
     for (const output of found)
@@ -144,12 +146,15 @@ async function buildMessages(
   const outputs = new Map<string, Output[]>();
   const units = new Map<string, Set<string>>();
   let tail = "";
+  let spawned: ChildProcess | undefined;
   try {
     const cargo = spawn(program, args, {
       cwd,
       env,
       stdio: ["ignore", "pipe", "pipe"],
     });
+    spawned = cargo;
+    running.add(cargo);
     cargo.stderr.setEncoding("utf8");
     cargo.stderr.on("data", (chunk: string) => {
       tail = (tail + chunk).slice(-4096);
@@ -223,9 +228,12 @@ async function buildMessages(
     });
   } catch (error) {
     // Cargo can finish local scripts before an unrelated package fails.
-    log(
-      `Could not finish reading build-script cfgs: ${(error as Error).message}`,
-    );
+    if (!spawned?.killed)
+      log(
+        `Could not finish reading build-script cfgs: ${(error as Error).message}`,
+      );
+  } finally {
+    if (spawned) running.delete(spawned);
   }
   return { outputs, units };
 }

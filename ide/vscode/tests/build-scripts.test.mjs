@@ -151,13 +151,12 @@ test("workspace cfgs and explicit inputs survive an unrelated failure, in either
       path.join(root, "a/src/missing.rs"),
       path.join(root, "a/data=with space"),
       external,
-      path.join(root, "failed"),
     ]),
   );
   assert.match(logs.join("\n"), /error from another package/);
 });
 
-test("default and unavailable script stdout watch each package, including a missing executable", async (t) => {
+test("default and unavailable script stdout watch each package, and a missing executable only the scripts", async (t) => {
   const { root, pkg, run, output } = await project(t);
   const a = pkg("default"),
     b = pkg("custom");
@@ -199,7 +198,10 @@ test("default and unavailable script stdout watch each package, including a miss
     { packages: [a, b], workspace_members: [a.id, b.id] },
     (line) => errors.push(line),
   );
-  assert.deepEqual(new Set(failed.inputs), expected);
+  assert.deepEqual(
+    new Set(failed.inputs),
+    new Set([a.targets[1].src_path, b.targets[1].src_path]),
+  );
   assert.equal(failed.cfgs.size, 0);
   assert.equal(errors.length, 1);
 });
