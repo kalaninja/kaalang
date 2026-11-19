@@ -12,8 +12,10 @@ pub(crate) use self::choice::{choice_match, is_todo_body};
 #[cfg(feature = "source")]
 pub use self::source::{
     Declared, ExternalModule, ModuleDirectory, ModuleFile, NamedPath, Ribbons, SourceError,
-    SourceFile, SourceFlow, SourceType, Target, line_and_column,
+    SourceFile, SourceFlow, SourceType, line_and_column,
 };
+#[cfg(feature = "cfg")]
+pub use self::target::Target;
 pub use self::{
     attribute::{expand_attribute, is_kaalang_attribute},
     codegen::expand,
@@ -59,6 +61,8 @@ mod scope;
 mod source;
 mod stage;
 mod symbolic;
+#[cfg(feature = "cfg")]
+mod target;
 pub mod topology;
 #[cfg(feature = "workspace")]
 pub mod workspace;

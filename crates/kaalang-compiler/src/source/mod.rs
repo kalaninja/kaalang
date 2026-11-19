@@ -17,19 +17,16 @@ pub use self::{
     cards::NamedPath,
     modules::{ExternalModule, ModuleDirectory, ModuleFile},
     ribbons::Ribbons,
-    target::Target,
 };
 use crate::{
-    FlowItem, Owner, SemanticModel, TypeDeclaration, TypeForm, build_with_options, datatype::parts,
-    flows, type_declaration, type_items,
+    FlowItem, Owner, SemanticModel, Target, TypeDeclaration, TypeForm, build_with_options,
+    datatype::parts, flows, type_declaration, type_items,
 };
 
-mod attributes;
 mod cards;
 mod modules;
 mod ribbons;
 mod spans;
-mod target;
 
 /// An error produced while reading a flow or a type from a source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
