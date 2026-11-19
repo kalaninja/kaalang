@@ -14,7 +14,12 @@ function within(file: string, directory: string): boolean {
   );
 }
 
-/** Watch the declared inputs, including missing files and files outside the open folders. */
+/**
+ * Watch the declared inputs, including missing files and files outside the
+ * open folders. A directory, such as the package of a script that declares no
+ * inputs, changes only when the editor saves a file in it: a script may write
+ * there itself, and every check would then start the next one.
+ */
 export function watchBuildInputs(
   { paths, ignored }: BuildInputs,
   changed: () => void,
@@ -29,10 +34,13 @@ export function watchBuildInputs(
     } catch {
       // Cargo also accepts a file that has yet to be created.
     }
-    if (directory) directories.push(input);
-    else files.add(input);
-    let parent = directory ? input : path.dirname(input);
-    let recursive = directory;
+    if (directory) {
+      directories.push(input);
+      continue;
+    }
+    files.add(input);
+    let parent = path.dirname(input);
+    let recursive = false;
     // A declared build input can be created along with its parent.
     while (!existsSync(parent) && parent !== path.dirname(parent)) {
       parent = path.dirname(parent);
@@ -40,19 +48,20 @@ export function watchBuildInputs(
     }
     bases.set(parent, recursive || bases.get(parent) === true);
   }
-  function notify(uri: vscode.Uri) {
+  function notify(uri: vscode.Uri, saved = false) {
     if (uri.scheme !== "file") return;
     const file = path.normalize(uri.fsPath);
     const watched =
       files.has(file) ||
-      directories.some((dir) => {
-        if (!within(file, dir)) return false;
-        const git = path.relative(dir, file).split(path.sep).includes(".git");
-        const generated = ignored.some(
-          (output) => within(output, dir) && within(file, output),
-        );
-        return !git && !generated;
-      });
+      (saved &&
+        directories.some((dir) => {
+          if (!within(file, dir)) return false;
+          const git = path.relative(dir, file).split(path.sep).includes(".git");
+          const generated = ignored.some(
+            (output) => within(output, dir) && within(file, output),
+          );
+          return !git && !generated;
+        }));
     if (watched) changed();
   }
   const watchers: vscode.Disposable[] = [];
@@ -63,14 +72,14 @@ export function watchBuildInputs(
         recursive ? "**/*" : "*",
       ),
     );
-    watcher.onDidCreate(notify);
-    watcher.onDidChange(notify);
-    watcher.onDidDelete(notify);
+    watcher.onDidCreate((uri) => notify(uri));
+    watcher.onDidChange((uri) => notify(uri));
+    watcher.onDidDelete((uri) => notify(uri));
     watchers.push(watcher);
   }
   // VS Code can exclude paths from filesystem watching even though the editor saves them.
   watchers.push(
-    vscode.workspace.onDidSaveTextDocument((doc) => notify(doc.uri)),
+    vscode.workspace.onDidSaveTextDocument((doc) => notify(doc.uri, true)),
   );
   return vscode.Disposable.from(...watchers);
 }

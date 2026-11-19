@@ -121,7 +121,7 @@ test("declared files, including missing and external inputs, refresh on change o
   assert.equal(changes, 3);
 });
 
-test("a directory input includes nested files while ignoring Git and Cargo output", async (t) => {
+test("a directory input refreshes on a save inside it, ignoring Git and Cargo output", async (t) => {
   const { directory, watchers, watch, save } = await editor(t);
   const root = path.join(directory, "workspace");
   const output = path.join(root, "build");
@@ -132,26 +132,19 @@ test("a directory input includes nested files while ignoring Git and Cargo outpu
       mkdir(dir, { recursive: true }),
     ),
   );
-  const source = path.join(nested, "schema.json");
-  await writeFile(source, "{}");
   let changes = 0;
   const subscription = watch(
     { paths: [root], ignored: [output] },
     () => ++changes,
   );
-  const workspace = watchers.get(root);
-  assert.equal(workspace.pattern, "**/*");
-  workspace.events.emit("change", uri(source));
+  // A script that writes into its own package would otherwise start the next check.
+  assert.equal(watchers.size, 0);
+  save(path.join(nested, "schema.json"));
   assert.equal(changes, 1);
-  workspace.events.emit("change", uri(path.join(root, ".git", "index")));
   save(path.join(nested, ".git", "HEAD"));
-  workspace.events.emit("create", uri(path.join(output, "debug", "artifact")));
   save(path.join(output, "generated.rs"));
   assert.equal(changes, 1);
-  workspace.events.emit(
-    "create",
-    uri(path.join(similarlyNamed, "options.json")),
-  );
+  save(path.join(similarlyNamed, "options.json"));
   assert.equal(changes, 2);
   subscription.dispose();
 });
