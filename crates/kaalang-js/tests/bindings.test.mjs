@@ -77,7 +77,7 @@ test("drawing and asking many times keeps the memory level", () => {
   const memory = () => module.memory.buffer.byteLength;
   const round = () => {
     kaalang.drawFlow(source, "", 0, false);
-    kaalang.declaredAt(source, "", source.indexOf("#[kaa]"));
+    kaalang.declaredRanges(source, "");
   };
   for (let warm = 0; warm < 5; warm++) {
     round();
@@ -139,34 +139,32 @@ test("positions count UTF-16 code units of a JavaScript string", () => {
   assert.equal(source.slice(call.start, call.end), "#[kaa::call]");
   assert.equal(source.slice(call.calleeStart, call.calleeEnd), "add");
 
-  const declared = (offset) =>
-    JSON.parse(kaalang.declaredAt(source, "", offset));
-  assert.deepEqual(declared(source.indexOf("math::add")), {
-    flow: 0,
-    path: "settle",
-  });
-  assert.equal(declared(source.indexOf("🦀")), null);
+  const [[start, end, declared]] = JSON.parse(
+    kaalang.declaredRanges(source, ""),
+  );
+  assert.equal(
+    source.slice(start, end),
+    source.slice(source.indexOf("#[kaa]")).trimEnd(),
+  );
+  assert.deepEqual(declared, { flow: 0, path: "settle" });
 });
 
-test("the caret index includes active declarations, adjacent boundaries and Unicode offsets", () => {
+test("declaration ranges cover what the target compiles from its first attribute", () => {
   const source =
     "\ufeff#!/usr/bin/env rustx\n// 🦀\n#[cfg(on)] struct A;#[kaa] fn run() { || return; }\nmod m { struct B; }";
   for (const cfg of ["", "on"]) {
     const ranges = JSON.parse(kaalang.declaredRanges(source, cfg));
     assert.equal(ranges.length, cfg ? 3 : 2);
-    for (let offset = 0; offset <= source.length + 1; offset++) {
-      const active = ranges.findLast(
-        ([start, end]) => start <= offset && offset <= end,
-      );
-      assert.deepEqual(
-        active?.[2] ?? null,
-        JSON.parse(kaalang.declaredAt(source, cfg, offset)),
-      );
-    }
     const flow = source.indexOf("#[kaa]");
     const [start, end, value] = ranges.find((range) => range[0] === flow);
     assert.equal(source.slice(start, end), "#[kaa] fn run() { || return; }");
     assert.deepEqual(value, { flow: 0, path: "run" });
+    if (cfg) {
+      assert.equal(
+        source.slice(ranges[0][0], ranges[0][1]),
+        "#[cfg(on)] struct A;",
+      );
+    }
   }
 });
 

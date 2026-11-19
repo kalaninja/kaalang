@@ -22,22 +22,10 @@ impl Offsets {
     }
 }
 
-/// The byte where the character holding UTF-16 code unit `offset` starts, the
-/// end of `text` just past its last unit, or nothing further on: JavaScript
+/// The byte where the character holding each of the UTF-16 code units
+/// `offsets` starts, or the end of `text` just past its last unit, in one pass
+/// over it, in no particular order. An offset further on has none: JavaScript
 /// passes a negative offset as one past any text.
-pub(crate) fn byte(text: &str, offset: u32) -> Option<usize> {
-    let mut units = 0;
-    for (byte, character) in text.char_indices() {
-        units += character.len_utf16() as u32;
-        if units > offset {
-            return Some(byte);
-        }
-    }
-    (units == offset).then_some(text.len())
-}
-
-/// [`byte`] of each of `offsets` that stands in `text`, in one pass over it,
-/// in no particular order.
 pub(crate) fn bytes(text: &str, offsets: &[u32]) -> Vec<usize> {
     let mut wanted = offsets.to_vec();
     wanted.sort_unstable();
@@ -61,6 +49,18 @@ mod tests {
     /// A Cyrillic letter takes two bytes and one unit, an emoji four bytes and
     /// two units.
     const TEXT: &str = "// Пример 🦀\n";
+
+    /// [`bytes`] for one offset, a character at a time.
+    fn byte(text: &str, offset: u32) -> Option<usize> {
+        let mut units = 0;
+        for (byte, character) in text.char_indices() {
+            units += character.len_utf16() as u32;
+            if units > offset {
+                return Some(byte);
+            }
+        }
+        (units == offset).then_some(text.len())
+    }
 
     #[test]
     fn a_wide_character_counts_its_utf16_units() {

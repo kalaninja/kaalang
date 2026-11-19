@@ -28,7 +28,7 @@ mod workspace;
 /// SVG's user units, and a wire's range is its binding. `cfg` is the target's
 /// cfg set as `rustc --print cfg` prints it, empty for none. The answer is
 /// `null` when the selected flow is absent. When given, `path` selects the
-/// flow previously returned by [`declared_at`], even after other flows move.
+/// flow previously returned by [`declared_ranges`], even after other flows move.
 ///
 /// # Errors
 ///
@@ -112,20 +112,10 @@ pub fn module_items(
     answer(modules::items(text, cfg, file_stem, owns_directory))
 }
 
-/// What `text`, read for the target `cfg`, declares at `offset`, in UTF-16
-/// code units, that kaalang draws, as JSON: `{"flow": position, "path": path}`,
-/// `{"type": path}`, or `null`, as for an offset past the end of `text`.
-///
-/// # Errors
-///
-/// Throws why the text cannot be read: `cfg` or `text` does not parse.
-#[wasm_bindgen(js_name = declaredAt)]
-pub fn declared_at(text: &str, cfg: &str, offset: u32) -> Result<String, JsError> {
-    answer(declared::at(text, cfg, offset))
-}
-
-/// The active declarations in source order as `[firstCaret, lastCaret, declaration]`
-/// triples in UTF-16. Where two declarations meet, the later one owns the caret.
+/// What `text`, read for the target `cfg`, declares that kaalang draws, in
+/// source order, as JSON `[firstCaret, lastCaret, declaration]` triples in
+/// UTF-16 code units: `{"flow": position, "path": path}` or `{"type": path}`.
+/// Where two declarations meet, the later one owns the caret.
 ///
 /// # Errors
 ///

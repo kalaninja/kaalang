@@ -10,7 +10,8 @@ use std::{cell::OnceCell, collections::BTreeMap, error::Error, fmt, ops::Range};
 
 use proc_macro2::{Ident, Span};
 use syn::{
-    Attribute, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem, spanned::Spanned,
+    Attribute, Fields, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem,
+    Visibility, spanned::Spanned,
 };
 
 pub use self::{
@@ -152,26 +153,14 @@ impl<'a> SourceFile<'a> {
         })
     }
 
-    /// What is declared at `offset`, a byte of the text as given, that
-    /// kaalang draws: a flow, by its position and path as
-    /// [`SourceFile::flow_named`] takes them, or a type, by its path as
-    /// [`SourceFile::ty`] takes it. A declaration runs from its first
-    /// attribute, a `cfg` that holds included,
-    /// to just past its last character, where an editor's caret still stands in
-    /// it. A declaration starting at that same byte takes precedence. Nothing
-    /// is declared in a byte order mark or a shebang line, between declarations,
-    /// or in what the target does not compile.
-    #[must_use]
-    pub fn declared_at(&self, offset: usize) -> Option<Declared> {
-        let ranges = self.declared_ranges();
-        let end = ranges.partition_point(|(range, _)| range.start <= offset);
-        let (range, declared) = ranges.into_iter().nth(end.checked_sub(1)?)?;
-        (offset <= range.end).then_some(declared)
-    }
-
-    /// The active, non-overlapping flow and type declarations in source order.
-    /// Both ends are caret positions in bytes of the original text. At a
-    /// shared boundary the declaration starting there takes precedence.
+    /// The flows and types the file declares that kaalang draws, in source
+    /// order: a flow by its position and path as [`SourceFile::flow_named`]
+    /// takes them, a type by its path as [`SourceFile::ty`] takes it. Each runs
+    /// from its first attribute, a `cfg` that holds included, to just past its
+    /// last character, where an editor's caret still stands in it, in bytes of
+    /// the text as given. Where two meet, the one starting there takes the
+    /// caret. A byte order mark, a shebang line, the space between
+    /// declarations, and what the target does not compile declare nothing.
     #[must_use]
     pub fn declared_ranges(&self) -> Vec<(Range<usize>, Declared)> {
         let start = |name: &Ident, otherwise| {
@@ -195,10 +184,9 @@ impl<'a> SourceFile<'a> {
             ));
         }
         for (path, item) in self.type_items() {
-            if let Some((_, name, _)) = parts(item) {
-                let range = item.span().byte_range();
+            if let (Some((_, name, _)), Some(bounds)) = (parts(item), type_bounds(item)) {
                 ranges.push((
-                    start(name, range.start)..self.prefix + range.end,
+                    start(name, bounds.start)..self.prefix + bounds.end,
                     Declared::Type(path.clone()),
                 ));
             }
@@ -482,6 +470,44 @@ fn collect_starts(items: &[Item], starts: &mut BTreeMap<usize, usize>) {
     }
 }
 
+/// Where a type item runs without its attributes, from its first token to its
+/// last: a whole item's span would rebuild its tokens.
+fn type_bounds(item: &Item) -> Option<Range<usize>> {
+    let (visibility, keyword, end) = match item {
+        Item::Struct(declaration) => (
+            &declaration.vis,
+            declaration.struct_token.span,
+            match (&declaration.fields, declaration.semi_token) {
+                (_, Some(semi)) => semi.spans[0],
+                (Fields::Named(fields), None) => fields.brace_token.span.close(),
+                _ => return None,
+            },
+        ),
+        Item::Enum(declaration) => (
+            &declaration.vis,
+            declaration.enum_token.span,
+            declaration.brace_token.span.close(),
+        ),
+        Item::Union(declaration) => (
+            &declaration.vis,
+            declaration.union_token.span,
+            declaration.fields.brace_token.span.close(),
+        ),
+        Item::Type(declaration) => (
+            &declaration.vis,
+            declaration.type_token.span,
+            declaration.semi_token.spans[0],
+        ),
+        _ => return None,
+    };
+    let start = match visibility {
+        Visibility::Public(token) => token.span,
+        Visibility::Restricted(restricted) => restricted.pub_token.span,
+        Visibility::Inherited => keyword,
+    };
+    Some(start.byte_range().start..end.byte_range().end)
+}
+
 /// Records where a declaration named `name` starts, at its first attribute.
 fn record(attributes: &[Attribute], name: &Ident, starts: &mut BTreeMap<usize, usize>) {
     if let Some(first) = attributes.first() {
@@ -722,9 +748,16 @@ mod tests {
     /// What `source`, read for `target`, declares where `marker` starts.
     fn declared(source: &str, target: &Target, marker: &str) -> Option<Declared> {
         let offset = source.find(marker).expect("the source has the marker");
-        SourceFile::parse(source, target)
-            .unwrap()
-            .declared_at(offset)
+        declared_at(&SourceFile::parse(source, target).unwrap(), offset)
+    }
+
+    /// What `file` declares at `offset`, as an editor finds the caret's
+    /// declaration among the ranges: the last one that holds it.
+    fn declared_at(file: &SourceFile<'_>, offset: usize) -> Option<Declared> {
+        file.declared_ranges()
+            .into_iter()
+            .rfind(|(range, _)| range.contains(&offset) || range.end == offset)
+            .map(|(_, declared)| declared)
     }
 
     const DECLARED: &str = "/// A flow.\n#[kaa]\nfn first(input: u8) -> u8 {\n    |input| return input;\n}\n\nmod model {\n    pub struct Member { id: u8 }\n    impl Member {\n        #[kaa]\n        fn second(input: u8) -> u8 {\n            |input| return input;\n        }\n    }\n}\n";
@@ -831,7 +864,7 @@ mod tests {
         let source = "mod a { impl Owner { #[kaa] fn run() { || return; } } }\nmod b { impl Owner { #[kaa] fn run() { || return; } } }";
         let file = SourceFile::parse(source, Target::EMPTY).unwrap();
         let Declared::Flow(position, path) =
-            file.declared_at(source.rfind("run").unwrap()).unwrap()
+            declared_at(&file, source.rfind("run").unwrap()).unwrap()
         else {
             panic!("the cursor is in a flow");
         };
