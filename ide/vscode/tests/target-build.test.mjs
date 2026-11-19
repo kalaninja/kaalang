@@ -588,40 +588,47 @@ test(
 const fs = require("node:fs");
 const args = process.argv.slice(2);
 if (args.shift() !== "+old") process.exit(1);
-if (args.includes("-V")) console.log("cargo 1.96.0");
+if (args.includes("-V")) console.log(process.env.FAKE_CARGO_VERSION);
 else if (args.includes("locate-project")) console.log(require("node:path").resolve("Cargo.toml"));
 else if (args.includes("check")) fs.writeFileSync("invocation.json", JSON.stringify(args));
 else process.exit(1);
 `,
       { mode: 0o755 },
     );
-    const result = await readCargoProject(
-      root,
-      [],
-      [],
-      {
-        target: null,
-        features: [],
-        noDeps: false,
-        noDefaultFeatures: false,
-        metadataArgs: [],
-        extraArgs: [],
-        buildScripts: true,
-        rebuildOnSave: false,
-        buildCommand: [program, "+old", "check"],
-      },
-      process.env,
-      () => {},
-    );
-    const args = JSON.parse(
-      await readFile(path.join(root, "invocation.json"), "utf8"),
-    );
-    assert.ok(args.includes("--locked"));
-    assert.equal(
-      args.some((arg) => arg.includes("resolver.lockfile-path")),
-      false,
-    );
-    assert.ok(result.metadata.resolve);
-    assert.equal(existsSync(path.join(root, "Cargo.lock")), false);
+    // A nightly 1.97 can predate the key, which an older Cargo ignores.
+    for (const version of [
+      "cargo 1.96.0 (0123abcde 2026-04-01)",
+      "cargo 1.97.0-nightly (0123abcde 2026-04-10)",
+    ]) {
+      const result = await readCargoProject(
+        root,
+        [],
+        [],
+        {
+          target: null,
+          features: [],
+          noDeps: false,
+          noDefaultFeatures: false,
+          metadataArgs: [],
+          extraArgs: [],
+          buildScripts: true,
+          rebuildOnSave: false,
+          buildCommand: [program, "+old", "check"],
+        },
+        { ...process.env, FAKE_CARGO_VERSION: version },
+        () => {},
+      );
+      const args = JSON.parse(
+        await readFile(path.join(root, "invocation.json"), "utf8"),
+      );
+      assert.ok(args.includes("--locked"), version);
+      assert.equal(
+        args.some((arg) => arg.includes("resolver.lockfile-path")),
+        false,
+        version,
+      );
+      assert.ok(result.metadata.resolve);
+      assert.equal(existsSync(path.join(root, "Cargo.lock")), false);
+    }
   },
 );

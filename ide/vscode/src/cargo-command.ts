@@ -122,12 +122,17 @@ export class CargoLocks {
     manifest: string[],
     probe: (args: string[]) => Promise<string>,
   ): Promise<Lockfile> {
-    const version = /^cargo (\d+)\.(\d+)/.exec(await probe(["-V"]));
-    // Cargo 1.97 stabilized resolver.lockfile-path. Earlier Cargo must use --locked.
+    const version = /^cargo (\d+)\.(\d+)\.\d+(-nightly)?/.exec(
+      await probe(["-V"]),
+    );
+    // Cargo 1.97 stabilized resolver.lockfile-path, but not every 1.97 nightly
+    // has it and an older Cargo ignores the key. Earlier Cargo must use --locked.
+    const [, major, minor, nightly] = version ?? [];
     const canCopy =
       !!version &&
-      (Number(version[1]) > 1 ||
-        (Number(version[1]) === 1 && Number(version[2]) >= 97));
+      (Number(major) > 1 ||
+        Number(minor) > 97 ||
+        (Number(minor) === 97 && nightly === undefined));
     let file: string | undefined;
     if (canCopy) {
       const get = (format: string[]) =>
