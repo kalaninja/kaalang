@@ -6,7 +6,8 @@
 
 - The VS Code extension shows the flow or type at the cursor. Click a connection
   or merge to inspect the wires it carries. Ctrl-click (Cmd-click on macOS) a
-  node, wire name, or type path to open its source or definition.
+  node, wire name, or type path to open its source or definition. Diagrams honor
+  the `cfg` flags each package's build script sets.
 
 ### Fixed
 

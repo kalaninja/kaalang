@@ -217,19 +217,23 @@ snapshot.
 
 In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
 rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
-cargo's configuration applied, local crate flags, settings overrides and the
-package's active features. It reads a value's type from rust-analyzer's hover at
-its binding. Cargo identifies workspace targets. The CLI and VS Code follow the
-same compiler rules for module files and `#[path]`. The extension reads unsaved
-text from the editor and runs the compiler in a Node worker. When a reference
-search misses a renamed type, the host can resolve the relationship at the
-position the compiler gives it. The bindings use module positions to put
-incoming cards in source order, including across files. A file shared by targets
-contributes its card at the first place in diagram order. The panel follows Rust
-editors in the VS Code workspace folders. A go-to can open a file outside those
-folders. It opens what a click finds as the editor's own go-to does, from where
-the cursor stands, so that the diagram follows only the target and going back
-returns. In Restricted Mode it runs neither cargo nor rustc, whose binaries the
-workspace's configuration may name: the diagram goes without the set, and what
-rust-analyzer gives, the types, incoming cards, module paths, and go-to actions,
-waits for trust, as rust-analyzer does.
+cargo's configuration applied, local crate flags, settings overrides, package
+features and build-script cfgs. When build scripts are enabled,
+[the extension](../ide/vscode/src/cargo.ts) reads their output by Cargo package
+ID. Cargo reuses fresh results. Saving a script or changing one of its inputs
+refreshes the diagram when rust-analyzer's rebuild-on-save setting is enabled.
+The extension reads a value's type from rust-analyzer's hover at its binding.
+Cargo identifies workspace targets. The CLI and VS Code follow the same compiler
+rules for module files and `#[path]`. The extension reads unsaved text from the
+editor and runs the compiler in a Node worker. When a reference search misses a
+renamed type, the host can resolve the relationship at the position the compiler
+gives it. The bindings use module positions to put incoming cards in source
+order, including across files. A file shared by targets contributes its card at
+the first place in diagram order. The panel follows Rust editors in the VS Code
+workspace folders. A go-to can open a file outside those folders. It opens what
+a click finds as the editor's own go-to does, from where the cursor stands, so
+that the diagram follows only the target and going back returns. In Restricted
+Mode it runs neither cargo nor rustc, whose binaries the workspace's
+configuration may name: the diagram goes without the set, and what rust-analyzer
+gives, the types, incoming cards, module paths, and go-to actions, waits for
+trust, as rust-analyzer does.

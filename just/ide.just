@@ -14,9 +14,9 @@ list:
 test: (tooling::build "rust")
     ./scripts/docker/run-tooling.sh kaalang-rust node --test 'ide/page/tests/*.test.mjs'
 
-# Type-check the VS Code extension and run its tests in Node.
-check: (tooling::build "fmt")
-    ./scripts/docker/run-tooling.sh kaalang-fmt sh -c 'cd ide/vscode && npm ci && npx tsc && node --test tests/*.test.mjs'
+# Type-check the VS Code extension and run its Node and Cargo integration tests.
+check: (tooling::build "rust")
+    ./scripts/docker/run-tooling.sh kaalang-rust sh -c 'cd ide/vscode && npm ci --cache ../../.cache/npm && npx tsc && node --test tests/*.test.mjs'
 
 
 # Build the VS Code extension into ide/vscode/out, with the page and the bindings.

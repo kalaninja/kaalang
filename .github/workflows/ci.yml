@@ -27,7 +27,6 @@ jobs:
           cache-to: type=gha,scope=fmt,mode=max
       - uses: extractions/setup-just@v3
       - run: just fmt-check
-      - run: just ide check
 
   validate:
     needs: fmt
@@ -50,6 +49,7 @@ jobs:
             target
           key: cargo-${{ hashFiles('Cargo.lock', 'mise/config.toml') }}
       - uses: extractions/setup-just@v3
+      - run: just ide check
       - run: just rust clippy
       - run: just rust test
       - run: just wasm test

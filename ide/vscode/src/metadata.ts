@@ -4,7 +4,12 @@ interface Package {
   name: string;
   manifest_path: string;
   source: string | null;
-  dependencies: { name: string; rename: string | null }[];
+  dependencies: {
+    name: string;
+    rename: string | null;
+    kind: string | null;
+    path?: string;
+  }[];
   targets: {
     name: string;
     kind: string[];
@@ -15,7 +20,10 @@ interface Package {
 
 export interface Metadata {
   packages: Package[];
+  workspace_root: string;
   workspace_members: string[];
+  target_directory: string;
+  build_directory?: string;
   resolve: {
     nodes: {
       id: string;

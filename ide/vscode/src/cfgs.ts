@@ -48,7 +48,7 @@ export function applyExtraCfgs(
 
 /**
  * rust-analyzer sets the local crate's flags, applies the configured
- * overrides, then adds the package features from cargo.
+ * overrides, then adds the package's features and build-script cfgs from Cargo.
  */
 export function fileCfgs(
   rustc: string[],
@@ -56,6 +56,7 @@ export function fileCfgs(
   file: string | undefined,
   options: { cfgs: unknown[]; setTest: boolean },
   log: (line: string) => void,
+  buildCfgs?: ReadonlyMap<string, string[]>,
 ): string {
   const lines = new Set(rustc);
   // The package whose directory holds the file most closely.
@@ -77,5 +78,8 @@ export function fileCfgs(
   metadata?.resolve?.nodes
     .find((node) => node.id === owner?.id)
     ?.features.forEach((feature) => lines.add(`feature="${feature}"`));
+  if (owner) {
+    for (const cfg of buildCfgs?.get(owner.id) ?? []) lines.add(cfg);
+  }
   return [...lines].join("\n");
 }

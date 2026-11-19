@@ -8,6 +8,8 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
 
+import { watchBuildInputs } from "./build-inputs";
+import type { BuildInputs } from "./cargo";
 import { cardPlacements } from "./card-places";
 import { hoverType, moduleHovers } from "./hover";
 import { stopModuleWorker } from "./module-sources";
@@ -60,6 +62,16 @@ export function activate(context: vscode.ExtensionContext): void {
   /** A newer click or a switch to another source overtakes a pending go-to. */
   let navigation = 0;
   const log = vscode.window.createOutputChannel("kaalang");
+  const buildWatchers = new Map<
+    string,
+    { inputs: BuildInputs; watcher: vscode.Disposable }
+  >();
+
+  function clearCfg() {
+    forgetCfg();
+    for (const { watcher } of buildWatchers.values()) watcher.dispose();
+    buildWatchers.clear();
+  }
 
   /** Follows `editor`, unless it shows a document outside the workspace. */
   function follow(editor: vscode.TextEditor | undefined): void {
@@ -80,6 +92,7 @@ export function activate(context: vscode.ExtensionContext): void {
     source = editor;
     send();
     if (moved) {
+      watchConfig();
       void sendCfg();
     }
   }
@@ -90,10 +103,23 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const question = ++asked;
-    const { cfg } = await target(source.document.uri, (line) =>
-      log.appendLine(line),
+    const { cfg, buildInputs, workspaceRoot } = await target(
+      source.document.uri,
+      (line) => log.appendLine(line),
     );
     if (question === asked && panel !== undefined) {
+      if (
+        workspaceRoot &&
+        buildWatchers.get(workspaceRoot)?.inputs !== buildInputs
+      ) {
+        buildWatchers.get(workspaceRoot)?.watcher.dispose();
+        buildWatchers.delete(workspaceRoot);
+        if (buildInputs)
+          buildWatchers.set(workspaceRoot, {
+            inputs: buildInputs,
+            watcher: watchBuildInputs(buildInputs, reread),
+          });
+      }
       void panel.webview.postMessage({ type: "target", cfg });
     }
   }
@@ -214,9 +240,14 @@ export function activate(context: vscode.ExtensionContext): void {
     "**/{Cargo.toml,Cargo.lock,.cargo/config.toml,.cargo/config,rust-toolchain,rust-toolchain.toml}",
   );
   let configWatcher: vscode.FileSystemWatcher | undefined;
+  let watchedConfig: string | undefined;
   function watchConfig(): void {
+    const file = vscode.workspace.isTrusted
+      ? cargoConfig(source?.document.uri)
+      : undefined;
+    if (file === watchedConfig) return;
+    watchedConfig = file;
     configWatcher?.dispose();
-    const file = vscode.workspace.isTrusted && cargoConfig();
     if (file) {
       configWatcher = vscode.workspace.createFileSystemWatcher(
         new vscode.RelativePattern(
@@ -234,6 +265,7 @@ export function activate(context: vscode.ExtensionContext): void {
   function reread(): void {
     clearTimeout(rereading);
     rereading = setTimeout(() => {
+      // Keep the old input watches until the new Cargo query has finished.
       forgetCfg();
       forgetReferences();
       void sendCfg();
@@ -298,13 +330,14 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (affectsCfg(event)) {
         watchConfig();
-        forgetCfg();
+        clearCfg();
         void sendCfg();
         sourcesChanged();
       }
     }),
     vscode.languages.onDidChangeDiagnostics(changed),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      clearCfg();
       watchConfig();
       reread();
     }),
@@ -325,6 +358,7 @@ export function activate(context: vscode.ExtensionContext): void {
     sources.onDidChange(sourcesChanged),
     sources.onDidDelete(sourcesChanged),
     { dispose: () => configWatcher?.dispose() },
+    { dispose: clearCfg },
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
     manifests.onDidDelete(reread),
