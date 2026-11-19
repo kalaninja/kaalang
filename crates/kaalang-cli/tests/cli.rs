@@ -1444,25 +1444,6 @@ fn a_module_the_target_does_not_compile_is_not_read() {
 }
 
 #[test]
-fn a_file_read_twice_draws_its_type_once() {
-    // Both modules read `src/common.rs`, which declares `Report` once.
-    let directory = package(
-        "cli-type-read-twice",
-        "pub struct Member;\n#[path = \"common.rs\"]\nmod first;\n#[path = \"common.rs\"]\nmod second;\n",
-    );
-    write(
-        &directory,
-        "src/common.rs",
-        "#[kaa]\npub struct Report {\n    #[kaa::refer(crate::Member, \"m\")]\n    m: u8,\n}\n",
-    );
-    let rendered = run(&directory, "diagram --type Member");
-    assert!(rendered.status.success(), "{:?}", rendered.stderr);
-    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
-    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
-}
-
-#[test]
 fn a_file_two_crates_read_under_their_own_cfgs_draws_the_focus_lines_of_its_crate() {
     let directory = package("cli-shared-file-type", "pub mod model;\n");
     write(
@@ -1708,7 +1689,11 @@ fn incoming_types_follow_crate_order() {
 #[test]
 fn a_file_that_two_crates_include_gives_one_card() {
     let directory = package("cli-type-shared-file", "pub mod model;\n");
-    write(&directory, "src/main.rs", "mod model;\nfn main() {}\n");
+    write(
+        &directory,
+        "src/main.rs",
+        "#[path = \"model.rs\"] mod other;\nfn main() {}\n",
+    );
     write(
         &directory,
         "src/model.rs",
@@ -1718,6 +1703,136 @@ fn a_file_that_two_crates_include_gives_one_card() {
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
     assert_eq!(svg.matches(r#"class="card""#).count(), 1, "{svg}");
+}
+
+#[test]
+fn each_module_keeps_its_incoming_type_when_another_target_shares_the_file() {
+    let directory = package(
+        "cli-distinct-incoming",
+        r#"pub struct Focus;
+           #[path = "shared.rs"] pub mod r#left;
+           #[path = "shared.rs"] pub mod right;"#,
+    );
+    write(
+        &directory,
+        "src/shared.rs",
+        r#"#[kaa] pub struct Report { #[kaa::refer(crate::Focus, "Owner")] pub id: u8 }"#,
+    );
+    let draw = || {
+        let rendered = run(&directory, "diagram --type Focus");
+        assert!(rendered.status.success(), "{rendered:?}");
+        assert!(rendered.stderr.is_empty(), "{rendered:?}");
+        fs::read_to_string(directory.join("Focus.svg")).unwrap()
+    };
+    let svg = draw();
+    assert!(
+        svg.contains("r#left::Report → Focus") && svg.contains("right::Report → Focus"),
+        "{svg}"
+    );
+    assert_eq!(svg.matches(r#"class="card""#).count(), 2, "{svg}");
+    write(
+        &directory,
+        "tests/shared.rs",
+        r#"pub use cli_distinct_incoming::Focus; #[path = "../src/shared.rs"] mod left;"#,
+    );
+    assert_eq!(draw(), svg);
+}
+
+#[test]
+fn two_modules_of_one_crate_give_shared_source_distinct_types() {
+    let directory = package(
+        "cli-distinct-inclusions",
+        r#"
+        #[path = "shared.rs"] pub mod r#left;
+        #[path = "shared.rs"] pub mod right;
+        #[kaa] pub struct Report { #[kaa::refer(left::Member, "Owner")] pub owner: u32 }
+    "#,
+    );
+    write(&directory, "src/shared.rs", "pub struct Member;");
+    // A third inclusion must not make left and right aliases of one another.
+    write(
+        &directory,
+        "tests/shared.rs",
+        "#[path = \"../src/shared.rs\"] mod left;",
+    );
+    let query = |name: &str| {
+        let result = run(
+            &directory,
+            &format!("diagram --type {name}::Member -o out.svg"),
+        );
+        assert!(result.status.success(), "{:?}", result.stderr);
+        fs::read_to_string(directory.join("out.svg")).unwrap()
+    };
+    assert!(query("left").contains("Report → r#left::Member"));
+    assert!(!query("right").contains("Report → right::Member"));
+}
+
+#[test]
+fn an_unrelated_target_cannot_change_which_shared_types_match() {
+    let directory = package(
+        "cli-shared-target-identity",
+        r#"#[path = "shared.rs"] pub mod first; pub use first::Member as Chosen;"#,
+    );
+    write(&directory, "src/shared.rs", "pub struct Member;");
+    write(
+        &directory,
+        "tests/other.rs",
+        r#"#[path = "../src/shared.rs"] pub mod second;
+           pub use second::Member as Chosen;
+           #[kaa] pub struct Incoming { #[kaa::refer(second::Member, "Owner")] pub id: u32 }"#,
+    );
+    let query = || run(&directory, "diagram --type Chosen -o chosen.svg");
+    let first = query();
+    assert!(first.status.success(), "{:?}", first.stderr);
+    let svg = fs::read(directory.join("chosen.svg")).unwrap();
+    assert!(String::from_utf8_lossy(&svg).contains("Incoming"));
+
+    let repeated = r#"#[path = "../src/shared.rs"] pub mod first;
+                      #[path = "../src/shared.rs"] pub mod second;
+                      #[path = "../src/shared.rs"] pub mod third;"#;
+    write(&directory, "tests/repeated.rs", repeated);
+    let again = query();
+    assert!(again.status.success(), "{:?}", again.stderr);
+    assert_eq!(fs::read(directory.join("chosen.svg")).unwrap(), svg);
+
+    write(
+        &directory,
+        "tests/repeated.rs",
+        &format!("{repeated} pub use first::Member as Chosen;"),
+    );
+    let ambiguous = query();
+    assert!(!ambiguous.status.success());
+    assert!(String::from_utf8_lossy(&ambiguous.stderr).contains("multiple types have the path"));
+}
+
+#[test]
+fn conflicting_module_files_are_reported_without_drawing_either_candidate() {
+    let directory = package("cli-ambiguous-module-files", "mod node; pub struct Root;");
+    for file in ["src/node.rs", "src/node/mod.rs"] {
+        write(&directory, file, &format!("pub struct Item;\n{SOURCE}"));
+    }
+    for query in ["--type node::Item", "--flow node::route"] {
+        let failed = run(&directory, &format!("diagram {query} -o out.svg"));
+        assert!(!failed.status.success());
+        let message = String::from_utf8_lossy(&failed.stderr).replace('\\', "/");
+        assert!(
+            message.contains("is ambiguous")
+                && message.contains("src/node.rs")
+                && message.contains("src/node/mod.rs"),
+            "{message}"
+        );
+        assert!(!directory.join("out.svg").exists());
+    }
+    let unrelated = run(&directory, "diagram --type Root");
+    assert!(unrelated.status.success());
+    assert!(String::from_utf8_lossy(&unrelated.stderr).contains("is ambiguous"));
+    for file in ["src/node.rs", "src/node/mod.rs"] {
+        assert!(
+            !run(&directory, &format!("diagram --type Root -o {file}"))
+                .status
+                .success()
+        );
+    }
 }
 
 #[test]
@@ -1771,13 +1886,23 @@ fn a_target_in_a_file_that_could_not_be_read_warns_and_draws_no_line() {
 
 #[test]
 fn a_type_path_in_two_packages_fails_until_one_is_selected() {
+    let root = "pub mod model; pub use model::Member;";
     let directory = workspace(
         "cli-type-two-packages",
-        &[
-            ("first", "pub struct Member;\n"),
-            ("second", "pub struct Member;\n"),
-        ],
+        &[("first", root), ("second", root)],
     );
+    for member in ["first", "second"] {
+        write(
+            &directory,
+            &format!("{member}/src/model.rs"),
+            "pub struct Member;",
+        );
+        write(
+            &directory,
+            &format!("{member}/src/main.rs"),
+            &format!("{root} fn main() {{}}"),
+        );
+    }
     let failed = run(&directory, "diagram --type Member");
     assert!(!failed.status.success());
     let stderr = String::from_utf8_lossy(&failed.stderr);

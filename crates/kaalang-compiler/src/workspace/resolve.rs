@@ -4,7 +4,12 @@
 //! libraries by their crate names. rustc has already checked that the path
 //! names something; this finds what.
 
-use std::{collections::BTreeMap, iter};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet},
+    iter,
+    path::Path,
+};
 
 use syn::{
     ext::IdentExt,
@@ -15,23 +20,89 @@ use crate::workspace::{Crate, Declared, UsePath, Visibility};
 
 /// A type declaration: its crate and its index among the crate's types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct TypeRef {
-    pub(super) krate: usize,
-    pub(super) id: usize,
+pub struct TypeRef {
+    pub krate: usize,
+    pub id: usize,
 }
 
-impl TypeRef {
-    /// Where the declaration is written: its file and its place in the file,
-    /// which identify it across the crates that include the file.
-    pub(super) fn place(self, crates: &[Crate]) -> (&std::path::Path, proc_macro2::LineColumn) {
-        let krate = &crates[self.krate];
-        let entry = &krate.types[self.id];
-        (&krate.modules[entry.module].file.canonical, entry.position)
+/// The module and target that read a physical declaration.
+#[derive(Clone, Copy)]
+pub struct Inclusion<'a> {
+    pub owner: usize,
+    pub module: &'a str,
+    /// This target includes the file under several module names.
+    pub repeated: bool,
+}
+
+impl<'a> Inclusion<'a> {
+    fn module_name(self) -> Cow<'a, str> {
+        let name = self.module.trim_end_matches("::");
+        if name.contains("r#") {
+            name.replace("r#", "").into()
+        } else {
+            name.into()
+        }
+    }
+
+    /// Whether two readings at one physical source position denote the same type.
+    #[must_use]
+    pub fn same_type(self, other: Self) -> bool {
+        (self.owner != other.owner && !self.repeated && !other.repeated)
+            || self.module_name() == other.module_name()
     }
 }
 
+/// The first card positions in diagram order, grouped by physical declaration.
+/// A target that includes the file several times gives each module a distinct
+/// card. Single inclusions share their earliest card. If exactly one of their
+/// names also occurs in a repeated inclusion, it identifies their shared card.
+pub fn first_readings<'a, K: Ord>(
+    cards: impl IntoIterator<Item = (usize, K, Option<Inclusion<'a>>)>,
+) -> BTreeSet<usize> {
+    let mut places = BTreeMap::<K, Vec<_>>::new();
+    for (position, place, inclusion) in cards {
+        places.entry(place).or_default().push((position, inclusion));
+    }
+    let mut first = BTreeSet::new();
+    for readings in places.into_values() {
+        let mut named = BTreeMap::new();
+        for &(position, inclusion) in &readings {
+            if let Some(mount) = inclusion.filter(|mount| mount.repeated) {
+                named
+                    .entry(mount.module_name())
+                    .or_insert((position, false));
+            }
+        }
+        if named.is_empty() {
+            first.insert(readings[0].0);
+            continue;
+        }
+        let mut unmatched = None;
+        for (position, inclusion) in readings {
+            if let Some(mount) = inclusion.filter(|mount| !mount.repeated) {
+                if let Some((earliest, shared)) = named.get_mut(&mount.module_name()) {
+                    *earliest = (*earliest).min(position);
+                    *shared = true;
+                } else {
+                    unmatched.get_or_insert(position);
+                }
+            }
+        }
+        if let Some(position) = unmatched {
+            let mut shared = named.values_mut().filter(|(_, single)| *single);
+            if let (Some((earliest, _)), None) = (shared.next(), shared.next()) {
+                *earliest = (*earliest).min(position);
+            } else {
+                first.insert(position);
+            }
+        }
+        first.extend(named.into_values().map(|(position, _)| position));
+    }
+    first
+}
+
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum Resolution {
+pub enum Resolution {
     /// A struct, enum, union, or alias of the workspace.
     Type(TypeRef),
     /// Something of the workspace that is not a type, such as "a trait".
@@ -47,7 +118,7 @@ pub(super) enum Resolution {
 
 /// What a path resolves to.
 #[derive(Clone, PartialEq, Eq)]
-pub(super) enum Def {
+pub enum Def {
     Type(TypeRef),
     Module(usize, usize),
     /// A trait: its crate, its module, and its name.
@@ -66,18 +137,21 @@ pub(super) enum Def {
     Unknown(&'static str),
 }
 
-pub(super) struct Resolver<'a> {
-    crates: &'a [Crate],
+/// Rust's type and value namespaces over a set of workspace crates.
+pub struct Resolver<'a> {
+    crates: Vec<&'a Crate>,
     /// Each crate's names for the workspace's libraries.
     externs: Vec<Vec<(String, usize)>>,
-    /// One identity for each source declaration, including shared files.
-    types: Vec<Vec<usize>>,
+    /// Files included in more than one module of each target.
+    repeated: Vec<BTreeSet<&'a Path>>,
 }
 
 impl<'a> Resolver<'a> {
-    pub(super) fn new(crates: &'a [Crate]) -> Self {
+    pub fn new(crates: impl IntoIterator<Item = &'a Crate>) -> Self {
+        let crates: Vec<_> = crates.into_iter().collect();
         let libraries: Vec<(usize, &Crate)> = crates
             .iter()
+            .copied()
             .enumerate()
             .filter(|(_, krate)| krate.library)
             .collect();
@@ -108,29 +182,65 @@ impl<'a> Resolver<'a> {
                 names
             })
             .collect();
-        let mut declared = BTreeMap::new();
-        let types = crates
+        let repeated = crates
             .iter()
-            .enumerate()
-            .map(|(index, krate)| {
-                (0..krate.types.len())
-                    .map(|id| {
-                        let key = TypeRef { krate: index, id }.place(crates);
-                        let next = declared.len();
-                        *declared.entry(key).or_insert(next)
-                    })
+            .map(|krate| {
+                let mut seen = BTreeSet::new();
+                krate
+                    .modules
+                    .iter()
+                    .filter(|module| module.in_file.is_empty())
+                    .map(|module| module.file.canonical.as_path())
+                    .filter(|file| !seen.insert(*file))
                     .collect()
             })
             .collect();
         Self {
             crates,
             externs,
-            types,
+            repeated,
         }
     }
 
+    /// A declaration's physical source position, shared by all inclusions of its file.
+    #[must_use]
+    pub fn place(&self, ty: TypeRef) -> (&'a Path, proc_macro2::LineColumn) {
+        let krate = self.crates[ty.krate];
+        let entry = &krate.types[ty.id];
+        (&krate.modules[entry.module].file.canonical, entry.position)
+    }
+
+    /// Two targets can share a declaration under their own module names. When
+    /// either includes its file twice, only the matching module selects its copy.
+    #[must_use]
+    pub fn same_type(&self, left: TypeRef, right: TypeRef) -> bool {
+        if left.krate == right.krate {
+            return left.id == right.id;
+        }
+        self.place(left) == self.place(right)
+            && self.inclusion(left).same_type(self.inclusion(right))
+    }
+
+    #[must_use]
+    pub fn inclusion(&self, ty: TypeRef) -> Inclusion<'a> {
+        let krate = self.crates[ty.krate];
+        let module = &krate.modules[krate.types[ty.id].module];
+        Inclusion {
+            owner: ty.krate,
+            module: &module.path,
+            repeated: self.repeated_file(ty.krate, &module.file.canonical),
+        }
+    }
+
+    /// Whether this target mounts the physical file at multiple module paths.
+    #[must_use]
+    pub fn repeated_file(&self, owner: usize, canonical: &Path) -> bool {
+        self.repeated[owner].contains(canonical)
+    }
+
     /// Resolves `path` as written in `module` of crate `krate`.
-    pub(super) fn resolve(&self, krate: usize, module: usize, path: &syn::Path) -> Resolution {
+    #[must_use]
+    pub fn resolve(&self, krate: usize, module: usize, path: &syn::Path) -> Resolution {
         match self.find(krate, module, path) {
             Def::Type(found) => Resolution::Type(found),
             Def::Module(..) => Resolution::NotAType("a module"),
@@ -146,13 +256,15 @@ impl<'a> Resolver<'a> {
     }
 
     /// What `path`, as written in `module` of crate `krate`, names.
-    pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+    #[must_use]
+    pub fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, false)
     }
 
     /// A query has not been checked by rustc: a bare missing name cannot use
     /// the fallback for external types unless its scope could provide it.
-    pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
+    #[must_use]
+    pub fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
         Some(match self.find(krate, module, path) {
             Def::Ambiguous(_) => return None,
             Def::Type(_) | Def::Unknown(_) => true,
@@ -222,12 +334,14 @@ impl<'a> Resolver<'a> {
     /// What `path` names among functions, constants, and statics: its last
     /// segment passes over a module or type that shares the name, as in
     /// `mod checkout; pub use checkout::checkout;`.
-    pub(super) fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+    #[must_use]
+    pub fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, true)
     }
 
     /// Compares types after expanding aliases in their own scopes.
-    pub(super) fn types_match(
+    #[must_use]
+    pub fn types_match(
         &self,
         query_scope: (usize, usize),
         query: &syn::Type,
@@ -235,20 +349,32 @@ impl<'a> Resolver<'a> {
         written: &syn::Type,
         generics: &syn::Generics,
     ) -> bool {
+        let mut types = BTreeMap::new();
         let query = self.normalized_type(
             query_scope.0,
             query_scope.1,
             query,
             &syn::Generics::default(),
+            &mut types,
         );
-        let written = self.normalized_type(written_scope.0, written_scope.1, written, generics);
-        kaalang_compiler::types_match(&query, &written, generics, &mut |left, right| {
+        let written = self.normalized_type(
+            written_scope.0,
+            written_scope.1,
+            written,
+            generics,
+            &mut types,
+        );
+        crate::types_match(&query, &written, generics, &mut |left, right| {
             let identity = |path: &syn::Path| {
                 path.leading_colon
                     .and_then(|_| path.segments.first().map(|segment| segment.ident.clone()))
             };
             let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
             let (left_id, right_id) = (identity(left), identity(right));
+            let declared = |id: &Option<syn::Ident>| id.as_ref().and_then(|id| types.get(id));
+            if let Some((left, right)) = declared(&left_id).zip(declared(&right_id)) {
+                return self.same_type(*left, *right);
+            }
             if left_id.as_ref().is_some_and(|id| id == "missing") {
                 return false;
             }
@@ -270,10 +396,12 @@ impl<'a> Resolver<'a> {
         module: usize,
         ty: &syn::Type,
         generics: &syn::Generics,
+        types: &mut BTreeMap<syn::Ident, TypeRef>,
     ) -> syn::Type {
         let mut ty = ty.clone();
         Normalize {
             resolver: self,
+            types,
             krate,
             module,
             bound: generics
@@ -358,7 +486,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn variant(&self, ty: TypeRef, name: &str, value: bool) -> Option<(Def, Visibility)> {
-        let krate = &self.crates[ty.krate];
+        let krate = self.crates[ty.krate];
         let entry = &krate.types[ty.id];
         let syn::Item::Enum(enumeration) = &entry.item else {
             return None;
@@ -621,6 +749,7 @@ struct Lookup {
 
 struct Normalize<'a, 'b> {
     resolver: &'a Resolver<'b>,
+    types: &'a mut BTreeMap<syn::Ident, TypeRef>,
     krate: usize,
     module: usize,
     bound: Vec<syn::Ident>,
@@ -766,32 +895,35 @@ impl VisitMut for Normalize<'_, '_> {
         {
             return;
         }
+        let Some(last) = path.segments.last().cloned() else {
+            return;
+        };
+        let ident = |name: &str| syn::Ident::new(name, last.ident.span());
         let identity = match self.resolver.find(self.krate, self.module, path) {
-            Def::Type(found) => Some(format!(
-                "type_{}",
-                self.resolver.types[found.krate][found.id]
-            )),
-            Def::Trait(krate, module, name) => Some(format!("trait_{krate}_{module}_{name}")),
-            Def::Value(krate, module, name, _) => Some(format!("value_{krate}_{module}_{name}")),
-            Def::Unknown(_) => Some("unknown".into()),
+            Def::Type(found) => {
+                let id = ident(&format!("type_{}_{}", found.krate, found.id));
+                self.types.insert(id.clone(), found);
+                Some(id)
+            }
+            Def::Trait(krate, module, name) => {
+                Some(ident(&format!("trait_{krate}_{module}_{name}")))
+            }
+            Def::Value(krate, module, name, _) => {
+                Some(ident(&format!("value_{krate}_{module}_{name}")))
+            }
+            Def::Unknown(_) => Some(ident("unknown")),
             Def::Missing
             | Def::Module(..)
             | Def::Variant(..)
             | Def::NotAType(_)
-            | Def::Ambiguous(_) => Some("missing".into()),
+            | Def::Ambiguous(_) => Some(ident("missing")),
             Def::Outside => None,
         };
-        let Some(last) = path.segments.last().cloned() else {
-            return;
-        };
         *path = match identity {
-            Some(identity) => {
-                let ident = syn::Ident::new(&identity, last.ident.span());
-                syn::Path {
-                    leading_colon: Some(syn::token::PathSep::default()),
-                    segments: [syn::PathSegment::from(ident), last].into_iter().collect(),
-                }
-            }
+            Some(ident) => syn::Path {
+                leading_colon: Some(syn::token::PathSep::default()),
+                segments: [syn::PathSegment::from(ident), last].into_iter().collect(),
+            },
             // Names outside the workspace retain the RFC's last-segment match.
             None => syn::Path {
                 leading_colon: None,
@@ -803,8 +935,44 @@ impl VisitMut for Normalize<'_, '_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Def, Resolution, Resolver, TypeRef};
+    use super::{Def, Inclusion, Resolution, Resolver, TypeRef, first_readings};
     use crate::workspace::{Crate, library};
+
+    #[test]
+    fn shared_declarations_keep_the_first_card_in_every_target_order() {
+        let mount = |owner, module, repeated| Inclusion {
+            owner,
+            module,
+            repeated,
+        };
+        let targets: [&[Inclusion<'_>]; 3] = [
+            &[mount(0, "red", false)],
+            &[mount(1, "blue", false)],
+            &[mount(2, "r#blue", true), mount(2, "spare", true)],
+        ];
+        for order in [
+            [0, 1, 2],
+            [0, 2, 1],
+            [1, 0, 2],
+            [1, 2, 0],
+            [2, 0, 1],
+            [2, 1, 0],
+        ] {
+            let mounts: Vec<_> = order
+                .into_iter()
+                .flat_map(|target| targets[target].iter().copied())
+                .collect();
+            let spare = mounts
+                .iter()
+                .position(|mount| mount.module == "spare")
+                .unwrap();
+            let cards = mounts
+                .into_iter()
+                .enumerate()
+                .map(|(i, mount)| (i, (), Some(mount)));
+            assert_eq!(first_readings(cards), [0, spare].into(), "{order:?}");
+        }
+    }
 
     /// Resolves `target` from the module at `module`, a path such as `a::b::`,
     /// in the first of `crates`.

@@ -1,37 +1,34 @@
 //! Draws a type diagram: finds the focus type in the workspace, resolves every
 //! relationship there, and renders the focus under the types that refer to it.
 
-use std::{collections::BTreeSet, fmt::Write as _, path::PathBuf};
+use std::{
+    collections::{BTreeSet, HashMap, hash_map::Entry},
+    fmt::Write as _,
+};
 
-use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
+use kaalang_compiler::{
+    SourceError, SourceFile, SourceType, TypeDeclaration,
+    workspace::{Def, Resolution, Resolver, TypeRef, first_readings},
+};
 use kaalang_svg::{CardCrate, CardPath, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
-use crate::{
-    resolve::{Def, Resolution, Resolver, TypeRef},
-    workspace::{self, Crate, TargetOptions},
-};
-
-/// A rendered type diagram and every file it was drawn from.
-pub(super) struct Drawn {
-    pub(super) svg: String,
-    pub(super) files: Vec<PathBuf>,
-}
+use crate::workspace::{self, Crate};
 
 /// Draws the type whose path from its crate root is `path`, taken from
 /// `package` when given. A file that cannot be read or parsed, or a type whose
 /// annotations do not parse, is skipped and listed, as an error when the type
 /// is not found and as a warning when it is.
 pub(super) fn draw(
+    crates: &[Crate],
     path: &str,
     package: Option<&str>,
-    target: &TargetOptions,
     options: TypeOptions,
-) -> Result<Drawn, String> {
-    let crates = workspace::crates(package, target)?;
-    let (declarations, unreadable) = declarations(&crates);
-    let skipped = workspace::skipped(&crates);
-    let focus = focus(&crates, path, package, &skipped).map_err(|mut message| {
+) -> Result<String, String> {
+    let resolver = Resolver::new(crates.iter().map(|krate| &krate.names));
+    let (declarations, unreadable) = declarations(crates);
+    let skipped = workspace::skipped(crates);
+    let focus = focus(crates, &resolver, path, package, &skipped).map_err(|mut message| {
         if !unreadable.is_empty() {
             message = listed(message + "\nthese types could not be read:", &unreadable);
         }
@@ -39,8 +36,8 @@ pub(super) fn draw(
     })?;
     workspace::warn_skipped(path, &skipped);
     warn("warning: these types could not be read:", &unreadable);
-    let drawn = relationships(&crates, &declarations, focus)?;
-    render(&crates, focus, &drawn, options)
+    let drawn = relationships(crates, &resolver, &declarations, focus)?;
+    render(crates, &resolver, focus, &drawn, options)
 }
 
 /// Each crate's type declarations, parsed with their annotations, and the
@@ -73,10 +70,10 @@ fn declarations(crates: &[Crate]) -> (Vec<Vec<Option<TypeDeclaration>>>, BTreeSe
 /// cannot resolve is not drawn and is listed as a warning.
 fn relationships(
     crates: &[Crate],
+    resolver: &Resolver,
     declarations: &[Vec<Option<TypeDeclaration>>],
     focus: TypeRef,
 ) -> Result<Vec<(TypeRef, Vec<usize>)>, String> {
-    let resolver = Resolver::new(crates);
     let mut errors = BTreeSet::new();
     let mut unknown = BTreeSet::new();
     let mut drawn = Vec::new();
@@ -91,7 +88,7 @@ fn relationships(
                 let at = location(krate, entry.module, target.span());
                 let written = written(target);
                 match resolver.resolve(index, entry.module, target) {
-                    Resolution::Type(found) if same(crates, found, focus) => {
+                    Resolution::Type(found) if resolver.same_type(found, focus) => {
                         positions.push(position);
                     }
                     Resolution::Type(_) => {}
@@ -133,36 +130,51 @@ fn relationships(
 /// tests, its examples, and its benches start a new row.
 fn render(
     crates: &[Crate],
+    resolver: &Resolver,
     focus: TypeRef,
     drawn: &[(TypeRef, Vec<usize>)],
     options: TypeOptions,
-) -> Result<Drawn, String> {
+) -> Result<String, String> {
     let mut own: &[usize] = &[];
     let mut incoming: Vec<(TypeRef, &[usize])> = Vec::new();
     for krate in order(crates, focus.krate) {
         for (source, positions) in drawn.iter().filter(|(source, _)| source.krate == krate) {
-            if same(crates, *source, focus) {
+            if resolver.same_type(*source, focus) {
                 // Another crate reads the focus's file under its own `cfg`s,
                 // so only the focus's own reading gives its lines.
                 if *source == focus {
                     own = positions;
                 }
-            } else if !incoming
-                .iter()
-                .any(|(other, _)| same(crates, *other, *source))
-            {
+            } else {
                 incoming.push((*source, positions));
             }
         }
     }
+    let first = first_readings(
+        incoming
+            .iter()
+            .enumerate()
+            .map(|(index, &(ty, _))| (index, resolver.place(ty), Some(resolver.inclusion(ty)))),
+    );
+    let incoming: Vec<_> = first.into_iter().map(|index| incoming[index]).collect();
     let file = |source: TypeRef| {
         let entry = &crates[source.krate].types[source.id];
-        crates[source.krate].modules[entry.module].file.path.clone()
+        &crates[source.krate].modules[entry.module].file
     };
 
     let (focus_header, headers) = headers(crates, focus, &incoming);
-    let read = |source: TypeRef| {
-        read(crates, source).map_err(|error| format!("{}: {error}", file(source).display()))
+    let mut files = HashMap::new();
+    let mut read = |source: TypeRef| -> Result<SourceType, String> {
+        let krate = &crates[source.krate];
+        let file = file(source);
+        let located = |error| format!("{}: {error}", file.path.display());
+        let parsed = match files.entry((&file.canonical, &krate.cfg)) {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => {
+                entry.insert(SourceFile::parse(&file.source, &krate.cfg).map_err(located)?)
+            }
+        };
+        parsed.ty(&krate.types[source.id].in_file).map_err(located)
     };
     let focus_type = read(focus)?;
     let incoming_types = incoming
@@ -195,32 +207,20 @@ fn render(
     }
     let (svg, _) = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
         let culprit = error.card.checked_sub(1).map_or(focus, |i| incoming[i].0);
-        format!("{}: {error}", file(culprit).display())
+        format!("{}: {error}", file(culprit).path.display())
     })?;
-    let mut files: Vec<PathBuf> = std::iter::once(file(focus))
-        .chain(incoming.iter().map(|(source, _)| file(*source)))
-        .collect();
-    files.sort();
-    files.dedup();
-    Ok(Drawn { svg, files })
-}
-
-/// Reads a card's type from its file as its crate compiles it.
-fn read(crates: &[Crate], source: TypeRef) -> Result<SourceType, SourceError> {
-    let krate = &crates[source.krate];
-    let entry = &krate.types[source.id];
-    SourceFile::parse(&krate.modules[entry.module].file.source, &krate.cfg)?.ty(&entry.in_file)
+    Ok(svg)
 }
 
 /// The one type that `path` resolves to from a crate root, from `package` when
 /// given, the first in crate order when several crates include its file.
 fn focus(
     crates: &[Crate],
+    resolver: &Resolver,
     path: &str,
     package: Option<&str>,
     skipped: &BTreeSet<String>,
 ) -> Result<TypeRef, String> {
-    let resolver = Resolver::new(crates);
     let target = syn::parse_str::<syn::Path>(path).ok();
     let mut found: Vec<TypeRef> = Vec::new();
     for krate in order(crates, usize::MAX) {
@@ -233,9 +233,7 @@ fn focus(
             .as_ref()
             .map(|target| resolver.find(krate, 0, target))
         {
-            Some(Def::Type(declared))
-                if !found.iter().any(|other| same(crates, *other, declared)) =>
-            {
+            Some(Def::Type(declared)) if !found.contains(&declared) => {
                 found.push(declared);
             }
             Some(Def::Ambiguous(_)) => {
@@ -247,15 +245,31 @@ fn focus(
             _ => {}
         }
     }
+    let one_declaration = |candidates: &[TypeRef]| {
+        candidates.iter().enumerate().all(|(i, ty)| {
+            candidates[..i]
+                .iter()
+                .all(|previous| resolver.same_type(*ty, *previous))
+        })
+    };
     match found.as_slice() {
         [] => {
             let message = SourceError::TypeNotFound(path.to_owned()).to_string();
             Err(workspace::with_skipped(message, skipped))
         }
-        [one] => Ok(*one),
-        many => {
-            let listed: Vec<(&Crate, String)> = many
-                .iter()
+        [first, ..] if one_declaration(&found) => Ok(*first),
+        _ => {
+            let package = |ty: &TypeRef| &crates[ty.krate].package;
+            found.sort_by_key(package);
+            let listed: Vec<(&Crate, String)> = found
+                .chunk_by(|left, right| package(left) == package(right))
+                .flat_map(|group| {
+                    if one_declaration(group) {
+                        &group[..1]
+                    } else {
+                        group
+                    }
+                })
                 .map(|declared| {
                     let krate = &crates[declared.krate];
                     let module = &krate.modules[krate.types[declared.id].module];
@@ -293,12 +307,6 @@ impl Crate {
             root: &self.root,
         }
     }
-}
-
-/// Whether two declarations are one: the same place in the same file, which
-/// several crates may include or one crate may read twice.
-pub(super) fn same(crates: &[Crate], left: TypeRef, right: TypeRef) -> bool {
-    left.place(crates) == right.place(crates)
 }
 
 /// The focus's header and each incoming card's, by RFC 0010.

@@ -17,7 +17,8 @@
   expands datatypes. Behind its `source` feature it reads flows and types from
   the text of a file for the renderers, which read no source themselves, says
   what each drawn element of a flow or a type stands for there, and finds the
-  flow or type declared at an offset.
+  flow or type declared at an offset. Its `workspace` feature resolves Rust
+  paths across the active module trees supplied by the CLI or the editor.
 - `crates/kaalang-macros/` holds only the procedural macro entry point: a
   `proc-macro` crate exports only macros, so anything else here could not be
   called, tested, or measured from another crate.

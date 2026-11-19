@@ -145,14 +145,10 @@ impl<'a> SourceFile<'a> {
         let mut starts = BTreeMap::new();
         collect_starts(&file.items, &mut starts);
         target.configure(&mut file);
-        let tokenized = text.strip_prefix('\u{feff}').unwrap_or(text);
-        let tokenized = file
-            .shebang
-            .as_ref()
-            .map_or(tokenized, |shebang| &tokenized[shebang.len()..]);
+        let prefix = source_prefix(text, &file);
         Ok(Self {
-            tokenized,
-            prefix: text.len() - tokenized.len(),
+            tokenized: &text[prefix..],
+            prefix,
             items: file.items,
             starts,
             types: OnceCell::new(),
@@ -170,44 +166,48 @@ impl<'a> SourceFile<'a> {
     /// or in what the target does not compile.
     #[must_use]
     pub fn declared_at(&self, offset: usize) -> Option<Declared> {
-        let offset = offset.checked_sub(self.prefix)?;
-        let start = |name: &Ident| {
-            let named = name.span().byte_range().start;
-            self.starts.get(&named).copied()
+        let ranges = self.declared_ranges();
+        let end = ranges.partition_point(|(range, _)| range.start <= offset);
+        let (range, declared) = ranges.into_iter().nth(end.checked_sub(1)?)?;
+        (offset <= range.end).then_some(declared)
+    }
+
+    /// The active, non-overlapping flow and type declarations in source order.
+    /// Both ends are caret positions in bytes of the original text. At a
+    /// shared boundary the declaration starting there takes precedence.
+    #[must_use]
+    pub fn declared_ranges(&self) -> Vec<(Range<usize>, Declared)> {
+        let start = |name: &Ident, otherwise| {
+            self.prefix
+                + self
+                    .starts
+                    .get(&name.span().byte_range().start)
+                    .copied()
+                    .unwrap_or(otherwise)
         };
-        let mut ending_here = None;
-        // A flow's `#[kaa]` recorded its start.
+        let mut ranges = Vec::new();
         for (position, flow) in flows(&self.items).iter().enumerate() {
             let function = &flow.function;
-            let end = function.block.brace_token.span.close().byte_range().end;
-            if start(&function.sig.ident).is_some_and(|start| start <= offset) && offset <= end {
-                let declared = Declared::Flow(position, flow_path(flow));
-                if offset < end {
-                    return Some(declared);
-                }
-                ending_here = Some(declared);
-            }
+            let end = self.prefix + function.block.brace_token.span.close().byte_range().end;
+            ranges.push((
+                start(
+                    &function.sig.ident,
+                    function.sig.fn_token.span.byte_range().start,
+                )..end,
+                Declared::Flow(position, flow_path(flow)),
+            ));
         }
-        // A type's whole span rebuilds its tokens, so it is read only for a
-        // type that may hold the offset, or one without a recorded start.
         for (path, item) in self.type_items() {
-            let Some((_, name, _)) = parts(item) else {
-                continue;
-            };
-            let start = start(name);
-            if start.is_some_and(|start| start > offset) {
-                continue;
-            }
-            let range = item.span().byte_range();
-            if (start.unwrap_or(range.start)..=range.end).contains(&offset) {
-                let declared = Declared::Type(path.clone());
-                if offset < range.end {
-                    return Some(declared);
-                }
-                ending_here = Some(declared);
+            if let Some((_, name, _)) = parts(item) {
+                let range = item.span().byte_range();
+                ranges.push((
+                    start(name, range.start)..self.prefix + range.end,
+                    Declared::Type(path.clone()),
+                ));
             }
         }
-        ending_here
+        ranges.sort_unstable_by_key(|(range, _)| range.start);
+        ranges
     }
 
     /// What the target compiles of the file, for a caller to list its flows
@@ -421,6 +421,12 @@ impl<'a> SourceFile<'a> {
             .filter(|representation| !representation.is_empty())
             .collect()
     }
+}
+
+/// Bytes syn strips before tokenizing a whole Rust file.
+pub(crate) fn source_prefix(text: &str, file: &syn::File) -> usize {
+    usize::from(text.starts_with('\u{feff}')) * '\u{feff}'.len_utf8()
+        + file.shebang.as_ref().map_or(0, String::len)
 }
 
 /// What a place in a source file declares that kaalang draws.

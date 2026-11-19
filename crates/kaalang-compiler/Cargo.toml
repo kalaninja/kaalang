@@ -18,9 +18,11 @@ syn = { workspace = true, features = ["visit"] }
 # Reads flows and types from the text of a source file, for the renderers. The
 # macro leaves it off: rustc gives it tokens, not text.
 source = ["dep:cargo-platform", "proc-macro2/span-locations"]
+# Resolve names across module sources supplied by Cargo or an editor.
+workspace = ["source", "syn/visit-mut"]
 
 [package.metadata.docs.rs]
-features = ["source"]
+features = ["workspace"]
 
 [dev-dependencies]
 kaalang-testing = { workspace = true }

@@ -7,27 +7,26 @@ use std::{
     env,
     fmt::Write as _,
     fs, io, iter,
+    ops::Deref,
     path::{Path, PathBuf},
     process::Command,
     rc::Rc,
 };
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
-use kaalang_compiler::{Declarations, FlowPath, ModuleDirectory, Place, Question};
-use syn::{Item, UseTree, ext::IdentExt};
-
-use crate::{
-    datatype,
-    resolve::{Def, Resolver},
+use kaalang_compiler::{
+    Declarations, FlowPath, ModuleFile, Place, Question,
+    workspace::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver},
 };
+use syn::ext::IdentExt;
 
 /// The file that declares a found flow, its source, the flow's position among
 /// the file's flows, and the cfg set its crate is read for.
-pub(super) struct Found {
-    pub(super) file: PathBuf,
-    pub(super) source: String,
+pub(super) struct Found<'a> {
+    pub(super) file: &'a Path,
+    pub(super) source: &'a str,
     pub(super) position: usize,
-    pub(super) cfg: kaalang_compiler::Target,
+    pub(super) cfg: &'a kaalang_compiler::Target,
 }
 
 /// The target options, as cargo takes them.
@@ -50,31 +49,27 @@ pub(super) struct TargetOptions {
 /// One crate: a package's target with the modules read from its root.
 pub(super) struct Crate {
     pub(super) package: String,
-    pub(super) package_id: String,
-    /// The name its code and other crates use for it.
-    pub(super) name: String,
     /// The target as errors list it: `` lib `app` ``.
     pub(super) target: String,
     /// Where it stands among its package's crates: its library and binaries
     /// 0, then its tests 1, examples 2, and benches 3.
     pub(super) group: u8,
-    /// Whether other crates may use it by its name.
-    pub(super) library: bool,
-    /// Read for the host during cross-compilation.
-    pub(super) host: bool,
     /// An additional host reading of a library, reached through dependencies only.
     pub(super) dependency_only: bool,
     pub(super) root: PathBuf,
-    /// Dependency names and resolved package IDs available to this target.
-    pub(super) dependencies: Vec<(String, String)>,
-    /// The modules in the order they were read; the first is the root.
-    pub(super) modules: Vec<Module>,
-    /// The struct, enum, union, and alias declarations in source order.
-    pub(super) types: Vec<TypeEntry>,
+    /// Existing source paths, including unreadable files and both sides of an ambiguous module.
+    pub(super) sources: BTreeSet<PathBuf>,
     /// Each file that could not be read or parsed, with the reason.
     pub(super) skipped: Vec<String>,
-    /// The cfg set its files are read for.
-    pub(super) cfg: kaalang_compiler::Target,
+    pub(super) names: CompiledCrate,
+}
+
+impl Deref for Crate {
+    type Target = CompiledCrate;
+
+    fn deref(&self) -> &CompiledCrate {
+        &self.names
+    }
 }
 
 impl Crate {
@@ -82,79 +77,6 @@ impl Crate {
     pub(super) fn label(&self) -> String {
         format!("{}: {}", self.package, self.target)
     }
-}
-
-/// One module: a file's own module or an inline module within one.
-pub(super) struct Module {
-    /// The path from the crate root: `""`, or `review::inner::` with its
-    /// trailing separator.
-    pub(super) path: String,
-    pub(super) parent: Option<usize>,
-    pub(super) file: Rc<File>,
-    /// The path within its file: `""` for the file's own module.
-    pub(super) in_file: String,
-    pub(super) scope: Scope,
-}
-
-pub(super) struct File {
-    pub(super) path: PathBuf,
-    /// The path that tells two crates' copies of one file apart from two files.
-    pub(super) canonical: PathBuf,
-    pub(super) source: String,
-    /// Its items as its crate's target compiles them, none when it could not
-    /// be read.
-    pub(super) items: Vec<Item>,
-}
-
-/// The names a module declares and imports, compared without `r#`, each with
-/// its visibility.
-#[derive(Default)]
-pub(super) struct Scope {
-    /// Declared names in the type namespace.
-    pub(super) declared: Vec<(String, Declared, Visibility)>,
-    /// Functions, constants, and statics, with what each is.
-    pub(super) values: Vec<(String, &'static str, Visibility)>,
-    /// Each name a `use` binds, with the path it imports.
-    pub(super) imports: Vec<(String, UsePath, Visibility)>,
-    /// The module path of each glob import.
-    pub(super) globs: Vec<(UsePath, Visibility)>,
-    /// Whether names this scope does not list may be declared here: by an
-    /// item macro, or in a file that could not be read.
-    pub(super) opaque: bool,
-}
-
-/// Where a name may be used from: anywhere, or inside a module of its crate.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Visibility {
-    Public,
-    Within(usize),
-}
-
-pub(super) enum Declared {
-    Type(usize),
-    Module(usize),
-    Trait,
-    /// `extern crate` with the crate it names; `self` names this crate.
-    ExternCrate(String),
-}
-
-/// A path as written, its segments without `r#`.
-pub(super) struct UsePath {
-    /// Whether it starts with `::`, naming a crate.
-    pub(super) global: bool,
-    pub(super) segments: Vec<String>,
-}
-
-/// A struct, enum, union, or alias declaration.
-pub(super) struct TypeEntry {
-    pub(super) module: usize,
-    /// The path from the crate root, as `--type` names it.
-    pub(super) path: String,
-    /// The path within its file, as `kaalang_compiler::type_items` lists it.
-    pub(super) in_file: String,
-    /// The identifier's source position, unchanged by conditional attributes.
-    pub(super) position: proc_macro2::LineColumn,
-    pub(super) item: Item,
 }
 
 /// Reads every target of every workspace member, in package name order, once
@@ -219,25 +141,21 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 .map(|node| node.features.iter().map(ToString::to_string).collect())
                 .unwrap_or_default();
             let cfg = cfg_set(target, printed, &features)?;
-            let mut walk = Walk::new(&cfg);
-            walk_file(
-                &mut walk,
-                target.src_path.as_std_path(),
-                true,
-                String::new(),
-                None,
+            let root = target.src_path.clone().into_std_path_buf();
+            let mut sources = BTreeSet::new();
+            let tree = ModuleTree::read(
+                file(root.clone(), true, &mut sources),
+                &cfg,
+                |module, parent, candidates| {
+                    module_source(module, parent, candidates, &mut sources)
+                },
             );
             let group = target_group(target);
-            crates.push(Crate {
-                package: package.name.to_string(),
+            let names = CompiledCrate {
                 package_id: package.id.to_string(),
                 name: target.name.replace('-', "_"),
-                target: target_label(target),
-                group,
                 library: group == 0 && !target.is_bin(),
                 host: for_host,
-                dependency_only,
-                root: target.src_path.clone().into_std_path_buf(),
                 dependencies: resolved
                     .into_iter()
                     .flat_map(|node| &node.deps)
@@ -249,10 +167,19 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                     })
                     .map(|dependency| (dependency.name.clone(), dependency.pkg.to_string()))
                     .collect(),
-                modules: walk.modules,
-                types: walk.types,
-                skipped: walk.skipped,
+                modules: tree.modules,
+                types: tree.types,
                 cfg,
+            };
+            crates.push(Crate {
+                package: package.name.to_string(),
+                target: target_label(target),
+                group,
+                dependency_only,
+                root,
+                sources,
+                skipped: tree.skipped,
+                names,
             });
         }
     }
@@ -466,13 +393,12 @@ fn rustc(arguments: &[String]) -> Result<String, String> {
 /// workspace's libraries, as a trait's default method may be in one. A file
 /// that cannot be read or parsed is skipped and listed, as an error when the
 /// flow is not found and as a warning when it is.
-pub(super) fn find(
+pub(super) fn find<'a>(
+    crates: &'a [Crate],
     path: &str,
     package: Option<&str>,
-    options: &TargetOptions,
-) -> Result<Found, String> {
-    let crates = crates(package, options)?;
-    let resolver = Resolver::new(&crates);
+) -> Result<Found<'a>, String> {
+    let resolver = Resolver::new(crates.iter().map(|krate| &krate.names));
     let selected = |krate: &Crate| {
         !krate.dependency_only && package.is_none_or(|package| krate.package == package)
     };
@@ -514,7 +440,7 @@ pub(super) fn find(
             .collect();
         let mut ambiguous = false;
         let mut names = |question: Question<'_, (usize, usize)>| {
-            answer(&crates, index, &resolver, question).unwrap_or_else(|| {
+            answer(crates, index, &resolver, question).unwrap_or_else(|| {
                 ambiguous = true;
                 false
             })
@@ -570,10 +496,10 @@ pub(super) fn find(
     };
     warn_skipped(path, &skipped);
     Ok(Found {
-        file: module.file.path.clone(),
-        source: module.file.source.clone(),
+        file: &module.file.path,
+        source: &module.file.source,
         position,
-        cfg: crates[source].cfg.clone(),
+        cfg: &crates[source].cfg,
     })
 }
 
@@ -630,7 +556,7 @@ fn answer(
             ) {
                 // rustc has not checked the flow path, so a name it misses is wrong.
                 (Def::Missing, _) if left.is_none() => false,
-                (Def::Type(left), Def::Type(right)) => datatype::same(crates, left, right),
+                (Def::Type(left), Def::Type(right)) => resolver.same_type(left, right),
                 (
                     Def::Trait(left, left_module, left_name),
                     Def::Trait(right, right_module, right_name),
@@ -692,326 +618,55 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
     message
 }
 
-/// One crate's module tree as it is read.
-struct Walk<'a> {
-    /// The cfg set the crate's files are read for.
-    cfg: &'a kaalang_compiler::Target,
-    /// The files being read, outermost first; a `#[path]` loop stops here.
-    open: Vec<PathBuf>,
-    modules: Vec<Module>,
-    types: Vec<TypeEntry>,
-    skipped: Vec<String>,
-}
-
-impl<'a> Walk<'a> {
-    fn new(cfg: &'a kaalang_compiler::Target) -> Self {
-        Self {
-            cfg,
-            open: Vec::new(),
-            modules: Vec::new(),
-            types: Vec::new(),
-            skipped: Vec::new(),
-        }
-    }
-}
-
-/// Reads the file of the module at `path` and follows its `mod` declarations,
-/// returning the module. A crate root, a `mod.rs`, and a `#[path]` file own
-/// their directory; another file `a.rs` keeps its submodules in `a/`. A file
-/// that cannot be read or parsed is skipped and listed, and its module stays
-/// declared with an opaque scope, so that a path into it is unknown rather than
-/// outside the workspace.
-fn walk_file(
-    walk: &mut Walk<'_>,
-    file: &Path,
-    owns_directory: bool,
-    path: String,
-    parent: Option<usize>,
-) -> Option<usize> {
-    let (canonical, source, parsed, scope) = match read(file) {
-        Ok((canonical, source, mut parsed)) => {
-            walk.cfg.configure(&mut parsed);
-            (canonical, source, Some(parsed), Scope::default())
-        }
-        Err(error) => {
-            // A missing module file may be one a build script generates.
-            if error.kind() != io::ErrorKind::NotFound {
-                walk.skipped.push(format!("{}: {error}", file.display()));
-            }
-            let opaque = Scope {
-                opaque: true,
-                ..Scope::default()
+/// Chooses which Rust module file exists and records the paths an export must protect.
+fn module_source(
+    module: &str,
+    parent: &Path,
+    candidates: Vec<ModuleFile>,
+    sources: &mut BTreeSet<PathBuf>,
+) -> Input {
+    let base = parent.parent().unwrap_or(Path::new(""));
+    let mut candidates = candidates.into_iter().map(|candidate| {
+        (
+            base.join(candidate.parts.iter().collect::<PathBuf>()),
+            candidate.owns_directory,
+        )
+    });
+    let first = candidates.next().expect("every module has a candidate");
+    let (path, owns_directory) = match candidates.next() {
+        Some(second) if !first.0.is_file() => second,
+        Some(second) if second.0.is_file() => {
+            let name = module
+                .trim_end_matches("::")
+                .rsplit("::")
+                .next()
+                .unwrap_or(module);
+            let error = io::Error::other(format!(
+                "module `{name}` is ambiguous: both this file and `{}` exist",
+                second.0.display()
+            ));
+            sources.extend([first.0.clone(), second.0]);
+            return Input {
+                path: first.0,
+                owns_directory: first.1,
+                contents: Err(error),
             };
-            (file.to_owned(), String::new(), None, opaque)
         }
+        _ => first,
     };
-    if walk.open.contains(&canonical) {
-        return None;
-    }
-    let module = walk.modules.len();
-    let readable = parsed.is_some();
-    let shared = Rc::new(File {
-        path: file.to_owned(),
-        canonical: canonical.clone(),
-        source,
-        items: parsed.map(|parsed| parsed.items).unwrap_or_default(),
+    file(path, owns_directory, sources)
+}
+
+fn file(path: PathBuf, owns_directory: bool, sources: &mut BTreeSet<PathBuf>) -> Input {
+    let contents = fs::canonicalize(&path).and_then(|canonical| {
+        // An existing source needs protection even when reading its contents fails.
+        sources.insert(canonical.clone());
+        fs::read_to_string(&canonical).map(|source| (canonical, source))
     });
-    walk.modules.push(Module {
+    Input {
         path,
-        parent,
-        file: Rc::clone(&shared),
-        in_file: String::new(),
-        scope,
-    });
-    if readable {
-        let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-        let directory = ModuleDirectory::for_file(stem, owns_directory);
-        walk.open.push(canonical);
-        walk_items(walk, &shared.items, module, &directory);
-        walk.open.pop();
-    }
-    Some(module)
-}
-
-/// A module file's canonical path, source, and items.
-fn read(file: &Path) -> io::Result<(PathBuf, String, syn::File)> {
-    let canonical = fs::canonicalize(file)?;
-    let source = fs::read_to_string(file)?;
-    let parsed = syn::parse_file(&source).map_err(io::Error::other)?;
-    Ok((canonical, source, parsed))
-}
-
-/// Declares the names among `items` in `module` and follows its `mod` declarations.
-fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &ModuleDirectory) {
-    for item in items {
-        let name = |ident: &syn::Ident| ident.unraw().to_string();
-        let (bound, declared, vis) = match item {
-            Item::Mod(declaration) => {
-                let Some(child) = walk_module(walk, declaration, module, directory) else {
-                    continue;
-                };
-                (
-                    name(&declaration.ident),
-                    Declared::Module(child),
-                    &declaration.vis,
-                )
-            }
-            Item::Struct(syn::ItemStruct { vis, ident, .. })
-            | Item::Enum(syn::ItemEnum { vis, ident, .. })
-            | Item::Union(syn::ItemUnion { vis, ident, .. })
-            | Item::Type(syn::ItemType { vis, ident, .. }) => {
-                if let Item::Struct(declaration) = item
-                    && let Some(visible) =
-                        constructor_visibility(&walk.modules, module, declaration)
-                {
-                    walk.modules[module].scope.values.push((
-                        name(ident),
-                        "a struct constructor",
-                        visible,
-                    ));
-                }
-                let outer = &walk.modules[module];
-                walk.types.push(TypeEntry {
-                    module,
-                    path: format!("{}{ident}", outer.path),
-                    in_file: format!("{}{ident}", outer.in_file),
-                    position: ident.span().start(),
-                    item: item.clone(),
-                });
-                (name(ident), Declared::Type(walk.types.len() - 1), vis)
-            }
-            Item::Trait(syn::ItemTrait { vis, ident, .. })
-            | Item::TraitAlias(syn::ItemTraitAlias { vis, ident, .. }) => {
-                (name(ident), Declared::Trait, vis)
-            }
-            Item::ExternCrate(declaration) => {
-                let bound = declaration
-                    .rename
-                    .as_ref()
-                    .map_or(&declaration.ident, |(_, rename)| rename);
-                let named = name(&declaration.ident);
-                (name(bound), Declared::ExternCrate(named), &declaration.vis)
-            }
-            Item::Fn(function) => {
-                let visibility = visibility(&walk.modules, module, &function.vis);
-                let value = (name(&function.sig.ident), "a function", visibility);
-                walk.modules[module].scope.values.push(value);
-                continue;
-            }
-            Item::Const(constant) => {
-                let visibility = visibility(&walk.modules, module, &constant.vis);
-                let value = (name(&constant.ident), "a constant", visibility);
-                walk.modules[module].scope.values.push(value);
-                continue;
-            }
-            Item::Static(staticdecl) => {
-                let visibility = visibility(&walk.modules, module, &staticdecl.vis);
-                let value = (name(&staticdecl.ident), "a static", visibility);
-                walk.modules[module].scope.values.push(value);
-                continue;
-            }
-            Item::Use(declaration) => {
-                let visibility = visibility(&walk.modules, module, &declaration.vis);
-                imports(
-                    &declaration.tree,
-                    &mut Vec::new(),
-                    declaration.leading_colon.is_some(),
-                    visibility,
-                    &mut walk.modules[module].scope,
-                );
-                continue;
-            }
-            // An invocation may expand to items; a `macro_rules!` definition
-            // has a name and declares none.
-            Item::Macro(invocation) if invocation.ident.is_none() => {
-                walk.modules[module].scope.opaque = true;
-                continue;
-            }
-            _ => continue,
-        };
-        let visibility = visibility(&walk.modules, module, vis);
-        walk.modules[module]
-            .scope
-            .declared
-            .push((bound, declared, visibility));
-    }
-}
-
-fn constructor_visibility(
-    modules: &[Module],
-    module: usize,
-    declaration: &syn::ItemStruct,
-) -> Option<Visibility> {
-    let declared = visibility(modules, module, &declaration.vis);
-    let fields = match &declaration.fields {
-        syn::Fields::Unit => return Some(declared),
-        syn::Fields::Unnamed(fields) => &fields.unnamed,
-        syn::Fields::Named(_) => return None,
-    };
-    // The constructor is as private as its most restricted field. Restricted
-    // scopes are ancestors of this module and are listed before their children.
-    fields
-        .iter()
-        .map(|field| visibility(modules, module, &field.vis))
-        .chain(iter::once(declared))
-        .max_by_key(|visible| match visible {
-            Visibility::Public => None,
-            Visibility::Within(module) => Some(*module),
-        })
-}
-
-/// Where an item of `module` with `vis` may be used from. A restricted
-/// visibility names an ancestor of the module.
-fn visibility(modules: &[Module], module: usize, vis: &syn::Visibility) -> Visibility {
-    let restricted = match vis {
-        syn::Visibility::Public(_) => return Visibility::Public,
-        syn::Visibility::Inherited => return Visibility::Within(module),
-        syn::Visibility::Restricted(restricted) => restricted,
-    };
-    let mut within = module;
-    for segment in &restricted.path.segments {
-        within = match segment.ident.to_string().as_str() {
-            "crate" => 0,
-            "self" => within,
-            "super" => modules[within].parent.unwrap_or(0),
-            name => {
-                let path = format!("{}{name}::", modules[within].path);
-                iter::successors(Some(module), |&ancestor| modules[ancestor].parent)
-                    .find(|&ancestor| modules[ancestor].path == path)
-                    .unwrap_or(0)
-            }
-        };
-    }
-    Visibility::Within(within)
-}
-
-/// Reads the module that `declaration` declares inside `parent`: an inline one,
-/// or its file, its `#[path]` or default one. Configuring the source turned a
-/// `cfg_attr` path that holds into a plain `#[path]`.
-fn walk_module(
-    walk: &mut Walk<'_>,
-    declaration: &syn::ItemMod,
-    parent: usize,
-    directory: &ModuleDirectory,
-) -> Option<usize> {
-    let path = format!("{}{}::", walk.modules[parent].path, declaration.ident);
-    if let Some((_, items)) = &declaration.content {
-        let module = walk.modules.len();
-        let outer = &walk.modules[parent];
-        walk.modules.push(Module {
-            path,
-            parent: Some(parent),
-            file: Rc::clone(&outer.file),
-            in_file: format!("{}{}::", outer.in_file, declaration.ident),
-            scope: Scope::default(),
-        });
-        walk_items(walk, items, module, &directory.inline(declaration));
-        return Some(module);
-    }
-    let base = walk.modules[parent]
-        .file
-        .path
-        .parent()
-        .unwrap_or(Path::new(""));
-    let mut candidates = directory.files(declaration).into_iter().map(|file| {
-        let path = base.join(file.parts.iter().collect::<PathBuf>());
-        (path, file.owns_directory)
-    });
-    // A missing file still declares an opaque module at its fallback path.
-    let fallback = candidates
-        .next_back()
-        .expect("every module has a candidate");
-    let (file, owns_directory) = candidates
-        .find(|(file, _)| file.is_file())
-        .unwrap_or(fallback);
-    walk_file(walk, &file, owns_directory, path, Some(parent))
-}
-
-/// Adds the names a `use` tree binds to `scope`, under the path `prefix` it
-/// is nested in, with the visibility of the `use`.
-fn imports(
-    tree: &UseTree,
-    prefix: &mut Vec<String>,
-    global: bool,
-    visibility: Visibility,
-    scope: &mut Scope,
-) {
-    let path = |prefix: &[String], last: &syn::Ident| {
-        let mut segments = prefix.to_vec();
-        // `a::{self}` imports `a` itself.
-        if last != "self" {
-            segments.push(last.unraw().to_string());
-        }
-        UsePath { global, segments }
-    };
-    match tree {
-        UseTree::Path(nested) => {
-            prefix.push(nested.ident.unraw().to_string());
-            imports(&nested.tree, prefix, global, visibility, scope);
-            prefix.pop();
-        }
-        UseTree::Name(name) => {
-            let imported = path(prefix, &name.ident);
-            if let Some(bound) = imported.segments.last() {
-                scope.imports.push((bound.clone(), imported, visibility));
-            }
-        }
-        // `as _` binds no name.
-        UseTree::Rename(rename) if rename.rename != "_" => {
-            let bound = rename.rename.unraw().to_string();
-            let imported = path(prefix, &rename.ident);
-            scope.imports.push((bound, imported, visibility));
-        }
-        UseTree::Rename(_) => {}
-        UseTree::Glob(_) => {
-            let segments = prefix.clone();
-            scope.globs.push((UsePath { global, segments }, visibility));
-        }
-        UseTree::Group(group) => {
-            for tree in &group.items {
-                imports(tree, prefix, global, visibility, scope);
-            }
-        }
+        owns_directory,
+        contents,
     }
 }
 
@@ -1032,47 +687,4 @@ fn target_group(target: &Target) -> u8 {
 fn target_label(target: &Target) -> String {
     let kinds: Vec<String> = target.kind.iter().map(ToString::to_string).collect();
     format!("{} `{}`", kinds.join(", "), target.name)
-}
-
-/// The library of `package`, read from `source` without cargo: its modules
-/// must be inline.
-#[cfg(test)]
-pub(super) fn library(package: &str, source: &str) -> Crate {
-    let parsed = syn::parse_file(source).expect("the test source parses");
-    let cfg = kaalang_compiler::Target::default();
-    let mut walk = Walk::new(&cfg);
-    walk.modules.push(Module {
-        path: String::new(),
-        parent: None,
-        file: Rc::new(File {
-            path: PathBuf::from("src/lib.rs"),
-            canonical: PathBuf::from(format!("/{package}/src/lib.rs")),
-            source: source.to_owned(),
-            items: parsed.items.clone(),
-        }),
-        in_file: String::new(),
-        scope: Scope::default(),
-    });
-    walk_items(
-        &mut walk,
-        &parsed.items,
-        0,
-        &ModuleDirectory::for_file("lib", true),
-    );
-    Crate {
-        package: package.to_owned(),
-        package_id: package.to_owned(),
-        name: package.replace('-', "_"),
-        target: format!("lib `{package}`"),
-        group: 0,
-        library: true,
-        host: false,
-        dependency_only: false,
-        root: PathBuf::from(format!("/{package}/src/lib.rs")),
-        dependencies: Vec::new(),
-        modules: walk.modules,
-        types: walk.types,
-        skipped: walk.skipped,
-        cfg,
-    }
 }

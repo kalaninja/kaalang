@@ -3,7 +3,8 @@
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
 //! any minor release. Its `source` feature reads flows and types from the text
-//! of a source file for the renderers; the macro leaves it off.
+//! of a source file for the renderers. The `workspace` feature resolves Rust
+//! paths across the module trees supplied by Cargo or an editor.
 
 use syn::{Error, ItemFn, Result};
 
@@ -59,6 +60,8 @@ mod source;
 mod stage;
 mod symbolic;
 pub mod topology;
+#[cfg(feature = "workspace")]
+pub mod workspace;
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///

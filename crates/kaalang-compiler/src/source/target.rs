@@ -8,7 +8,7 @@ use syn::Lit;
 /// one `name` or `key="value"` per line, such as `unix` or `target_os="linux"`,
 /// with a `feature="…"` line for each enabled feature. A source file is read
 /// as that target compiles it.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Target {
     cfgs: Vec<Cfg>,
 }
@@ -60,13 +60,15 @@ impl FromStr for Target {
 
     /// Reads one cfg from each nonempty line.
     fn from_str(lines: &str) -> Result<Self, Self::Err> {
-        lines
+        let mut cfgs = lines
             .lines()
             .map(str::trim)
             .filter(|line| !line.is_empty())
             .map(|line| Cfg::from_str(line).map_err(|error| format!("`{line}`: {error}")))
-            .collect::<Result<_, _>>()
-            .map(|cfgs| Self { cfgs })
+            .collect::<Result<Vec<_>, _>>()?;
+        cfgs.sort_unstable();
+        cfgs.dedup();
+        Ok(Self { cfgs })
     }
 }
 
@@ -75,6 +77,14 @@ mod tests {
     use quote::quote;
 
     use super::Target;
+
+    #[test]
+    fn order_and_repeated_cfgs_describe_the_same_target() {
+        assert_eq!(
+            "unix\nfeature=\"audit\"".parse::<Target>().unwrap(),
+            "feature=\"audit\"\nunix\nunix".parse::<Target>().unwrap()
+        );
+    }
 
     #[test]
     fn a_predicate_holds_as_cargo_decides_it() {

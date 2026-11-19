@@ -41,17 +41,15 @@ pub(super) struct Diagram {
 impl Diagram {
     /// Renders the flow or type and prints the written path.
     pub(super) fn run(self) -> Result<(), String> {
-        let (path, svg, sources) = match (&self.flow, &self.ty) {
-            (Some(flow), _) => {
-                let (svg, file) = self.flow(flow)?;
-                (flow, svg, vec![file])
-            }
+        let package = self.package.as_deref();
+        let crates = workspace::crates(package, &self.target)?;
+        let (path, svg) = match (&self.flow, &self.ty) {
+            (Some(flow), _) => (flow, self.flow(flow, &crates)?),
             (None, Some(ty)) => {
                 let options = kaalang_svg::TypeOptions {
                     columns: self.columns,
                 };
-                let drawn = datatype::draw(ty, self.package.as_deref(), &self.target, options)?;
-                (ty, drawn.svg, drawn.files)
+                (ty, datatype::draw(&crates, ty, package, options)?)
             }
             (None, None) => unreachable!("clap requires --flow or --type"),
         };
@@ -68,7 +66,11 @@ impl Diagram {
                 format!("{name}.svg")
             })
         });
-        for source in &sources {
+        let sources = crates
+            .iter()
+            .flat_map(|krate| &krate.sources)
+            .map(PathBuf::as_path);
+        for source in sources {
             if overwrites(source, &output)? {
                 return Err("the output path would overwrite the source file".to_owned());
             }
@@ -81,12 +83,12 @@ impl Diagram {
         Ok(())
     }
 
-    /// Renders the flow at `path` and returns it with the file declaring it.
-    fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
-        let found = workspace::find(path, self.package.as_deref(), &self.target)?;
+    /// Renders the flow at `path` in its declaring crate's configuration.
+    fn flow(&self, path: &str, crates: &[workspace::Crate]) -> Result<String, String> {
+        let found = workspace::find(crates, path, self.package.as_deref())?;
         let located = |error: &dyn std::fmt::Display| format!("{}: {error}", found.file.display());
         // The file and the renderer know only the path within the file.
-        let flow = SourceFile::parse(&found.source, &found.cfg)
+        let flow = SourceFile::parse(found.source, found.cfg)
             .and_then(|file| file.flow(found.position, self.collapse_cycles))
             .map_err(|mut error| {
                 if let SourceError::InvalidFlow { name, .. } = &mut error {
@@ -100,7 +102,7 @@ impl Diagram {
             }
             located(&error)
         })?;
-        Ok((svg, found.file))
+        Ok(svg)
     }
 }
 

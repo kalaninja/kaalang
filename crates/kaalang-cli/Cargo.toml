@@ -13,11 +13,11 @@ repository.workspace = true
 [dependencies]
 cargo_metadata = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-kaalang-compiler = { workspace = true, features = ["source"] }
+kaalang-compiler = { workspace = true, features = ["workspace"] }
 kaalang-svg = { workspace = true }
 proc-macro2 = { workspace = true, features = ["span-locations"] }
 same-file = { workspace = true }
-syn = { workspace = true, features = ["visit-mut"] }
+syn = { workspace = true }
 
 [[bin]]
 name = "cargo-kaalang"

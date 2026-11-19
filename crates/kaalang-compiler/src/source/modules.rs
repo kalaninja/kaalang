@@ -1,6 +1,8 @@
 //! Where a Rust file declares its external modules, and which files a host
 //! looks for at each declaration.
 
+use std::ops::Range;
+
 use syn::{Expr, ExprLit, Item, ItemMod, Lit, Meta, ext::IdentExt};
 
 use super::SourceFile;
@@ -113,6 +115,34 @@ impl ModuleDirectory {
 }
 
 impl SourceFile<'_> {
+    /// The bytes between the braces of module-level functions, impls and traits
+    /// in source order. The workspace's name resolution ignores these bodies.
+    #[must_use]
+    pub fn module_bodies(&self) -> Vec<Range<usize>> {
+        fn collect(file: &SourceFile<'_>, items: &[Item], ranges: &mut Vec<Range<usize>>) {
+            for item in items {
+                let braces = match item {
+                    Item::Fn(function) => function.block.brace_token,
+                    Item::Impl(block) => block.brace_token,
+                    Item::Trait(declaration) => declaration.brace_token,
+                    Item::Mod(module) => {
+                        if let Some((_, nested)) = &module.content {
+                            collect(file, nested, ranges);
+                        }
+                        continue;
+                    }
+                    _ => continue,
+                };
+                ranges.push(
+                    file.range(braces.span.open()).end..file.range(braces.span.close()).start,
+                );
+            }
+        }
+        let mut ranges = Vec::new();
+        collect(self, self.items(), &mut ranges);
+        ranges
+    }
+
     /// Every external module and the name offsets of every struct, enum, union
     /// and alias compiled from this text, in declaration order.
     /// The same file can own its directory in one inclusion and have its
