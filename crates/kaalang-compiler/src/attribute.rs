@@ -66,7 +66,7 @@ pub fn expand_attribute(
         }
         if attrs.iter().any(|attr| {
             matches!(attr.style, AttrStyle::Outer)
-                && !attr.path().is_ident("doc")
+                && !BUILT_IN.iter().any(|name| attr.path().is_ident(name))
                 && parse::annotation_name(attr).is_none()
         }) {
             // rustc resolves the remaining attribute macros. Even a bare `kaa`
@@ -83,6 +83,24 @@ pub fn expand_attribute(
         item => expand_type(arguments, item),
     }
 }
+
+/// Built-in attributes, which rustc never takes for an imported macro, so none
+/// of them is a second `kaa`.
+const BUILT_IN: [&str; 13] = [
+    "allow",
+    "cfg",
+    "cold",
+    "deny",
+    "deprecated",
+    "doc",
+    "expect",
+    "forbid",
+    "inline",
+    "must_use",
+    "non_exhaustive",
+    "repr",
+    "warn",
+];
 
 const FLOW_ARGUMENTS: &str = "#[kaa] on a function does not accept arguments";
 const DUPLICATE_FLOW: &str = "a function takes one `#[kaa]` attribute";
@@ -114,4 +132,32 @@ pub(crate) fn flow_attributes(attributes: &[Attribute]) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use quote::quote;
+
+    use super::expand_attribute;
+
+    /// Whether expanding `item` marks it for a second `kaa` to find.
+    fn marked(item: &str) -> bool {
+        let item = syn::parse_str(item).expect("the item parses");
+        expand_attribute(&quote!(), item, || quote!(::kaalang))
+            .expect("the item expands")
+            .to_string()
+            .contains("__kaa_applied")
+    }
+
+    #[test]
+    fn an_attribute_that_may_be_a_renamed_kaa_marks_the_item() {
+        assert!(marked("#[derive(Debug)] struct Member { id: u8 }"));
+    }
+
+    #[test]
+    fn built_in_attributes_leave_the_item_unmarked() {
+        assert!(!marked(
+            "/// A member.\n#[allow(dead_code)]\n#[repr(C)]\n#[must_use]\nstruct Member { id: u8 }"
+        ));
+    }
 }
