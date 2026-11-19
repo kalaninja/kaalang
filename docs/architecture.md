@@ -214,46 +214,35 @@ kaalang supports VS Code. Every supported IDE shows
 `kaalang-js` in a worker, draws the flow or the type at the editor's cursor,
 lists the ribbon of a clicked connection or merge, and asks its host to reveal a
 range, to run the editor's own go-to action at a position, for the types of
-values, and for a type's references and places in the module tree. The host
-supplies the text, cursor, target cfgs and editor results. Cursor moves reuse
-the declaration ranges for the current text and cfg. A Cargo type's first
-diagram waits for its target, references, definitions, and module positions. A
-refresh of the same type keeps the last diagram visible until its replacement is
-ready.
+values, and for a type's references and places in the module tree; a host gives
+the text, the cursor, the target's cfg set, and what the editor knows.
 
-In VS Code, [the extension](../ide/vscode/src/target.ts) combines rustc's cfgs
-with Cargo configuration, rust-analyzer settings, package features and
-build-script cfgs. The editor shows the cfgs rust-analyzer uses for the open
-file. The workspace resolver includes `cfg(proc_macro)` for procedural macros.
-With an explicit compilation target, it resolves those macros and their library
-dependencies with Cargo's host graph and host flags. The extension watches the
-lockfile selected by each Cargo command. When a lock needs updating, it can
-resolve against a private copy if that Cargo supports `resolver.lockfile-path`
-and the command permits updates. Saving a script or changing one of its inputs
-refreshes the diagram when rust-analyzer's rebuild-on-save setting is enabled.
-The extension reads a value's type from rust-analyzer's hover at its binding.
-Cargo identifies workspace targets. The CLI and VS Code follow the same compiler
-rules for module files and `#[path]`. The extension reads unsaved text from the
-editor, watches the directories containing declared modules, and runs the
-compiler in a Node worker. For files shared by several modules or targets, and
-sources reached outside the package directory, the worker resolves each `refer`
-in its owning module using the compiler's
-[workspace resolver](../crates/kaalang-compiler/src/workspace/mod.rs). Edits
-inside function, trait, and impl bodies reuse the relationship index when type
-name offsets stay fixed. The host caches the last focus's incoming
-relationships. For a shared source, the active declaration at the name's offset
-and its module select the Cargo target for both the focus and its incoming
-cards. For paths the source alone cannot resolve, the host can use
-rust-analyzer's definition when the reference has one owner and the destination
-identifies one type. The bindings use module positions to put incoming cards in
-source order, including across files. A declaration shared by targets
-contributes its card at the first place in diagram order. Two modules in the
-same target that include the same file can declare distinct types. Navigating
-from a relationship connected to the focus opens that focus's declaration. The
-panel follows Rust editors in the workspace folders and sources that their Cargo
-targets include elsewhere. A go-to opens what a click finds as the editor's own
-go-to does, from where the cursor stands, so that the diagram follows only the
-target and going back returns. In Restricted Mode it runs neither cargo nor
-rustc, whose binaries the workspace's configuration may name: the diagram goes
-without the set, and what rust-analyzer gives, the types, incoming cards, module
-paths, and go-to actions, waits for trust, as rust-analyzer does.
+In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) reads that set as
+rust-analyzer reads its own, with its settings: rustc's cfgs for the target with
+Cargo's configuration applied, the extra cfgs its settings list, the features
+Cargo enables for the file's package, the cfgs each build script prints to
+rust-analyzer's own build-script command, `rust_analyzer` and `test` for a
+workspace crate, and `proc_macro`, on the host's graph under an explicit target,
+for a procedural macro. Cargo runs `--locked`, or against a private copy of the
+lockfile where Cargo reads `resolver.lockfile-path`, so that reading the set
+leaves the user's lockfile as it was; a build-script override runs as
+rust-analyzer runs it. Under rust-analyzer's rebuild-on-save setting, a saved
+build-script input, or a declared file changed on disk, reads the set again; a
+directory input counts only an editor's save, since a script may write there
+itself.
+
+A type diagram's incoming cards come from rust-analyzer's references to the
+focus. Where those cannot tell the reading, in a file several modules or targets
+include, a source outside its package, or behind a `use` that renames the type,
+a Node worker reads each `refer` in its owning module with the compiler's
+[workspace resolver](../crates/kaalang-compiler/src/workspace/mod.rs), over the
+module files the compiler finds as the CLI does and the editor's unsaved texts,
+and rust-analyzer's definition settles a target the sources alone cannot. Each
+card stands at its first place in the module tree. The panel follows Rust
+editors in the workspace folders and the sources their Cargo targets include
+elsewhere. It opens what a click finds as the editor's own go-to does, from
+where the cursor stands, so that the diagram follows only the target and going
+back returns. In Restricted Mode it runs neither cargo nor rustc, whose binaries
+the workspace's configuration may name: the diagram goes without the set, and
+what rust-analyzer gives, the types, incoming cards, module paths, and go-to
+actions, waits for trust, as rust-analyzer does.
