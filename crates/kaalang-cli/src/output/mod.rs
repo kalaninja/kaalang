@@ -1,17 +1,12 @@
 //! Replaces a finished diagram without damaging its sources or the previous export.
 
 use std::{
-    fs::{self, File, OpenOptions},
+    fs::{self, OpenOptions},
     io::{self, ErrorKind, Write},
     path::{Path, PathBuf},
 };
 
 use tempfile::{Builder, NamedTempFile};
-
-#[cfg(target_os = "macos")]
-mod macos;
-#[cfg(windows)]
-mod windows;
 
 pub(super) fn write<'a>(
     output: &Path,
@@ -61,13 +56,11 @@ pub(super) fn write<'a>(
         Err(error) if error.kind() == ErrorKind::NotFound => None,
         Err(error) => return Err(error),
     };
-    #[cfg(target_os = "macos")]
-    if existing.is_some() {
-        return macos::replace(&path, svg);
-    }
-    let mut file = create_sibling(&path, existing.as_ref())?;
+    let mut file = create_sibling(&path, existing.is_some())?;
+    // The replacement keeps the old file's mode, but not its owner or ACL.
     if let Some(existing) = &existing {
-        copy_permissions(existing, file.as_file())?;
+        file.as_file()
+            .set_permissions(existing.metadata()?.permissions())?;
     }
     file.write_all(svg.as_bytes())?;
     file.as_file().sync_all()?;
@@ -77,46 +70,11 @@ pub(super) fn write<'a>(
 fn publish(temporary: NamedTempFile, path: &Path, replacing: bool) -> io::Result<()> {
     let temporary = temporary.into_temp_path();
     if replacing {
-        fs::rename(temporary, path)
+        temporary.persist(path).map_err(|err| err.error)
     } else {
         // A file created since our lookup has its own contents and access controls.
         temporary.persist_noclobber(path).map_err(|err| err.error)
     }
-}
-
-fn copy_permissions(existing: &File, replacement: &File) -> io::Result<()> {
-    let original = existing.metadata()?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::{MetadataExt, fchown};
-        let created = replacement.metadata()?;
-        let owner = (original.uid() != created.uid()).then(|| original.uid());
-        let group = (original.gid() != created.gid()).then(|| original.gid());
-        if owner.is_some() || group.is_some() {
-            fchown(replacement, owner, group)?;
-        }
-    }
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    {
-        use rustix::{
-            fs::{XattrFlags, fgetxattr, fremovexattr, fsetxattr},
-            io::Errno,
-        };
-        const ACL: &str = "system.posix_acl_access";
-        // Linux limits a single extended attribute to 64 KiB.
-        let mut acl = vec![0; 65_536];
-        match fgetxattr(existing, ACL, &mut acl[..]) {
-            Ok(len) => fsetxattr(replacement, ACL, &acl[..len], XattrFlags::empty())?,
-            // The parent may have supplied a default ACL that the old file did not have.
-            Err(Errno::NODATA) => match fremovexattr(replacement, ACL) {
-                Ok(()) | Err(Errno::NODATA) => {}
-                Err(error) => return Err(error.into()),
-            },
-            Err(Errno::NOTSUP) => {}
-            Err(error) => return Err(error.into()),
-        }
-    }
-    replacement.set_permissions(original.permissions())
 }
 
 #[cfg(windows)]
@@ -150,7 +108,7 @@ fn destination(output: &Path) -> io::Result<PathBuf> {
     }
 }
 
-fn create_sibling(path: &Path, existing: Option<&File>) -> io::Result<NamedTempFile> {
+fn create_sibling(path: &Path, replacing: bool) -> io::Result<NamedTempFile> {
     let directory = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -160,23 +118,20 @@ fn create_sibling(path: &Path, existing: Option<&File>) -> io::Result<NamedTempF
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]
-    if existing.is_some() {
+    if replacing {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
     #[cfg(windows)]
     {
         use std::os::windows::fs::OpenOptionsExt;
-        options.share_mode(windows::FILE_SHARE_DELETE);
+        // The temporary path can be unlinked on error while its file handle is open.
+        const FILE_SHARE_DELETE: u32 = 4;
+        options.share_mode(FILE_SHARE_DELETE);
     }
-    let temporary = builder.make_in(directory, |path| options.open(path))?;
-    #[cfg(windows)]
-    if let Some(existing) = existing {
-        return windows::with_permissions(temporary, existing, &builder, directory);
-    }
-    #[cfg(not(any(unix, windows)))]
-    let _ = existing;
-    Ok(temporary)
+    #[cfg(not(unix))]
+    let _ = replacing;
+    builder.make_in(directory, |path| options.open(path))
 }
 
 #[cfg(test)]
@@ -187,7 +142,7 @@ mod tests {
     fn a_new_export_keeps_a_destination_created_after_lookup() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("diagram.svg");
-        let mut file = create_sibling(&path, None).unwrap();
+        let mut file = create_sibling(&path, false).unwrap();
         file.write_all(b"first export").unwrap();
         fs::write(&path, b"another export").unwrap();
         assert_eq!(

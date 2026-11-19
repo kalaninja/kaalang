@@ -19,17 +19,8 @@ proc-macro2 = { workspace = true, features = ["span-locations"] }
 syn = { workspace = true }
 tempfile = { workspace = true }
 
-[target.'cfg(any(target_os = "linux", target_os = "android"))'.dependencies]
-rustix = { workspace = true, features = ["fs"] }
-
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2-foundation = { workspace = true, features = ["std", "NSError", "NSFileManager", "NSPathUtilities", "NSString", "NSURL"] }
-
 [target.'cfg(not(unix))'.dependencies]
 same-file = { workspace = true }
-
-[target.'cfg(windows)'.dependencies]
-windows-namespace-request-sys = { workspace = true }
 
 [[bin]]
 name = "cargo-kaalang"
