@@ -14,95 +14,49 @@ export interface ExternalModule {
   files: { parts: string[]; ownsDirectory: boolean }[];
 }
 
-type Arguments = [
-  text: string,
-  cfg: string,
-  fileStem: string,
-  ownsDirectory: boolean,
-];
-export type Body = [number, number];
 type Items = {
   modules: ExternalModule[];
   types: number[];
-  bodies: Body[];
 } | null;
 
-export interface WorkspaceSources {
-  files: { uri: string; text: string | null }[];
-  crates: {
-    packageId: string;
-    name: string;
-    library: boolean;
-    host: boolean;
-    cfg: string;
-    dependencies: [string, string][];
-    modules: { path: string; file: number }[];
-  }[];
-}
-
-export interface Owner {
-  owner: number;
-  module: string;
-}
-
-export interface Matches extends Owner {
-  uri: string;
-  cfg: string;
-  offsets: number[];
-  unknown?: number[];
-  focus?: boolean;
-  repeated?: boolean;
-}
-
-type Job =
-  | { op: "items"; args: Arguments }
-  | {
-      op: "references";
-      snapshot?: WorkspaceSources;
-      focus: string;
-      offset: number;
-      candidates: string[];
-      place?: Owner;
-    };
-type Result = Items | Matches[];
+/** The bindings this worker calls, each answering JSON. */
+type Name = "moduleItems" | "relationshipTargets";
 
 let parser: ReturnType<typeof start> | undefined;
 let next = 0;
 
-function request(job: Job): Promise<Result> {
+/** Parse off the extension host's event loop. A trap discards only this worker. */
+function call(name: Name, args: unknown[]): Promise<unknown> {
   const { worker, pending } = (parser ??= start());
   const id = ++next;
   return new Promise((resolve) => {
     pending.set(id, resolve);
     worker.ref();
-    worker.postMessage({ id, ...job });
+    worker.postMessage({ id, name, args });
   });
 }
 
-/** Parse off the extension host's event loop. A trap discards only this worker. */
-export function moduleItems(...args: Arguments): Promise<Items> {
-  return request({ op: "items", args }) as Promise<Items>;
+/** The external modules and type names a file declares for `cfg`, or `null` when it does not parse. */
+export function moduleItems(
+  text: string,
+  cfg: string,
+  fileStem: string,
+  ownsDirectory: boolean,
+): Promise<Items> {
+  return call("moduleItems", [
+    text,
+    cfg,
+    fileStem,
+    ownsDirectory,
+  ]) as Promise<Items>;
 }
 
-/** Transfer a workspace snapshot once for every sequence of queries against it. */
-export function workspaceReferences(
-  snapshot: WorkspaceSources,
-  focus: string,
-  offset: number,
-  candidates: string[],
-  place?: Owner,
-) {
-  const state = (parser ??= start());
-  const send = state.snapshot !== snapshot;
-  state.snapshot = snapshot;
-  return request({
-    op: "references",
-    snapshot: send ? snapshot : undefined,
-    focus,
-    offset,
-    candidates,
-    place,
-  }) as Promise<Matches[] | null>;
+/** The final identifier of each active relationship target, or `null` when the file does not parse. */
+export function relationshipTargets(
+  text: string,
+  cfg: string,
+): Promise<number[] | null> {
+  return call("relationshipTargets", [text, cfg]) as Promise<number[] | null>;
 }
 
 export function stopModuleWorker(): void {
@@ -112,7 +66,7 @@ export function stopModuleWorker(): void {
 
 function start() {
   const worker = new Worker(__filename, { workerData: "kaalang-module-files" });
-  const pending = new Map<number, (items: Result) => void>();
+  const pending = new Map<number, (answer: unknown) => void>();
   const close = () => {
     if (parser?.worker === worker) parser = undefined;
     for (const resolve of pending.values()) resolve(null);
@@ -120,17 +74,13 @@ function start() {
   };
   worker.on("error", close);
   worker.on("exit", close);
-  worker.on("message", ({ id, items }: { id: number; items: Result }) => {
-    pending.get(id)?.(items);
+  worker.on("message", ({ id, answer }: { id: number; answer: unknown }) => {
+    pending.get(id)?.(answer);
     pending.delete(id);
     if (!pending.size) worker.unref();
   });
   worker.unref();
-  return {
-    worker,
-    pending,
-    snapshot: undefined as WorkspaceSources | undefined,
-  };
+  return { worker, pending };
 }
 
 async function serve(port: MessagePort): Promise<void> {
@@ -141,45 +91,16 @@ async function serve(port: MessagePort): Promise<void> {
   bindings.initSync({
     module: await readFile(path.join(wasm, "kaalang_js_bg.wasm")),
   });
-  let workspace:
-    | {
-        free(): void;
-        references(
-          focus: string,
-          offset: number,
-          candidates: string,
-          place?: string,
-        ): string;
-      }
-    | undefined;
-  port.on("message", (job: { id: number } & Job) => {
-    let items: Result;
+  port.on("message", (job: { id: number; name: Name; args: unknown[] }) => {
+    let answer: unknown;
     try {
-      if (job.op === "items")
-        items = JSON.parse(bindings.moduleItems(...job.args));
-      else {
-        if (job.snapshot) {
-          workspace?.free();
-          workspace = undefined;
-          workspace = new bindings.Workspace(JSON.stringify(job.snapshot));
-        }
-        items = workspace
-          ? JSON.parse(
-              workspace.references(
-                job.focus,
-                job.offset,
-                JSON.stringify(job.candidates),
-                job.place && JSON.stringify(job.place),
-              ),
-            )
-          : null;
-      }
+      answer = JSON.parse(bindings[job.name](...job.args));
     } catch (error) {
       // A parse error leaves the instance usable. A Wasm trap ends the worker.
       if (!(error instanceof Error) || error.constructor !== Error) throw error;
-      items = null;
+      answer = null;
     }
-    port.postMessage({ id: job.id, items });
+    port.postMessage({ id: job.id, answer });
   });
 }
 

@@ -1,26 +1,16 @@
 // Workspace source files and the places of their declarations in Cargo targets.
 
-import { realpathSync } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import * as path from "node:path";
 import type * as vscode from "vscode";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { cached, fileStamp } from "./cache";
-import { type Body, type ExternalModule, moduleItems } from "./module-sources";
+import { cached, fileStamp, realFile } from "./cache";
+import { type ExternalModule, moduleItems } from "./module-sources";
 import type { CargoRoot } from "./target";
 
-export interface CardPlace {
-  uri: string;
-  offset: number;
-  /** The type's path within its source. Absent when asking about a file alone. */
-  path?: string;
-  cfg?: string;
-  owner?: number;
-  module?: string;
-}
-
-interface Placement {
+/** Where a file stands in a Cargo target's module tree. */
+export interface Placement {
   package: string;
   group: number;
   crate: string;
@@ -34,9 +24,7 @@ interface Placement {
 export interface Reading {
   place: Placement;
   cfg: string;
-  rank: number;
   types: Set<number> | null;
-  bodies?: Body[];
 }
 
 export interface Graph {
@@ -44,8 +32,6 @@ export interface Graph {
   files: Map<string, Reading[]>;
   /** Paths consulted, including a missing sibling that would make a module ambiguous. */
   paths: Set<string>;
-  /** One live text per physical file, including unsaved editor buffers. */
-  texts: Map<string, string | null>;
   /** Only these workspace sources need a search for relationship targets. */
   referring: Map<string, string>;
   /** A file that failed to parse or read could declare more modules. */
@@ -55,7 +41,6 @@ export interface Graph {
 interface Parsed {
   modules: ExternalModule[];
   types: Set<number>;
-  bodies: Body[];
 }
 
 /** Every relationship annotation contains this Rust identifier. */
@@ -88,8 +73,8 @@ class ModuleCache {
     string,
     {
       items: Map<string, Promise<Parsed | null>>;
-      text?: string;
-      mayRefer: boolean;
+      /** The text, kept only when it may contain a relationship. */
+      referring?: string;
     }
   >();
   physical = new Map<string, string>();
@@ -183,7 +168,6 @@ interface Visit {
   ancestors: Set<string>;
   place: Placement;
   cfg: string;
-  rank: number;
 }
 
 /** Keep `..` for the filesystem: the preceding directory may be a symlink. */
@@ -213,7 +197,6 @@ export async function moduleTree(
   const graph: Graph = {
     files: new Map(),
     paths: new Set(),
-    texts: new Map(),
     referring: new Map(),
     complete: true,
   };
@@ -223,7 +206,6 @@ export async function moduleTree(
     ancestors,
     place,
     cfg,
-    rank,
   }: Visit): Promise<Visit[]> {
     for (const { file } of files) graph.paths.add(file);
     const candidates = await Promise.all(
@@ -249,7 +231,6 @@ export async function moduleTree(
       const current: Reading = {
         place,
         cfg,
-        rank,
         types: null,
       };
       found.push(current);
@@ -258,8 +239,6 @@ export async function moduleTree(
       const key = JSON.stringify([cfg, stem, ownsDirectory]);
       const source = cache.sources.get(actual) ?? {
         items: new Map<string, Promise<Parsed | null>>(),
-        text: undefined,
-        mayRefer: false,
       };
       cache.sources.set(actual, source);
       const parsed = source.items;
@@ -269,22 +248,19 @@ export async function moduleTree(
         const text = await cached(sources, actual, () =>
           read(pathToFileURL(readable).href),
         );
-        source.text = text;
-        source.mayRefer = MAY_REFER.test(text);
+        source.referring = MAY_REFER.test(text) ? text : undefined;
         const found = await parse(text, cfg, stem, ownsDirectory);
         return found ? { ...found, types: new Set(found.types) } : null;
       });
       const items = await pending.catch(() => null);
-      graph.texts.set(actual, source.text ?? null);
-      if (source.text !== undefined && source.mayRefer)
-        graph.referring.set(pathToFileURL(actual).href, source.text);
+      if (source.referring !== undefined)
+        graph.referring.set(pathToFileURL(actual).href, source.referring);
       if (!items) {
         if (parsed.get(key) === pending) parsed.delete(key);
         graph.complete = false;
         return [];
       }
       current.types = items.types;
-      current.bodies = items.bodies;
       const seen = new Set(ancestors).add(actual);
       return items.modules.map((child) => ({
         files: child.files.map(({ parts, ownsDirectory }) => ({
@@ -293,7 +269,6 @@ export async function moduleTree(
         })),
         ancestors: seen,
         cfg,
-        rank,
         place: {
           ...place,
           module: [place.module, child.module].filter(Boolean).join("::"),
@@ -305,13 +280,12 @@ export async function moduleTree(
     return [];
   }
 
-  let pending: Visit[] = roots.map((target, rank) => {
+  let pending: Visit[] = roots.map((target) => {
     const file = fileURLToPath(target.root);
     return {
       files: [{ file, ownsDirectory: true }],
       ancestors: new Set(),
       cfg: target.cfg,
-      rank,
       place: {
         package: target.package,
         group: target.group,
@@ -330,7 +304,6 @@ export async function moduleTree(
         return {
           files: new Map(),
           paths: new Set(),
-          texts: new Map(),
           referring: new Map(),
           complete: false,
         };
@@ -350,40 +323,6 @@ export async function moduleTree(
   return graph;
 }
 
-/** The declaration's inline path and offset extend each of its file's places. */
-export async function placements(
-  graph: Graph,
-  cards: CardPlace[],
-): Promise<(Placement[] | null)[]> {
-  const files = new Map<string, Promise<string>>();
-  return Promise.all(
-    cards.map(async ({ uri, path, offset, cfg, owner, module }) => {
-      try {
-        const actual = await cached(files, uri, () =>
-          realpath(fileURLToPath(uri)),
-        );
-        const positions = graph.files.get(actual);
-        const active = positions?.filter(
-          (entry) =>
-            (cfg === undefined || cfg === entry.cfg) &&
-            (owner === undefined || owner === entry.rank) &&
-            (module === undefined || module === entry.place.module) &&
-            (path === undefined || entry.types?.has(offset)),
-        );
-        if (!active?.length) return graph.complete ? [] : null;
-        const inline = path?.split("::").slice(0, -1).join("::");
-        return active.map(({ place: position }) => ({
-          ...position,
-          module: [position.module, inline].filter(Boolean).join("::"),
-          order: [...position.order, offset],
-        }));
-      } catch {
-        return null;
-      }
-    }),
-  );
-}
-
 let trees = new WeakMap<CargoRoot[], Promise<Graph>>();
 
 /** Edits or Cargo configuration changes invalidate the cached workspace graphs. */
@@ -395,13 +334,8 @@ export function forgetModules(file?: string): void {
     return;
   }
   if (!caches.size) return;
-  let physical = file;
   // A dirty editor can name a symlink even when Cargo knows only its target.
-  try {
-    physical = realpathSync(file);
-  } catch {
-    /* deletion */
-  }
+  const physical = realFile(file);
   for (const cache of caches.values()) cache.forget(file, physical);
 }
 
@@ -464,54 +398,46 @@ export function watchModuleSources(
   };
 }
 
-/** A declaration's places, an empty list outside the workspace, or null when unknown. */
-export async function cardPlacements(places: CardPlace[], roots: CargoRoot[]) {
-  const graph = await editorTree(roots);
-  return graph ? placements(graph, places) : places.map(() => null);
-}
-
 /** Declaration order at successive external module boundaries. A parent precedes its children. */
-export function sourceOrder(
-  a: readonly number[],
-  b: readonly number[],
-): number {
+function sourceOrder(a: readonly number[], b: readonly number[]): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     if (a[i] !== b[i]) return a[i] - b[i];
   }
   return a.length - b.length;
 }
 
-/** Every Cargo interpretation of a file, with its own cfg and module path. */
-export async function fileOwners(
-  uris: string[],
+/** RFC 0009 §4.3 order: package, target group, crate name and root, then source order. */
+export function placeOrder(a: Placement, b: Placement): number {
+  const text = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
+  return (
+    text(a.package, b.package) ||
+    a.group - b.group ||
+    text(a.crate, b.crate) ||
+    text(a.root, b.root) ||
+    sourceOrder(a.order, b.order)
+  );
+}
+
+/**
+ * Every Cargo reading of a file, in diagram order: an empty list outside every
+ * workspace target, `null` when the module tree cannot tell. `typeOffset`
+ * keeps the readings that declare a type there.
+ */
+export async function fileReadings(
+  uri: string,
   roots: CargoRoot[],
   typeOffset?: number,
-) {
-  if (!uris.length) return [];
+): Promise<Reading[] | null> {
   const graph = await editorTree(roots);
-  return Promise.all(
-    uris.map(async (uri) => {
-      if (!graph) return null;
-      const actual =
-        uri.startsWith("file:") &&
-        (await realpath(fileURLToPath(uri)).catch(() => undefined));
-      const records = actual ? graph.files.get(actual) : undefined;
-      const active =
-        typeOffset === undefined
-          ? records
-          : records?.filter((r) => r.types?.has(typeOffset));
-      if (!active?.length) return graph.complete ? [] : null;
-      return [...active]
-        .sort(
-          (a, b) =>
-            a.rank - b.rank || sourceOrder(a.place.order, b.place.order),
-        )
-        .map(({ cfg, place, rank }) => ({
-          cfg,
-          rank,
-          path: place.module,
-          module: [place.crate, place.module].filter(Boolean).join("::"),
-        }));
-    }),
-  );
+  if (!graph) return null;
+  const actual =
+    uri.startsWith("file:") &&
+    (await realpath(fileURLToPath(uri)).catch(() => undefined));
+  const readings = actual ? graph.files.get(actual) : undefined;
+  const active =
+    typeOffset === undefined
+      ? readings
+      : readings?.filter((reading) => reading.types?.has(typeOffset));
+  if (!active?.length) return graph.complete ? [] : null;
+  return [...active].sort((a, b) => placeOrder(a.place, b.place));
 }

@@ -3,6 +3,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -12,7 +13,37 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { forgetModules, moduleTree, placements } from "../out/card-places.js";
+import { forgetModules, moduleTree, placeOrder } from "../out/card-places.js";
+
+/**
+ * Each card's places in `graph`: its file's readings that match, inside the
+ * inline modules of its path, then at its name, as the bindings extend them.
+ * An empty list outside every target, `null` when the tree cannot tell.
+ */
+function placements(graph, cards) {
+  return Promise.all(
+    cards.map(async ({ uri, path: type, offset, cfg, module }) => {
+      try {
+        const readings = graph.files.get(await realpath(fileURLToPath(uri)));
+        const active = readings?.filter(
+          (reading) =>
+            (cfg === undefined || cfg === reading.cfg) &&
+            (module === undefined || module === reading.place.module) &&
+            (type === undefined || reading.types?.has(offset)),
+        );
+        if (!active?.length) return graph.complete ? [] : null;
+        const inline = type?.split("::").slice(0, -1).join("::");
+        return active.map(({ place }) => ({
+          ...place,
+          module: [place.module, inline].filter(Boolean).join("::"),
+          order: [...place.order, offset],
+        }));
+      } catch {
+        return null;
+      }
+    }),
+  );
+}
 
 async function workspace(t, sources) {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-modules-"));
@@ -148,7 +179,6 @@ test("shared source has distinct children and source order in each directory", a
   const [chosen] = await placements(graph, [
     {
       ...card("shared.rs", "nested::Same"),
-      owner: 1,
       module: "second",
       cfg: "",
     },
@@ -429,4 +459,30 @@ test("a module with two existing candidates is ambiguous until one path is remov
   const restored = await moduleTree(roots, read, parse);
   assert.equal(restored.complete, false);
   assert.equal(restored.files.size, 1);
+});
+
+test("a file's places follow RFC 0009 target order, then source order", () => {
+  const place = (crate, root, group, ...order) => ({
+    package: "app",
+    group,
+    crate,
+    root,
+    module: "",
+    order,
+  });
+  const places = [
+    place("check", "tests/check.rs", 1, 0),
+    place("app", "src/main.rs", 0, 1),
+    place("app", "src/lib.rs", 0, 5),
+    place("app", "src/lib.rs", 0, 2, 3),
+  ];
+  assert.deepEqual(
+    places.sort(placeOrder).map(({ root, order }) => [root, ...order]),
+    [
+      ["src/lib.rs", 2, 3],
+      ["src/lib.rs", 5],
+      ["src/main.rs", 1],
+      ["tests/check.rs", 0],
+    ],
+  );
 });

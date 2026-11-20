@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import test from "node:test";
 
-import { hoverModule, hoverType, moduleHovers } from "../out/hover.js";
+import { hoverType } from "../out/hover.js";
 
 // Hovers rust-analyzer 0.3.3121 gave in the repository's fixtures, with the
 // macro expanded and, for the last two, before it expands, cut after the parts
@@ -70,69 +70,6 @@ test("a local before the macro expands gives no type", () => {
 test("a type rust-analyzer has not inferred gives none", () => {
   assert.equal(
     hoverType("\n```rust\nadd: {unknown}\n```\n\n---\n\nno Drop"),
-    null,
-  );
-});
-
-// Hovers rust-analyzer 0.3.3121 gave at a type's name on 2026-11-18.
-
-test("a type's module comes from the first Rust block", () => {
-  assert.equal(
-    hoverModule(
-      "\n```rust\nspike::model::inner\n```\n\n```rust\npub struct Nested {\n    owner: u8,\n}\n```\n\n---\n\nsize = 1",
-    ),
-    "spike::model::inner",
-  );
-});
-
-test("a type at its crate's root is in the crate itself", () => {
-  assert.equal(
-    hoverModule(
-      "\n```rust\nspike\n```\n\n```rust\npub type Members = Vec<u8>\n```",
-    ),
-    "spike",
-  );
-});
-
-test("a module named with a raw identifier keeps its spelling", () => {
-  assert.equal(
-    hoverModule("```rust\nshop::r#type\n```\n\n```rust\npub struct Raw;\n```"),
-    "shop::r#type",
-  );
-});
-
-test("hover fills an unknown module or chooses among the focus's crate roots", async () => {
-  const places = [1, 2, 3].map((offset) => ({
-    uri: "file:///model.rs",
-    offset,
-  }));
-  const asked = [];
-  const hover = async (_uri, offset) => {
-    asked.push(offset);
-    return "```rust\nshop::model\n```\n\n```rust\nstruct Focus;\n```";
-  };
-  assert.deepEqual(
-    await moduleHovers(places, [[{}, {}], [{}, {}], null], hover),
-    ["shop::model", null, "shop::model"],
-  );
-  assert.deepEqual(asked, [1, 3]);
-  assert.deepEqual(await moduleHovers(places, [[{}], [{}], [{}]], hover), [
-    null,
-    null,
-    null,
-  ]);
-  assert.deepEqual(asked, [1, 3]);
-});
-
-test("a hover at a binding gives no module", () => {
-  assert.equal(hoverModule("\n```rust\nlet finish: usize\n```"), null);
-});
-
-test("a hover at a keyword gives no module", () => {
-  assert.equal(
-    hoverModule(
-      "\n```rust\nstruct\n```\n\n---\n\nA type that is composed of other types.",
-    ),
     null,
   );
 });

@@ -115,43 +115,31 @@ export function createEngine(wasm) {
 
   return {
     /**
-     * @returns {Promise<{flow: number, path: string} | {type: string, cfg: string, start: number} | null>}
+     * @returns {Promise<{flow: number, path: string} | {type: string, start: number} | null>}
      */
-    async declaredAt(text, cfg, offset, cfgs) {
-      if (
-        declarations?.text !== text ||
-        declarations.cfg !== cfg ||
-        declarations.cfgs !== cfgs
-      ) {
-        const ranges = new Map([[cfg, null]]);
-        for (const enabled of cfgs ?? []) ranges.set(enabled, null);
-        declarations = { text, cfg, cfgs, ranges };
+    async declaredAt(text, cfg, offset) {
+      if (declarations?.text !== text || declarations.cfg !== cfg) {
+        declarations = { text, cfg, ranges: null };
       }
-      const { ranges } = declarations;
-      for (const enabled of ranges.keys()) {
-        if (!ranges.get(enabled))
-          ranges.set(enabled, call("declaredRanges", text, enabled));
-        let items;
-        try {
-          items = await ranges.get(enabled);
-        } catch (error) {
-          if (error instanceof Crash) ranges.set(enabled, null);
-          throw error;
-        }
-        let low = 0;
-        let high = items.length;
-        while (low < high) {
-          const middle = Math.floor((low + high) / 2);
-          if (items[middle][0] <= offset) low = middle + 1;
-          else high = middle;
-        }
-        const at = items[low - 1];
-        if (!at || offset > at[1]) continue;
-        if (at[2].type !== undefined)
-          return { ...at[2], cfg: enabled, start: at[0] };
-        if (enabled === cfg) return at[2];
+      const read = declarations;
+      read.ranges ??= call("declaredRanges", text, cfg);
+      let items;
+      try {
+        items = await read.ranges;
+      } catch (error) {
+        if (error instanceof Crash) read.ranges = null;
+        throw error;
       }
-      return null;
+      let low = 0;
+      let high = items.length;
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (items[middle][0] <= offset) low = middle + 1;
+        else high = middle;
+      }
+      const at = items[low - 1];
+      if (!at || offset > at[1]) return null;
+      return at[2].type !== undefined ? { ...at[2], start: at[0] } : at[2];
     },
     /**
      * @returns {Promise<{svg: string, hotspots: Hotspot[], wires: Wire[]} | null>}
@@ -159,12 +147,10 @@ export function createEngine(wasm) {
     drawFlow: (text, cfg, position, collapseCycles, path) =>
       call("drawFlow", text, cfg, position, collapseCycles, path),
     /**
-     * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[], otherPlaces?: Card[]} | null>}
+     * @returns {Promise<{svg: string, hotspots: Hotspot[], cards: Card[]} | null>}
      */
     drawType: (text, cfg, path, context) =>
       call("drawType", text, cfg, path, context),
-    /** @returns {Promise<number[]>} The last identifiers of valid relationship targets. */
-    relationshipTargets: (text, cfg) => call("relationshipTargets", text, cfg),
   };
 }
 

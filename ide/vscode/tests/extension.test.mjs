@@ -73,10 +73,9 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     "node:path": path,
     "./card-places": { watchModuleSources: ignore },
     "./target": {
-      cargoConfig: ignore,
-      target: (uri) => {
-        if (uri === local.document.uri)
-          return Promise.reject(new Error("Cargo unavailable"));
+      forgetAnalyzedCfg: ignore,
+      analyzedCfg: async () => "",
+      located: (uri) => {
         if (!ownership.has(uri)) ownership.set(uri, Promise.withResolvers());
         return ownership.get(uri).promise;
       },
@@ -96,14 +95,14 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
   commands.get("kaalang.showDiagram")();
   const first = ownership.get(external.document.uri);
   changeEditor(undefined);
-  first.resolve({ owned: true, cfg: "" });
+  first.resolve({ place: {}, cfg: "", roots: [] });
   await first.promise;
   assert.deepEqual(shown, [external.document.uri.toString()]);
 
   changeEditor(pending);
   const second = ownership.get(pending.document.uri);
   changeEditor(local);
-  second.resolve({ owned: true, cfg: "" });
+  second.resolve({ place: {}, cfg: "", roots: [] });
   await second.promise;
   assert.deepEqual(
     shown,
@@ -114,6 +113,5 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     type: "target",
     uri: local.document.uri.toString(),
     cfg: "",
-    cfgs: undefined,
   });
 });

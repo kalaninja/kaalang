@@ -66,34 +66,28 @@ const receive = start(page, {
           }
         }
         const { id } = message;
-        const file = { uri, text: editor.value, cfg: "", offsets };
+        // Every type at the crate root.
+        const place = {
+          package: "bench",
+          group: 0,
+          crate: "bench",
+          root: "bench.rs",
+          module: "",
+          order: [],
+        };
+        const file = { uri, text: editor.value, cfg: "", offsets, place };
         setTimeout(
-          () => receive({ type: "referrers", id, files: [file] }),
+          () =>
+            receive({
+              type: "referrers",
+              id,
+              focus: { cfg: "", place },
+              files: [file],
+            }),
           300,
         );
         break;
       }
-      case "definitions": {
-        const name = editor.value.slice(...word(message.offset));
-        receive({
-          type: "definitions",
-          id: message.id,
-          matches: message.places.map(
-            (place) =>
-              place.uri === uri &&
-              editor.value.slice(...word(place.offset)) === name,
-          ),
-        });
-        break;
-      }
-      case "modules":
-        // Every type at the crate root.
-        receive({
-          type: "modules",
-          id: message.id,
-          modules: message.places.map(() => "bench"),
-        });
-        break;
     }
   },
   wasm: {

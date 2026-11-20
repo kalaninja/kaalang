@@ -84,24 +84,10 @@ function open(overrides = {}) {
     "position: fixed; top: 0; left: 0; opacity: 0; pointer-events: none";
   document.body.append(root);
   const requests = [];
-  const modules = [];
-  let holdModules = false;
-  const answerModules = (message) =>
-    receive({
-      type: "modules",
-      id: message.id,
-      modules: message.places.map(() => null),
-      placements: message.places.map(() => null),
-    });
   const receive = start(root, {
     send: (message) => {
-      if (message.type === "modules") {
-        modules.push(message);
-        if (!holdModules) queueMicrotask(() => answerModules(message));
-      } else if (
-        ["types", "referrers", "definitions", "reveal", "definition"].includes(
-          message.type,
-        )
+      if (
+        ["types", "referrers", "reveal", "definition"].includes(message.type)
       ) {
         requests.push(message);
       }
@@ -114,10 +100,6 @@ function open(overrides = {}) {
     visible: (shown) => {
       root.style.display = shown ? "" : "none";
     },
-    delayModules: () => {
-      holdModules = true;
-    },
-    finishModules: () => answerModules(modules.at(-1)),
     clickType(field, name) {
       const line = root.querySelectorAll(".field-type")[field];
       const box = line.getExtentOfChar(line.textContent.lastIndexOf(name));
@@ -188,7 +170,6 @@ function open(overrides = {}) {
       );
     },
     requests,
-    modules,
     /** Answers `request` with `type` for each offset. */
     answer: (request, type) =>
       receive({
@@ -349,37 +330,22 @@ const checks = {
     await settled();
     return asked?.type === "referrers" && alone === 1 && page.cards() === 2;
   },
-  async "a re-exported relationship draws and navigates from its own file"() {
+  async "a card from another file draws and navigates from its own file"() {
     const page = open();
     page.show(member, member.indexOf("Member"));
     await settled();
     const [refs] = page.requests;
-    const unrelated = review.replace("Review", "Other");
     page.receive({
       type: "referrers",
       id: refs.id,
       files: [
-        { uri: "review.rs", text: review, cfg: "", offsets: [] },
-        { uri: "other.rs", text: unrelated, cfg: "", offsets: [] },
+        {
+          uri: "review.rs",
+          text: review,
+          cfg: "",
+          offsets: [review.indexOf("Author")],
+        },
       ],
-    });
-    await settled();
-    const lookup = page.requests.at(-1);
-    if (
-      lookup?.type !== "definitions" ||
-      page.cards() !== 1 ||
-      lookup.offset !== member.indexOf("Member") ||
-      JSON.stringify(lookup.places) !==
-        JSON.stringify([
-          { uri: "review.rs", offset: review.indexOf("Author") },
-          { uri: "other.rs", offset: unrelated.indexOf("Author") },
-        ])
-    )
-      return false;
-    page.receive({
-      type: "definitions",
-      id: lookup.id,
-      matches: [true, false],
     });
     await settled();
     if (page.cards() !== 2) return false;
@@ -398,40 +364,15 @@ const checks = {
       target.start === member.indexOf("Member") &&
       target.end === target.start + "Member".length &&
       target.origin?.uri === "review.rs" &&
-      target.origin.text === review &&
-      page.requests.filter(({ type }) => type === "definitions").length === 1
+      target.origin.text === review
     );
   },
-  async "both compilations of a shared file contribute their own active declarations"() {
-    const page = open();
-    page.show(member, member.indexOf("Member"));
-    await settled();
-    const text =
-      '#[cfg(not(invoices))] #[kaa] struct Entry { #[kaa::refer(Member, "Owner.")] id: u8 }\n' +
-      '#[cfg(invoices)] #[kaa] struct Entry { #[kaa::refer(Member, "Owner.")] id: u8 }\n' +
-      '#[kaa] struct Common { #[kaa::refer(Member, "Owner.")] id: u8 }';
-    const refs = page.requests.findLast((r) => r.type === "referrers");
-    const offsets = [...text.matchAll(/refer\(Member/g)].map(
-      (m) => m.index + 6,
-    );
-    page.receive({
-      type: "referrers",
-      id: refs.id,
-      files: ["", "invoices"].map((cfg) => ({
-        uri: "shared.rs",
-        text,
-        cfg,
-        offsets,
-      })),
-    });
-    await settled();
-    return page.cards() === 4;
-  },
-  async "the same relationship token opens the focus in its selected Cargo target"() {
+
+  async "the same relationship token opens the focus it was drawn for"() {
     const page = open();
     const text =
       '#[kaa] pub struct Report { #[kaa::refer(crate::Focus, "Owner")] id: u8, #[kaa::refer(crate::Other, "Other")] other: u8 }';
-    for (const [owner, uri] of ["a.rs", "b.rs"].entries()) {
+    for (const uri of ["a.rs", "b.rs"]) {
       const root = `// 🦀 ${uri}\npub struct Focus; pub struct Other; mod shared;`;
       const start = root.indexOf("Focus");
       page.show(root, start, uri);
@@ -439,15 +380,9 @@ const checks = {
       const refs = page.requests.findLast((r) => r.type === "referrers");
       page.receive({
         ...refs,
-        files: [0, 1].map((reading) => ({
-          uri: "shared.rs",
-          text,
-          cfg: "",
-          module: "shared",
-          owner: reading,
-          resolved: true,
-          offsets: reading === owner ? [text.indexOf("Focus")] : [],
-        })),
+        files: [
+          { uri: "shared.rs", text, cfg: "", offsets: [text.indexOf("Focus")] },
+        ],
       });
       await settled();
       if (page.cards() !== 2) return false;
@@ -475,30 +410,26 @@ const checks = {
     }
     return true;
   },
-  async "a refreshed type ignores definitions from its older workspace snapshot"() {
+  async "a refreshed type ignores references from its older workspace snapshot"() {
     const page = open();
     page.show(member, member.indexOf("Member"));
-    await settled();
-    const files = [{ uri: "review.rs", text: review, cfg: "", offsets: [] }];
-    page.receive({ type: "referrers", id: page.requests.at(-1).id, files });
     await settled();
     const old = page.requests.at(-1);
     page.receive({ type: "changed" });
     const newer = page.requests.at(-1);
-    page.receive({ type: "referrers", id: newer.id, files });
+    const files = (offsets) => [
+      { uri: "review.rs", text: review, cfg: "", offsets },
+    ];
+    page.receive({ type: "referrers", id: newer.id, files: files([]) });
+    page.receive({
+      type: "referrers",
+      id: old.id,
+      files: files([review.indexOf("Author")]),
+    });
     await settled();
-    const latest = page.requests.at(-1);
-    page.receive({ type: "definitions", id: old.id, matches: [true] });
-    page.receive({ type: "definitions", id: latest.id, matches: [false] });
-    await settled();
-    return (
-      old.type === "definitions" &&
-      newer.type === "referrers" &&
-      latest.type === "definitions" &&
-      old.id !== latest.id &&
-      page.cards() === 1
-    );
+    return old.id !== newer.id && page.cards() === 1;
   },
+
   async "references from a previous text or cfg cannot add a card"() {
     const page = open();
     const cursor = types.indexOf("Member {");
@@ -520,18 +451,10 @@ const checks = {
       first !== second && second !== page.requests.at(-1) && page.cards() === 1
     );
   },
-  async "a shared declaration uses the owner selected at its name, including cfg-only types"() {
+  async "a type draws in the cfg the host reads its text with"() {
     const page = open();
     const text =
-      "pub struct Focus { #[cfg(red)] red_field: u8, #[cfg(blue)] blue_field: u8 }\n#[cfg(blue)] pub struct Only { blue_only: u8 }\n#[cfg(red)] pub struct Only { red_only: u8 }";
-    const answer = (r, cfg, owner) =>
-      page.receive({
-        type: "referrers",
-        id: r.id,
-        focus: { cfg, owner, module: "" },
-        files: [],
-      });
-    const latest = () => page.requests.findLast((r) => r.type === "referrers");
+      "pub struct Focus { #[cfg(red)] red_field: u8, #[cfg(blue)] blue_field: u8 }";
     page.receive({
       type: "document",
       uri: "a",
@@ -540,41 +463,24 @@ const checks = {
       waitForTarget: true,
     });
     await settled();
-    if (page.drawn() || latest()) return false;
+    if (page.drawn() || page.requests.length) return false;
+    page.receive({ type: "target", uri: "a", cfg: "red" });
+    await settled();
+    if (!page.fieldNames().includes("red_field")) return false;
+    const [refs] = page.requests;
     page.receive({
-      type: "target",
-      uri: "a",
-      cfg: "red",
-      cfgs: ["red", "blue"],
+      type: "referrers",
+      id: refs.id,
+      focus: { cfg: "blue" },
+      files: [],
     });
-    await settled();
-    const old = latest();
-    if (old?.offset !== text.indexOf("Focus") || page.drawn()) return false;
-    page.show(text, text.indexOf("blue_only"));
-    await settled();
-    const only = latest();
-    if (only?.offset !== text.indexOf("Only")) return false;
-    answer(only, "blue", 1);
-    answer(old, "red", 0);
-    await settled();
-    if (!page.fieldNames().includes("blue_only")) return false;
-    page.show(text, text.indexOf("red_only"));
-    await settled();
-    const other = latest();
-    if (other?.offset !== text.lastIndexOf("Only")) return false;
-    answer(other, "red", 0);
-    await settled();
-    if (!page.fieldNames().includes("red_only")) return false;
-    page.show(text, 0);
-    await settled();
-    answer(latest(), "blue", 1);
     await settled();
     return (
       page.fieldNames().includes("blue_field") &&
-      !page.fieldNames().includes("red_field") &&
-      page.modules.at(-1).places[0].owner === 1
+      !page.fieldNames().includes("red_field")
     );
   },
+
   async "a pending Cargo target leaves flows available and only its document's reply shows a type"() {
     const page = open();
     const pending = (uri, text, cursor) =>
@@ -602,34 +508,27 @@ const checks = {
     await settled();
     return page.cards() === 1 && !page.loading();
   },
-  async "a finished type stays visible until refreshed definitions and placements settle"() {
+  async "a finished type stays visible until refreshed references arrive"() {
     const page = open();
     page.show(member, member.indexOf("Member"));
     await settled();
-    const files = [{ uri: "review.rs", text: review, cfg: "", offsets: [] }];
-    const reply = (type, fields) =>
+    const reply = (offsets) =>
       page.receive({
-        type,
-        id: page.requests.findLast((r) => r.type === type).id,
-        ...fields,
+        type: "referrers",
+        id: page.requests.findLast((r) => r.type === "referrers").id,
+        files: [{ uri: "review.rs", text: review, cfg: "", offsets }],
       });
-    reply("referrers", { files });
-    await settled();
-    reply("definitions", { matches: [true] });
+    reply([review.indexOf("Author")]);
     await settled();
     if (page.cards() !== 2) return false;
-    page.delayModules();
     page.receive({ type: "changed" });
-    reply("referrers", { files });
     await settled();
     if (page.cards() !== 2) return false;
-    reply("definitions", { matches: [false] });
-    await settled();
-    if (page.cards() !== 2) return false;
-    page.finishModules();
+    reply([]);
     await settled();
     return page.cards() === 1;
   },
+
   async "after a trap, the next text draws"() {
     const page = open();
     page.show(deep, inFlow);

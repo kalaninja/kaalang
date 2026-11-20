@@ -29,19 +29,16 @@ let cells = 0;
  * - `{type: "document", uri, text, cursor, waitForTarget?}` on opening a
  *   document, on every edit, and on every cursor move. A host that will send
  *   a target can defer the first type drawing until then;
- * - `{type: "target", uri, cfg, cfgs?}` with the preferred cfg and, for a Cargo
- *   source, the cfgs that can declare the type under the cursor;
+ * - `{type: "target", uri, cfg}` with the cfg set the editor's engine reads the
+ *   document with;
  * - `{type: "types", id, types}` in answer to `types`, at once or in parts:
  *   each offset answered maps to the type's text, or to `null` when the host
  *   learns none;
- * - `{type: "referrers", id, focus?: {cfg, owner, module}, files: [{uri, text, cfg, offsets}]}` in answer to
- *   `referrers`: each Cargo reading may also identify its crate index `owner`
- *   and file `module`. A `resolved` reading contains its own confirmed offsets,
- *   optional `unknown` offsets for the editor, and `focus` on the selected reading;
- * - `{type: "definitions", id, matches}` in answer to `definitions`: a boolean
- *   per place saying whether its definition is the focus;
- * - `{type: "modules", id, modules, placements}` in answer to `modules`: each
- *   place's module path from hover and its positions in the Cargo targets;
+ * - `{type: "referrers", id, focus?: {cfg, place?}, files: [{uri, text, cfg, offsets, place?}]}`
+ *   in answer to `referrers`: each file the engine finds references to the
+ *   focus in, the focus's own included, read once, in the crate the engine
+ *   reads it in, with the references' `offsets`. A `place` is where a text
+ *   stands in the workspace's module tree, as `drawType` takes it;
  * - `{type: "changed"}` when the engine may answer `referrers` otherwise: it
  *   has analyzed more, or a document was saved.
  *
@@ -56,10 +53,6 @@ let cells = 0;
  *   offsets, as the editor's hover gives them; each answer repeats `id`;
  * - `{type: "referrers", id, uri, offset}` for the references to the type
  *   named at this offset of that document, as the editor's engine finds them;
- * - `{type: "definitions", id, uri, offset, places: [{uri, offset}]}` to check
- *   which relationship targets resolve to the focus type;
- * - `{type: "modules", id, uri, places: [{uri, path, offset, cfg, owner?, module?}]}`
- *   for each card's module and positions in the focus document's workspace;
  * - `{type: "back"}` and `{type: "forward"}` for a mouse's back and forward
  *   buttons, which go through the editor's own history.
  *
@@ -89,7 +82,6 @@ export function start(root, host) {
     text: "",
     cursor: 0,
     cfg: "",
-    cfgs: undefined,
     waitingForTarget: false,
     /**
      * What the cursor was last in, by its path in the file. Until then the
@@ -123,7 +115,7 @@ export function start(root, host) {
     const current = generation;
     const { text, cfg, cursor, collapseCycles } = state;
     try {
-      const declared = await engine.declaredAt(text, cfg, cursor, state.cfgs);
+      const declared = await engine.declaredAt(text, cfg, cursor);
       if (current !== generation) {
         return;
       }
@@ -137,12 +129,7 @@ export function start(root, host) {
         type =
           shown.type === undefined
             ? null
-            : new TypeContext(
-                shown.type,
-                shown.cfg ?? cfg,
-                shown.start,
-                !!state.cfgs,
-              );
+            : new TypeContext(shown.type, cfg, shown.start);
       }
       const version = type?.version;
       if (
@@ -160,7 +147,6 @@ export function start(root, host) {
       }
       let uris = [state.uri];
       let texts;
-      let readings;
       let result;
       if (shown.type === undefined) {
         result = await engine.drawFlow(
@@ -174,7 +160,6 @@ export function start(root, host) {
         const context = type.sources(state.uri, text);
         uris = context.uris;
         texts = context.texts;
-        readings = context.readings;
         result = await engine.drawType(
           text,
           type.cfg,
@@ -192,13 +177,7 @@ export function start(root, host) {
         return;
       }
       if (result?.cards) {
-        type.ask(
-          host,
-          result.cards.concat(result.otherPlaces ?? []),
-          uris,
-          false,
-          readings,
-        );
+        type.ask(host, uris[0], result.cards[0].start);
         if (current !== generation || !type.canPublish()) return;
       }
       toolbar.hidden = shown.type !== undefined;
@@ -469,7 +448,6 @@ export function start(root, host) {
         if (message.uri !== state.uri) {
           type = null;
           state.cfg = "";
-          state.cfgs = undefined;
           state.waitingForTarget = !!message.waitForTarget;
           state.uri = message.uri;
           state.declared = null;
@@ -492,20 +470,10 @@ export function start(root, host) {
         break;
       case "target":
         if (message.uri && message.uri !== state.uri) break;
-        if (
-          state.waitingForTarget ||
-          message.cfg !== state.cfg ||
-          JSON.stringify(message.cfgs) !== JSON.stringify(state.cfgs)
-        ) {
+        if (state.waitingForTarget || message.cfg !== state.cfg) {
           state.waitingForTarget = false;
           state.cfg = message.cfg;
-          state.cfgs = message.cfgs;
           type = null;
-          if (
-            state.declared?.type &&
-            !message.cfgs?.includes(state.declared.cfg)
-          )
-            state.declared = { ...state.declared, cfg: state.cfg };
           close();
           schedule(0);
         }
@@ -514,25 +482,7 @@ export function start(root, host) {
         type?.refresh(host);
         break;
       case "referrers":
-      case "definitions":
-      case "modules":
-        if (type?.receive(message)) {
-          schedule(0);
-          if (message.type === "referrers") {
-            const context = type;
-            void context
-              .checkDefinitions(
-                engine,
-                host,
-                state.text,
-                context.cfg,
-                () => type === context,
-              )
-              .then((finished) => {
-                if (finished && type === context) schedule(0);
-              });
-          }
-        }
+        if (type?.receive(message)) schedule(0);
         break;
       case "types":
         if (message.id !== listing) {

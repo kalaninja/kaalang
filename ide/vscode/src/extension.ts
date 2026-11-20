@@ -8,29 +8,22 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
 
-import { watchBuildInputs } from "./build-inputs";
-import type { BuildInputs } from "./cargo";
-import {
-  type CardPlace,
-  cardPlacements,
-  knownModule,
-  watchModuleSources,
-} from "./card-places";
-import { hoverModule, hoverType, moduleHovers } from "./hover";
+import { RUST_ANALYZER } from "./analyzer";
+import { knownModule, watchModuleSources } from "./card-places";
+import { hoverType } from "./hover";
 import { stopModuleWorker } from "./module-sources";
 import { navigate, type Navigation } from "./navigation";
+import { forgetReferences, referringFiles } from "./references";
 import {
-  definitionMatches,
-  forgetReferences,
-  referringFiles,
-} from "./references";
-import { affectsCfg, cargoConfig, forgetCfg, target } from "./target";
+  affectsCfg,
+  analyzedCfg,
+  forgetAnalyzedCfg,
+  forgetCfg,
+  located,
+} from "./target";
 
 /** The panel's type, which the `when` clauses in package.json name. */
 const VIEW_TYPE = "kaalang.diagram";
-
-/** The language server that answers the editor's go-to actions and hovers on Rust. */
-const RUST_ANALYZER = "rust-lang.rust-analyzer";
 
 /** What the page asks of the host; `page.js` documents each message. */
 type Request =
@@ -38,19 +31,6 @@ type Request =
   | Navigation
   | { type: "types"; id: number; uri: string; offsets: number[] }
   | { type: "referrers"; id: number; uri: string; offset: number }
-  | {
-      type: "definitions";
-      id: number;
-      uri: string;
-      offset: number;
-      places: { uri: string; offset: number }[];
-    }
-  | {
-      type: "modules";
-      id: number;
-      uri: string;
-      places: CardPlace[];
-    }
   | { type: "back" | "forward" };
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -69,16 +49,6 @@ export function activate(context: vscode.ExtensionContext): void {
   let following = 0;
   const edited = new WeakSet<vscode.TextDocument>();
   const log = vscode.window.createOutputChannel("kaalang");
-  const buildWatchers = new Map<
-    string,
-    { inputs: BuildInputs; watcher: vscode.Disposable }
-  >();
-
-  function clearCfg() {
-    forgetCfg();
-    for (const { watcher } of buildWatchers.values()) watcher.dispose();
-    buildWatchers.clear();
-  }
 
   /** Follow Rust sources in an open folder or declared by one of its Cargo targets. */
   function follow(editor: vscode.TextEditor | undefined): void {
@@ -95,10 +65,12 @@ export function activate(context: vscode.ExtensionContext): void {
       !vscode.workspace.getWorkspaceFolder(editor.document.uri)
     ) {
       if (panel && vscode.workspace.isTrusted)
-        void target(editor.document.uri, (line) => log.appendLine(line)).then(
-          ({ owned }) => {
-            if (owned && question === following) followSource(editor);
+        void located(editor.document.uri, (line) => log.appendLine(line)).then(
+          ({ place }) => {
+            if (place && question === following) followSource(editor);
           },
+          (error) =>
+            log.appendLine(`Could not read the source target: ${error}`),
         );
       return;
     }
@@ -109,10 +81,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const moved = editor.document !== source?.document;
     source = editor;
     send();
-    if (moved) {
-      watchConfig();
-      void sendCfg();
-    }
+    if (moved) void sendCfg();
   }
 
   /** Hands the page the cfg set of the followed document. */
@@ -122,34 +91,15 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     const question = ++asked;
     const uri = source.document.uri;
-    const cursor = source.document.offsetAt(source.selection.active);
-    const project = await target(
-      uri,
-      (line) => log.appendLine(line),
-      async () => hoverModule(await hoverAt(uri.toString(), cursor)),
-    ).catch((error) => {
-      log.appendLine(`Could not read the source target: ${String(error)}`);
-      return undefined;
-    });
+    const cfg =
+      uri.scheme === "file"
+        ? await analyzedCfg(uri.fsPath, (line) => log.appendLine(line))
+        : "";
     if (question === asked && panel !== undefined) {
-      const { workspaceRoot, buildInputs } = project ?? {};
-      if (
-        workspaceRoot &&
-        buildWatchers.get(workspaceRoot)?.inputs !== buildInputs
-      ) {
-        buildWatchers.get(workspaceRoot)?.watcher.dispose();
-        buildWatchers.delete(workspaceRoot);
-        if (buildInputs)
-          buildWatchers.set(workspaceRoot, {
-            inputs: buildInputs,
-            watcher: watchBuildInputs(buildInputs, reread),
-          });
-      }
       void panel.webview.postMessage({
         type: "target",
         uri: uri.toString(),
-        cfg: project?.cfg ?? "",
-        cfgs: project?.owned ? (project.cfgs ?? [project.cfg]) : undefined,
+        cfg,
       });
     }
   }
@@ -218,43 +168,12 @@ export function activate(context: vscode.ExtensionContext): void {
           request.uri,
           request.offset,
           (line) => log.appendLine(line),
-          async () => hoverModule(await hoverAt(request.uri, request.offset)),
         ).catch((error: unknown) => {
           log.appendLine(`Could not find the referring types: ${error}`);
           return { files: [] };
         });
         if (result !== undefined) {
           reply({ type: "referrers", id: request.id, ...result });
-        }
-        break;
-      }
-      case "definitions": {
-        const matches = await definitionMatches(request, request.places);
-        if (matches) reply({ type: "definitions", id: request.id, matches });
-        break;
-      }
-      case "modules": {
-        try {
-          const { roots } = await target(
-            vscode.Uri.parse(request.uri),
-            (line) => log.appendLine(line),
-          );
-          const placements = await cardPlacements(request.places, roots);
-          const modules = await moduleHovers(
-            request.places,
-            placements,
-            hoverAt,
-          );
-          reply({ type: "modules", id: request.id, modules, placements });
-        } catch (error) {
-          // Headers fall back to paths within the file.
-          log.appendLine(`Could not place the cards: ${error}`);
-          reply({
-            type: "modules",
-            id: request.id,
-            modules: [],
-            placements: [],
-          });
         }
         break;
       }
@@ -293,60 +212,38 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   }
 
-  /** The files the cfg set is read from, whoever changes them. */
-  const manifests = vscode.workspace.createFileSystemWatcher(
-    "**/{Cargo.toml,Cargo.lock,.cargo/config.toml,.cargo/config,rust-toolchain,rust-toolchain.toml}",
-  );
-  let configWatcher: vscode.FileSystemWatcher | undefined;
-  let watchedConfig: string | undefined;
-  function watchConfig(): void {
-    const file = vscode.workspace.isTrusted
-      ? cargoConfig(source?.document.uri)
-      : undefined;
-    if (file === watchedConfig) return;
-    watchedConfig = file;
-    configWatcher?.dispose();
-    if (file) {
-      configWatcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(
-          vscode.Uri.file(path.dirname(file)),
-          path.basename(file),
-        ),
-      );
-      configWatcher.onDidCreate(reread);
-      configWatcher.onDidChange(reread);
-      configWatcher.onDidDelete(reread);
-    }
+  /** The manifests that list the workspace's targets. */
+  const manifests = vscode.workspace.createFileSystemWatcher("**/Cargo.toml");
+  /** Reads the targets and the set again. */
+  function reconfigure(): void {
+    forgetCfg();
+    forgetReferences();
+    void sendCfg();
+    changed();
   }
+
   let rereading: ReturnType<typeof setTimeout> | undefined;
-  /** Reads the set again once changes pause: cargo unpacking crates makes hundreds. */
+  /** Reconfigures once manifest changes pause: cargo unpacking crates makes hundreds. */
   function reread(): void {
     clearTimeout(rereading);
-    rereading = setTimeout(() => {
-      // Keep the old input watches until the new Cargo query has finished.
-      forgetCfg();
-      forgetReferences();
-      void sendCfg();
-      changed();
-    }, 500);
+    rereading = setTimeout(reconfigure, 500);
   }
 
   let changing: ReturnType<typeof setTimeout> | undefined;
-  let sourceCfgChanged = false;
   let announce = false;
   /**
-   * Tells the page, once changes pause, that the engine may find other
-   * references: it publishes diagnostics as it analyzes the workspace. The
-   * page asks again by itself after an edit of the text it follows.
+   * Once changes pause, asks rust-analyzer for the set again, which it changes
+   * as it loads the workspace and reruns build scripts, and tells the page
+   * that the engine may find other references: it publishes diagnostics as it
+   * analyzes the workspace. The page asks again by itself after an edit of the
+   * text it follows.
    */
   function changed(page = true): void {
     announce ||= page;
     clearTimeout(changing);
     changing = setTimeout(() => {
-      if (sourceCfgChanged) {
-        sourceCfgChanged = false;
-        void sendCfg();
-      }
+      forgetAnalyzedCfg();
+      void sendCfg();
       if (announce) {
         announce = false;
         void panel?.webview.postMessage({ type: "changed" });
@@ -356,11 +253,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   function sourcesChanged(source: vscode.Uri | string, page = true): void {
     forgetReferences(source);
-    sourceCfgChanged = true;
     changed(page);
   }
   const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
-  watchConfig();
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(
     log,
@@ -400,20 +295,10 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (affectsCfg(event)) {
-        watchConfig();
-        clearCfg();
-        forgetReferences();
-        void sendCfg();
-        changed();
-      }
+      if (affectsCfg(event)) reconfigure();
     }),
     vscode.languages.onDidChangeDiagnostics(() => changed()),
-    vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      clearCfg();
-      watchConfig();
-      reread();
-    }),
+    vscode.workspace.onDidChangeWorkspaceFolders(reconfigure),
     vscode.workspace.onDidCloseTextDocument((document) => {
       if (edited.has(document)) sourcesChanged(document.uri);
     }),
@@ -425,18 +310,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.workspace.onDidGrantWorkspaceTrust(() => {
       offered = false;
-      watchConfig();
-      forgetReferences();
-      void sendCfg();
-      changed();
+      reconfigure();
     }),
     manifests,
     sources,
     sources.onDidCreate(sourcesChanged),
     sources.onDidChange(sourcesChanged),
     sources.onDidDelete(sourcesChanged),
-    { dispose: () => configWatcher?.dispose() },
-    { dispose: clearCfg },
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
     manifests.onDidDelete(reread),

@@ -24,11 +24,10 @@ const uri = (fsPath) => ({ scheme: "file", fsPath });
 
 async function editor(t, modules = {}) {
   const directory = await mkdtemp(
-    path.join(os.tmpdir(), "kaalang-build-inputs-"),
+    path.join(os.tmpdir(), "kaalang-module-watches-"),
   );
   t.after(() => rm(directory, { recursive: true, force: true }));
   const watchers = new Map();
-  const saves = new EventEmitter();
   const vscode = {
     Uri: { file: uri },
     RelativePattern: class {
@@ -59,10 +58,6 @@ async function editor(t, modules = {}) {
           dispose: () => events.removeAllListeners(),
         };
       },
-      onDidSaveTextDocument(fn) {
-        saves.on("save", fn);
-        return { dispose: () => saves.off("save", fn) };
-      },
     },
   };
   async function load(name) {
@@ -79,75 +74,9 @@ async function editor(t, modules = {}) {
   return {
     directory,
     watchers,
-    watch: (await load("build-inputs")).watchBuildInputs,
     moduleWatches: (await load("module-watches")).moduleWatches,
-    save: (file) => saves.emit("save", { uri: uri(file) }),
   };
 }
-
-test("declared files, including missing and external inputs, refresh on change or editor save", async (t) => {
-  const { directory, watchers, watch, save } = await editor(t);
-  const workspace = path.join(directory, "workspace");
-  const external = path.join(directory, "external");
-  await Promise.all([mkdir(workspace), mkdir(external)]);
-  const script = path.join(workspace, "flags.rs");
-  const missing = path.join(workspace, "later.txt");
-  const settings = path.join(external, "flags.toml");
-  await Promise.all([writeFile(script, ""), writeFile(settings, "")]);
-
-  let changes = 0;
-  const subscription = watch(
-    { paths: [script, missing, settings], ignored: [] },
-    () => ++changes,
-  );
-  const local = watchers.get(workspace);
-  assert.equal(local.pattern, "*");
-  local.events.emit("change", uri(path.join(workspace, "another.rs")));
-  assert.equal(changes, 0);
-  save(script);
-  assert.equal(changes, 1);
-  await writeFile(missing, "ready");
-  local.events.emit("create", uri(missing));
-  assert.equal(changes, 2);
-  await rm(settings);
-  const outside = watchers.get(external);
-  outside.events.emit("delete", uri(settings));
-  assert.equal(changes, 3);
-
-  subscription.dispose();
-  save(script);
-  local.events.emit("change", uri(script));
-  outside.events.emit("create", uri(settings));
-  assert.equal(changes, 3);
-});
-
-test("a directory input refreshes on a save inside it, ignoring Git and Cargo output", async (t) => {
-  const { directory, watchers, watch, save } = await editor(t);
-  const root = path.join(directory, "workspace");
-  const output = path.join(root, "build");
-  const nested = path.join(root, "schema", "v1");
-  const similarlyNamed = path.join(root, "build-inputs");
-  await Promise.all(
-    [output, nested, similarlyNamed].map((dir) =>
-      mkdir(dir, { recursive: true }),
-    ),
-  );
-  let changes = 0;
-  const subscription = watch(
-    { paths: [root], ignored: [output] },
-    () => ++changes,
-  );
-  // A script that writes into its own package would otherwise start the next check.
-  assert.equal(watchers.size, 0);
-  save(path.join(nested, "schema.json"));
-  assert.equal(changes, 1);
-  save(path.join(nested, ".git", "HEAD"));
-  save(path.join(output, "generated.rs"));
-  assert.equal(changes, 1);
-  save(path.join(similarlyNamed, "options.json"));
-  assert.equal(changes, 2);
-  subscription.dispose();
-});
 
 test(
   "module watches follow excluded Rust files, missing paths, and directory renames",
@@ -289,12 +218,11 @@ test(
                 ]
               : [],
           types: text === source ? [] : [7],
-          bodies: [],
         }),
       );
     const graph = await tree();
     const firstPath = await realpath(first);
-    assert.equal(graph.texts.get(firstPath), "struct First;");
+    assert.ok(graph.files.has(firstPath));
     const events = new EventEmitter();
     const watch = moduleWatches((file) => {
       forgetModules(file);
@@ -307,8 +235,8 @@ test(
     await rename(current + "-next", current);
     await changed;
     const after = await tree();
-    assert.equal(after.texts.get(await realpath(second)), "struct Second;");
-    assert.equal(after.texts.has(firstPath), false);
+    assert.ok(after.files.has(await realpath(second)));
+    assert.equal(after.files.has(firstPath), false);
   },
 );
 

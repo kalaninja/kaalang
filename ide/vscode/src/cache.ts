@@ -1,4 +1,4 @@
-import type { Stats } from "node:fs";
+import { realpathSync, type Stats } from "node:fs";
 
 /** Share both an in-flight read and its result among callers. */
 export function cached<K, V>(
@@ -11,6 +11,15 @@ export function cached<K, V>(
   const pending = read();
   entries.set(key, pending);
   return pending;
+}
+
+/** The real path of `file`, or `file` itself when it no longer exists. */
+export function realFile(file: string): string {
+  try {
+    return realpathSync(file);
+  } catch {
+    return file;
+  }
 }
 
 /** A missing path and a non-file are both absent from the Rust module tree. */

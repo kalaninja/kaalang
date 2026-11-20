@@ -8,32 +8,38 @@ import test from "node:test";
 const root = "file:///project/lib.rs";
 const alias = "file:///project/names.rs";
 const review = "file:///project/integration.rs";
+const other = "file:///project/other.rs";
 const author =
   '#[kaa] struct Review { #[kaa::refer(Author, "author")] id: u8 }';
 const focus = { uri: root, offset: 7 };
-const place = { uri: review, offset: author.indexOf("Author") };
+
+/** Where a file stands: in `module` of crate `app`. */
+const place = (module) => ({
+  package: "app",
+  group: 0,
+  crate: "app",
+  root: "/project/lib.rs",
+  module,
+  order: [],
+});
 
 /**
  * The built host with isolated editor, Cargo and language server answers:
  * `texts` holds each file, `references` the files the editor finds the focus
- * in, `resolved` what the workspace resolver matched in a scanned file.
+ * in. The workspace's module tree holds every file that may refer to it, and
+ * only `Author` in `review` names the focus.
  */
 async function host(texts) {
-  const state = { references: [root], resolved: undefined, queries: 0 };
+  const state = { references: [root], queries: 0 };
   const uri = (key) => ({
     toString: () => key,
     scheme: "file",
     fsPath: new URL(key).pathname,
   });
-  state.opened = [];
   const modules = {
     vscode: {
       Uri: { parse: uri },
-      workspace: {
-        textDocuments: [],
-        workspaceFolders: [{}],
-        getWorkspaceFolder: () => ({}),
-      },
+      workspace: { getWorkspaceFolder: () => ({}) },
       commands: {
         executeCommand: async () =>
           state.references.map((key) => ({
@@ -45,53 +51,41 @@ async function host(texts) {
       },
     },
     "./target": {
-      target: async () => ({
-        roots: [{ root, cfg: "" }],
-        cfgForRoot: () => "",
-        cfg: "selected",
-        displayOwner: { owner: 2, module: "nested" },
+      located: async (file) => ({
+        cfg: `cfg of ${file.toString()}`,
+        place: place(new URL(file.toString()).pathname),
+        roots: [],
       }),
     },
     "./documents": {
-      openDocument: async (key) => {
-        state.opened.push(key);
-        return {
-          uri: uri(key),
-          version: 1,
-          positionAt: (offset) => ({ line: 0, character: offset }),
-        };
-      },
+      openDocument: async (key) => ({
+        uri: uri(key),
+        version: 1,
+        positionAt: (offset) => ({ line: 0, character: offset }),
+      }),
       documentText: async (uri) => texts.get(uri.toString()),
     },
     "./card-places": {
       MAY_REFER: /\brefer\b/,
-      fileOwners: async (places) =>
-        places.map((key) =>
-          key === review ? [{ cfg: "left" }, { cfg: "right" }] : [{ cfg: "" }],
-        ),
       forgetModules: () => {},
+      editorTree: async () => ({
+        referring: new Map(
+          [review, other]
+            .filter((key) => texts.has(key))
+            .map((key) => [key, texts.get(key)]),
+        ),
+      }),
     },
-    "./referring-sources": {
-      // A workspace scan finds the file that names the focus through `Author`.
-      referringSources: async (_, all) =>
-        all
-          ? new Map([
-              [
-                review,
-                {
-                  text: texts.get(review),
-                  cfgs: ["left", "right"],
-                  matches: state.resolved,
-                },
-              ],
-            ])
-          : new Map(),
+    "./module-sources": {
+      relationshipTargets: async (text) => [text.indexOf("Author")],
     },
     "./analyzer": {
       analyzerClient: () => ({}),
-      locations: async () => {
+      locations: async (_client, uri) => {
         ++state.queries;
-        return [{ uri: root, position: { line: 0, character: 7 } }];
+        return uri === review
+          ? [{ uri: root, position: { line: 0, character: 7 } }]
+          : [];
       },
     },
   };
@@ -104,20 +98,50 @@ async function host(texts) {
   return { ...exports, state };
 }
 
-const files = async ({ referringFiles }) =>
-  (await referringFiles(root, focus.offset, () => {})).files.map(
-    ({ uri, cfg }) => [uri, cfg],
-  );
+const referring = ({ referringFiles }) =>
+  referringFiles(root, focus.offset, () => {});
 
-test("a reference search without a renaming use reads no other file", async () => {
+test("a reference search without a renaming use asks no definition", async () => {
   const texts = new Map([
     [root, "struct Focus; fn wide(id: u8) -> u32 { id as u32 }"],
     [review, author],
   ]);
-  assert.deepEqual(await files(await host(texts)), []);
+  const loaded = await host(texts);
+  const answer = await referring(loaded);
+  assert.deepEqual(answer.files, []);
+  assert.deepEqual(answer.focus, {
+    cfg: `cfg of ${root}`,
+    place: place("/project/lib.rs"),
+  });
+  assert.equal(loaded.state.queries, 0);
 });
 
-test("a renaming use brings in the files that name the type by its new name", async () => {
+test("a renaming use brings in each file whose target's definition is the focus, once, with its place", async () => {
+  const texts = new Map([
+    [root, "struct Focus;"],
+    [alias, "pub use crate::Focus as Author;"],
+    [review, author],
+    [other, author.replace("Review", "Other")],
+  ]);
+  const loaded = await host(texts);
+  loaded.state.references = [root, alias];
+  const { files } = await referring(loaded);
+  assert.deepEqual(files, [
+    {
+      uri: review,
+      text: author,
+      cfg: `cfg of ${review}`,
+      offsets: [author.indexOf("Author")],
+      place: place("/project/integration.rs"),
+    },
+  ]);
+  // A second search in the same source revision asks again only what had no answer.
+  const asked = loaded.state.queries;
+  await referring(loaded);
+  assert.equal(loaded.state.queries, asked + 1);
+});
+
+test("a source change asks the definitions again", async () => {
   const texts = new Map([
     [root, "struct Focus;"],
     [alias, "pub use crate::Focus as Author;"],
@@ -125,49 +149,8 @@ test("a renaming use brings in the files that name the type by its new name", as
   ]);
   const loaded = await host(texts);
   loaded.state.references = [root, alias];
-  assert.deepEqual(await files(loaded), [
-    [review, "left"],
-    [review, "right"],
-  ]);
-});
-
-test("the workspace resolver's matches stand for a scanned file's references", async () => {
-  const texts = new Map([
-    [root, "struct Focus;"],
-    [alias, "pub use crate::Focus as Author;"],
-    [review, author],
-  ]);
-  const loaded = await host(texts);
-  loaded.state.references = [root, alias];
-  loaded.state.resolved = [
-    { uri: review, cfg: "right", owner: 1, module: "two", offsets: [7] },
-  ];
-  const { files } = await loaded.referringFiles(root, focus.offset, () => {});
-  assert.deepEqual(
-    files.map(({ text, ...file }) => file),
-    [{ ...loaded.state.resolved[0], resolved: true }],
-  );
-});
-
-test("a definition reaching the focus matches once per source revision without opening its file", async () => {
-  const texts = new Map([
-    [root, "struct Focus;"],
-    [alias, "pub use crate::Focus as Author;"],
-    [review, author],
-  ]);
-  const loaded = await host(texts);
-  loaded.state.references = [root, alias];
-  await loaded.referringFiles(root, focus.offset, () => {});
-  assert.deepEqual(await loaded.definitionMatches(focus, [place]), [true]);
-  assert.deepEqual(await loaded.definitionMatches(focus, [place]), [true]);
-  assert.equal(loaded.state.queries, 1);
-  assert.ok(!loaded.state.opened.includes(review));
-});
-
-test("a source change drops the definitions asked before it", async () => {
-  const texts = new Map([[root, "struct Focus;"]]);
-  const loaded = await host(texts);
-  await loaded.referringFiles(root, focus.offset, () => {});
+  await referring(loaded);
   loaded.forgetReferences();
-  assert.equal(await loaded.definitionMatches(focus, [place]), undefined);
+  await referring(loaded);
+  assert.equal(loaded.state.queries, 2);
 });
