@@ -6,14 +6,14 @@ use std::{
     fmt::Write as _,
 };
 
-use kaalang_compiler::{
-    SourceError, SourceFile, SourceType, TypeDeclaration,
-    workspace::{CardCrate, Def, Resolution, Resolver, TypeRef, first_readings},
-};
+use kaalang_compiler::{CardCrate, SourceError, SourceFile, SourceType, TypeDeclaration};
 use kaalang_svg::{CardPath, TypeCard, TypeOptions};
 use syn::spanned::Spanned;
 
-use crate::workspace::{self, Crate};
+use crate::{
+    names::{Def, Resolution, Resolver, TypeRef},
+    workspace::{self, Crate},
+};
 
 /// Draws the type whose path from its crate root is `path`, taken from
 /// `package` when given. A file that cannot be read or parsed, or a type whose
@@ -37,7 +37,7 @@ pub(super) fn draw(
     workspace::warn_skipped(path, &skipped);
     warn("warning: these types could not be read:", &unreadable);
     let drawn = relationships(crates, &resolver, &declarations, focus)?;
-    render(crates, &resolver, focus, &drawn, options)
+    render(crates, focus, &drawn, options)
 }
 
 /// Each crate's type declarations, parsed with their annotations, and the
@@ -88,7 +88,7 @@ fn relationships(
                 let at = location(krate, entry.module, target.span());
                 let written = written(target);
                 match resolver.resolve(index, entry.module, target) {
-                    Resolution::Type(found) if resolver.same_type(found, focus) => {
+                    Resolution::Type(found) if found == focus => {
                         positions.push(position);
                     }
                     Resolution::Type(_) => {}
@@ -125,38 +125,32 @@ fn relationships(
     Ok(drawn)
 }
 
-/// Renders the focus under its incoming types in diagram order, one card for a
-/// file that several crates include. Each package's library and binaries, its
-/// tests, its examples, and its benches start a new row.
+/// Renders the focus under its incoming types in diagram order. A file that
+/// several modules include gives each of them its own types, as rustc compiles
+/// them. Each package's library and binaries, its tests, its examples, and its
+/// benches start a new row.
 fn render(
     crates: &[Crate],
-    resolver: &Resolver,
     focus: TypeRef,
     drawn: &[(TypeRef, Vec<usize>)],
     options: TypeOptions,
 ) -> Result<String, String> {
-    let mut own: &[usize] = &[];
+    let drawn: HashMap<TypeRef, &[usize]> = drawn
+        .iter()
+        .map(|(ty, positions)| (*ty, positions.as_slice()))
+        .collect();
+    let own = drawn.get(&focus).copied().unwrap_or_default();
     let mut incoming: Vec<(TypeRef, &[usize])> = Vec::new();
     for krate in order(crates, focus.krate) {
-        for (source, positions) in drawn.iter().filter(|(source, _)| source.krate == krate) {
-            if resolver.same_type(*source, focus) {
-                // Another crate reads the focus's file under its own `cfg`s,
-                // so only the focus's own reading gives its lines.
-                if *source == focus {
-                    own = positions;
-                }
-            } else {
-                incoming.push((*source, positions));
+        for id in 0..crates[krate].types.len() {
+            let ty = TypeRef { krate, id };
+            if ty != focus
+                && let Some(positions) = drawn.get(&ty)
+            {
+                incoming.push((ty, positions));
             }
         }
     }
-    let first = first_readings(
-        incoming
-            .iter()
-            .enumerate()
-            .map(|(index, &(ty, _))| (index, resolver.place(ty), Some(resolver.inclusion(ty)))),
-    );
-    let incoming: Vec<_> = first.into_iter().map(|index| incoming[index]).collect();
     let file = |source: TypeRef| {
         let entry = &crates[source.krate].types[source.id];
         &crates[source.krate].modules[entry.module].file
@@ -213,7 +207,7 @@ fn render(
 }
 
 /// The one type that `path` resolves to from a crate root, from `package` when
-/// given, the first in crate order when several crates include its file.
+/// given, or the first crate's when the crates that resolve it share its file.
 fn focus(
     crates: &[Crate],
     resolver: &Resolver,
@@ -222,13 +216,15 @@ fn focus(
     skipped: &BTreeSet<String>,
 ) -> Result<TypeRef, String> {
     let target = syn::parse_str::<syn::Path>(path).ok();
+    let searched: Vec<usize> = order(crates, usize::MAX)
+        .into_iter()
+        .filter(|&krate| {
+            !crates[krate].dependency_only
+                && package.is_none_or(|package| crates[krate].package == package)
+        })
+        .collect();
     let mut found: Vec<TypeRef> = Vec::new();
-    for krate in order(crates, usize::MAX) {
-        if crates[krate].dependency_only
-            || package.is_some_and(|package| crates[krate].package != package)
-        {
-            continue;
-        }
+    for &krate in &searched {
         match target
             .as_ref()
             .map(|target| resolver.find(krate, 0, target))
@@ -249,7 +245,7 @@ fn focus(
         candidates.iter().enumerate().all(|(i, ty)| {
             candidates[..i]
                 .iter()
-                .all(|previous| resolver.same_type(*ty, *previous))
+                .all(|previous| resolver.place(*ty) == resolver.place(*previous))
         })
     };
     match found.as_slice() {

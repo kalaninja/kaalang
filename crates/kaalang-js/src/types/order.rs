@@ -1,13 +1,14 @@
-//! A declaration's places in the Cargo module tree, as reported by the editor.
+//! Where a file stands in the Cargo module tree, as the editor reports it, and
+//! where each of its types stands.
 
-use std::{collections::BTreeMap, path::Path};
+use std::path::Path;
 
-use kaalang_compiler::workspace::CardCrate;
+use kaalang_compiler::CardCrate;
 use serde::Deserialize;
 
-pub(super) type Places = BTreeMap<String, Vec<Place>>;
-
-#[derive(Deserialize)]
+/// A Cargo target, the crate-relative module, and the source positions from
+/// the crate root through module declarations to the file, or to a type's name.
+#[derive(Clone, Deserialize)]
 pub(super) struct Place {
     package: String,
     group: u8,
@@ -15,8 +16,6 @@ pub(super) struct Place {
     name: String,
     root: String,
     pub module: String,
-    /// From the crate root, the source positions of the enclosing module
-    /// declarations, then the type's name.
     order: Vec<u32>,
 }
 
@@ -39,20 +38,22 @@ impl Place {
         )
     }
 
-    /// A shared declaration appears once, at its first place in diagram order.
-    /// For the focus the hover identifies which module the editor is showing.
-    pub fn first<'a>(
-        places: &'a Places,
-        path: &str,
-        focus: Option<&Place>,
-        hover: Option<&str>,
-    ) -> Option<&'a Place> {
-        places.get(path)?.iter().min_by_key(|place| {
-            let matches_hover = hover.is_some_and(|module| {
-                let (krate, inner) = module.split_once("::").unwrap_or((module, ""));
-                krate == place.name && inner == place.module
-            });
-            (!matches_hover, place.key(focus))
-        })
+    /// The place of the type at `path` in this file, its name at `offset`:
+    /// inside the inline modules of its path, after what precedes it.
+    pub fn of_type(&self, path: &str, offset: u32) -> Self {
+        let mut module = self.module.clone();
+        if let Some((inline, _)) = path.rsplit_once("::") {
+            if !module.is_empty() {
+                module.push_str("::");
+            }
+            module.push_str(inline);
+        }
+        let mut order = self.order.clone();
+        order.push(offset);
+        Self {
+            module,
+            order,
+            ..self.clone()
+        }
     }
 }

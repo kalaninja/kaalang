@@ -306,8 +306,11 @@ root: items in declaration order, with a module's items at the position of its
 its package, then the other workspace members by package name. Within a package,
 its library and binaries come first as one group, then its tests, examples, and
 benches; each group is ordered by target name, and targets of the same name by
-the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file
-that several crates include through `mod` gives one card, at its first position.
+the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file the
+source includes several times, through `mod` in several crates or `#[path]` in
+several modules of one, declares a type per inclusion, as rustc compiles it:
+each has its own path and relationships, and each that refers to the focus is a
+card of its own, at its own position.
 
 The incoming cards stand in rows above the focus, read from left to right and
 then from top to bottom. Each package's library and binaries, its tests, its
@@ -387,7 +390,8 @@ the item and for incoming types. When the path exists in several packages, `-p`
 names the package to take it from. Each target of a package (its library,
 binaries, tests, examples, and benches) is a separate crate; a path that
 resolves in more than one of them cannot be selected, unless they all reach one
-declaration in a file they share. Exactly one of `--flow` and `--type` is given.
+declaration in a file they share, which selects the first one's copy in the
+order of §4.3. Exactly one of `--flow` and `--type` is given.
 `--collapse-cycles` applies to flows and is rejected with `--type`; `--columns`,
 how many incoming cards a row holds, applies to types and is rejected with
 `--flow`. Without `-o`, the command writes `./<name>.svg` from the last path
@@ -492,6 +496,7 @@ Acceptance scenarios:
 | `<&Report as Approve>::approve`                         | Select the method of the `impl` for `&Report`.                         |
 | Incoming types from two crates                          | Order the focus type's crate first, then its package, then others.     |
 | More incoming types than fit one row                    | Wrap them into rows in source order, each target group from a new one. |
+| An incoming type in a file two modules include          | Draw a card for each module whose copy refers to the focus.            |
 | A focus type without `#[kaa]`                           | Draw its Rust structure without descriptions.                          |
 | `refer` to a plain type of the workspace                | Draw the relationship as to any other type.                            |
 | `refer` to `String`, a trait, or a module               | Fail naming the relationship and its target.                           |

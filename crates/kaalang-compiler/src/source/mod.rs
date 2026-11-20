@@ -15,7 +15,7 @@ use syn::{
 };
 
 pub use self::{
-    cards::NamedPath,
+    cards::{CardCrate, NamedPath},
     modules::{ExternalModule, ModuleDirectory, ModuleFile},
     ribbons::Ribbons,
 };

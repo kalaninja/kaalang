@@ -53,9 +53,7 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
   write("app/src/other_names.rs", "pub use crate::names::Person as Author;\n");
   const binary = write(
     "app/src/main.rs",
-    'use app::Member;\n#[path = "zebra.rs"] mod shared;\n' +
-      refers("FromBin", "Member") +
-      "fn main() {}\n",
+    "use app::Member;\n" + refers("FromBin", "Member") + "fn main() {}\n",
   );
   const zebra = write("app/src/zebra.rs", refers("Before", "crate::Member"));
   const alpha = write(
@@ -68,17 +66,17 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
     'pub use app::Member;\n#[path="../../shared.rs"] mod shared;\n' +
       refers("FromOther", "app::Member"),
   );
-  // Both packages compile this file. The two Exclusive declarations occupy
-  // different source positions; Common is drawn once with its preferred cfg.
+  // Both packages compile this file, each keeping another Exclusive. A
+  // declaration both kept would give the CLI a card per copy and the editor,
+  // whose rust-analyzer reads the file in one module, a single one.
   const shared = write(
     "shared.rs",
     '#[cfg(not(feature="invoices"))]\n' +
       refers("Exclusive", "crate::Member") +
       '#[cfg(feature="invoices")]\n' +
-      refers("Exclusive", "crate::Member") +
-      '#[kaa] pub struct Common { #[cfg(feature="invoices")] invoice: bool, #[kaa::refer(crate::Member, "Member")] id: u8 }\n',
+      refers("Exclusive", "crate::Member"),
   );
-  const gated = write(
+  write(
     "app/tools/gated.rs",
     refers("Gated", "app::Member") + "fn main() {}\n",
   );
@@ -104,21 +102,24 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
     place("app", 0, "app", "app/src/lib.rs", module, ...order);
   const inBin = (module, ...order) =>
     place("app", 0, "app", "app/src/main.rs", module, ...order);
-  const references = (text, places) => ({
+  const references = (text, place) => ({
     text,
     cfg: "",
     // Each of these single-relationship files refers to Member. A definition
     // can confirm a target even when its last identifier is a re-export.
     offsets: JSON.parse(relationshipTargets(text, "")),
-    places,
+    place,
   });
-  // The host can discover files in either order. The shared declaration has
-  // two module paths and the library and binary have the same crate name.
+  // The host can discover files in either order. The library and binary have
+  // the same crate name. The gated binary is outside the enabled targets.
   const files = [
     ...[false, true].map((enabled) => {
       const cfg = enabled ? 'feature="invoices"' : "";
-      const owner = (offset) =>
-        enabled
+      return {
+        text: shared,
+        cfg,
+        offsets: JSON.parse(relationshipTargets(shared, cfg)),
+        place: enabled
           ? place(
               "other",
               0,
@@ -126,70 +127,21 @@ test("the editor and CLI draw the same cards, paths, and rows", (t) => {
               "other/src/lib.rs",
               "shared",
               other.indexOf("mod shared"),
-              offset,
             )
-          : inLib("shared", lib.indexOf("mod shared"), offset);
-      return {
-        uri: "shared.rs",
-        text: shared,
-        cfg,
-        offsets: JSON.parse(relationshipTargets(shared, cfg)),
-        places: {
-          Exclusive: [
-            owner(
-              enabled
-                ? shared.lastIndexOf("Exclusive")
-                : shared.indexOf("Exclusive"),
-            ),
-          ],
-          Common: [owner(shared.indexOf("Common"))],
-        },
+          : inLib("shared", lib.indexOf("mod shared")),
       };
     }),
-    references(gated, { Gated: [] }),
-    references(other, {
-      FromOther: [
-        place(
-          "other",
-          0,
-          "other",
-          "other/src/lib.rs",
-          "",
-          other.indexOf("FromOther"),
-        ),
-      ],
-    }),
-    references(check, {
-      FromTest: [
-        place(
-          "app",
-          1,
-          "check",
-          "app/tests/check.rs",
-          "",
-          check.indexOf("FromTest"),
-        ),
-      ],
-    }),
-    references(binary, { FromBin: [inBin("", binary.indexOf("FromBin"))] }),
-    references(alpha, {
-      After: [inLib("alpha", lib.indexOf("mod alpha"), alpha.indexOf("After"))],
-    }),
-    references(zebra, {
-      Before: [
-        inBin("shared", binary.indexOf("mod shared"), zebra.indexOf("Before")),
-        inLib("zebra", lib.indexOf("mod zebra"), zebra.indexOf("Before")),
-      ],
-    }),
+    references(other, place("other", 0, "other", "other/src/lib.rs", "")),
+    references(check, place("app", 1, "check", "app/tests/check.rs", "")),
+    references(binary, inBin("")),
+    references(alpha, inLib("alpha", lib.indexOf("mod alpha"))),
+    references(zebra, inLib("zebra", lib.indexOf("mod zebra"))),
   ];
-  const focus = references(lib, {
-    Member: [inLib("", lib.indexOf("Member"))],
-    Middle: [inLib("", lib.indexOf("Middle"))],
-  });
+  const focus = references(lib, inLib(""));
   for (const found of [files, files.toReversed()]) {
     const context = {
       offsets: focus.offsets,
-      places: focus.places,
+      place: focus.place,
       files: found,
     };
     const diagram = JSON.parse(

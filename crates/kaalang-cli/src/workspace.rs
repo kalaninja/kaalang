@@ -14,11 +14,10 @@ use std::{
 };
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
-use kaalang_compiler::{
-    Declarations, FlowPath, ModuleFile, Place, Question,
-    workspace::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver},
-};
+use kaalang_compiler::{Declarations, FlowPath, ModuleFile, Place, Question};
 use syn::ext::IdentExt;
+
+use crate::names::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver};
 
 /// The file that declares a found flow, its source, the flow's position among
 /// the file's flows, and the cfg set its crate is read for.
@@ -556,7 +555,7 @@ fn answer(
             ) {
                 // rustc has not checked the flow path, so a name it misses is wrong.
                 (Def::Missing, _) if left.is_none() => false,
-                (Def::Type(left), Def::Type(right)) => resolver.same_type(left, right),
+                (Def::Type(left), Def::Type(right)) => left == right,
                 (
                     Def::Trait(left, left_module, left_name),
                     Def::Trait(right, right_module, right_name),

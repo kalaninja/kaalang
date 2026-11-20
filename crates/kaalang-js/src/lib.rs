@@ -4,8 +4,7 @@
 //! of the text as given, as JavaScript strings and the editors' APIs do; the
 //! column an error's message gives counts characters. A call
 //! answers in JSON, a string JavaScript owns, and the module forgets the text
-//! it parsed. A host can retain a workspace index of resolved relationships
-//! across queries, until its source snapshot changes.
+//! it parsed.
 
 use wasm_bindgen::{JsError, prelude::wasm_bindgen};
 
@@ -16,7 +15,6 @@ mod fixture;
 mod modules;
 mod types;
 mod utf16;
-mod workspace;
 
 /// Draws the flow at `position` among those that the target `cfg` compiles in
 /// `text`, with each cycle as one node when `collapse_cycles` is set, as JSON:
@@ -56,20 +54,17 @@ pub fn draw_flow(
 /// its path within its text and the range of its name. A `source` is 0 for
 /// `text` and n for the nth file of `context`, whose ranges count its own text.
 /// A path's `fieldText` gives its field-type line and UTF-16 range on that
-/// line. `otherPlaces`, when present, lists other readings of the same cards
-/// whose Cargo positions the editor can still supply.
+/// line.
 ///
-/// `context` is JSON, empty for none. The focus and each entry of `files`
-/// carry the editor's reference `offsets`, hover `modules`, and `places` by
-/// type path within the file. Each file also carries its `text` and `cfg`.
-/// Readings of a shared file under different cfgs use the same `uri`.
-/// A place gives the Cargo `package`, target `group` (0–3), `crate` name and
-/// `root` path, the crate-relative `module`, and `order` as source offsets
-/// from the root through module declarations to the type. These determine
-/// card order, rows and headers. An empty list excludes a type traced outside
-/// the focus's workspace targets. With only hover information, a header uses
-/// its module path. An unreadable incoming file draws no card. The answer is
-/// `null` when no type has `path`.
+/// `context` is JSON, empty for none. The focus's text and each entry of
+/// `files` carry the editor's reference `offsets` and, when known, the text's
+/// `place`; each file also carries its `text` and `cfg`. A place gives the
+/// Cargo `package`, target `group` (0–3), `crate` name and `root` path, the
+/// crate-relative `module`, and `order` as source offsets from the root
+/// through module declarations to the file. These determine card order, rows,
+/// and headers; without every place, a header is the path within its file. An
+/// unreadable incoming file draws no card. The answer is `null` when no type
+/// has `path`.
 ///
 /// # Errors
 ///
@@ -81,8 +76,9 @@ pub fn draw_type(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
 }
 
 /// The UTF-16 start of the final identifier in each active relationship target
-/// in `text`, as a JSON array. Editors can request a definition at each offset
-/// when their reference provider omits an incoming type behind a re-export.
+/// in `text`, as a JSON array. An editor can request a definition at each
+/// offset when its reference provider omits an incoming type behind a renamed
+/// import.
 ///
 /// # Errors
 ///
@@ -95,8 +91,6 @@ pub fn relationship_targets(text: &str, cfg: &str) -> Result<String, JsError> {
 /// The active types' name offsets and the external modules this file declares
 /// for `cfg`. Each module has a path, its name's UTF-16 offset, and the
 /// candidate files to try relative to the containing directory.
-/// `bodies` lists UTF-16 ranges inside the braces of functions, impls and
-/// traits whose contents do not affect workspace name resolution.
 /// `owns_directory` holds for a crate root, `mod.rs`, or an explicit `#[path]`.
 ///
 /// # Errors

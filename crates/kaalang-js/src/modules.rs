@@ -21,10 +21,5 @@ pub(crate) fn items(
         json!({"module": declaration.module, "offset": offsets.at(declaration.offset), "files": files})
     }).collect();
     let types: Vec<_> = types.into_iter().map(|byte| offsets.at(byte)).collect();
-    let bodies: Vec<_> = source
-        .module_bodies()
-        .into_iter()
-        .map(|range| [offsets.at(range.start), offsets.at(range.end)])
-        .collect();
-    Ok(json!({"modules": modules, "types": types, "bodies": bodies}).to_string())
+    Ok(json!({"modules": modules, "types": types}).to_string())
 }

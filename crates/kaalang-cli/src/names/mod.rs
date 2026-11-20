@@ -1,42 +1,17 @@
-//! Rust names and relationships in the active modules of a workspace target.
-//! Callers supply Cargo target metadata and module sources from disk or the editor.
+//! Rust names and relationships in the active modules of a workspace target,
+//! read from the module sources Cargo's targets compile.
 
 use std::{
-    collections::BTreeMap,
     io, iter,
     path::{Path, PathBuf},
     rc::Rc,
 };
 
+use kaalang_compiler::{ModuleDirectory, ModuleFile, Target};
 use syn::{Item, UseTree, ext::IdentExt};
 
-pub use self::resolve::{Def, Inclusion, Resolution, Resolver, TypeRef, first_readings};
-use crate::{ModuleDirectory, ModuleFile, Target};
+pub use self::resolve::{Def, Resolution, Resolver, TypeRef};
 mod resolve;
-
-/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CardCrate<'a> {
-    pub package: &'a str,
-    /// Library and binaries, tests, examples, then benches.
-    pub group: u8,
-    pub name: &'a str,
-    pub root: &'a Path,
-}
-
-impl<'a> CardCrate<'a> {
-    /// The focus's crate comes first, then the other targets of its package.
-    #[must_use]
-    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
-        (!is_focus, Some(self.package) != focus_package, self)
-    }
-
-    /// Each package's target groups start separate rows in the diagram.
-    #[must_use]
-    pub fn group_key(self) -> (&'a str, u8) {
-        (self.package, self.group)
-    }
-}
 
 /// A compiled crate and the libraries it can name.
 pub struct Crate {
@@ -57,14 +32,6 @@ pub struct Input {
     pub contents: io::Result<(PathBuf, String)>,
 }
 
-impl File {
-    /// A span's first byte in the original source.
-    #[must_use]
-    pub fn offset(&self, span: proc_macro2::Span) -> usize {
-        self.prefix + span.byte_range().start
-    }
-}
-
 /// One module: a file's own module or an inline module within one.
 pub struct Module {
     /// The path from the crate root: `""`, or `review::inner::` with its
@@ -82,7 +49,6 @@ pub struct File {
     /// The path that tells two crates' copies of one file apart from two files.
     pub canonical: PathBuf,
     pub source: String,
-    prefix: usize,
     /// Its items as its crate's target compiles them, none when it could not
     /// be read.
     pub items: Vec<Item>,
@@ -136,8 +102,6 @@ pub struct TypeEntry {
     pub in_file: String,
     /// The identifier's source position, unchanged by conditional attributes.
     pub position: proc_macro2::LineColumn,
-    /// The byte offset of the name in the original source, including its BOM and shebang.
-    pub offset: usize,
     pub item: Item,
 }
 
@@ -174,46 +138,6 @@ struct Walk<'a> {
     load: &'a mut Load<'a>,
     open: Vec<PathBuf>,
     tree: ModuleTree,
-}
-
-impl Crate {
-    /// Indexes the editor's source snapshots by their module paths from the crate root.
-    #[must_use]
-    pub fn from_modules(
-        package_id: String,
-        name: String,
-        library: bool,
-        host: bool,
-        dependencies: Vec<(String, String)>,
-        cfg: Target,
-        modules: &BTreeMap<&str, (&str, Option<&str>)>,
-    ) -> Self {
-        let source = |module: &str| {
-            let (uri, text) = modules
-                .get(module.trim_end_matches("::"))
-                .copied()
-                .unwrap_or((module, None));
-            let path = PathBuf::from(uri);
-            Input {
-                contents: text
-                    .map(|text| (path.clone(), text.to_owned()))
-                    .ok_or(io::ErrorKind::NotFound.into()),
-                path,
-                owns_directory: true,
-            }
-        };
-        let tree = ModuleTree::read(source(""), &cfg, |module, _, _| source(module));
-        Self {
-            package_id,
-            name,
-            library,
-            host,
-            dependencies,
-            cfg,
-            modules: tree.modules,
-            types: tree.types,
-        }
-    }
 }
 
 /// Reads the file of the module at `path` and follows its `mod` declarations,
@@ -261,11 +185,7 @@ fn walk_file(
     }
     let module = walk.tree.modules.len();
     let readable = parsed.is_some();
-    let prefix = parsed
-        .as_ref()
-        .map_or(0, |parsed| crate::source::source_prefix(&source, parsed));
     let shared = Rc::new(File {
-        prefix,
         path: file.clone(),
         canonical: canonical.clone(),
         source,
@@ -323,7 +243,6 @@ fn walk_items(walk: &mut Walk<'_>, items: &[Item], module: usize, directory: &Mo
                     path: format!("{}{ident}", outer.path),
                     in_file: format!("{}{ident}", outer.in_file),
                     position: ident.span().start(),
-                    offset: outer.file.offset(ident.span()),
                     item: item.clone(),
                 });
                 (name(ident), Declared::Type(walk.tree.types.len() - 1), vis)
@@ -512,16 +431,32 @@ fn imports(
     }
 }
 
+/// A library of one file, `source`, whose modules declared elsewhere are missing.
 #[cfg(test)]
 fn library(package: &str, source: &str) -> Crate {
-    let root = format!("/{package}/src/lib.rs");
-    Crate::from_modules(
-        package.to_owned(),
-        package.replace('-', "_"),
-        true,
-        false,
-        Vec::new(),
-        Target::default(),
-        &BTreeMap::from([("", (root.as_str(), Some(source)))]),
-    )
+    let root = PathBuf::from(format!("/{package}/src/lib.rs"));
+    let cfg = Target::default();
+    let tree = ModuleTree::read(
+        Input {
+            contents: Ok((root.clone(), source.to_owned())),
+            path: root,
+            owns_directory: true,
+        },
+        &cfg,
+        |module, _, _| Input {
+            path: PathBuf::from(module),
+            owns_directory: true,
+            contents: Err(io::ErrorKind::NotFound.into()),
+        },
+    );
+    Crate {
+        package_id: package.to_owned(),
+        name: package.replace('-', "_"),
+        library: true,
+        host: false,
+        dependencies: Vec::new(),
+        cfg,
+        modules: tree.modules,
+        types: tree.types,
+    }
 }

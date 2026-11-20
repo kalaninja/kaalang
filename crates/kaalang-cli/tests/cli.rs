@@ -1867,7 +1867,7 @@ fn incoming_types_follow_crate_order() {
 }
 
 #[test]
-fn a_file_that_two_crates_include_gives_one_card() {
+fn a_copy_of_a_file_in_another_crate_refers_to_its_own_types() {
     let directory = package("cli-type-shared-file", "pub mod model;\n");
     write(
         &directory,
@@ -1886,7 +1886,7 @@ fn a_file_that_two_crates_include_gives_one_card() {
 }
 
 #[test]
-fn each_module_keeps_its_incoming_type_when_another_target_shares_the_file() {
+fn each_inclusion_of_a_file_gives_its_incoming_type_a_card() {
     let directory = package(
         "cli-distinct-incoming",
         r#"pub struct Focus;
@@ -1915,7 +1915,9 @@ fn each_module_keeps_its_incoming_type_when_another_target_shares_the_file() {
         "tests/shared.rs",
         r#"pub use cli_distinct_incoming::Focus; #[path = "../src/shared.rs"] mod left;"#,
     );
-    assert_eq!(draw(), svg);
+    let svg = draw();
+    assert!(svg.contains("shared::left::Report → Focus"), "{svg}");
+    assert_eq!(svg.matches(r#"class="card""#).count(), 3, "{svg}");
 }
 
 #[test]
@@ -1965,7 +1967,8 @@ fn an_unrelated_target_cannot_change_which_shared_types_match() {
     let first = query();
     assert!(first.status.success(), "{:?}", first.stderr);
     let svg = fs::read(directory.join("chosen.svg")).unwrap();
-    assert!(String::from_utf8_lossy(&svg).contains("Incoming"));
+    // The test target refers to its own copy of `Member`.
+    assert!(!String::from_utf8_lossy(&svg).contains("Incoming"));
 
     let repeated = r#"#[path = "../src/shared.rs"] pub mod first;
                       #[path = "../src/shared.rs"] pub mod second;
@@ -1978,11 +1981,11 @@ fn an_unrelated_target_cannot_change_which_shared_types_match() {
     write(
         &directory,
         "tests/repeated.rs",
-        &format!("{repeated} pub use first::Member as Chosen;"),
+        &format!("{repeated} pub use third::Member as Chosen;"),
     );
-    let ambiguous = query();
-    assert!(!ambiguous.status.success());
-    assert!(String::from_utf8_lossy(&ambiguous.stderr).contains("multiple types have the path"));
+    let again = query();
+    assert!(again.status.success(), "{:?}", again.stderr);
+    assert_eq!(fs::read(directory.join("chosen.svg")).unwrap(), svg);
 }
 
 #[test]

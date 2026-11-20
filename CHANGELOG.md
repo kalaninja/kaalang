@@ -20,10 +20,11 @@
 - A flow's parameter, or a datatype's generic parameter, that a `#[cfg]` leaves
   out no longer counts: a block cannot capture it, and it no longer hides a
   relationship target of the same name.
-- `cargo kaalang diagram --type` draws a type that two modules include through
-  `#[path]` as two types, one in each module, as rustc compiles them, and
-  reports a module that has both `name.rs` and `name/mod.rs` instead of reading
-  one of them.
+- `cargo kaalang diagram --type` reads a file included several times, through
+  `mod` in several crates or `#[path]` in several modules, as a type per
+  inclusion, as rustc compiles it, each with its own card.
+- `cargo kaalang diagram` reports a module that has both `name.rs` and
+  `name/mod.rs` instead of reading one of them.
 
 ## 0.3.0 - 2026-11-12
 

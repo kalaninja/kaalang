@@ -3,16 +3,15 @@
 //!
 //! It serves the `kaalang` macro and the renderers, and its API may change in
 //! any minor release. Its `source` feature reads flows and types from the text
-//! of a source file for the renderers. The `workspace` feature resolves Rust
-//! paths across the module trees supplied by Cargo or an editor.
+//! of a source file for the renderers.
 
 use syn::{Error, ItemFn, Result};
 
 pub(crate) use self::choice::{choice_match, is_todo_body};
 #[cfg(feature = "source")]
 pub use self::source::{
-    Declared, ExternalModule, ModuleDirectory, ModuleFile, NamedPath, Ribbons, SourceError,
-    SourceFile, SourceFlow, SourceType, line_and_column,
+    CardCrate, Declared, ExternalModule, ModuleDirectory, ModuleFile, NamedPath, Ribbons,
+    SourceError, SourceFile, SourceFlow, SourceType, line_and_column,
 };
 #[cfg(feature = "cfg")]
 pub use self::target::Target;
@@ -64,8 +63,6 @@ mod symbolic;
 #[cfg(feature = "cfg")]
 mod target;
 pub mod topology;
-#[cfg(feature = "workspace")]
-pub mod workspace;
 
 /// Builds the validated semantic model for one kaalang flow function.
 ///

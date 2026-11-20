@@ -1,6 +1,7 @@
-//! Where the text of a type's card stands in its source, and which of a file's
-//! relationships an engine's references to a type reach: facts a renderer and
-//! an editor's page report, with no say in what a reader does with them.
+//! Where the text of a type's card stands in its source, which of a file's
+//! relationships an engine's references to a type reach, and the order of the
+//! cards' Cargo targets: facts a renderer and an editor's page report, with no
+//! say in what a reader does with them.
 
 use std::{collections::BTreeSet, ops::Range};
 
@@ -19,6 +20,30 @@ pub struct NamedPath {
     pub range: Range<usize>,
     /// Its last segment, where an engine resolves the path.
     pub span: Span,
+}
+
+/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CardCrate<'a> {
+    pub package: &'a str,
+    /// Library and binaries, tests, examples, then benches.
+    pub group: u8,
+    pub name: &'a str,
+    pub root: &'a std::path::Path,
+}
+
+impl<'a> CardCrate<'a> {
+    /// The focus's crate comes first, then the other targets of its package.
+    #[must_use]
+    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
+        (!is_focus, Some(self.package) != focus_package, self)
+    }
+
+    /// Each package's target groups start separate rows in the diagram.
+    #[must_use]
+    pub fn group_key(self) -> (&'a str, u8) {
+        (self.package, self.group)
+    }
 }
 
 impl SourceFile<'_> {
