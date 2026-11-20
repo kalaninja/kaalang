@@ -26,10 +26,7 @@ pub use self::{
         type_items, type_name,
     },
     executions::Executions,
-    flows::{
-        Declarations, FlowItem, FlowPath, Impl, Owner, Place, Question, declarations, flows,
-        select, types_match,
-    },
+    flows::{Declarations, FlowItem, Impl, Owner, declarations, flows},
     model::{
         Analysis, Block, BlockKind, Branch, BranchSelection, CaptureDependency, CaptureId,
         ConvergenceGroup, Execution, ExecutionOutcome, ExecutionPlan, Flow, FlowKind, Input,

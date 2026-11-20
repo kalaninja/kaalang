@@ -11,6 +11,7 @@ repository.workspace = true
 [dependencies]
 kaalang-compiler = { workspace = true, features = ["source"] }
 proc-macro2 = { workspace = true, features = ["span-locations"] }
+quote = { workspace = true }
 syn = { workspace = true, features = ["visit-mut"] }
 
 [lints]

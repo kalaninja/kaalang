@@ -6,12 +6,16 @@ use std::{io, iter, path::PathBuf, rc::Rc};
 use kaalang_compiler::{CfgSet, SourceFile};
 use syn::{Item, UseTree, ext::IdentExt};
 
-pub use self::resolve::{Def, Resolution, Resolver, TypeRef};
+pub use self::{
+    resolve::{Def, Resolution, Resolver, TypeRef},
+    select::{FlowPath, FoundFlow},
+};
 use crate::{
     Files, module_items,
     walk::{TreeFile, walk},
 };
 mod resolve;
+mod select;
 
 /// A compiled crate and the libraries it can name.
 pub struct Crate {

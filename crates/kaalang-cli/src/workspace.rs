@@ -10,16 +10,13 @@ use std::{
     ops::Deref,
     path::{Path, PathBuf},
     process::Command,
-    rc::Rc,
 };
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
-use kaalang_compiler::{Declarations, FlowPath, Place, Question};
 use kaalang_workspace::{
     Files,
-    names::{Crate as CompiledCrate, Def, ModuleTree, Resolver},
+    names::{Crate as CompiledCrate, FlowPath, FoundFlow, ModuleTree, Resolver},
 };
-use syn::ext::IdentExt;
 
 /// The file that declares a found flow, its source, the flow's position among
 /// the file's flows, and the cfg set its crate is read for.
@@ -397,81 +394,39 @@ pub(super) fn find<'a>(
     let selected = |krate: &Crate| {
         !krate.dependency_only && package.is_none_or(|package| krate.package == package)
     };
-    // Each crate's files, by their own modules, with their declarations.
-    let files: Vec<Vec<(usize, Declarations)>> = crates
-        .iter()
-        .map(|krate| {
-            krate
-                .modules
-                .iter()
-                .enumerate()
-                .filter(|(_, module)| module.in_file.is_empty())
-                .map(|(at, module)| (at, kaalang_compiler::declarations(&module.file.items)))
-                .collect()
-        })
-        .collect();
-    let mut matches = Vec::new();
-    // A file that several crates include, or one crate reads twice, declares a
-    // flow once.
-    let mut seen = BTreeSet::new();
-    let flow_path = FlowPath::parse(path);
-    for (index, krate) in crates.iter().enumerate() {
-        let Some(flow_path) = flow_path.as_ref().filter(|_| selected(krate)) else {
-            continue;
-        };
-        let listed: Vec<((usize, usize), &Declarations)> = crates
-            .iter()
-            .enumerate()
-            .filter(|(source, other)| {
-                *source == index
+    // A crate's search spans its own files and those of the libraries it may
+    // use, as a trait's default method may be in one.
+    let roots: Vec<(usize, Vec<usize>)> = (0..crates.len())
+        .filter(|&index| selected(&crates[index]))
+        .map(|index| {
+            let krate = &crates[index];
+            let spanned = (0..crates.len()).filter(|&source| {
+                let other = &crates[source];
+                source == index
                     || other.library
                         && (other.host == krate.host || other.host && !other.dependency_only)
-            })
-            .flat_map(|(source, _)| {
-                files[source]
-                    .iter()
-                    .map(move |(at, declarations)| ((source, *at), declarations))
-            })
-            .collect();
-        let mut ambiguous = false;
-        let mut names = |question: Question<'_, (usize, usize)>| {
-            answer(crates, index, &resolver, question).unwrap_or_else(|| {
-                ambiguous = true;
-                false
-            })
-        };
-        let selected = kaalang_compiler::select(flow_path, &listed, &mut names);
-        if ambiguous {
-            return Err(format!(
+            });
+            (index, spanned.collect())
+        })
+        .collect();
+    let mut matches = match FlowPath::parse(path) {
+        Some(flow_path) => resolver.select_flows(&flow_path, &roots).map_err(|root| {
+            format!(
                 "the flow path `{path}` is ambiguous through glob imports in {}",
-                krate.label()
-            ));
-        }
-        for (file, position) in selected {
-            let ((source, at), declarations) = listed[file];
-            let module = &crates[source].modules[at];
-            // Crates read a shared file under their own `cfg`s, so its flow
-            // is known by where it stands, not by its position among them.
-            let at = declarations.flows[position]
-                .function
-                .sig
-                .ident
-                .span()
-                .start();
-            if seen.insert((module.file.canonical.clone(), at.line, at.column)) {
-                let in_file = declarations.flows[position].path.clone();
-                // Listed under the crate the path was resolved from, which `-p`
-                // selects, and read for the crate whose file declares it.
-                matches.push((index, source, module, in_file, position));
-            }
-        }
-    }
+                crates[root].label()
+            )
+        })?,
+        None => Vec::new(),
+    };
+    let file = |found: &FoundFlow| &crates[found.krate].modules[found.module].file;
     if matches.len() > 1 {
+        // Each listed under the crate the path was resolved from, which `-p`
+        // selects.
         let listed: Vec<(&Crate, String)> = matches
             .iter()
-            .map(|(index, _, module, in_file, _)| {
-                let at = format!("{}: {in_file}", module.file.path.display());
-                (&crates[*index], at)
+            .map(|found| {
+                let at = format!("{}: {}", file(found).path.display(), found.in_file);
+                (&crates[found.root], at)
             })
             .collect();
         return Err(ambiguous(
@@ -485,85 +440,18 @@ pub(super) fn find<'a>(
             .iter()
             .filter(|krate| selected(krate) || krate.library),
     );
-    let Some((_, source, module, _, position)) = matches.pop() else {
+    let Some(found) = matches.pop() else {
         let message = format!("`#[kaa]` function `{path}` was not found");
         return Err(with_skipped(message, &skipped));
     };
     warn_skipped(path, &skipped);
+    // Read for the crate whose file declares it.
+    let declaring = file(&found);
     Ok(Found {
-        file: &module.file.path,
-        source: &module.file.source,
-        position,
-        cfg: &crates[source].cfg,
-    })
-}
-
-/// Answers how names resolve for a flow path written from the root of crate
-/// `krate`. A place names a crate and a file's own module in it.
-fn answer(
-    crates: &[Crate],
-    krate: usize,
-    resolver: &Resolver,
-    question: Question<'_, (usize, usize)>,
-) -> Option<bool> {
-    // The module of a place: the file's own, or an inline one within it.
-    let module = |at: Place<'_, (usize, usize)>| {
-        let (source, own) = at.file;
-        let modules = &crates[source].modules;
-        let found = modules
-            .iter()
-            .position(|module| {
-                Rc::ptr_eq(&module.file, &modules[own].file) && module.in_file == at.module
-            })
-            .unwrap_or(own);
-        (source, found)
-    };
-    let query = |def| (!matches!(def, Def::Ambiguous(_))).then_some(def);
-    Some(match question {
-        Question::Function { path, at, name } => {
-            let (source, inside) = module(at);
-            matches!(
-                query(resolver.find_value(krate, 0, path))?,
-                Def::Value(found, declared, value, "a function")
-                    if (found, declared) == (source, inside) && name.unraw() == value
-            )
-        }
-        Question::Type(path) => resolver.is_type(krate, 0, path)?,
-        Question::Types {
-            query,
-            at,
-            written,
-            generics,
-        } => resolver.types_match((krate, 0), query, module(at), written, generics),
-        Question::Same(left, left_path, right, right_path) => {
-            let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
-            let (left_crate, left_module) = left.map_or((krate, 0), module);
-            let (right_crate, right_module) = module(right);
-            let left_def = resolver.find(left_crate, left_module, left_path);
-            let left_def = if left.is_none() {
-                query(left_def)?
-            } else {
-                left_def
-            };
-            match (
-                left_def,
-                resolver.find(right_crate, right_module, right_path),
-            ) {
-                // rustc has not checked the flow path, so a name it misses is wrong.
-                (Def::Missing, _) if left.is_none() => false,
-                (Def::Type(left), Def::Type(right)) => left == right,
-                (
-                    Def::Trait(left, left_module, left_name),
-                    Def::Trait(right, right_module, right_name),
-                ) => (left, left_module, left_name) == (right, right_module, right_name),
-                // The source alone cannot tell what a name it cannot resolve
-                // is, nor which name from outside the workspace.
-                (Def::Outside, Def::Outside)
-                | (Def::Missing | Def::Unknown(_), _)
-                | (_, Def::Missing | Def::Unknown(_)) => last(left_path) == last(right_path),
-                _ => false,
-            }
-        }
+        file: &declaring.path,
+        source: &declaring.source,
+        position: found.position,
+        cfg: &crates[found.krate].cfg,
     })
 }
 
