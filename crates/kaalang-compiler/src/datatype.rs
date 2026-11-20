@@ -205,6 +205,12 @@ fn collect_types(items: &[Item], prefix: &str, types: &mut Vec<(String, Item)>) 
     }
 }
 
+/// The name of a struct, enum, union, or type alias.
+#[must_use]
+pub fn type_name(item: &Item) -> Option<&Ident> {
+    parts(item).map(|(_, name, _)| name)
+}
+
 /// The attributes, name, and generics of a supported declaration form.
 pub(crate) fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
     match item {

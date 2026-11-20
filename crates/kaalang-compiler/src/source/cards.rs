@@ -1,7 +1,6 @@
-//! Where the text of a type's card stands in its source, which of a file's
-//! relationships an engine's references to a type reach, and the order of the
-//! cards' Cargo targets: facts a renderer and an editor's page report, with no
-//! say in what a reader does with them.
+//! Where the text of a type's card stands in its source, and which of a file's
+//! relationships an engine's references to a type reach: facts a renderer and
+//! an editor's page report, with no say in what a reader does with them.
 
 use std::{collections::BTreeSet, ops::Range};
 
@@ -20,30 +19,6 @@ pub struct NamedPath {
     pub range: Range<usize>,
     /// Its last segment, where an engine resolves the path.
     pub span: Span,
-}
-
-/// The Cargo target containing a type card, in RFC 0009 §4.3 order.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CardCrate<'a> {
-    pub package: &'a str,
-    /// Library and binaries, tests, examples, then benches.
-    pub group: u8,
-    pub name: &'a str,
-    pub root: &'a std::path::Path,
-}
-
-impl<'a> CardCrate<'a> {
-    /// The focus's crate comes first, then the other targets of its package.
-    #[must_use]
-    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
-        (!is_focus, Some(self.package) != focus_package, self)
-    }
-
-    /// Each package's target groups start separate rows in the diagram.
-    #[must_use]
-    pub fn group_key(self) -> (&'a str, u8) {
-        (self.package, self.group)
-    }
 }
 
 impl SourceFile<'_> {
@@ -268,12 +243,12 @@ fn renamed_in(
 
 #[cfg(test)]
 mod tests {
-    use crate::{SourceFile, Target};
+    use crate::{CfgSet, SourceFile};
 
     /// The text each name of each field's type covers, and the source its
     /// span covers.
     fn names(source: &str, path: &str) -> Vec<Vec<(String, String)>> {
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let ty = file.ty(path).unwrap();
         ty.field_paths
             .iter()
@@ -399,7 +374,7 @@ mod inner {
 
     /// The types `REFERRING` refers from to what stands at each `marker`.
     fn referring(markers: &[&str]) -> Vec<(String, Vec<usize>)> {
-        let file = SourceFile::parse(REFERRING, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(REFERRING, CfgSet::EMPTY).unwrap();
         let offsets: Vec<usize> = markers
             .iter()
             .map(|marker| REFERRING.find(marker).unwrap())
@@ -418,14 +393,14 @@ mod inner {
     #[test]
     fn a_reference_before_a_targets_last_segment_reaches_nothing() {
         let source = "#[kaa]\nenum Member { Lead }\n\n#[kaa]\nstruct Team {\n    #[kaa::refer(Member::Lead, \"A variant.\")]\n    lead: u8,\n}\n";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         assert_eq!(file.referring(&[source.find("Member::").unwrap()]), []);
     }
 
     #[test]
     fn a_path_declared_twice_refers_as_its_first_declaration() {
         let source = "#[kaa]\nstruct Team {\n    #[kaa::refer(Member, \"One.\")]\n    lead: u8,\n}\n\n#[kaa]\nstruct Team {\n    #[kaa::refer(Other, \"Two.\")]\n    other: u8,\n    #[kaa::refer(Member, \"Three.\")]\n    lead: u8,\n}\n";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let offsets: Vec<usize> = source.match_indices("Member").map(|(at, _)| at).collect();
         assert_eq!(file.referring(&offsets), [("Team".to_owned(), vec![0])]);
     }
@@ -494,7 +469,7 @@ mod inner {
         #[kaa] struct Group {
             #[kaa::refer(labels::Person, "Child module.")] lead: u8,
         }"#;
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let name = source.find("Member as").unwrap();
         assert_eq!(
             file.referring(&[name]),
@@ -509,7 +484,7 @@ mod inner {
     #[test]
     fn a_self_target_names_its_owner() {
         let source = "#[kaa]\nstruct Member {\n    #[kaa::refer(Self, \"The previous one.\")]\n    previous: u8,\n}\n";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let ty = file.ty("Member").unwrap();
         assert_eq!(ty.relationship_targets, ["Self"]);
         assert_eq!(&source[file.range(ty.target_spans[0])], "Member");

@@ -7,14 +7,14 @@ use std::{
     sync::LazyLock,
 };
 
-use kaalang_compiler::{FlowItem, Target};
+use kaalang_compiler::{CfgSet, FlowItem};
 use syn::ItemFn;
 
 /// The cfg of `x86_64-unknown-linux-gnu` printed by rustc 1.99.1, plus `test`.
 pub const TARGET_CFG: &str = include_str!("../../kaalang/tests/diagram-target.cfg");
 
 /// The target used to compile and draw fixture source in the corpus.
-pub static TARGET: LazyLock<Target> =
+pub static TARGET: LazyLock<CfgSet> =
     LazyLock::new(|| TARGET_CFG.parse().expect("the fixture target is a cfg set"));
 
 fn fixture_flows(source: &str) -> syn::Result<Vec<FlowItem>> {

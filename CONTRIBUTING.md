@@ -196,8 +196,9 @@ just release publish
 
 To resume a partial release, publish one crate at a time with
 `just release publish-crate <crate>`, in dependency order: `kaalang-compiler`,
-`kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
-`kaalang-cli`. `kaalang-testing` and `kaalang-js` are never published.
+`kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang-workspace`,
+`kaalang`, then `kaalang-cli`. `kaalang-testing` and `kaalang-js` are never
+published.
 
 Then tag the released commit and push the tag:
 

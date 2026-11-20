@@ -7,10 +7,11 @@ use std::{
     rc::Rc,
 };
 
-use kaalang_compiler::{ModuleDirectory, ModuleFile, Target};
+use kaalang_compiler::CfgSet;
 use syn::{Item, UseTree, ext::IdentExt};
 
 pub use self::resolve::{Def, Resolution, Resolver, TypeRef};
+use crate::{ModuleDirectory, ModuleFile};
 mod resolve;
 
 /// A compiled crate and the libraries it can name.
@@ -20,7 +21,7 @@ pub struct Crate {
     pub library: bool,
     pub host: bool,
     pub dependencies: Vec<(String, String)>,
-    pub cfg: Target,
+    pub cfg: CfgSet,
     pub modules: Vec<Module>,
     pub types: Vec<TypeEntry>,
 }
@@ -119,7 +120,7 @@ impl ModuleTree {
     /// Follows active module declarations, asking the host to choose each external source.
     pub fn read(
         root: Input,
-        cfg: &Target,
+        cfg: &CfgSet,
         mut load: impl FnMut(&str, &Path, Vec<ModuleFile>) -> Input,
     ) -> Self {
         let mut walk = Walk {
@@ -134,7 +135,7 @@ impl ModuleTree {
 }
 
 struct Walk<'a> {
-    cfg: &'a Target,
+    cfg: &'a CfgSet,
     load: &'a mut Load<'a>,
     open: Vec<PathBuf>,
     tree: ModuleTree,
@@ -435,7 +436,7 @@ fn imports(
 #[cfg(test)]
 fn library(package: &str, source: &str) -> Crate {
     let root = PathBuf::from(format!("/{package}/src/lib.rs"));
-    let cfg = Target::default();
+    let cfg = CfgSet::default();
     let tree = ModuleTree::read(
         Input {
             contents: Ok((root.clone(), source.to_owned())),

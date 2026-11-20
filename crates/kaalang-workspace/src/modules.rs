@@ -1,10 +1,8 @@
 //! Where a Rust file declares its external modules, and which files a host
 //! looks for at each declaration.
 
+use kaalang_compiler::{SourceFile, type_name};
 use syn::{Expr, ExprLit, Item, ItemMod, Lit, Meta, ext::IdentExt};
-
-use super::SourceFile;
-use crate::datatype::parts;
 
 /// A file's external module, including any inline modules around it.
 #[derive(Debug, PartialEq, Eq)]
@@ -112,69 +110,68 @@ impl ModuleDirectory {
     }
 }
 
-impl SourceFile<'_> {
-    /// Every external module and the name offsets of every struct, enum, union
-    /// and alias compiled from this text, in declaration order.
-    /// The same file can own its directory in one inclusion and have its
-    /// submodules under `file_stem/` in another.
-    #[must_use]
-    pub fn module_items(
-        &self,
-        file_stem: &str,
-        owns_directory: bool,
-    ) -> (Vec<ExternalModule>, Vec<usize>) {
-        fn collect(
-            file: &SourceFile<'_>,
-            items: &[Item],
-            prefix: &str,
-            directory: &ModuleDirectory,
-            modules: &mut Vec<ExternalModule>,
-            types: &mut Vec<usize>,
-        ) {
-            for item in items {
-                let Item::Mod(declaration) = item else {
-                    if let Some((_, name, _)) = parts(item) {
-                        types.push(file.range(name.span()).start);
-                    }
-                    continue;
-                };
-                let module = format!("{prefix}{}", declaration.ident);
-                if let Some((_, nested)) = &declaration.content {
-                    collect(
-                        file,
-                        nested,
-                        &format!("{module}::"),
-                        &directory.inline(declaration),
-                        modules,
-                        types,
-                    );
-                } else {
-                    modules.push(ExternalModule {
-                        module,
-                        offset: file.range(declaration.ident.span()).start,
-                        files: directory.files(declaration),
-                    });
+/// Every external module and the name offsets of every struct, enum, union
+/// and alias `file` compiles, in declaration order. The same file can own its
+/// directory in one inclusion and have its submodules under `file_stem/` in
+/// another.
+#[must_use]
+pub fn module_items(
+    file: &SourceFile<'_>,
+    file_stem: &str,
+    owns_directory: bool,
+) -> (Vec<ExternalModule>, Vec<usize>) {
+    fn collect(
+        file: &SourceFile<'_>,
+        items: &[Item],
+        prefix: &str,
+        directory: &ModuleDirectory,
+        modules: &mut Vec<ExternalModule>,
+        types: &mut Vec<usize>,
+    ) {
+        for item in items {
+            let Item::Mod(declaration) = item else {
+                if let Some(name) = type_name(item) {
+                    types.push(file.range(name.span()).start);
                 }
+                continue;
+            };
+            let module = format!("{prefix}{}", declaration.ident);
+            if let Some((_, nested)) = &declaration.content {
+                collect(
+                    file,
+                    nested,
+                    &format!("{module}::"),
+                    &directory.inline(declaration),
+                    modules,
+                    types,
+                );
+            } else {
+                modules.push(ExternalModule {
+                    module,
+                    offset: file.range(declaration.ident.span()).start,
+                    files: directory.files(declaration),
+                });
             }
         }
-        let mut modules = Vec::new();
-        let mut types = Vec::new();
-        collect(
-            self,
-            self.items(),
-            "",
-            &ModuleDirectory::for_file(file_stem, owns_directory),
-            &mut modules,
-            &mut types,
-        );
-        (modules, types)
     }
+    let mut modules = Vec::new();
+    let mut types = Vec::new();
+    collect(
+        file,
+        file.items(),
+        "",
+        &ModuleDirectory::for_file(file_stem, owns_directory),
+        &mut modules,
+        &mut types,
+    );
+    (modules, types)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ModuleFile, SourceFile};
-    use crate::Target;
+    use kaalang_compiler::{CfgSet, SourceFile};
+
+    use super::{ModuleFile, module_items};
 
     fn candidate(parts: &[&str], owns_directory: bool) -> ModuleFile {
         ModuleFile {
@@ -186,8 +183,8 @@ mod tests {
     #[test]
     fn two_inclusions_of_one_file_search_different_directories() {
         let root = "mod shared; #[path = \"shared.rs\"] mod copy;";
-        let file = SourceFile::parse(root, Target::EMPTY).unwrap();
-        let (modules, _) = file.module_items("lib", true);
+        let file = SourceFile::parse(root, CfgSet::EMPTY).unwrap();
+        let (modules, _) = module_items(&file, "lib", true);
         assert_eq!(modules[0].module, "shared");
         assert_eq!(
             modules[0].files,
@@ -199,8 +196,8 @@ mod tests {
         assert_eq!(modules[1].module, "copy");
         assert_eq!(modules[1].files, [candidate(&["shared.rs"], true)]);
 
-        let file = SourceFile::parse("mod r#match;", Target::EMPTY).unwrap();
-        let children = |owned| file.module_items("shared", owned).0.remove(0);
+        let file = SourceFile::parse("mod r#match;", CfgSet::EMPTY).unwrap();
+        let children = |owned| module_items(&file, "shared", owned).0.remove(0);
         let direct = children(modules[0].files[0].owns_directory);
         let copied = children(modules[1].files[0].owns_directory);
         assert_eq!(direct.module, "r#match");
@@ -241,7 +238,7 @@ mod tests {
             "#,
         );
         let file = SourceFile::parse(source, &"unix".parse().unwrap()).unwrap();
-        let (modules, types) = file.module_items("shared", false);
+        let (modules, types) = module_items(&file, "shared", false);
         assert_eq!(modules.len(), 2);
         assert_eq!(modules[0].module, "r#type::inner::explicit");
         assert_eq!(modules[0].offset, source.find("explicit;").unwrap());

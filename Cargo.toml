@@ -7,6 +7,7 @@ members = [
     "crates/kaalang-render",
     "crates/kaalang-svg",
     "crates/kaalang-testing",
+    "crates/kaalang-workspace",
     "crates/kaalang-js",
 ]
 resolver = "3"
@@ -24,6 +25,7 @@ kaalang-macros = { version = "0.3.0", path = "crates/kaalang-macros" }
 kaalang-render = { version = "0.3.0", path = "crates/kaalang-render" }
 kaalang-svg = { version = "0.3.0", path = "crates/kaalang-svg" }
 kaalang-testing = { path = "crates/kaalang-testing" }
+kaalang-workspace = { version = "0.3.0", path = "crates/kaalang-workspace" }
 
 cargo-platform = "0.3.3"
 cargo_metadata = "0.23.1"

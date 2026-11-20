@@ -145,7 +145,7 @@ fn explicit_output_replaces_an_existing_file() {
     assert_eq!(
         fs::read_to_string(directory.join("chosen.svg")).unwrap(),
         kaalang_svg::render_flow(
-            kaalang_compiler::SourceFile::parse(SOURCE, kaalang_compiler::Target::EMPTY)
+            kaalang_compiler::SourceFile::parse(SOURCE, kaalang_compiler::CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .unwrap_or_else(|error| panic!("{error}"))

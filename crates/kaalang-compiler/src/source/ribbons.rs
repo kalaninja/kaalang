@@ -442,7 +442,7 @@ mod tests {
 
     use super::Ribbons;
     use crate::{
-        Flow, ProducerId, SemanticModel, SourceFile, Target,
+        CfgSet, Flow, ProducerId, SemanticModel, SourceFile,
         tests::{fixture, model},
         topology::{Connection, NodeId, NodeKind, Vertex},
     };
@@ -838,7 +838,7 @@ mod tests {
     /// Calls `check` with every local flow the ordinary fixtures draw, in each
     /// view, and its diagram's name.
     fn each_fixture_model(check: impl Fn(&str, &SemanticModel)) {
-        let target: Target = corpus::TARGET_CFG
+        let target: CfgSet = corpus::TARGET_CFG
             .parse()
             .expect("the fixture target is a cfg set");
         for diagram in corpus::diagrams(Suite::Ordinary) {

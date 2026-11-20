@@ -4,7 +4,7 @@
 //! Hotspots are checked against the SVG they describe: each sits on a line of
 //! text the diagram draws, so a hotspot that drifts from the drawing fails.
 
-use kaalang_compiler::{SourceFile, SourceType, Target};
+use kaalang_compiler::{CfgSet, SourceFile, SourceType};
 use kaalang_svg::{Hotspot, HotspotKind, TypeCard, TypeOptions, render_type};
 use kaalang_testing::corpus::{self, Suite};
 
@@ -78,7 +78,7 @@ fn each_diagram(file: &SourceFile<'_>, mut check: impl FnMut(&[&SourceType], &st
 fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
     let mut checked = 0;
     for (path, source) in corpus::files(Suite::Ordinary) {
-        let file = SourceFile::parse(&source, Target::EMPTY).expect("the fixture parses");
+        let file = SourceFile::parse(&source, CfgSet::EMPTY).expect("the fixture parses");
         each_diagram(&file, |cards, svg, hotspots| {
             let what = format!("{} in {}", cards[0].path, path.display());
             let (width, height) = (number(svg, "width"), number(svg, "height"));
@@ -175,7 +175,7 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
 #[test]
 fn a_path_that_wraps_has_a_hotspot_at_the_start_of_each_line() {
     let source = "struct Long {\n    field: crate::alpha::beta::gamma::delta::epsilon::zeta::eta::theta::iota::Kappa,\n}\n";
-    let file = SourceFile::parse(source, Target::EMPTY).expect("the source parses");
+    let file = SourceFile::parse(source, CfgSet::EMPTY).expect("the source parses");
     let ty = file.ty("Long").expect("the type reads");
     let card = TypeCard {
         ty: &ty,

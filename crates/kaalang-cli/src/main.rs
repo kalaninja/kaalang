@@ -6,7 +6,6 @@ use crate::diagram::Diagram;
 
 mod datatype;
 mod diagram;
-mod names;
 mod output;
 mod workspace;
 

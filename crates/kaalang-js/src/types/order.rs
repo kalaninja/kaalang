@@ -3,7 +3,7 @@
 
 use std::path::Path;
 
-use kaalang_compiler::CardCrate;
+use kaalang_workspace::CargoTarget;
 use serde::Deserialize;
 
 /// A Cargo target, the crate-relative module, and the source positions from
@@ -20,8 +20,8 @@ pub(super) struct Place {
 }
 
 impl Place {
-    pub fn krate(&self) -> CardCrate<'_> {
-        CardCrate {
+    pub fn krate(&self) -> CargoTarget<'_> {
+        CargoTarget {
             package: &self.package,
             group: self.group,
             name: &self.name,
@@ -29,7 +29,7 @@ impl Place {
         }
     }
 
-    pub fn key(&self, focus: Option<&Place>) -> ((bool, bool, CardCrate<'_>), &[u32]) {
+    pub fn key(&self, focus: Option<&Place>) -> ((bool, bool, CargoTarget<'_>), &[u32]) {
         let krate = self.krate();
         let focus = focus.map(Place::krate);
         (

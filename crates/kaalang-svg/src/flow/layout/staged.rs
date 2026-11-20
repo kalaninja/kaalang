@@ -351,7 +351,7 @@ mod tests {
 
     /// The first flow of `source`, read for no target.
     fn first_flow(source: &str, collapsed: bool) -> kaalang_compiler::SourceFlow {
-        kaalang_compiler::SourceFile::parse(source, kaalang_compiler::Target::EMPTY)
+        kaalang_compiler::SourceFile::parse(source, kaalang_compiler::CfgSet::EMPTY)
             .unwrap()
             .flow(0, collapsed)
             .unwrap_or_else(|error| panic!("{error}"))

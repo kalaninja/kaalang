@@ -1,11 +1,11 @@
-use kaalang_compiler::{SourceError, SourceFile, SourceFlow, Target};
+use kaalang_compiler::{CfgSet, SourceError, SourceFile, SourceFlow};
 use kaalang_svg::{RenderError, TypeCard, TypeOptions, render_flow, render_type};
 use kaalang_testing::corpus::{self, Suite};
 
 /// Reads the flow at `path` within `source` for no target, with each cycle as
 /// one node when `collapse_cycles` is set.
 fn read(source: &str, path: &str, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
-    let file = SourceFile::parse(source, Target::EMPTY)?;
+    let file = SourceFile::parse(source, CfgSet::EMPTY)?;
     let position = kaalang_compiler::flows(file.items())
         .iter()
         .position(|flow| flow.path == path)
@@ -767,8 +767,8 @@ fn crlf_line_endings_draw_the_same_type_diagram() {
     let mut drawn = 0;
     for (path, source) in corpus::files(Suite::Ordinary) {
         let crlf = source.replace('\n', "\r\n");
-        let file = SourceFile::parse(&source, Target::EMPTY).expect("the fixture parses");
-        let crlf_file = SourceFile::parse(&crlf, Target::EMPTY).expect("the fixture parses");
+        let file = SourceFile::parse(&source, CfgSet::EMPTY).expect("the fixture parses");
+        let crlf_file = SourceFile::parse(&crlf, CfgSet::EMPTY).expect("the fixture parses");
         for (name, _) in kaalang_compiler::type_items(file.items()) {
             let svg = |file: &SourceFile<'_>| {
                 let ty = file.ty(&name).map_err(|error| error.to_string())?;

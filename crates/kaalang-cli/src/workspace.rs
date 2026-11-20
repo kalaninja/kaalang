@@ -14,10 +14,12 @@ use std::{
 };
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
-use kaalang_compiler::{Declarations, FlowPath, ModuleFile, Place, Question};
+use kaalang_compiler::{Declarations, FlowPath, Place, Question};
+use kaalang_workspace::{
+    ModuleFile,
+    names::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver},
+};
 use syn::ext::IdentExt;
-
-use crate::names::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver};
 
 /// The file that declares a found flow, its source, the flow's position among
 /// the file's flows, and the cfg set its crate is read for.
@@ -25,7 +27,7 @@ pub(super) struct Found<'a> {
     pub(super) file: &'a Path,
     pub(super) source: &'a str,
     pub(super) position: usize,
-    pub(super) cfg: &'a kaalang_compiler::Target,
+    pub(super) cfg: &'a kaalang_compiler::CfgSet,
 }
 
 /// The target options, as cargo takes them.
@@ -269,7 +271,7 @@ fn cfg_set(
     target: &Target,
     printed: &str,
     features: &[String],
-) -> Result<kaalang_compiler::Target, String> {
+) -> Result<kaalang_compiler::CfgSet, String> {
     let mut lines = vec![printed.to_owned()];
     lines.extend(
         features

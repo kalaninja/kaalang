@@ -6,14 +6,15 @@ use std::{
     fmt::Write as _,
 };
 
-use kaalang_compiler::{CardCrate, SourceError, SourceFile, SourceType, TypeDeclaration};
+use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
 use kaalang_svg::{CardPath, TypeCard, TypeOptions};
+use kaalang_workspace::{
+    CargoTarget,
+    names::{Def, Resolution, Resolver, TypeRef},
+};
 use syn::spanned::Spanned;
 
-use crate::{
-    names::{Def, Resolution, Resolver, TypeRef},
-    workspace::{self, Crate},
-};
+use crate::workspace::{self, Crate};
 
 /// Draws the type whose path from its crate root is `path`, taken from
 /// `package` when given. A file that cannot be read or parsed, or a type whose
@@ -193,7 +194,7 @@ fn render(
     let mut groups: Vec<&[TypeCard]> = Vec::new();
     let mut start = 0;
     for end in 1..=incoming.len() {
-        let group = |index: usize| crates[incoming[index].0.krate].card_crate().group_key();
+        let group = |index: usize| crates[incoming[index].0.krate].cargo_target().group_key();
         if end == incoming.len() || group(end) != group(start) {
             groups.push(&incoming_cards[start..end]);
             start = end;
@@ -289,14 +290,14 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..crates.len()).collect();
     order.sort_by_key(|&index| {
         let krate = &crates[index];
-        krate.card_crate().order(package, index == first)
+        krate.cargo_target().order(package, index == first)
     });
     order
 }
 
 impl Crate {
-    fn card_crate(&self) -> CardCrate<'_> {
-        CardCrate {
+    fn cargo_target(&self) -> CargoTarget<'_> {
+        CargoTarget {
             package: &self.package,
             group: self.group,
             name: &self.name,

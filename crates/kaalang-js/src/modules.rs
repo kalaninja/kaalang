@@ -13,7 +13,7 @@ pub(crate) fn items(
 ) -> Result<String, String> {
     let source = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
     let offsets = utf16::Offsets::new(text);
-    let (modules, types) = source.module_items(stem, owns_directory);
+    let (modules, types) = kaalang_workspace::module_items(&source, stem, owns_directory);
     let modules: Vec<_> = modules.into_iter().map(|declaration| {
         let files: Vec<_> = declaration.files.into_iter().map(|file| {
             json!({"parts": file.parts, "ownsDirectory": file.owns_directory})

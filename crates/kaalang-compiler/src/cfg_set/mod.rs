@@ -11,11 +11,11 @@ mod imports;
 /// with a `feature="…"` line for each enabled feature. A source file is read
 /// as that target compiles it.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct Target {
+pub struct CfgSet {
     cfgs: Vec<Cfg>,
 }
 
-impl Target {
+impl CfgSet {
     /// The empty set, for a caller that names no target.
     pub const EMPTY: &'static Self = &Self { cfgs: Vec::new() };
 
@@ -57,7 +57,7 @@ fn cargo_text(predicate: TokenStream) -> String {
     parts.join(" ")
 }
 
-impl FromStr for Target {
+impl FromStr for CfgSet {
     type Err = String;
 
     /// Reads one cfg from each nonempty line.
@@ -78,19 +78,19 @@ impl FromStr for Target {
 mod tests {
     use quote::quote;
 
-    use super::Target;
+    use super::CfgSet;
 
     #[test]
     fn order_and_repeated_cfgs_describe_the_same_target() {
         assert_eq!(
-            "unix\nfeature=\"audit\"".parse::<Target>().unwrap(),
-            "feature=\"audit\"\nunix\nunix".parse::<Target>().unwrap()
+            "unix\nfeature=\"audit\"".parse::<CfgSet>().unwrap(),
+            "feature=\"audit\"\nunix\nunix".parse::<CfgSet>().unwrap()
         );
     }
 
     #[test]
     fn a_predicate_holds_as_cargo_decides_it() {
-        let target: Target = "unix\ntarget_os=\"linux\"\nfeature=\"audit\"\n"
+        let target: CfgSet = "unix\ntarget_os=\"linux\"\nfeature=\"audit\"\n"
             .parse()
             .unwrap();
         for predicate in [
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn a_string_literal_holds_by_its_value() {
-        let target: Target = "feature=\"audit\"".parse().unwrap();
+        let target: CfgSet = "feature=\"audit\"".parse().unwrap();
         for predicate in [
             quote!(feature = r"audit"),
             quote!(feature = r#"audit"#),
@@ -132,11 +132,11 @@ mod tests {
 
     #[test]
     fn a_predicate_cargo_cannot_read_does_not_hold() {
-        assert!(!Target::EMPTY.holds(&quote!(version("1.80"))));
+        assert!(!CfgSet::EMPTY.holds(&quote!(version("1.80"))));
     }
 
     #[test]
     fn a_line_that_is_not_a_cfg_is_rejected() {
-        assert!("unix\nnot a cfg".parse::<Target>().is_err());
+        assert!("unix\nnot a cfg".parse::<CfgSet>().is_err());
     }
 }

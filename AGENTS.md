@@ -18,6 +18,10 @@
   the text of a file for the renderers, which read no source themselves, says
   what each drawn element of a flow or a type stands for there, and finds the
   flow or type declared at an offset.
+- `crates/kaalang-workspace/` reads a Cargo workspace for the diagrams: its
+  targets in the order their cards stand, which file a module declaration loads,
+  each target's module tree, and how Rust paths resolve across those trees. The
+  compiler reads one source text and knows no workspace.
 - `crates/kaalang-macros/` holds only the procedural macro entry point: a
   `proc-macro` crate exports only macros, so anything else here could not be
   called, tested, or measured from another crate.
@@ -31,8 +35,8 @@
   generated performance probes and cycle shapes, and the budget harness. Only
   tests depend on it.
 - `crates/kaalang-cli/` is the `cargo kaalang` subcommand, shipped as the
-  `cargo-kaalang` binary. It resolves Rust paths across the workspace's module
-  trees itself, where an editor asks rust-analyzer.
+  `cargo-kaalang` binary. It resolves Rust paths through `kaalang-workspace`,
+  where an editor asks rust-analyzer.
 - `crates/kaalang-js/` exposes the compiler and the renderers to JavaScript, as
   WebAssembly an editor's page loads.
 - `ide/page/` is the page every supported IDE shows, in plain JavaScript: it

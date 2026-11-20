@@ -1547,7 +1547,7 @@ fn every_accepted_alternative_output_shape_renders_in_both_views() {
 fn every_accepted_staged_shape_renders_in_both_views() {
     let mut rendered = 0;
     for source in kaalang_testing::shapes::staged_shapes() {
-        let file = kaalang_compiler::SourceFile::parse(&source, kaalang_compiler::Target::EMPTY)
+        let file = kaalang_compiler::SourceFile::parse(&source, kaalang_compiler::CfgSet::EMPTY)
             .unwrap_or_else(|error| panic!("{source}\n{error}"));
         if file.flow(0, false).is_err() {
             continue;

@@ -14,18 +14,13 @@ use syn::{
     Visibility, spanned::Spanned,
 };
 
-pub use self::{
-    cards::{CardCrate, NamedPath},
-    modules::{ExternalModule, ModuleDirectory, ModuleFile},
-    ribbons::Ribbons,
-};
+pub use self::{cards::NamedPath, ribbons::Ribbons};
 use crate::{
-    FlowItem, Owner, SemanticModel, Target, TypeDeclaration, TypeForm, build_with_options,
+    CfgSet, FlowItem, Owner, SemanticModel, TypeDeclaration, TypeForm, build_with_options,
     datatype::parts, flows, type_declaration, type_items,
 };
 
 mod cards;
-mod modules;
 mod ribbons;
 mod spans;
 
@@ -131,7 +126,7 @@ impl<'a> SourceFile<'a> {
     /// # Errors
     ///
     /// Returns [`SourceError::Parse`] when `text` is not valid Rust.
-    pub fn parse(text: &'a str, target: &Target) -> Result<Self, SourceError> {
+    pub fn parse(text: &'a str, target: &CfgSet) -> Result<Self, SourceError> {
         let mut file = syn::parse_file(text).map_err(|error| {
             let (line, column) = line_and_column(error.span());
             SourceError::Parse {
@@ -614,7 +609,7 @@ mod tests {
 
     /// What reading the first flow of `source` for no target fails with.
     fn flow_error(source: &str) -> SourceError {
-        SourceFile::parse(source, Target::EMPTY)
+        SourceFile::parse(source, CfgSet::EMPTY)
             .and_then(|file| file.flow(0, false).map(|_| ()))
             .expect_err("the source declares no valid flow")
     }
@@ -622,7 +617,7 @@ mod tests {
     #[test]
     fn a_type_is_selected_by_its_path_annotated_or_not() {
         let source = "mod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
 
         assert_eq!(
             file.ty("Missing").err(),
@@ -638,14 +633,14 @@ mod tests {
     #[test]
     fn a_type_is_read_as_its_target_compiles_it() {
         let source = "#[cfg(unix)]\nstruct Handle(u8, #[cfg(windows)] isize);\n#[cfg(not(unix))]\nstruct Handle(u16);\n#[cfg(windows)]\nstruct Raw;\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
         let types = |target| {
             let file = SourceFile::parse(source, target).unwrap();
             file.ty("Handle").map(|ty| ty.field_types).ok()
         };
 
         assert_eq!(types(&unix), Some(vec!["u8".to_owned()]));
-        assert_eq!(types(Target::EMPTY), Some(vec!["u16".to_owned()]));
+        assert_eq!(types(CfgSet::EMPTY), Some(vec!["u16".to_owned()]));
         assert_eq!(
             SourceFile::parse(source, &unix).unwrap().ty("Raw").err(),
             Some(SourceError::TypeNotFound("Raw".into()))
@@ -659,7 +654,7 @@ mod tests {
             Quorum { votes: u16, #[kaa::refer(directory :: Team, "Two.")] voters: u32 },
         }
         #[kaa] #[kaa::refer(Member, "The member.")] type MemberRef = u64;"#;
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
 
         let approval = file
             .ty("Approval")
@@ -679,40 +674,40 @@ mod tests {
     #[test]
     fn a_representation_under_a_cfg_attr_counts_when_it_holds() {
         let source = "#[kaa] #[repr(C)] #[repr(align(8))] struct Combined(u8);\n#[kaa] #[cfg_attr(unix, cfg_attr(target_pointer_width = \"64\", repr(C)))] struct Conditional(u8);\n";
-        let unix: Target = "unix\ntarget_pointer_width=\"64\"".parse().unwrap();
+        let unix: CfgSet = "unix\ntarget_pointer_width=\"64\"".parse().unwrap();
         let representations = |path, target| {
             let file = SourceFile::parse(source, target).unwrap();
             file.ty(path).map(|ty| ty.representations).ok()
         };
 
         assert_eq!(
-            representations("Combined", Target::EMPTY),
+            representations("Combined", CfgSet::EMPTY),
             Some(vec!["C".to_owned(), "align(8)".to_owned()])
         );
         assert_eq!(
             representations("Conditional", &unix),
             Some(vec!["C".to_owned()])
         );
-        assert_eq!(representations("Conditional", Target::EMPTY), Some(vec![]));
+        assert_eq!(representations("Conditional", CfgSet::EMPTY), Some(vec![]));
     }
 
     #[test]
     fn a_type_lists_the_generic_parameters_its_target_compiles() {
         let source = "struct Handle<#[cfg(windows)] W, #[cfg(unix)] U>(u8);\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
         let generics = |target| {
             let file = SourceFile::parse(source, target).unwrap();
             file.ty("Handle").map(|ty| ty.generics).ok()
         };
 
         assert_eq!(generics(&unix).as_deref(), Some("<U>"));
-        assert_eq!(generics(Target::EMPTY).as_deref(), Some(""));
+        assert_eq!(generics(CfgSet::EMPTY).as_deref(), Some(""));
     }
 
     #[test]
     fn a_flow_lists_the_parameters_its_target_compiles() {
         let source = "#[kaa]\nfn copy<#[cfg(windows)] W, #[cfg(unix)] U>(#[cfg(windows)] raw: W, #[cfg(unix)] input: U) -> U {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
 
         let flow = SourceFile::parse(source, &unix)
             .unwrap()
@@ -730,7 +725,7 @@ mod tests {
             COPY.split_once("-> u8 ").unwrap().1
         );
 
-        let flow = SourceFile::parse(&source, Target::EMPTY)
+        let flow = SourceFile::parse(&source, CfgSet::EMPTY)
             .unwrap()
             .flow(0, false)
             .unwrap_or_else(|error| panic!("{error}"));
@@ -746,7 +741,7 @@ mod tests {
     }
 
     /// What `source`, read for `target`, declares where `marker` starts.
-    fn declared(source: &str, target: &Target, marker: &str) -> Option<Declared> {
+    fn declared(source: &str, target: &CfgSet, marker: &str) -> Option<Declared> {
         let offset = source.find(marker).expect("the source has the marker");
         declared_at(&SourceFile::parse(source, target).unwrap(), offset)
     }
@@ -766,7 +761,7 @@ mod tests {
     fn a_flow_is_declared_from_its_first_attribute_to_just_past_its_end() {
         for marker in ["/// A flow", "#[kaa]\nfn first", "first(", "\n\nmod"] {
             assert_eq!(
-                declared(DECLARED, Target::EMPTY, marker),
+                declared(DECLARED, CfgSet::EMPTY, marker),
                 Some(Declared::Flow(0, "first".into())),
                 "{marker:?}"
             );
@@ -776,7 +771,7 @@ mod tests {
     #[test]
     fn a_method_in_a_module_is_declared_as_a_flow() {
         assert_eq!(
-            declared(DECLARED, Target::EMPTY, "fn second"),
+            declared(DECLARED, CfgSet::EMPTY, "fn second"),
             Some(Declared::Flow(1, "model::Member::second".into()))
         );
     }
@@ -784,7 +779,7 @@ mod tests {
     #[test]
     fn a_type_in_a_module_is_declared_by_its_path() {
         assert_eq!(
-            declared(DECLARED, Target::EMPTY, "id: u8"),
+            declared(DECLARED, CfgSet::EMPTY, "id: u8"),
             Some(Declared::Type("model::Member".into()))
         );
     }
@@ -793,7 +788,7 @@ mod tests {
     fn nothing_is_declared_between_declarations_or_in_a_module_header() {
         for marker in ["\nmod", "mod model", "impl Member"] {
             assert_eq!(
-                declared(DECLARED, Target::EMPTY, marker),
+                declared(DECLARED, CfgSet::EMPTY, marker),
                 None,
                 "{marker:?}"
             );
@@ -803,7 +798,7 @@ mod tests {
     #[test]
     fn a_cfg_that_holds_starts_its_declaration() {
         let source = "#[cfg(unix)]\n#[kaa]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n#[cfg(unix)]\nstruct Kept;\n#[cfg(windows)]\nstruct Removed;\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
 
         assert_eq!(
             declared(source, &unix, "#[cfg(unix)]"),
@@ -820,23 +815,23 @@ mod tests {
     fn a_flow_marked_through_a_cfg_attr_is_declared_from_it() {
         let source =
             "#[cfg_attr(unix, kaa)]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
 
         assert_eq!(
             declared(source, &unix, "#[cfg_attr"),
             Some(Declared::Flow(0, "flow".into()))
         );
-        assert_eq!(declared(source, Target::EMPTY, "fn flow"), None);
+        assert_eq!(declared(source, CfgSet::EMPTY, "fn flow"), None);
     }
 
     #[test]
     fn offsets_count_the_byte_order_mark_and_the_shebang() {
         let source = format!("\u{feff}#!/usr/bin/env rustx\n{DECLARED}");
 
-        assert_eq!(declared(&source, Target::EMPTY, "\u{feff}"), None);
-        assert_eq!(declared(&source, Target::EMPTY, "rustx"), None);
+        assert_eq!(declared(&source, CfgSet::EMPTY, "\u{feff}"), None);
+        assert_eq!(declared(&source, CfgSet::EMPTY, "rustx"), None);
         assert_eq!(
-            declared(&source, Target::EMPTY, "first("),
+            declared(&source, CfgSet::EMPTY, "first("),
             Some(Declared::Flow(0, "first".into()))
         );
     }
@@ -855,21 +850,21 @@ mod tests {
             ("struct D", Declared::Type("D".into())),
             ("#[kaa] fn e", Declared::Flow(2, "e".into())),
         ] {
-            assert_eq!(declared(source, Target::EMPTY, marker), Some(expected));
+            assert_eq!(declared(source, CfgSet::EMPTY, marker), Some(expected));
         }
     }
 
     #[test]
     fn a_moved_method_is_found_by_its_path_including_its_module() {
         let source = "mod a { impl Owner { #[kaa] fn run() { || return; } } }\nmod b { impl Owner { #[kaa] fn run() { || return; } } }";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let Declared::Flow(position, path) =
             declared_at(&file, source.rfind("run").unwrap()).unwrap()
         else {
             panic!("the cursor is in a flow");
         };
         let edited = format!("#[kaa] fn start() {{ || return; }}\n{source}");
-        let file = SourceFile::parse(&edited, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(&edited, CfgSet::EMPTY).unwrap();
         let method = file.flow_named(&path, position, false).unwrap().unwrap();
         assert_eq!(method.item.module, "b::");
         assert!(
@@ -882,7 +877,7 @@ mod tests {
     #[test]
     fn the_position_disambiguates_a_flow_path_while_editing() {
         let source = "#[kaa] fn run() { || return; }\n#[kaa] fn run(input: u8) -> u8 { |input| return input; }";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let flow = file.flow_named("run", 1, false).unwrap().unwrap();
         assert_eq!(flow.parameters, ["input: u8"]);
     }
@@ -892,7 +887,7 @@ mod tests {
         let source = format!("#[kaalang::kaa]\n{COPY}");
 
         assert!(
-            SourceFile::parse(&source, Target::EMPTY)
+            SourceFile::parse(&source, CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .is_ok()
@@ -923,7 +918,7 @@ mod tests {
             Err(SourceError::InvalidFlow { line: 2, message, .. })
                 if message == "a function takes one `#[kaa]` attribute"
         ));
-        let disabled = SourceFile::parse(&source, Target::EMPTY).unwrap();
+        let disabled = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
         assert!(disabled.flow(0, false).is_ok());
     }
 
@@ -943,7 +938,7 @@ mod tests {
                 }
             }
         "#;
-        let source = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let source = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         assert_eq!(source.flow(0, false).unwrap().parameters, ["value: u8"]);
         let owner = source.ty("sample::Owner").unwrap();
         assert_eq!(owner.declaration.description.as_deref(), Some("The owner."));
@@ -957,7 +952,7 @@ mod tests {
                 let source = format!(
                     "use {root}; mod a {{ mod b {{ use {local}; #[kaa] #[kaalang::kaa] {COPY} }} }}"
                 );
-                let file = SourceFile::parse(&source, Target::EMPTY).unwrap();
+                let file = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
                 let flow = file.flow(0, false);
                 if duplicate {
                     assert!(matches!(flow, Err(SourceError::InvalidFlow { message, .. })
@@ -1030,7 +1025,7 @@ fn invalid(condition: bool) -> u32 {
         ];
 
         let labels = |source: &str| {
-            let flow = SourceFile::parse(source, Target::EMPTY)
+            let flow = SourceFile::parse(source, CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .unwrap_or_else(|error| panic!("{error}"));

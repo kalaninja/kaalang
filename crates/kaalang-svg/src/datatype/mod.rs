@@ -271,13 +271,13 @@ fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::{SourceFile, Target};
+    use kaalang_compiler::{CfgSet, SourceFile};
 
     use super::structure;
 
     /// Whether each tile with a target draws its line, in source order.
     fn drawn(source: &str, path: &str, drawn: &[usize]) -> Vec<bool> {
-        let ty = SourceFile::parse(source, Target::EMPTY)
+        let ty = SourceFile::parse(source, CfgSet::EMPTY)
             .unwrap()
             .ty(path)
             .unwrap();

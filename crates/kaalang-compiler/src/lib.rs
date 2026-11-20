@@ -7,14 +7,13 @@
 
 use syn::{Error, ItemFn, Result};
 
+#[cfg(feature = "cfg")]
+pub use self::cfg_set::CfgSet;
 pub(crate) use self::choice::{choice_match, is_todo_body};
 #[cfg(feature = "source")]
 pub use self::source::{
-    CardCrate, Declared, ExternalModule, ModuleDirectory, ModuleFile, NamedPath, Ribbons,
-    SourceError, SourceFile, SourceFlow, SourceType, line_and_column,
+    Declared, NamedPath, Ribbons, SourceError, SourceFile, SourceFlow, SourceType, line_and_column,
 };
-#[cfg(feature = "cfg")]
-pub use self::target::Target;
 pub use self::{
     attribute::{expand_attribute, is_kaalang_attribute},
     codegen::expand,
@@ -25,7 +24,7 @@ pub use self::{
     },
     datatype::{
         Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
-        type_declaration, type_items,
+        type_declaration, type_items, type_name,
     },
     executions::Executions,
     flows::{
@@ -42,6 +41,8 @@ pub use self::{
 
 mod analyze;
 mod attribute;
+#[cfg(feature = "cfg")]
+mod cfg_set;
 mod choice;
 mod codegen;
 mod conditional;
@@ -60,8 +61,6 @@ mod scope;
 mod source;
 mod stage;
 mod symbolic;
-#[cfg(feature = "cfg")]
-mod target;
 pub mod topology;
 
 /// Builds the validated semantic model for one kaalang flow function.

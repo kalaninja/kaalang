@@ -187,7 +187,7 @@ pub(crate) fn read_path(
     path: &str,
     collapse_cycles: bool,
 ) -> Result<SourceFlow, kaalang_compiler::SourceError> {
-    let file = kaalang_compiler::SourceFile::parse(source, kaalang_compiler::Target::EMPTY)?;
+    let file = kaalang_compiler::SourceFile::parse(source, kaalang_compiler::CfgSet::EMPTY)?;
     let position = kaalang_compiler::flows(file.items())
         .iter()
         .position(|flow| flow.path == path)
@@ -373,7 +373,7 @@ const fn valid_xml_character(character: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::{SourceFile, Target};
+    use kaalang_compiler::{CfgSet, SourceFile};
 
     use super::{CardPath, card_headers};
 
@@ -414,7 +414,7 @@ mod tests {
 
     /// Renders the type at `path` in `source`, read for no target, alone.
     fn render_card(source: &str, path: &str) -> Result<String, RenderError> {
-        let ty = SourceFile::parse(source, Target::EMPTY)
+        let ty = SourceFile::parse(source, CfgSet::EMPTY)
             .unwrap()
             .ty(path)
             .unwrap_or_else(|error| panic!("{error}"));
