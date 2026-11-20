@@ -1,5 +1,5 @@
 // Plays the page's races against the real worker, timing its answers through a
-// wrapped `Worker`. Open checks.html while `just ide bench` runs; every check
+// wrapped `Worker`. Open checks.html while `just ide browser` runs; every check
 // should pass.
 
 import { start } from "../page.js";

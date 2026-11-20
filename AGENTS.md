@@ -44,6 +44,8 @@
   cursor, lists the ribbon of a clicked connection or merge, and asks its host
   to navigate. `ide/page/bench/` tries it in a browser with a stub host, and
   `checks.html` there plays its races.
+- `ide/sample/` is the Cargo workspace every supported IDE opens for manual
+  checks; its README lists the cases, and `just ide sample` keeps it building.
 - `ide/vscode/` is the VS Code extension, in TypeScript: it shows the page in a
   webview, in place of a Rust editor or beside it, and gives it the text, the
   cursor, and the cfg set rust-analyzer analyzes it with. It asks Cargo for

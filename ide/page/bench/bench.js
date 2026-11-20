@@ -8,7 +8,8 @@ import { start } from "../page.js";
 const editor = document.querySelector("#editor");
 const log = document.querySelector("#log");
 const built = new URL("/target/wasm/web/", location.href);
-let uri = "gallery/sorting/quick_sort.rs";
+const sample = document.querySelector("#sample");
+let uri = "";
 
 const page = document.querySelector("#page");
 const receive = start(page, {
@@ -139,19 +140,32 @@ document.querySelector("#outlines").addEventListener("change", ({ target }) => {
   page.classList.toggle("kaalang-show-hotspots", target.checked);
 });
 
+/** Shows `text` as the file `name`, the cursor on its first declaration. */
+function open(name, text) {
+  uri = name;
+  editor.value = text;
+  const first = Math.max(editor.value.indexOf("#[kaa"), 0);
+  editor.setSelectionRange(first, first);
+  report();
+}
+
+/** Opens the sample workspace's file at `name`, unless another was chosen meanwhile. */
+async function openSample(name) {
+  const text = await (await fetch(`/ide/sample/${name}`)).text();
+  if (sample.value === name) open(name, text);
+}
+
 document
   .querySelector("#file")
   .addEventListener("change", async ({ target }) => {
     const [file] = target.files;
-    uri = file.name;
-    editor.value = await file.text();
-    editor.setSelectionRange(0, 0);
-    report();
+    sample.value = "";
+    open(file.name, await file.text());
   });
+sample.addEventListener("change", () => openSample(sample.value));
 
-editor.value = await (
-  await fetch("/crates/kaalang/examples/gallery/sorting/quick_sort.rs")
-).text();
-const flow = editor.value.indexOf("#[kaa]");
-editor.setSelectionRange(flow, flow);
-report();
+for (const name of await (await fetch("sample.json")).json()) {
+  sample.add(new Option(name, name));
+}
+sample.value = "shop/src/lib.rs";
+await openSample(sample.value);

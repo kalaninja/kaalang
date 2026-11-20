@@ -28,10 +28,16 @@ vscode-build: wasm::build (tooling::build "fmt")
     cp target/wasm/web/kaalang_js.js ide/vscode/out/wasm/kaalang_js.mjs
     cp target/wasm/web/kaalang_js_bg.wasm ide/vscode/out/wasm/
 
-# Open this repository in VS Code with the extension from ide/vscode.
+# Open the sample workspace in VS Code with the extension from ide/vscode.
 vscode: vscode-build
-    code --extensionDevelopmentPath="$PWD/ide/vscode" .
+    code --extensionDevelopmentPath="$PWD/ide/vscode" ide/sample
 
-# Serve the page's test bench at http://127.0.0.1:8080/ide/page/bench/ and its race checks at http://127.0.0.1:8080/ide/page/bench/checks.html.
-bench: wasm::build
+# Check that the sample workspace builds with each feature set its cases use.
+sample: (tooling::build "rust")
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo check --manifest-path ide/sample/Cargo.toml --workspace --all-targets
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo check --manifest-path ide/sample/Cargo.toml --workspace --all-targets --all-features
+    ./scripts/docker/run-tooling.sh kaalang-rust cargo check --manifest-path ide/sample/Cargo.toml --workspace --all-targets --no-default-features
+
+# Show the page in a browser with a stub host at http://127.0.0.1:8080/ide/page/bench/, and its race checks at http://127.0.0.1:8080/ide/page/bench/checks.html.
+browser: wasm::build
     TOOLING_PORT={{ port }} ./scripts/docker/run-tooling.sh kaalang-rust node ide/page/bench/serve.mjs . {{ port }}

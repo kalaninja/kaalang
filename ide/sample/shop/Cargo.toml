@@ -1,0 +1,16 @@
+[package]
+name = "shop"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+kaalang = { workspace = true }
+
+[features]
+default = ["express"]
+express = []
+gift = []
+
+[lints]
+workspace = true

@@ -1,0 +1,17 @@
+# The workspace every supported IDE opens for manual checks; README.md lists them.
+[workspace]
+members = ["billing", "shop"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+kaalang = { path = "../../crates/kaalang" }
+shop = { path = "shop" }
+
+# The examples exist to be drawn, not called.
+[workspace.lints.rust]
+dead_code = "allow"

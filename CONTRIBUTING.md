@@ -127,13 +127,14 @@ which hotspots a click on the IDE page takes and what it asks of the host.
 Try a change to the IDE page in a browser before committing it:
 
 ```sh
-just ide bench
+just ide browser
 ```
 
 It serves the page at <http://127.0.0.1:8080/ide/page/bench/> with a stub host:
-a text field stands for the editor, a log shows what the page asks of the host,
-a search of the same text for a declaration or a `refer` stands for the engine,
-a binding's name for its type, and switches show a dark theme and every hotspot.
+a text field stands for the editor, open on a file of `ide/sample/` or any
+other, a log shows what the page asks of the host, a search of the same text for
+a declaration or a `refer` stands for the engine, a binding's name for its type,
+and switches show a dark theme and every hotspot.
 <http://127.0.0.1:8080/ide/page/bench/checks.html> plays the page's races
 against the real worker; every check must pass.
 
@@ -144,7 +145,8 @@ just ide vscode
 ```
 
 It builds the extension, with the page and the bindings, into `ide/vscode/out/`
-and opens this repository in a VS Code window that runs it.
+and opens `ide/sample/` in a VS Code window that runs it: a small Cargo
+workspace whose README lists the cases to check.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A

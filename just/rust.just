@@ -10,10 +10,12 @@ list:
 # Format the workspace in place.
 fmt: (tooling::build "fmt")
     ./scripts/docker/run-tooling.sh kaalang-fmt cargo fmt --all
+    ./scripts/docker/run-tooling.sh kaalang-fmt cargo fmt --all --manifest-path ide/sample/Cargo.toml
 
 # Check Rust formatting.
 fmt-check: (tooling::build "fmt")
     ./scripts/docker/run-tooling.sh kaalang-fmt cargo fmt --all -- --check
+    ./scripts/docker/run-tooling.sh kaalang-fmt cargo fmt --all --manifest-path ide/sample/Cargo.toml -- --check
 
 # Type-check the workspace, the quick local loop.
 check: (tooling::build "rust")
