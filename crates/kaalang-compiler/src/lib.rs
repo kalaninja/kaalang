@@ -9,13 +9,12 @@ use syn::{Error, ItemFn, Result};
 
 #[cfg(feature = "cfg")]
 pub use self::cfg_set::CfgSet;
-pub(crate) use self::choice::{choice_match, is_todo_body};
 #[cfg(feature = "source")]
 pub use self::source::{
     Declared, NamedPath, Ribbons, SourceError, SourceFile, SourceFlow, SourceType, line_and_column,
 };
 pub use self::{
-    attribute::{expand_attribute, is_kaalang_attribute},
+    attribute::expand_attribute,
     codegen::expand,
     conditional::{configured_parameters, parameter_choices},
     configure::configure,
@@ -23,8 +22,8 @@ pub use self::{
         Arrangement, ArrangementChecks, ArrangementGeometry, Contour, Route, Run, RunLine, Side,
     },
     datatype::{
-        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, expand_type,
-        type_declaration, type_items, type_name,
+        Annotation, Field, Relationship, TypeDeclaration, TypeForm, Variant, type_declaration,
+        type_items, type_name,
     },
     executions::Executions,
     flows::{
@@ -37,6 +36,10 @@ pub use self::{
         Iteration, Join, JoinTarget, ProducerId, QuestionBranch, SemanticModel, StageAnalysis,
         WireMerge,
     },
+};
+pub(crate) use self::{
+    attribute::is_kaalang_attribute,
+    choice::{choice_match, is_todo_body},
 };
 
 mod analyze;

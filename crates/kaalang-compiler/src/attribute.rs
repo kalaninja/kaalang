@@ -4,12 +4,12 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{AttrStyle, Attribute, Error, Ident, Item, Meta, Path, Result};
 
-use crate::{conditional, configure, datatype, expand, expand_type, parse};
+use crate::{conditional, configure, datatype, datatype::expand_type, expand, parse};
 
 /// Whether `attribute` is kaalang's own, written `#[kaa]` or through its
 /// crate path as `#[kaalang::kaa]`. Another crate's `kaa` is not.
 #[must_use]
-pub fn is_kaalang_attribute(attribute: &Attribute) -> bool {
+pub(crate) fn is_kaalang_attribute(attribute: &Attribute) -> bool {
     bare_kaa(attribute.path()) || qualified_kaa(attribute.path())
 }
 

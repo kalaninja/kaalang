@@ -246,7 +246,7 @@ pub(crate) fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)>
 ///
 /// Rejects unsupported declaration forms. Annotation errors are emitted at
 /// their source spans under the same compilation guards as the annotations.
-pub fn expand_type(arguments: &TokenStream, item: Item) -> Result<TokenStream> {
+pub(crate) fn expand_type(arguments: &TokenStream, item: Item) -> Result<TokenStream> {
     let (item, checks) = expansion(arguments, item)?;
     Ok(quote! { #item #checks })
 }

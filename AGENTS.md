@@ -37,8 +37,9 @@
 - `crates/kaalang-cli/` is the `cargo kaalang` subcommand, shipped as the
   `cargo-kaalang` binary. It resolves Rust paths through `kaalang-workspace`,
   where an editor asks rust-analyzer.
-- `crates/kaalang-js/` exposes the compiler and the renderers to JavaScript, as
-  WebAssembly an editor's page loads.
+- `crates/kaalang-js/` exposes the compiler, the renderers, and the module tree
+  walk of `kaalang-workspace` to JavaScript, as WebAssembly an editor's page and
+  host load.
 - `ide/page/` is the page every supported IDE shows, in plain JavaScript: it
   runs the bindings in a worker, draws the flow or the type at the editor's
   cursor, lists the ribbon of a clicked connection or merge, and asks its host

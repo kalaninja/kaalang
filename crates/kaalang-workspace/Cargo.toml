@@ -10,7 +10,7 @@ repository.workspace = true
 
 [dependencies]
 kaalang-compiler = { workspace = true, features = ["source"] }
-proc-macro2 = { workspace = true }
+proc-macro2 = { workspace = true, features = ["span-locations"] }
 syn = { workspace = true, features = ["visit-mut"] }
 
 [lints]
