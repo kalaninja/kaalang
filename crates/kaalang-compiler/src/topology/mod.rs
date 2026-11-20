@@ -202,6 +202,23 @@ impl Topology {
     /// Panics if `header` is not a cycle header in the corresponding flow.
     #[must_use]
     pub fn body_vertices(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
+        self.body(flow, header)
+    }
+
+    /// Every vertex a cycle boundary holds: its body's, the cycles nested in
+    /// it included, its entry, and its results.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `boundary` is not one of this topology's.
+    #[must_use]
+    pub fn boundary_vertices(&self, flow: &Flow, boundary: &CycleBoundary) -> BTreeSet<Vertex> {
+        let mut vertices = self.body(flow, boundary.header);
+        vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
+        vertices
+    }
+
+    fn body(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
         let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
         let body = header + 1..end;
         let results = self
@@ -1315,6 +1332,12 @@ pub struct Caps {
 }
 
 impl CycleBoundary {
+    /// Whether the cycle whose header block is `header` lies inside this one.
+    #[must_use]
+    pub fn encloses(&self, header: usize) -> bool {
+        (self.header + 1..self.end).contains(&header)
+    }
+
     /// Projection allocates entry junctions before removing redundant ones.
     fn entry_junction(&self) -> usize {
         let Vertex::Junction(junction) = self.entry else {

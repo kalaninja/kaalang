@@ -24,14 +24,11 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
     let last_rows = scene
         .region_bodies
         .iter()
-        .zip(&scene.topology.cycle_boundaries)
-        .map(|(body, boundary)| {
-            body.iter()
-                .copied()
-                .chain(boundary.results.iter().map(|&result| Vertex::from(result)))
-                .map(|vertex| scene.rank(vertex))
+        .map(|held| {
+            held.iter()
+                .map(|&vertex| scene.rank(vertex))
                 .max()
-                .expect("every cycle body includes its entry")
+                .expect("every cycle boundary holds its entry")
         })
         .collect::<Vec<_>>();
     let mut padding = vec![0; scene.arrangement.ranks];
@@ -73,14 +70,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
     for (index, boundary) in scene.topology.cycle_boundaries.iter().enumerate().rev() {
         let body = &scene.region_bodies[index];
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
-        let owns_vertex = |vertex| {
-            body.contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns_vertex = |vertex| body.contains(&vertex);
         let mut boxes = scene
             .nodes
             .iter()
@@ -252,14 +242,7 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
         .enumerate()
     {
         let (left, _, right, _) = region.bounds();
-        let owns = |vertex| {
-            scene.region_bodies[index].contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns = |vertex| scene.region_bodies[index].contains(&vertex);
         for bounds in scene
             .nodes
             .iter()
@@ -337,14 +320,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         }
         let body = &scene.region_bodies[index];
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
-        let owns_vertex = |vertex| {
-            body.contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns_vertex = |vertex| body.contains(&vertex);
         for node in &scene.nodes {
             let bounds = Scene::bounds(node);
             if owns(node.id) && !contains(region.bounds(), bounds) {

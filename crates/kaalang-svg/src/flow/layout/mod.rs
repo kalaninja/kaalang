@@ -103,7 +103,7 @@ pub(crate) struct Scene {
     stage_rows: Option<staged::StageRows>,
     /// Model-defined body vertices, one set per `topology.cycles` entry.
     bodies: Vec<BTreeSet<Vertex>>,
-    /// The owned vertices of every expanded cycle boundary, including cycles
+    /// The vertices every expanded cycle boundary holds, including cycles
     /// that have no repeating execution and therefore no back edge.
     region_bodies: Vec<BTreeSet<Vertex>>,
     /// The strings its nodes, exits, and junctions show.
@@ -255,7 +255,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             .iter()
             .find(|boundary| boundary.header == scene.topology.cycles[index].header)
             .expect("a repeating cycle has a boundary");
-        let (boundary_header, boundary_end) = (boundary.header, boundary.end);
+        let boundary = boundary.clone();
         let obstructions = |scene: &Scene| {
             let mut bounds = scene.labels.iter().map(label_rect).collect::<Vec<_>>();
             bounds.extend(
@@ -264,9 +264,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
                     .cycle_boundaries
                     .iter()
                     .zip(cycle::regions(scene))
-                    .filter(|(nested, _)| {
-                        (boundary_header + 1..boundary_end).contains(&nested.header)
-                    })
+                    .filter(|(nested, _)| boundary.encloses(nested.header))
                     .map(|(_, region)| region.padded(LANE)),
             );
             bounds
@@ -579,7 +577,7 @@ fn attempt(
             .topology
             .cycle_boundaries
             .iter()
-            .map(|boundary| topology.body_vertices(flow, boundary.header))
+            .map(|boundary| topology.boundary_vertices(flow, boundary))
             .collect(),
         arrangement: model.arrangement.clone(),
         topology: model.topology.clone(),
