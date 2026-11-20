@@ -137,7 +137,7 @@ export async function referringFiles(
   });
   if (document.version !== version || revision !== current) return undefined;
   return {
-    focus: { cfg: focus.cfg, place: focus.place },
+    focus: { place: focus.place },
     files: files.flat(),
   };
 }

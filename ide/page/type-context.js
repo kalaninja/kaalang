@@ -1,7 +1,7 @@
 /** Requests keep distinct ids when the page moves to another type or text. */
 let next = 0;
 
-/** The host's references for one drawing's type, text and cfg. */
+/** The host's references for the type a drawing shows. */
 export class TypeContext {
   /** Each file the engine finds references in, read in the crate the engine reads it in. */
   #files = [];
@@ -10,12 +10,11 @@ export class TypeContext {
   #referrers = null;
   #waiting = false;
   #refreshing = false;
+  #edited = false;
   version = 0;
 
-  constructor(path, cfg, start) {
+  constructor(path) {
     this.path = path;
-    this.start = start;
-    this.cfg = cfg;
   }
 
   /** The bindings number their sources from the focus, then each other file. */
@@ -54,9 +53,20 @@ export class TypeContext {
     }
   }
 
-  /** Asks once for the references to the focus named at `offset` of `uri`. */
+  /**
+   * The focus's text changed: the next drawing asks again, and shows the
+   * cards of the other files meanwhile.
+   */
+  edited() {
+    this.#edited = true;
+    this.#refreshing = false;
+  }
+
+  /** Asks for the references to the focus named at `offset` of `uri`, once per text. */
   ask(host, uri, offset) {
-    if (!this.#referrers) this.#request(host, uri, offset);
+    if (this.#referrers && !this.#edited) return;
+    this.#edited = false;
+    this.#request(host, uri, offset);
   }
 
   #request(host, uri, offset) {
@@ -72,7 +82,6 @@ export class TypeContext {
     this.#waiting = false;
     this.#files = message.files;
     this.#place = message.focus?.place;
-    if (message.focus?.cfg !== undefined) this.cfg = message.focus.cfg;
     ++this.version;
     return true;
   }

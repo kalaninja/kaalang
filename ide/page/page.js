@@ -34,17 +34,20 @@ let cells = 0;
  * - `{type: "types", id, types}` in answer to `types`, at once or in parts:
  *   each offset answered maps to the type's text, or to `null` when the host
  *   learns none;
- * - `{type: "referrers", id, focus?: {cfg, place?}, files: [{uri, text, cfg, offsets, place?}]}`
+ * - `{type: "referrers", id, focus?: {place?}, files: [{uri, text, cfg, offsets, place?}]}`
  *   in answer to `referrers`: each file the engine finds references to the
  *   focus in, the focus's own included, read once, in the crate the engine
  *   reads it in, with the references' `offsets`. A `place` is where a text
- *   stands in the workspace's module tree, as `drawType` takes it;
+ *   stands in the workspace's module tree, as `drawType` takes it. The focus
+ *   draws in the cfg set of `target`;
  * - `{type: "changed"}` when the engine may answer `referrers` otherwise: it
  *   has analyzed more, or a document was saved.
  *
  * To the host:
  * - `{type: "ready"}` once started;
- * - `{type: "reveal", uri, start, end}` to select a node's code;
+ * - `{type: "reveal", uri, start, end}` to select a node's code. A reveal of
+ *   the focus from a card in another file names that file as
+ *   `origin: {uri, text}`, which a host checks is unchanged;
  * - `{type: "definition", uri, offset}` and `{type: "typeDefinition", uri, offset}`
  *   to run the editor's own go-to action in the document drawn. The editor's
  *   cursor moves to the target, and the diagram follows it. A go-to or reveal
@@ -125,11 +128,8 @@ export function start(root, host) {
         state.declared = declared;
       }
       const shown = state.declared ?? { flow: 0 };
-      if (shown.type !== type?.path || shown.start !== type?.start) {
-        type =
-          shown.type === undefined
-            ? null
-            : new TypeContext(shown.type, cfg, shown.start);
+      if (shown.type !== type?.path) {
+        type = shown.type === undefined ? null : new TypeContext(shown.type);
       }
       const version = type?.version;
       if (
@@ -162,7 +162,7 @@ export function start(root, host) {
         texts = context.texts;
         result = await engine.drawType(
           text,
-          type.cfg,
+          cfg,
           shown.type,
           JSON.stringify(context.context),
         );
@@ -462,7 +462,7 @@ export function start(root, host) {
         if (message.text !== state.text) {
           // A list's offsets count in the text it was opened on.
           close();
-          type = null;
+          type?.edited();
         }
         state.text = message.text;
         state.cursor = message.cursor;

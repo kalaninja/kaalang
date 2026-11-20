@@ -8,7 +8,9 @@ import type { CargoRoot } from "./target";
 
 /** Watch the local files Cargo declared, even when VS Code excludes them. */
 export function moduleWatches(changed: (file: string) => void) {
-  const workspaces = new Map<CargoRoot[], ReturnType<typeof subscribe>>();
+  // A workspace's roots come anew with each change of a cfg set: its files stay.
+  const workspaces = new Map<string, ReturnType<typeof subscribe>>();
+  const key = (roots: CargoRoot[]) => roots.map(({ root }) => root).join("\n");
 
   function subscribe(
     files: ReadonlySet<string>,
@@ -112,7 +114,7 @@ export function moduleWatches(changed: (file: string) => void) {
       files: ReadonlySet<string>,
       stamps: ReadonlyMap<string, string>,
     ) {
-      const old = workspaces.get(roots);
+      const old = workspaces.get(key(roots));
       if (
         old &&
         !old.directoriesChanged &&
@@ -121,8 +123,8 @@ export function moduleWatches(changed: (file: string) => void) {
       )
         return;
       old?.dispose();
-      if (files.size) workspaces.set(roots, subscribe(files, stamps));
-      else workspaces.delete(roots);
+      if (files.size) workspaces.set(key(roots), subscribe(files, stamps));
+      else workspaces.delete(key(roots));
     },
   };
 }

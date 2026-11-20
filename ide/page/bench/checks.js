@@ -451,7 +451,7 @@ const checks = {
       first !== second && second !== page.requests.at(-1) && page.cards() === 1
     );
   },
-  async "a type draws in the cfg the host reads its text with"() {
+  async "a type draws in the cfg of its document's target"() {
     const page = open();
     const text =
       "pub struct Focus { #[cfg(red)] red_field: u8, #[cfg(blue)] blue_field: u8 }";
@@ -467,13 +467,7 @@ const checks = {
     page.receive({ type: "target", uri: "a", cfg: "red" });
     await settled();
     if (!page.fieldNames().includes("red_field")) return false;
-    const [refs] = page.requests;
-    page.receive({
-      type: "referrers",
-      id: refs.id,
-      focus: { cfg: "blue" },
-      files: [],
-    });
+    page.receive({ type: "target", uri: "a", cfg: "blue" });
     await settled();
     return (
       page.fieldNames().includes("blue_field") &&
@@ -527,6 +521,36 @@ const checks = {
     reply([]);
     await settled();
     return page.cards() === 1;
+  },
+
+  async "an edit of the focus keeps another file's cards until its new answer"() {
+    const page = open();
+    page.show(member, member.indexOf("Member"));
+    await settled();
+    const [asked] = page.requests;
+    page.receive({
+      type: "referrers",
+      id: asked.id,
+      files: [
+        {
+          uri: "review.rs",
+          text: review,
+          cfg: "",
+          offsets: [review.indexOf("Author")],
+        },
+      ],
+    });
+    await settled();
+    if (page.cards() !== 2) return false;
+    const added = "// An edit above the type.\n";
+    page.show(added + member, added.length + member.indexOf("Member"));
+    await settled();
+    const again = page.requests.findLast((r) => r.type === "referrers");
+    return (
+      again.id !== asked.id &&
+      again.offset === asked.offset + added.length &&
+      page.cards() === 2
+    );
   },
 
   async "after a trap, the next text draws"() {

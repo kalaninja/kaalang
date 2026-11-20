@@ -106,10 +106,7 @@ test("a reference search without a renaming use asks no definition", async () =>
   const loaded = await host(texts);
   const answer = await referring(loaded);
   assert.deepEqual(answer.files, []);
-  assert.deepEqual(answer.focus, {
-    cfg: `cfg of ${root}`,
-    place: place("/project/lib.rs"),
-  });
+  assert.deepEqual(answer.focus, { place: place("/project/lib.rs") });
   assert.equal(loaded.state.queries, 0);
 });
 

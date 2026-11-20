@@ -123,6 +123,28 @@ test(
   },
 );
 
+test("a workspace's watches move to its new roots when a cfg set changes", async (t) => {
+  const { directory, moduleWatches } = await editor(t);
+  const first = path.join(directory, "first.rs"),
+    second = path.join(directory, "second.rs");
+  await Promise.all([first, second].map((file) => writeFile(file, "original")));
+  const updates = new EventEmitter();
+  const watch = moduleWatches((file) => updates.emit(file));
+  t.after(() => watch.clear());
+  const roots = (cfg) => [{ root: "file:///lib.rs", cfg }];
+  watch.update(roots(""), new Set([first]), new Map());
+  watch.update(roots("test"), new Set([second]), new Map());
+  let stale = false;
+  updates.on(first, () => {
+    stale = true;
+  });
+  await writeFile(first, "edited");
+  const changed = once(updates, second);
+  await writeFile(second, "edited");
+  await changed;
+  assert.equal(stale, false);
+});
+
 test("a write during registration of an external module watch refreshes exactly that file", async (t) => {
   const { directory, moduleWatches } = await editor(t);
   const external = path.join(directory, "external.rs"),

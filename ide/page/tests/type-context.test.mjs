@@ -13,7 +13,7 @@ const place = {
 };
 
 test("the type asks once, and only the latest answer counts", () => {
-  const context = new TypeContext("Focus", "", 0);
+  const context = new TypeContext("Focus");
   const requests = [];
   const host = { send: (message) => requests.push(message) };
   context.ask(host, "a.rs", 7);
@@ -31,16 +31,15 @@ test("the type asks once, and only the latest answer counts", () => {
 });
 
 test("the focus's own references count only in the text they were found in", () => {
-  const context = new TypeContext("Focus", "", 0);
+  const context = new TypeContext("Focus");
   const requests = [];
   context.ask({ send: (message) => requests.push(message) }, "a.rs", 7);
   const other = { uri: "b.rs", text: "b", cfg: "x", offsets: [1], place };
   context.receive({
     ...requests[0],
-    focus: { cfg: "y", place },
+    focus: { place },
     files: [{ uri: "a.rs", text: "first", cfg: "y", offsets: [2] }, other],
   });
-  assert.equal(context.cfg, "y");
   const current = context.sources("a.rs", "first");
   assert.deepEqual(current.uris, ["a.rs", "b.rs"]);
   assert.deepEqual(current.texts, ["first", "b"]);
@@ -53,7 +52,7 @@ test("the focus's own references count only in the text they were found in", () 
 });
 
 test("a refresh keeps the finished diagram until its answer arrives", () => {
-  const context = new TypeContext("Focus", "", 0);
+  const context = new TypeContext("Focus");
   const requests = [];
   const host = { send: (message) => requests.push(message) };
   context.ask(host, "a.rs", 7);
@@ -61,5 +60,22 @@ test("a refresh keeps the finished diagram until its answer arrives", () => {
   context.refresh(host);
   assert.equal(context.canPublish(), false);
   context.receive({ ...requests.at(-1), files: [] });
+  assert.ok(context.canPublish());
+});
+
+test("an edit asks again and draws the other files' cards meanwhile", () => {
+  const context = new TypeContext("Focus");
+  const requests = [];
+  const host = { send: (message) => requests.push(message) };
+  context.ask(host, "a.rs", 7);
+  context.refresh(host);
+  context.edited();
+  assert.ok(context.canPublish());
+  context.ask(host, "a.rs", 9);
+  context.ask(host, "a.rs", 9);
+  assert.deepEqual(
+    requests.map(({ offset }) => offset),
+    [7, 7, 9],
+  );
   assert.ok(context.canPublish());
 });

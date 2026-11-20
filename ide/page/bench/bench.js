@@ -82,7 +82,7 @@ const receive = start(page, {
             receive({
               type: "referrers",
               id,
-              focus: { cfg: "", place },
+              focus: { place },
               files: [file],
             }),
           300,
