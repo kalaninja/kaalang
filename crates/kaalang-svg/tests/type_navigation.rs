@@ -67,7 +67,8 @@ fn each_diagram(file: &SourceFile<'_>, mut check: impl FnMut(&[&SourceType], &st
             header: &focus.path,
             relationships: &own,
         };
-        let (svg, hotspots) = render_type(&card, &[&cards], TypeOptions::default())
+        let groups = vec![(); cards.len()];
+        let (svg, hotspots) = render_type(&card, &cards, &groups, TypeOptions::default())
             .unwrap_or_else(|error| panic!("{}: {error}", focus.path));
         let drawn: Vec<&SourceType> = std::iter::once(focus).chain(incoming).collect();
         check(&drawn, &svg, &hotspots);
@@ -182,7 +183,8 @@ fn a_path_that_wraps_has_a_hotspot_at_the_start_of_each_line() {
         header: "Long",
         relationships: &[],
     };
-    let (svg, hotspots) = render_type(&card, &[], TypeOptions::default()).expect("it renders");
+    let (svg, hotspots) =
+        render_type(&card, &[], &[(); 0], TypeOptions::default()).expect("it renders");
     let lines = lines(&svg, "field-type");
     let paths: Vec<(i32, i32)> = hotspots
         .iter()

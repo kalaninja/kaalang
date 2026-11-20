@@ -191,16 +191,12 @@ fn render(
             relationships: positions,
         })
         .collect();
-    let mut groups: Vec<&[TypeCard]> = Vec::new();
-    let mut start = 0;
-    for end in 1..=incoming.len() {
-        let group = |index: usize| crates[incoming[index].0.krate].cargo_target().group_key();
-        if end == incoming.len() || group(end) != group(start) {
-            groups.push(&incoming_cards[start..end]);
-            start = end;
-        }
-    }
-    let (svg, _) = kaalang_svg::render_type(&focus_card, &groups, options).map_err(|error| {
+    let groups: Vec<_> = incoming
+        .iter()
+        .map(|(ty, _)| crates[ty.krate].cargo_target().group_key())
+        .collect();
+    let rendered = kaalang_svg::render_type(&focus_card, &incoming_cards, &groups, options);
+    let (svg, _) = rendered.map_err(|error| {
         let culprit = error.card.checked_sub(1).map_or(focus, |i| incoming[i].0);
         format!("{}: {error}", file(culprit).path.display())
     })?;

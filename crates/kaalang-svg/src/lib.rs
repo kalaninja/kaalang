@@ -243,11 +243,12 @@ impl Error for CardError {
 
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
-/// Each group of incoming cards starts a new row and wraps into further rows
-/// after `options.columns` cards, or where it would grow wider than a screen,
-/// or than the focus when it is wider. Returns the SVG and its hotspots: every
-/// path a tile's type names, every relationship's target, and every incoming
-/// card's header.
+/// `groups` gives each incoming card's group: a card of another group than the
+/// card before it starts a new row, and a group wraps into further rows after
+/// `options.columns` cards, or where it would grow wider than a screen, or than
+/// the focus when it is wider. Returns the SVG and its hotspots: every path a
+/// tile's type names, every relationship's target, and every incoming card's
+/// header.
 ///
 /// # Errors
 ///
@@ -256,13 +257,20 @@ impl Error for CardError {
 ///
 /// # Panics
 ///
-/// Panics when a card draws a relationship index its type does not have.
-pub fn render_type(
+/// Panics when a card draws a relationship index its type does not have, or
+/// when `groups` does not give one group for each incoming card.
+pub fn render_type<K: PartialEq>(
     focus: &TypeCard<'_>,
-    incoming: &[&[TypeCard<'_>]],
+    incoming: &[TypeCard<'_>],
+    groups: &[K],
     options: TypeOptions,
 ) -> Result<(String, Vec<Hotspot>), CardError> {
-    datatype::render(focus, incoming, options.columns)
+    assert_eq!(
+        groups.len(),
+        incoming.len(),
+        "each incoming card has a group"
+    );
+    datatype::render(focus, incoming, groups, options.columns)
 }
 
 /// An incoming card's type for [`card_headers`]: its path from its crate's
@@ -423,7 +431,7 @@ mod tests {
             header: path,
             relationships: &[],
         };
-        render_type(&card, &[], TypeOptions::default())
+        render_type(&card, &[], &[(); 0], TypeOptions::default())
             .map(|(svg, _)| svg)
             .map_err(|error| error.error)
     }

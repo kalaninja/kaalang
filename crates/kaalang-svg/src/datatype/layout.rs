@@ -214,9 +214,15 @@ pub(super) struct Route {
     pub(super) points: Vec<Point>,
 }
 
-/// Lays out the focus under its incoming cards, in groups that each start a
-/// new row, with `columns` cards to a row when given.
-pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUsize>) -> TypeScene {
+/// Lays out the focus under its incoming cards, in rows as
+/// [`kaalang_render::card_cells`] places them by `groups`, with `columns` cards
+/// to a row when given.
+pub(super) fn layout<K: PartialEq>(
+    incoming: &[Card],
+    groups: &[K],
+    focus: &Card,
+    columns: Option<NonZeroUsize>,
+) -> TypeScene {
     let sized = SizedCard::new(focus);
     let natural = sized.width();
     let Row {
@@ -224,7 +230,7 @@ pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUs
         mut routes,
         bottom: row_bottom,
         right,
-    } = row(groups, columns, ROW_WIDTH.max(natural));
+    } = row(incoming, groups, columns, ROW_WIDTH.max(natural));
     let incoming = cards.len();
     let mut ports = Vec::new();
     let rightmost_drop = routes
@@ -310,19 +316,27 @@ struct Row {
 /// row, wrapping into further rows after `columns` cards, or else into rows no
 /// wider than `limit`. The cards of a column share its width and one trunk,
 /// which drops through the gap right of the column into the focus.
-fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
-    let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
-    let lengths: Vec<usize> = groups.iter().map(|group| group.len()).collect();
-    let sized: Vec<SizedCard> = incoming.iter().map(|card| SizedCard::new(card)).collect();
+fn row<K: PartialEq>(
+    incoming: &[Card],
+    groups: &[K],
+    columns: Option<NonZeroUsize>,
+    limit: i32,
+) -> Row {
+    let sized: Vec<SizedCard> = incoming.iter().map(SizedCard::new).collect();
     let natural: Vec<i32> = sized.iter().map(SizedCard::list_width).collect();
-    let widest = lengths.iter().copied().max().unwrap_or(0);
+    let widest = groups
+        .chunk_by(PartialEq::eq)
+        .map(<[K]>::len)
+        .max()
+        .unwrap_or(0);
     let grid = match columns {
-        Some(columns) => Grid::new(&lengths, &natural, columns.get()),
+        Some(columns) => Grid::new(groups, &natural, columns),
         None => (1..=widest)
             .rev()
-            .map(|columns| Grid::new(&lengths, &natural, columns))
+            .filter_map(NonZeroUsize::new)
+            .map(|columns| Grid::new(groups, &natural, columns))
             .find(|grid| grid.width() <= limit)
-            .unwrap_or_else(|| Grid::new(&lengths, &natural, 1)),
+            .unwrap_or_else(|| Grid::new(groups, &natural, NonZeroUsize::MIN)),
     };
     let built: Vec<Built> = sized
         .iter()
@@ -370,7 +384,7 @@ fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
     row
 }
 
-/// Where each incoming card goes.
+/// Where each incoming card goes, measured.
 struct Grid {
     /// Each card's row and column.
     cells: Vec<(usize, usize)>,
@@ -380,13 +394,8 @@ struct Grid {
 }
 
 impl Grid {
-    fn new(sizes: &[usize], natural: &[i32], columns: usize) -> Self {
-        let mut cells = Vec::with_capacity(natural.len());
-        let mut first = 0;
-        for &size in sizes {
-            cells.extend((0..size).map(|index| (first + index / columns, index % columns)));
-            first += size.div_ceil(columns);
-        }
+    fn new<K: PartialEq>(groups: &[K], natural: &[i32], columns: NonZeroUsize) -> Self {
+        let cells = kaalang_render::card_cells(groups, columns);
         let used = cells
             .iter()
             .map(|&(_, column)| column + 1)
@@ -1088,7 +1097,7 @@ mod tests {
             "Entry",
             Structure::Row(vec![tile("line", Some(target), true)]),
         );
-        let scene = layout(&[], &focus, None);
+        let scene = layout(&[], &[(); 0], &focus, None);
         let targets: Vec<usize> = scene.cards[scene.focus]
             .texts
             .iter()
@@ -1190,7 +1199,7 @@ mod tests {
             Structure::Stack(own().into()),
         ]
         .into_iter()
-        .map(|structure| layout(&[&incoming], &card("Member", structure), None))
+        .map(|structure| layout(&incoming, &[(); 3], &card("Member", structure), None))
         .collect()
     }
 
@@ -1216,7 +1225,7 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        layout(&[&incoming], &focus, None)
+        layout(&incoming, &vec![(); incoming.len()], &focus, None)
     }
 
     #[test]
@@ -1254,9 +1263,9 @@ mod tests {
     #[test]
     fn each_group_of_incoming_cards_starts_a_row() {
         let source = |name: &str| card(name, Structure::Row(vec![tile("m", Some("Member"), true)]));
-        let (first, second) = ([source("Library")], [source("Test"), source("Example")]);
+        let incoming = [source("Library"), source("Test"), source("Example")];
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&first, &second], &focus, None);
+        let scene = layout(&incoming, &["lib", "tests", "tests"], &focus, None);
         assert_eq!(rows(&scene, 3), 2);
         // The second group is a row of its own, aligned to the same columns.
         assert_eq!(scene.cards[0].x, scene.cards[1].x);
@@ -1280,8 +1289,9 @@ mod tests {
                 .collect();
             card("Member", Structure::Row(tiles))
         };
-        let narrow = layout(&[&incoming], &focus(1), None);
-        let wide = layout(&[&incoming], &focus(14), None);
+        let groups = vec![(); incoming.len()];
+        let narrow = layout(&incoming, &groups, &focus(1), None);
+        let wide = layout(&incoming, &groups, &focus(14), None);
         assert!(wide.cards[16].width > 1800);
         assert!(rows(&wide, 16) < rows(&narrow, 16));
         routes_neither_cross_nor_enter(&wide);
@@ -1298,7 +1308,12 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&incoming], &focus, NonZeroUsize::new(3));
+        let scene = layout(
+            &incoming,
+            &vec![(); incoming.len()],
+            &focus,
+            NonZeroUsize::new(3),
+        );
         assert_eq!(rows(&scene, 7), 3);
         assert!(
             scene.cards[..3]

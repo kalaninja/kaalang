@@ -251,17 +251,16 @@ fn draw(
             relationships: &card.relationships,
         })
         .collect();
-    let mut groups = Vec::new();
-    let mut start = 0;
-    for group in incoming.chunk_by(|a, b| {
-        a.place.as_ref().map(|p| p.krate().group_key())
-            == b.place.as_ref().map(|p| p.krate().group_key())
-    }) {
-        let end = start + group.len();
-        groups.push(&incoming_cards[start..end]);
-        start = end;
-    }
-    kaalang_svg::render_type(&focus_card, &groups, TypeOptions::default())
+    let groups: Vec<_> = incoming
+        .iter()
+        .map(|card| card.place.as_ref().map(|place| place.krate().group_key()))
+        .collect();
+    kaalang_svg::render_type(
+        &focus_card,
+        &incoming_cards,
+        &groups,
+        TypeOptions::default(),
+    )
 }
 
 /// The relationships of `focus`, from source 0, to itself, and every incoming

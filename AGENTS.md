@@ -27,7 +27,7 @@
   called, tested, or measured from another crate.
 - `crates/kaalang-render/` checks cycle boundaries and compacts a verified
   arrangement into the shared rows, columns, and routes every renderer starts
-  from.
+  from, and places a type diagram's incoming cards in rows and columns.
 - `crates/kaalang-svg/` measures the shared arrangement and renders standalone
   SVG without changing its structural layout, lists what each part of a diagram
   stands for in the source, and lays out and renders type diagrams.

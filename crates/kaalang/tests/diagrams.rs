@@ -168,9 +168,10 @@ fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(Stri
                 .find(|(ty, _)| ty.path == focus.path)
                 .map(card)
                 .expect("the focus is a listed type");
-            let (svg, _) =
-                kaalang_svg::render_type(&own, &[&incoming], kaalang_svg::TypeOptions::default())
-                    .unwrap_or_else(|error| panic!("{fixture}: {}: {error}", focus.path));
+            let groups = vec![(); incoming.len()];
+            let options = kaalang_svg::TypeOptions::default();
+            let (svg, _) = kaalang_svg::render_type(&own, &incoming, &groups, options)
+                .unwrap_or_else(|error| panic!("{fixture}: {}: {error}", focus.path));
             let file = if index == 0 {
                 case.to_owned()
             } else {

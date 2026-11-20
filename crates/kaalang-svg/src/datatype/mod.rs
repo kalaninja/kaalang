@@ -13,9 +13,10 @@ mod layout;
 mod navigation;
 mod svg;
 
-pub(crate) fn render(
+pub(crate) fn render<K: PartialEq>(
     focus: &TypeCard<'_>,
-    incoming: &[&[TypeCard<'_>]],
+    incoming: &[TypeCard<'_>],
+    groups: &[K],
     columns: Option<NonZeroUsize>,
 ) -> Result<(String, Vec<Hotspot>), CardError> {
     let mut position = 0;
@@ -28,18 +29,12 @@ pub(crate) fn render(
         result
     };
     let focus = read_card(focus)?;
-    let groups = incoming
+    let incoming = incoming
         .iter()
-        .map(|group| {
-            group
-                .iter()
-                .map(&mut read_card)
-                .collect::<Result<Vec<_>, _>>()
-        })
+        .map(&mut read_card)
         .collect::<Result<Vec<_>, _>>()?;
-    let groups: Vec<&[Card]> = groups.iter().map(Vec::as_slice).collect();
-    let scene = layout::layout(&groups, &focus, columns);
-    let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
+    let scene = layout::layout(&incoming, groups, &focus, columns);
+    let incoming: Vec<&Card> = incoming.iter().collect();
     let hotspots = navigation::collect(&scene, &focus, &incoming);
     Ok((svg::serialize(&scene), hotspots))
 }

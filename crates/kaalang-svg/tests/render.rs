@@ -777,7 +777,7 @@ fn crlf_line_endings_draw_the_same_type_diagram() {
                     header: &name,
                     relationships: &[],
                 };
-                render_type(&card, &[], TypeOptions::default())
+                render_type(&card, &[], &[(); 0], TypeOptions::default())
                     .map(|(svg, _)| svg)
                     .map_err(|error| error.to_string())
             };
