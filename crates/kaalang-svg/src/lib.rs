@@ -128,10 +128,11 @@ pub enum HotspotKind {
     /// One path a tile's type names, on one line it is drawn on, of the type
     /// `card` draws: 0 for the focus, then the incoming cards in the order
     /// [`render_type`] takes them. Its span is the path's last segment, as
-    /// [`SourceType::field_paths`] places it.
+    /// [`kaalang_compiler::SourceField::paths`] places it.
     Path { card: usize },
     /// A relationship's target, of the type `card` draws. Its span names the
-    /// target's type, as [`SourceType::target_spans`] places it. `focus` marks
+    /// target's type, as [`kaalang_compiler::SourceRelationship::target_span`]
+    /// places it. `focus` marks
     /// a tile whose relationship line reaches the focus.
     Target { card: usize, focus: bool },
     /// The header of an incoming card, the type `card` draws. Its span is the

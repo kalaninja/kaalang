@@ -11,7 +11,8 @@ use syn::{Error, ItemFn, Result};
 pub use self::cfg_set::CfgSet;
 #[cfg(feature = "source")]
 pub use self::source::{
-    Declared, NamedPath, Ribbons, SourceError, SourceFile, SourceFlow, SourceType, line_and_column,
+    Declared, NamedPath, Ribbons, SourceError, SourceField, SourceFile, SourceFlow,
+    SourceRelationship, SourceType, line_and_column,
 };
 pub use self::{
     attribute::expand_attribute,

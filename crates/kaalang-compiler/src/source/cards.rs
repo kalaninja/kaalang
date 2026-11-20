@@ -250,15 +250,15 @@ mod tests {
     fn names(source: &str, path: &str) -> Vec<Vec<(String, String)>> {
         let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let ty = file.ty(path).unwrap();
-        ty.field_paths
+        ty.fields
             .iter()
-            .zip(&ty.field_types)
-            .map(|(names, text)| {
-                names
+            .map(|field| {
+                field
+                    .paths
                     .iter()
                     .map(|name| {
                         (
-                            text[name.range.clone()].to_owned(),
+                            field.ty[name.range.clone()].to_owned(),
                             source[file.range(name.span)].to_owned(),
                         )
                     })
@@ -486,7 +486,9 @@ mod inner {
         let source = "#[kaa]\nstruct Member {\n    #[kaa::refer(Self, \"The previous one.\")]\n    previous: u8,\n}\n";
         let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
         let ty = file.ty("Member").unwrap();
-        assert_eq!(ty.relationship_targets, ["Self"]);
-        assert_eq!(&source[file.range(ty.target_spans[0])], "Member");
+        let relationship = &ty.relationships[0];
+        assert!(relationship.to_self);
+        assert_eq!(relationship.target, "Self");
+        assert_eq!(&source[file.range(relationship.target_span)], "Member");
     }
 }

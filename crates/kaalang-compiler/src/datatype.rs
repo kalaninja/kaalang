@@ -65,18 +65,28 @@ pub struct Relationship {
 }
 
 impl TypeDeclaration {
-    /// Every relationship in source order, the position that identifies it.
+    /// Every field in source order, a variant's fields in its variant's place.
+    /// An alias has none.
     #[must_use]
-    pub fn relationships(&self) -> Vec<&Relationship> {
-        let fields: Vec<&Field> = match &self.form {
+    pub fn fields(&self) -> Vec<&Field> {
+        match &self.form {
             TypeForm::Struct(fields) | TypeForm::Union(fields) => fields.iter().collect(),
             TypeForm::Enum(variants) => variants
                 .iter()
                 .flat_map(|variant| &variant.fields)
                 .collect(),
-            TypeForm::Alias(_, relationship) => return relationship.iter().collect(),
-        };
-        fields
+            TypeForm::Alias(..) => Vec::new(),
+        }
+    }
+
+    /// Every relationship in source order, the position that identifies it:
+    /// an alias's own, or its fields' in the order of [`Self::fields`].
+    #[must_use]
+    pub fn relationships(&self) -> Vec<&Relationship> {
+        if let TypeForm::Alias(_, relationship) = &self.form {
+            return relationship.iter().collect();
+        }
+        self.fields()
             .into_iter()
             .filter_map(|field| match &field.annotation {
                 Some(Annotation::Refer(relationship)) => Some(relationship),

@@ -16,8 +16,8 @@ use syn::{
 
 pub use self::{cards::NamedPath, ribbons::Ribbons};
 use crate::{
-    CfgSet, FlowItem, Owner, SemanticModel, TypeDeclaration, TypeForm, build_with_options,
-    datatype::parts, flows, type_declaration, type_items,
+    Annotation, CfgSet, FlowItem, Owner, Relationship, SemanticModel, TypeDeclaration, TypeForm,
+    build_with_options, datatype::parts, flows, type_declaration, type_items,
 };
 
 mod cards;
@@ -297,42 +297,57 @@ impl<'a> SourceFile<'a> {
                 message: error.to_string(),
             }
         })?;
-        let types = field_types(&declaration.form);
-        let field_types = types.iter().map(|ty| self.collapsed(ty.span())).collect();
-        let field_paths = types.iter().map(|ty| self.named_paths(ty)).collect();
-        let relationship_targets: Vec<String> = declaration
-            .relationships()
-            .iter()
-            .map(|relationship| self.collapsed(relationship.target.span()))
-            .collect();
         // Every form `type_items` lists has a name.
-        let Some((_, name, _)) = parts(item) else {
+        let (Some((_, name, _)), Some(visibility)) = (parts(item), visibility(item)) else {
             return Err(SourceError::TypeNotFound(path.to_owned()));
         };
         let name = name.clone();
-        let target_spans = declaration
-            .relationships()
-            .iter()
-            .zip(&relationship_targets)
-            .map(|(relationship, target)| {
+        // Relationships number in the order the fields list them.
+        let mut relationships = Vec::new();
+        let mut relationship = |relationship: &Relationship| {
+            let target = self.collapsed(relationship.target.span());
+            let to_self = target == "Self";
+            relationships.push(SourceRelationship {
                 // `Self` names the declaring type.
-                if target == "Self" {
-                    return name.span();
-                }
-                cards::target_span(&relationship.target)
-            })
-            .collect();
+                target_span: if to_self {
+                    name.span()
+                } else {
+                    cards::target_span(&relationship.target)
+                },
+                target,
+                to_self,
+            });
+            relationships.len() - 1
+        };
+        let mut field = |ty: &syn::Type, refers: Option<&Relationship>| SourceField {
+            ty: self.collapsed(ty.span()),
+            paths: self.named_paths(ty),
+            relationship: refers.map(&mut relationship),
+        };
+        let fields = match &declaration.form {
+            TypeForm::Alias(ty, refers) => vec![field(ty, refers.as_ref())],
+            _ => declaration
+                .fields()
+                .into_iter()
+                .map(|declared| {
+                    let refers = match &declared.annotation {
+                        Some(Annotation::Refer(relationship)) => Some(relationship),
+                        _ => None,
+                    };
+                    field(&declared.ty, refers)
+                })
+                .collect(),
+        };
         Ok(SourceType {
             path: path.to_owned(),
             name,
+            visibility: visibility.clone(),
+            span: item.span(),
             generics: self.generics(&declaration.generics),
             representations: self.representations(item),
-            field_types,
-            field_paths,
-            relationship_targets,
-            target_spans,
+            fields,
+            relationships,
             declaration,
-            item: item.clone(),
         })
     }
 
@@ -546,8 +561,9 @@ pub struct SourceType {
     pub path: String,
     /// Its name in its declaration.
     pub name: Ident,
-    /// The declaration as the target compiles it.
-    pub item: Item,
+    pub visibility: Visibility,
+    /// The whole declaration, its attributes included.
+    pub span: Span,
     /// Its form, generics, description, and annotations.
     pub declaration: TypeDeclaration,
     /// The generic parameters the target keeps, each as authored, between
@@ -556,17 +572,35 @@ pub struct SourceType {
     /// The authored arguments of each `repr` attribute that has any, in source
     /// order. An alias has none.
     pub representations: Vec<String>,
-    /// The authored type of every field in source order, a variant's fields in
-    /// its variant's place, or an alias's right-hand side alone.
-    pub field_types: Vec<String>,
-    /// The paths each of `field_types` names.
-    pub field_paths: Vec<Vec<NamedPath>>,
-    /// The authored target of every relationship, in the order
-    /// [`TypeDeclaration::relationships`] lists them.
-    pub relationship_targets: Vec<String>,
-    /// Where each of `relationship_targets` names its type, for an engine to
-    /// resolve: its last segment, or the declaring type's name for `Self`.
-    pub target_spans: Vec<Span>,
+    /// Every field as [`TypeDeclaration::fields`] lists them, or an alias's
+    /// right-hand side alone.
+    pub fields: Vec<SourceField>,
+    /// Every relationship, in the order [`TypeDeclaration::relationships`]
+    /// lists them.
+    pub relationships: Vec<SourceRelationship>,
+}
+
+/// What a card quotes of one field.
+#[non_exhaustive]
+pub struct SourceField {
+    /// Its authored type, each whitespace run one space.
+    pub ty: String,
+    /// The paths `ty` names.
+    pub paths: Vec<NamedPath>,
+    /// Its relationship's position among [`SourceType::relationships`].
+    pub relationship: Option<usize>,
+}
+
+/// A relationship's target as a card quotes it.
+#[non_exhaustive]
+pub struct SourceRelationship {
+    /// As authored.
+    pub target: String,
+    /// Where it names its type, for an engine to resolve: its last segment, or
+    /// the declaring type's name for `Self`.
+    pub target_span: Span,
+    /// Whether it is `Self`, the declaring type.
+    pub to_self: bool,
 }
 
 /// The 1-based line and column where `span` starts in the text its file was
@@ -588,19 +622,14 @@ fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
     }
 }
 
-/// The type of every field of `form` in source order, a variant's fields in its
-/// variant's place, or an alias's right-hand side alone.
-fn field_types(form: &TypeForm) -> Vec<&syn::Type> {
-    match form {
-        TypeForm::Struct(fields) | TypeForm::Union(fields) => {
-            fields.iter().map(|field| &field.ty).collect()
-        }
-        TypeForm::Enum(variants) => variants
-            .iter()
-            .flat_map(|variant| &variant.fields)
-            .map(|field| &field.ty)
-            .collect(),
-        TypeForm::Alias(ty, _) => vec![ty.as_ref()],
+/// A type declaration's visibility.
+fn visibility(item: &Item) -> Option<&Visibility> {
+    match item {
+        Item::Struct(declaration) => Some(&declaration.vis),
+        Item::Enum(declaration) => Some(&declaration.vis),
+        Item::Union(declaration) => Some(&declaration.vis),
+        Item::Type(declaration) => Some(&declaration.vis),
+        _ => None,
     }
 }
 
@@ -634,7 +663,7 @@ mod tests {
             file.ty("model::Empty"),
             Err(SourceError::InvalidType { name, line: 1, .. }) if name == "model::Empty"
         ));
-        assert!(file.ty("Plain").is_ok_and(|ty| ty.field_types == ["u32"]));
+        assert!(file.ty("Plain").is_ok_and(|ty| ty.fields[0].ty == "u32"));
     }
 
     #[test]
@@ -643,7 +672,13 @@ mod tests {
         let unix: CfgSet = "unix".parse().unwrap();
         let types = |target| {
             let file = SourceFile::parse(source, target).unwrap();
-            file.ty("Handle").map(|ty| ty.field_types).ok()
+            let ty = file.ty("Handle").ok()?;
+            Some(
+                ty.fields
+                    .into_iter()
+                    .map(|field| field.ty)
+                    .collect::<Vec<_>>(),
+            )
         };
 
         assert_eq!(types(&unix), Some(vec!["u8".to_owned()]));
@@ -655,7 +690,7 @@ mod tests {
     }
 
     #[test]
-    fn a_type_lists_its_fields_and_relationship_targets_in_source_order() {
+    fn a_type_numbers_its_fields_relationships_in_source_order() {
         let source = r#"#[kaa] enum Approval {
             Named(#[kaa::refer(Member, "One.")] Vec< u8 >),
             Quorum { votes: u16, #[kaa::refer(directory :: Team, "Two.")] voters: u32 },
@@ -666,16 +701,26 @@ mod tests {
         let approval = file
             .ty("Approval")
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(approval.field_types, ["Vec< u8 >", "u16", "u32"]);
+        let fields = |ty: &SourceType| -> Vec<(String, Option<String>)> {
+            let target = |at: usize| ty.relationships[at].target.clone();
+            let fields = ty.fields.iter();
+            fields
+                .map(|field| (field.ty.clone(), field.relationship.map(target)))
+                .collect()
+        };
+        let named = |ty: &str, target: Option<&str>| (ty.to_owned(), target.map(str::to_owned));
         assert_eq!(
-            approval.relationship_targets,
-            ["Member", "directory :: Team"]
+            fields(&approval),
+            [
+                named("Vec< u8 >", Some("Member")),
+                named("u16", None),
+                named("u32", Some("directory :: Team")),
+            ]
         );
         let alias = file
             .ty("MemberRef")
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(alias.field_types, ["u64"]);
-        assert_eq!(alias.relationship_targets, ["Member"]);
+        assert_eq!(fields(&alias), [named("u64", Some("Member"))]);
     }
 
     #[test]

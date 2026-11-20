@@ -1,8 +1,8 @@
 use std::num::NonZeroUsize;
 
-use kaalang_compiler::{Annotation, Field, NamedPath, SourceType, TypeForm};
+use kaalang_compiler::{Annotation, Field, NamedPath, SourceField, SourceType, TypeForm};
 use proc_macro2::Span;
-use syn::{Item, Visibility, ext::IdentExt, spanned::Spanned};
+use syn::ext::IdentExt;
 
 use crate::{
     CardError, Hotspot, RenderError, TypeCard, validate_description, validate_label,
@@ -103,7 +103,8 @@ struct Tile {
 /// Reads what one card shows of its type.
 fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
     let ty = card.ty;
-    let (structure, relationships) = structure(ty, card.relationships);
+    let structure = structure(ty, card.relationships);
+    let relationships = ty.relationships.len();
     assert!(
         card.relationships
             .iter()
@@ -116,71 +117,57 @@ fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
     let read = Card {
         name: format!("{}{}", card.header, ty.generics),
         name_span: ty.name.span(),
-        marker: visibility_marker(visibility(&ty.item)),
+        marker: visibility_marker(&ty.visibility),
         kind: kind(ty),
         description: ty.declaration.description.clone(),
         structure,
     };
-    validate(&read, &ty.path, ty.item.span())?;
+    validate(&read, &ty.path, ty.span)?;
     Ok(read)
 }
 
-/// The card's structure, and how many relationships the type has. They count
-/// in source order, as `TypeDeclaration::relationships` lists them.
-fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
-    let mut relationships = 0;
-    let mut types = ty
-        .field_types
-        .iter()
-        .cloned()
-        .zip(ty.field_paths.iter().cloned());
-    let mut index = 0;
+/// The card's structure: each tile with the field the compiler read for it.
+fn structure(ty: &SourceType, drawn: &[usize]) -> Structure {
+    let tile = |index, label, field: &SourceField, description| {
+        let relationship = field.relationship.map(|at| (at, &ty.relationships[at]));
+        Tile {
+            index,
+            label,
+            ty: field.ty.clone(),
+            paths: field.paths.clone(),
+            description,
+            drawn: relationship.is_some_and(|(at, _)| drawn.contains(&at)),
+            target: relationship.map(|(_, relationship)| relationship.target.clone()),
+            target_span: relationship.map(|(_, relationship)| relationship.target_span),
+        }
+    };
+    let mut read = ty.fields.iter().enumerate();
     let mut tiles = |fields: &[Field], in_variant: bool| -> Vec<Tile> {
         fields
             .iter()
             .enumerate()
             .map(|(position, field)| {
-                let (description, target) = match &field.annotation {
-                    None => (None, None),
-                    Some(Annotation::Value(description)) => (Some(description.clone()), None),
-                    Some(Annotation::Refer(relationship)) => {
-                        relationships += 1;
-                        (
-                            Some(relationship.description.clone()),
-                            Some((
-                                relationships - 1,
-                                ty.relationship_targets[relationships - 1].clone(),
-                            )),
-                        )
-                    }
+                let (index, read) = read.next().expect("each field has its authored type");
+                let description = match &field.annotation {
+                    None => None,
+                    Some(Annotation::Value(description)) => Some(description.clone()),
+                    Some(Annotation::Refer(relationship)) => Some(relationship.description.clone()),
                 };
                 let name = field
                     .name
                     .as_ref()
                     .map_or_else(|| position.to_string(), |name| name.unraw().to_string());
-                let (field_type, paths) = types.next().expect("each field has its authored type");
-                index += 1;
-                Tile {
-                    index: index - 1,
-                    // A variant's fields take the enum's visibility.
-                    label: Some(if in_variant {
-                        name
-                    } else {
-                        with_visibility(&field.visibility, &name)
-                    }),
-                    ty: field_type,
-                    paths,
-                    description,
-                    drawn: target
-                        .as_ref()
-                        .is_some_and(|(index, _)| drawn.contains(index)),
-                    target_span: target.as_ref().map(|(index, _)| ty.target_spans[*index]),
-                    target: target.map(|(_, target)| target),
-                }
+                // A variant's fields take the enum's visibility.
+                let label = if in_variant {
+                    name
+                } else {
+                    with_visibility(&field.visibility, &name)
+                };
+                tile(index, Some(label), read, description)
             })
             .collect()
     };
-    let structure = match &ty.declaration.form {
+    match &ty.declaration.form {
         TypeForm::Struct(fields) | TypeForm::Union(fields) if fields.is_empty() => Structure::Empty,
         TypeForm::Struct(fields) => Structure::Row(tiles(fields, false)),
         TypeForm::Union(fields) => Structure::Stack(tiles(fields, false)),
@@ -196,29 +183,9 @@ fn structure(ty: &SourceType, drawn: &[usize]) -> (Structure, usize) {
                 .collect(),
         ),
         TypeForm::Alias(_, relationship) => {
-            relationships = usize::from(relationship.is_some());
-            Structure::Stack(vec![Tile {
-                index: 0,
-                label: None,
-                ty: ty.field_types[0].clone(),
-                paths: ty.field_paths[0].clone(),
-                description: relationship.as_ref().map(|it| it.description.clone()),
-                target: ty.relationship_targets.first().cloned(),
-                target_span: ty.target_spans.first().copied(),
-                drawn: relationship.is_some() && drawn.contains(&0),
-            }])
+            let description = relationship.as_ref().map(|it| it.description.clone());
+            Structure::Stack(vec![tile(0, None, &ty.fields[0], description)])
         }
-    };
-    (structure, relationships)
-}
-
-fn visibility(item: &Item) -> &Visibility {
-    match item {
-        Item::Struct(declaration) => &declaration.vis,
-        Item::Enum(declaration) => &declaration.vis,
-        Item::Union(declaration) => &declaration.vis,
-        Item::Type(declaration) => &declaration.vis,
-        _ => unreachable!("only the supported forms read as a type"),
     }
 }
 
@@ -277,7 +244,6 @@ mod tests {
             .ty(path)
             .unwrap();
         structure(&ty, drawn)
-            .0
             .tiles()
             .iter()
             .filter(|tile| tile.target.is_some())

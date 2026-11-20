@@ -273,8 +273,8 @@ fn cards(
 ) -> (Vec<usize>, Vec<Incoming>) {
     // A `Self` target is always the focus's own.
     let mut own: Vec<usize> = (0..)
-        .zip(&focus.relationship_targets)
-        .filter(|(_, target)| *target == "Self")
+        .zip(&focus.relationships)
+        .filter(|(_, relationship)| relationship.to_self)
         .map(|(position, _)| position)
         .collect();
     let mut incoming = Vec::new();

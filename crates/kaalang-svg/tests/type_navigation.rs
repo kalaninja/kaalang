@@ -102,12 +102,11 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
                     .collect();
                 spans.dedup();
                 let expected: Vec<String> = card
-                    .field_paths
+                    .fields
                     .iter()
-                    .zip(&card.field_types)
-                    .flat_map(|(names, text)| {
-                        names.iter().map(|name| {
-                            let path = &text[name.range.clone()];
+                    .flat_map(|field| {
+                        field.paths.iter().map(|name| {
+                            let path = &field.ty[name.range.clone()];
                             path.rsplit("::").next().unwrap().to_owned()
                         })
                     })
@@ -129,7 +128,7 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
                 });
                 assert_eq!(
                     drawn_targets.len(),
-                    card.relationship_targets.len(),
+                    card.relationships.len(),
                     "{what}: card {number} targets"
                 );
                 for hotspot in &drawn_targets {
