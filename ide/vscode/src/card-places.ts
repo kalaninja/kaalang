@@ -1,7 +1,6 @@
 // Workspace source files and the places of their declarations in Cargo
 // targets, as the bindings walk the targets' module trees in the module worker.
 
-import { realpath } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import type * as vscode from "vscode";
 
@@ -148,9 +147,7 @@ export async function fileReadings(
 ): Promise<Reading[] | null> {
   const graph = await editorTree(roots);
   if (!graph) return null;
-  const actual =
-    uri.startsWith("file:") &&
-    (await realpath(fileURLToPath(uri)).catch(() => undefined));
+  const actual = uri.startsWith("file:") && realFile(fileURLToPath(uri));
   const readings = actual ? graph.files.get(actual) : undefined;
   const active =
     typeOffset === undefined

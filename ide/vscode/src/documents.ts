@@ -1,7 +1,6 @@
-import { realpath } from "node:fs/promises";
 import * as vscode from "vscode";
 
-const paths = new WeakMap<vscode.TextDocument, Promise<string | undefined>>();
+import { realFile } from "./cache";
 
 /** Reopening a URI returns the current document even after its editor closed. */
 export async function openDocument(
@@ -24,20 +23,14 @@ export async function documentText(uri: vscode.Uri): Promise<string> {
   // Cargo and the server can name the canonical file while an unsaved editor
   // holds the same file under a symlink.
   if (uri.scheme === "file") {
-    const dirty = vscode.workspace.textDocuments.filter(
-      (document) => document.isDirty && document.uri.scheme === "file",
+    const physical = realFile(uri.fsPath);
+    const dirty = vscode.workspace.textDocuments.find(
+      (document) =>
+        document.isDirty &&
+        document.uri.scheme === "file" &&
+        realFile(document.uri.fsPath) === physical,
     );
-    if (dirty.length) {
-      const physical = await realpath(uri.fsPath).catch(() => undefined);
-      for (const document of dirty) {
-        let path = paths.get(document);
-        if (!path) {
-          path = realpath(document.uri.fsPath).catch(() => undefined);
-          paths.set(document, path);
-        }
-        if (physical && (await path) === physical) return document.getText();
-      }
-    }
+    if (dirty) return dirty.getText();
   }
   return new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
 }

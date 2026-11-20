@@ -1,4 +1,4 @@
-import { readFileSync, realpathSync, statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -9,7 +9,7 @@ import {
   workerData,
 } from "node:worker_threads";
 
-import { fileStamp, realFile } from "./cache";
+import { fileStamp, realFile, realPath } from "./cache";
 import type { Placement } from "./card-places";
 
 /** A Cargo target, as `cargo metadata` lists it, whose module tree the bindings read from the file `root`. */
@@ -116,12 +116,6 @@ export function moduleFile(parent: string, parts: string[]): string {
   }
   return file;
 }
-
-/**
- * The real path of `file` as the file system resolves it: a symlink before
- * the `..` after it, which `realpathSync` would resolve first.
- */
-const realPath = realpathSync.native;
 
 /** Resolve a missing candidate against its nearest existing parent, including directory symlinks. */
 function directoryPath(directory: string): string {

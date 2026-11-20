@@ -13,10 +13,17 @@ export function cached<K, V>(
   return pending;
 }
 
+/**
+ * The real path of `file` as the file system resolves it, as the asynchronous
+ * `realpath` does too: a symlink before the `..` after it, which plain
+ * `realpathSync` would resolve first.
+ */
+export const realPath = realpathSync.native;
+
 /** The real path of `file`, or `file` itself when it no longer exists. */
 export function realFile(file: string): string {
   try {
-    return realpathSync(file);
+    return realPath(file);
   } catch {
     return file;
   }
