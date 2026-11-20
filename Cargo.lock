@@ -269,6 +269,7 @@ dependencies = [
  "cargo_metadata",
  "clap",
  "kaalang-compiler",
+ "kaalang-render",
  "kaalang-svg",
  "kaalang-workspace",
  "proc-macro2",
@@ -293,6 +294,7 @@ name = "kaalang-js"
 version = "0.3.0"
 dependencies = [
  "kaalang-compiler",
+ "kaalang-render",
  "kaalang-svg",
  "kaalang-workspace",
  "proc-macro2",

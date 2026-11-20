@@ -68,12 +68,7 @@ impl Place {
 
     /// The card order of RFC 0009 §4.3 around a `focus`, if any.
     pub fn key(&self, focus: Option<&Place>) -> ((bool, bool, CargoTarget<'_>), &[usize]) {
-        let krate = self.krate();
-        let focus = focus.map(Place::krate);
-        (
-            krate.order(focus.map(|f| f.package), focus == Some(krate)),
-            &self.order,
-        )
+        (self.krate().order(focus.map(Place::krate)), &self.order)
     }
 
     /// The place of the type at `path` in this file, its name at `offset`:

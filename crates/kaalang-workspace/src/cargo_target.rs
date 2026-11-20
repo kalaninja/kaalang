@@ -39,10 +39,12 @@ pub struct CargoTarget<'a> {
 }
 
 impl<'a> CargoTarget<'a> {
-    /// The focus's crate comes first, then the other targets of its package.
+    /// Where its cards stand around a focus in `focus`: the focus's target
+    /// first, then the rest of its package, then the other packages.
     #[must_use]
-    pub fn order(self, focus_package: Option<&str>, is_focus: bool) -> (bool, bool, Self) {
-        (!is_focus, Some(self.package) != focus_package, self)
+    pub fn order(self, focus: Option<CargoTarget<'_>>) -> (bool, bool, Self) {
+        let package = focus.map(|focus| focus.package);
+        (focus != Some(self), Some(self.package) != package, self)
     }
 
     /// Each package's target groups start separate rows in the diagram.

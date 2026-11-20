@@ -7,7 +7,8 @@ use std::{
 };
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
-use kaalang_svg::{CardPath, TypeCard, TypeOptions};
+use kaalang_render::CardPath;
+use kaalang_svg::{TypeCard, TypeOptions};
 use kaalang_workspace::names::{Def, Resolution, Resolver, TypeRef};
 use syn::spanned::Spanned;
 
@@ -279,12 +280,9 @@ fn focus(
 /// first, then its tests, examples, and benches, each by name and then by the
 /// path of its root.
 fn order(crates: &[Crate], first: usize) -> Vec<usize> {
-    let package = crates.get(first).map(|krate| krate.package.as_str());
+    let focus = crates.get(first).map(|krate| krate.target());
     let mut order: Vec<usize> = (0..crates.len()).collect();
-    order.sort_by_key(|&index| {
-        let krate = &crates[index];
-        krate.target().order(package, index == first)
-    });
+    order.sort_by_key(|&index| crates[index].target().order(focus));
     order
 }
 
@@ -300,14 +298,15 @@ fn headers(
         .iter()
         .map(|(source, _)| {
             let other = &crates[source.krate];
+            let own = other.target() == krate.target();
             CardPath {
                 path: &other.types[source.id].path,
-                other_crate: (source.krate != focus.krate).then_some(other.name.as_str()),
+                other_crate: (!own).then_some(other.name.as_str()),
             }
         })
         .collect();
     let module = &krate.modules[entry.module].path;
-    let headers = kaalang_svg::card_headers(&entry.path, module, &cards);
+    let headers = kaalang_render::card_headers(&entry.path, module, &cards);
     (entry.path.clone(), headers)
 }
 

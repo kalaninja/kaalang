@@ -1,6 +1,6 @@
 [package]
 name = "kaalang-render"
-description = "Cycle-boundary checks, arrangement compaction, and type card grids for kaalang renderers"
+description = "Cycle-boundary checks, arrangement compaction, and type card grids and headers for kaalang renderers"
 documentation = "https://docs.rs/kaalang-render"
 version.workspace = true
 edition.workspace = true

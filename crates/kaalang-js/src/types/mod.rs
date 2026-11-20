@@ -1,7 +1,8 @@
 //! What [`crate::draw_type`] answers: a type diagram's SVG and its hotspots.
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType};
-use kaalang_svg::{CardError, CardPath, HotspotKind, TypeCard, TypeOptions};
+use kaalang_render::CardPath;
+use kaalang_svg::{CardError, HotspotKind, TypeCard, TypeOptions};
 use serde::{Deserialize, Serialize};
 
 pub(crate) use self::order::{Place, Target};
@@ -340,7 +341,7 @@ fn headers(
                     other_crate: (other.krate() != place.krate()).then_some(other.krate().name),
                 })
                 .collect();
-            let headers = kaalang_svg::card_headers(&header, &module, &cards);
+            let headers = kaalang_render::card_headers(&header, &module, &cards);
             (header, headers)
         }
         _ => (
