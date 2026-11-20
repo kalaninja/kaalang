@@ -194,7 +194,8 @@ group and a column count before any card is measured. The entry point
 incoming cards from its caller, which reads each card's type through the
 compiler's `SourceFile` for its compilation target and decides the relationships
 each card draws into the focus. For the CLI and the bindings alike, the
-`CargoTarget` of `kaalang-workspace` orders the cards' targets and gives each
+`CargoTarget` of `kaalang-workspace` tells each target's group and crate name
+from what `cargo metadata` lists, orders the cards' targets, and gives each
 card's group, and `card_headers` shortens their paths by RFC 0010. A rendering
 error names its card, so the CLI can name its file and the editor can leave an
 invalid incoming card out. Beside the SVG the renderer returns the hotspots of

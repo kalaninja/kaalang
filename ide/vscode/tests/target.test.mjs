@@ -34,11 +34,11 @@ const roots = {
   fileReadings: async (uri, targets) =>
     targets
       .filter(({ root }) => root === uri)
-      .map(({ cfg, package: pkg, group, name, root }) => ({
+      .map(({ cfg, package: pkg, name, root }) => ({
         cfg,
         place: {
           package: pkg,
-          group,
+          group: 0,
           crate: name,
           root,
           module: "",
@@ -72,7 +72,7 @@ async function targetHost(workspace, answer, cardPlaces) {
   return { ...host, asked };
 }
 
-test("each package's targets take rust-analyzer's set, gated ones included, and Cargo writes no lockfile", async (t) => {
+test("each target takes the set rust-analyzer reads its root with, gated ones included, and Cargo writes no lockfile", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-target-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   const file = (...parts) => path.join(root, ...parts);
@@ -142,8 +142,8 @@ test("each package's targets take rust-analyzer's set, gated ones included, and 
   loaded = true;
   const second = await target();
   assert.deepEqual(cfgs(second).at(-1), ["other", "test unix"]);
-  // Only the unanswered package is asked again, and an unchanged list keeps its identity.
-  assert.equal(host.asked.length, 3);
+  // Only the unanswered crate is asked again, and an unchanged list keeps its identity.
+  assert.equal(host.asked.length, 4);
   assert.equal((await target()).roots, second.roots);
   assert.equal(existsSync(file("Cargo.lock")), false);
 });

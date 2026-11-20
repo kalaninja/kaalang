@@ -10,11 +10,12 @@ import {
 } from "node:worker_threads";
 
 import { fileStamp, realFile } from "./cache";
+import type { Placement } from "./card-places";
 
-/** A Cargo target whose module tree the bindings read, from the file `root`. */
+/** A Cargo target, as `cargo metadata` lists it, whose module tree the bindings read from the file `root`. */
 export interface TreeRoot {
   package: string;
-  group: number;
+  kind: string[];
   name: string;
   root: string;
   cfg: string;
@@ -27,12 +28,7 @@ export interface TreeRoot {
 export interface Tree {
   files: Record<
     string,
-    {
-      target: number;
-      module: string;
-      order: number[];
-      types: number[] | null;
-    }[]
+    { target: number; place: Placement; types: number[] | null }[]
   >;
   referring: string[];
   complete: boolean;

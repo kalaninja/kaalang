@@ -6,7 +6,7 @@
 //! Its API may change in any minor release.
 
 pub use self::{
-    cargo_target::CargoTarget,
+    cargo_target::{CargoTarget, crate_name, target_group},
     modules::{ExternalModule, ModuleDirectory, ModuleFile, module_items},
     walk::{Files, TreeFile, walk},
 };

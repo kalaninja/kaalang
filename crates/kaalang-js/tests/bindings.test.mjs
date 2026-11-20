@@ -165,16 +165,18 @@ test("a module tree gives each file its places in card order", (t) => {
       return fs.readFileSync(at, "utf8");
     },
   };
-  const target = (name, group, source, cfg) => ({
+  const target = (name, kind, source, cfg) => ({
     package: "app",
-    group,
+    kind: [kind],
     name,
     root: path.join(root, source),
     cfg,
   });
+  // A build script has no tree; a target's crate name has `_` for `-`.
   const roots = [
-    target("it", 1, "tests/it.rs", "test"),
-    target("app", 0, "src/lib.rs", ""),
+    target("it", "test", "tests/it.rs", "test"),
+    target("build-script-build", "custom-build", "build.rs", ""),
+    target("app-core", "lib", "src/lib.rs", ""),
   ];
   const tree = () =>
     JSON.parse(kaalang.moduleTree(JSON.stringify(roots), host));
@@ -182,27 +184,36 @@ test("a module tree gives each file its places in card order", (t) => {
   assert.equal(complete, true);
   const at = (name, text) => sources[name].indexOf(text);
   const same = at("src/shared.rs", "Same");
+  const place = (crate, group, source, module, order) => ({
+    package: "app",
+    group,
+    crate,
+    root: path.join(root, source),
+    module,
+    order,
+  });
+  const library = (module, order) =>
+    place("app_core", 0, "src/lib.rs", module, order);
   assert.deepEqual(files[file("src/shared.rs")], [
     {
-      target: 1,
-      module: "shared",
-      order: [at("src/lib.rs", "shared")],
+      target: 2,
+      place: library("shared", [at("src/lib.rs", "shared")]),
       types: [same],
     },
     {
-      target: 1,
-      module: "alias",
-      order: [at("src/lib.rs", "alias")],
+      target: 2,
+      place: library("alias", [at("src/lib.rs", "alias")]),
       types: [same],
     },
     {
       target: 0,
-      module: "shared",
-      order: [at("tests/it.rs", "shared;")],
+      place: place("it", 1, "tests/it.rs", "shared", [
+        at("tests/it.rs", "shared;"),
+      ]),
       types: [at("src/shared.rs", "Tested"), same],
     },
   ]);
-  const modules = (name) => files[file(name)].map(({ module }) => module);
+  const modules = (name) => files[file(name)].map(({ place }) => place.module);
   assert.deepEqual(modules("src/shared/child.rs"), ["shared::child"]);
   assert.deepEqual(modules("src/child.rs"), ["alias::child", "shared::child"]);
   assert.deepEqual(referring, [file("src/shared/child.rs")]);

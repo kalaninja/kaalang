@@ -10,8 +10,10 @@ pub use self::{
     resolve::{Def, Resolution, Resolver, TypeRef},
     select::{FlowPath, FoundFlow},
 };
+#[cfg(doc)]
+use crate::target_group;
 use crate::{
-    Files, module_items,
+    CargoTarget, Files, module_items,
     walk::{TreeFile, walk},
 };
 mod resolve;
@@ -20,7 +22,12 @@ mod select;
 /// A compiled crate and the libraries it can name.
 pub struct Crate {
     pub package_id: String,
+    pub package: String,
+    /// The group its cards start a row in, as [`target_group`] gives it.
+    pub group: u8,
     pub name: String,
+    /// The target's own source path.
+    pub root: PathBuf,
     pub library: bool,
     pub host: bool,
     pub dependencies: Vec<(String, String)>,
@@ -100,6 +107,19 @@ pub struct TypeEntry {
     /// The identifier's source position, unchanged by conditional attributes.
     pub position: proc_macro2::LineColumn,
     pub item: Item,
+}
+
+impl Crate {
+    /// The Cargo target it compiles, as cards order it.
+    #[must_use]
+    pub fn target(&self) -> CargoTarget<'_> {
+        CargoTarget {
+            package: &self.package,
+            group: self.group,
+            name: &self.name,
+            root: &self.root,
+        }
+    }
 }
 
 /// Modules and declarations in source order, with diagnostics from unreadable files.
@@ -407,7 +427,10 @@ fn library(package: &str, source: &str) -> Crate {
     let tree = ModuleTree::read(root, &cfg, &mut files);
     Crate {
         package_id: package.to_owned(),
+        package: package.to_owned(),
+        group: 0,
         name: package.replace('-', "_"),
+        root: PathBuf::from(format!("/{package}/src/lib.rs")),
         library: true,
         host: false,
         dependencies: Vec::new(),

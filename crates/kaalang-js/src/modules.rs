@@ -11,12 +11,15 @@ use std::{
 
 use kaalang_compiler::{CfgSet, SourceFile};
 use kaalang_workspace::{
-    CargoTarget, ExternalModule, Files, ModuleDirectory, ModuleFile, TreeFile, module_items, walk,
+    ExternalModule, Files, ModuleDirectory, ModuleFile, TreeFile, module_items, walk,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use wasm_bindgen::{JsValue, prelude::wasm_bindgen};
 
-use crate::utf16;
+use crate::{
+    types::{Place, Target},
+    utf16,
+};
 
 #[wasm_bindgen]
 extern "C" {
@@ -76,25 +79,14 @@ fn host_error(error: &JsValue) -> io::Error {
     io::Error::other(format!("{error:?}"))
 }
 
-/// A Cargo target, with the set its crate is read for.
+/// A target as `cargo metadata` lists it, with the set its crate is read for.
 #[derive(Deserialize)]
 struct Root {
     package: String,
-    group: u8,
+    kind: Vec<String>,
     name: String,
     root: String,
     cfg: String,
-}
-
-impl Root {
-    fn target(&self) -> CargoTarget<'_> {
-        CargoTarget {
-            package: &self.package,
-            group: self.group,
-            name: &self.name,
-            root: Path::new(&self.root),
-        }
-    }
 }
 
 /// What a file declares for a set and a directory, in UTF-16 code units.
@@ -127,13 +119,12 @@ pub(crate) fn forget(canonical: Option<String>) {
     });
 }
 
-/// One place of a file: the root's position in the roots, its module, and its
-/// order, with its types' name offsets when it could be read.
+/// One place of a file, with the root's position in the roots and its types'
+/// name offsets when it could be read.
 #[derive(Serialize)]
 struct Reading {
     target: usize,
-    module: String,
-    order: Vec<usize>,
+    place: Place,
     #[serde(rename = "types", serialize_with = "types")]
     declared: Option<Rc<Declared>>,
 }
@@ -161,6 +152,10 @@ pub(crate) fn tree(roots: &str, host: &ModuleHost) -> Result<String, String> {
         complete: true,
     };
     for (index, root) in roots.iter().enumerate() {
+        let (package, name, path) = (root.package.clone(), &root.name, root.root.clone());
+        let Some(target) = Target::of_cargo(package, &root.kind, name, path) else {
+            continue;
+        };
         let cfg: CfgSet = root.cfg.parse()?;
         let tree = CACHE.with_borrow_mut(|Cache { declared, joined }| {
             let mut files = Host { host, joined };
@@ -184,7 +179,7 @@ pub(crate) fn tree(roots: &str, host: &ModuleHost) -> Result<String, String> {
                 },
             )
         });
-        collect(tree, index, &mut trees);
+        collect(tree, index, &target, &mut trees);
     }
     for (file, readings) in &mut trees.files {
         if readings.iter().any(|reading| {
@@ -195,10 +190,7 @@ pub(crate) fn tree(roots: &str, host: &ModuleHost) -> Result<String, String> {
         }) {
             trees.referring.push(file.clone());
         }
-        readings.sort_by(|left, right| {
-            (roots[left.target].target(), &left.order)
-                .cmp(&(roots[right.target].target(), &right.order))
-        });
+        readings.sort_by(|left, right| left.place.key(None).cmp(&right.place.key(None)));
     }
     serde_json::to_string(&trees).map_err(|error| error.to_string())
 }
@@ -230,7 +222,7 @@ fn declare(text: &str, cfg: &CfgSet, directory: &ModuleDirectory) -> io::Result<
 /// Adds each file of `tree` with its place in the root at `index`. A file that
 /// exists but cannot be read or parsed, or an ambiguous module, may hide more
 /// modules: the trees are then incomplete.
-fn collect(tree: TreeFile<Rc<Declared>>, index: usize, trees: &mut Trees) {
+fn collect(tree: TreeFile<Rc<Declared>>, index: usize, target: &Target, trees: &mut Trees) {
     let declared = match tree.content {
         Ok(declared) => Some(declared),
         Err(error) => {
@@ -245,12 +237,11 @@ fn collect(tree: TreeFile<Rc<Declared>>, index: usize, trees: &mut Trees) {
             .expect("the host's paths are strings");
         trees.files.entry(file).or_default().push(Reading {
             target: index,
-            module: tree.module,
-            order: tree.order,
+            place: Place::new(target.clone(), tree.module, tree.order),
             declared,
         });
     }
     for child in tree.children.into_iter().flatten() {
-        collect(child, index, trees);
+        collect(child, index, target, trees);
     }
 }

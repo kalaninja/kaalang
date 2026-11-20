@@ -14,13 +14,15 @@ export interface Metadata {
   workspace_members: string[];
 }
 
-/** A package target under its Rust crate name, with the group its cards occupy. */
+/**
+ * A package target as `cargo metadata` lists it: the bindings tell from its
+ * kinds and name which row its cards start and what its crate is named.
+ */
 export interface CargoRoot {
   package: string;
-  group: number;
+  kind: string[];
   name: string;
   root: string;
-  packageId: string;
 }
 
 /**
@@ -32,17 +34,11 @@ export function workspaceTargets(metadata: Metadata): CargoRoot[] {
   return metadata.packages
     .filter((pkg) => members.has(pkg.id))
     .flatMap((pkg) =>
-      pkg.targets
-        .filter((target) => !target.kind.includes("custom-build"))
-        .map((target) => ({
-          package: pkg.name,
-          group:
-            ["test", "example", "bench"].findIndex((kind) =>
-              target.kind.includes(kind),
-            ) + 1,
-          packageId: pkg.id,
-          name: target.name.replaceAll("-", "_"),
-          root: target.src_path,
-        })),
+      pkg.targets.map((target) => ({
+        package: pkg.name,
+        kind: target.kind,
+        name: target.name,
+        root: target.src_path,
+      })),
     );
 }

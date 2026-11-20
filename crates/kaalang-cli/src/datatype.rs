@@ -8,10 +8,7 @@ use std::{
 
 use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
 use kaalang_svg::{CardPath, TypeCard, TypeOptions};
-use kaalang_workspace::{
-    CargoTarget,
-    names::{Def, Resolution, Resolver, TypeRef},
-};
+use kaalang_workspace::names::{Def, Resolution, Resolver, TypeRef};
 use syn::spanned::Spanned;
 
 use crate::workspace::{self, Crate};
@@ -193,7 +190,7 @@ fn render(
         .collect();
     let groups: Vec<_> = incoming
         .iter()
-        .map(|(ty, _)| crates[ty.krate].cargo_target().group_key())
+        .map(|(ty, _)| crates[ty.krate].target().group_key())
         .collect();
     let rendered = kaalang_svg::render_type(&focus_card, &incoming_cards, &groups, options);
     let (svg, _) = rendered.map_err(|error| {
@@ -286,20 +283,9 @@ fn order(crates: &[Crate], first: usize) -> Vec<usize> {
     let mut order: Vec<usize> = (0..crates.len()).collect();
     order.sort_by_key(|&index| {
         let krate = &crates[index];
-        krate.cargo_target().order(package, index == first)
+        krate.target().order(package, index == first)
     });
     order
-}
-
-impl Crate {
-    fn cargo_target(&self) -> CargoTarget<'_> {
-        CargoTarget {
-            package: &self.package,
-            group: self.group,
-            name: &self.name,
-            root: &self.root,
-        }
-    }
 }
 
 /// The focus's header and each incoming card's, by RFC 0010.

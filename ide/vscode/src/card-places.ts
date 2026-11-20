@@ -2,7 +2,6 @@
 // targets, as the bindings walk the targets' module trees in the module worker.
 
 import { realpath } from "node:fs/promises";
-import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type * as vscode from "vscode";
 
@@ -10,7 +9,7 @@ import { realFile } from "./cache";
 import { forgetTrees, moduleTree } from "./module-sources";
 import type { CargoRoot } from "./target";
 
-/** Where a file stands in a Cargo target's module tree. */
+/** Where a file stands in a Cargo target's module tree, as the bindings give it. */
 export interface Placement {
   package: string;
   group: number;
@@ -63,15 +62,8 @@ export async function workspaceTree(
   roots: CargoRoot[],
   unsaved: [string, string][],
 ): Promise<Graph> {
-  const files = roots.map((target) => fileURLToPath(target.root));
   const tree = await moduleTree(
-    roots.map(({ package: pkg, group, name, cfg }, at) => ({
-      package: pkg,
-      group,
-      name,
-      root: files[at],
-      cfg,
-    })),
+    roots.map((target) => ({ ...target, root: fileURLToPath(target.root) })),
     unsaved,
   );
   if (!tree)
@@ -82,18 +74,11 @@ export async function workspaceTree(
       complete: false,
     };
   const readings = Object.entries(tree.files).map(([file, places]) => {
-    const found = places.map(({ target, module, order, types }) => {
-      const root = roots[target];
-      const place = {
-        package: root.package,
-        group: root.group,
-        crate: root.name,
-        root: files[target].split(path.sep).join("/"),
-        module,
-        order,
-      };
-      return { place, cfg: root.cfg, types: types && new Set(types) };
-    });
+    const found = places.map(({ target, place, types }) => ({
+      place,
+      cfg: roots[target].cfg,
+      types: types && new Set(types),
+    }));
     return [file, found] as const;
   });
   return {

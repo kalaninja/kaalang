@@ -4,7 +4,7 @@ use kaalang_compiler::{SourceError, SourceFile, SourceType};
 use kaalang_svg::{CardError, CardPath, HotspotKind, TypeCard, TypeOptions};
 use serde::{Deserialize, Serialize};
 
-use self::order::Place;
+pub(crate) use self::order::{Place, Target};
 use crate::utf16;
 
 mod order;

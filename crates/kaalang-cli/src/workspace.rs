@@ -14,8 +14,9 @@ use std::{
 
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
 use kaalang_workspace::{
-    Files,
+    Files, crate_name,
     names::{Crate as CompiledCrate, FlowPath, FoundFlow, ModuleTree, Resolver},
+    target_group,
 };
 
 /// The file that declares a found flow, its source, the flow's position among
@@ -46,15 +47,10 @@ pub(super) struct TargetOptions {
 
 /// One crate: a package's target with the modules read from its root.
 pub(super) struct Crate {
-    pub(super) package: String,
     /// The target as errors list it: `` lib `app` ``.
     pub(super) target: String,
-    /// Where it stands among its package's crates: its library and binaries
-    /// 0, then its tests 1, examples 2, and benches 3.
-    pub(super) group: u8,
     /// An additional host reading of a library, reached through dependencies only.
     pub(super) dependency_only: bool,
-    pub(super) root: PathBuf,
     /// Existing source paths, including unreadable files and both sides of an ambiguous module.
     pub(super) sources: BTreeSet<PathBuf>,
     /// Each file that could not be read or parsed, with the reason.
@@ -111,14 +107,15 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
         .map_or_else(BTreeSet::new, |(_, metadata)| host_dependencies(metadata));
     let mut crates = Vec::new();
     for package in packages {
-        let targets = package
-            .targets
-            .iter()
-            .filter(|target| !target.is_custom_build());
-        for (target, dependency_only) in targets.flat_map(|target| {
+        // A build script draws no cards.
+        let targets = package.targets.iter().filter_map(|target| {
+            let kinds: Vec<String> = target.kind.iter().map(ToString::to_string).collect();
+            Some((target, target_group(&kinds)?))
+        });
+        for ((target, group), dependency_only) in targets.flat_map(|(target, group)| {
             let also_host = (target.is_lib() || target.is_rlib() || target.is_dylib())
                 && host_dependencies.contains(&package.id);
-            iter::once((target, false)).chain(also_host.then_some((target, true)))
+            iter::once(((target, group), false)).chain(also_host.then_some(((target, group), true)))
         }) {
             let for_host = host.is_some() && (target.is_proc_macro() || dependency_only);
             let (printed, metadata) = if for_host {
@@ -142,10 +139,12 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
             let root = target.src_path.clone().into_std_path_buf();
             let mut sources = Sources::default();
             let tree = ModuleTree::read(root.clone(), &cfg, &mut sources);
-            let group = target_group(target);
             let names = CompiledCrate {
                 package_id: package.id.to_string(),
-                name: target.name.replace('-', "_"),
+                package: package.name.to_string(),
+                group,
+                name: crate_name(&target.name),
+                root,
                 library: group == 0 && !target.is_bin(),
                 host: for_host,
                 dependencies: resolved
@@ -164,11 +163,8 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 cfg,
             };
             crates.push(Crate {
-                package: package.name.to_string(),
                 target: target_label(target),
-                group,
                 dependency_only,
-                root,
                 sources: sources.0,
                 skipped: tree.skipped,
                 names,
@@ -238,10 +234,10 @@ fn required_features(
                                     || target.is_rlib()
                                     || target.is_dylib()
                                     || target.is_proc_macro())
-                                    && target.name.replace('-', "_") == edge.name
+                                    && crate_name(&target.name) == edge.name
                             })
                         },
-                        |rename| rename.replace('-', "_") == edge.name,
+                        |rename| crate_name(rename) == edge.name,
                     )
             });
             named
@@ -520,19 +516,6 @@ impl Files for Sources {
 
     fn read(&mut self, canonical: &Path) -> io::Result<String> {
         fs::read_to_string(canonical)
-    }
-}
-
-/// The target's diagram group.
-fn target_group(target: &Target) -> u8 {
-    if target.is_test() {
-        1
-    } else if target.is_example() {
-        2
-    } else if target.is_bench() {
-        3
-    } else {
-        0
     }
 }
 

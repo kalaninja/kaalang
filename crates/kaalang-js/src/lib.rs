@@ -89,15 +89,15 @@ pub fn relationship_targets(text: &str, cfg: &str) -> Result<String, JsError> {
 }
 
 /// The module trees of the Cargo targets `roots`, a JSON array of `{"package",
-/// "group", "name", "root", "cfg"}`, read through `host`, as JSON:
-/// `{"files": {canonical: [{"target", "module", "order", "types"}]},
-/// "referring": [canonical], "complete"}`. Each file lists its places in the
-/// order RFC 0009 §4.3 gives cards: the position of its target in `roots`,
-/// its module's path from the crate root, the UTF-16 offsets of the module
-/// names from the root's down to its own, and those of its types' names,
-/// `null` when it cannot be read. `referring` lists the files that may hold a
-/// relationship. A tree is not `complete` when a file that exists could not
-/// be read or parsed, or a module has two files.
+/// "kind", "name", "root", "cfg"}` with a target's package, kinds, name, and
+/// source path as `cargo metadata` lists them, read through `host`, as JSON:
+/// `{"files": {canonical: [{"target", "place", "types"}]}, "referring":
+/// [canonical], "complete"}`. A build script has no tree. Each file lists its
+/// places in the order RFC 0009 §4.3 gives cards: the position of its target
+/// in `roots`, its place as [`draw_type`] takes it, and the UTF-16 offsets of
+/// its types' names, `null` when it cannot be read. `referring` lists the
+/// files that may hold a relationship. A tree is not `complete` when a file
+/// that exists could not be read or parsed, or a module has two files.
 ///
 /// `host` answers `join(parent, parts)`, the path of a module file's
 /// candidate starting in the directory of the file at `parent`;

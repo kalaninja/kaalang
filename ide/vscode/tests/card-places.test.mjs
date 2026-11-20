@@ -30,21 +30,34 @@ async function places(tree) {
 test("each reading of the bindings' trees takes its target's place and set", async () => {
   const lib = path.resolve("project", "src", "lib.rs");
   const it = path.resolve("project", "tests", "it.rs");
-  const target = (name, group, file, cfg) => ({
+  const target = (name, kind, file, cfg) => ({
     package: "app",
-    group,
+    kind: [kind],
     name,
     root: pathToFileURL(file).href,
-    packageId: "app 0.1.0",
     cfg,
   });
-  const roots = [target("app", 0, lib, ""), target("it", 1, it, "test")];
+  const roots = [
+    target("app", "lib", lib, ""),
+    target("it", "test", it, "test"),
+  ];
   const shared = path.resolve("project", "src", "shared.rs");
+  // The bindings' places, which the host passes on as they are.
+  const place = (crate, group, file, order) => ({
+    package: "app",
+    group,
+    crate,
+    root: file,
+    module: "shared",
+    order,
+  });
+  const first = place("app", 0, lib, [4]);
+  const second = place("it", 1, it, [10]);
   const { asked, workspaceTree } = await places({
     files: {
       [shared]: [
-        { target: 0, module: "shared", order: [4], types: [7] },
-        { target: 1, module: "shared", order: [10], types: null },
+        { target: 0, place: first, types: [7] },
+        { target: 1, place: second, types: null },
       ],
     },
     referring: [shared],
@@ -55,23 +68,15 @@ test("each reading of the bindings' trees takes its target's place and set", asy
   assert.deepEqual(asked, [
     {
       roots: [
-        { package: "app", group: 0, name: "app", root: lib, cfg: "" },
-        { package: "app", group: 1, name: "it", root: it, cfg: "test" },
+        { package: "app", kind: ["lib"], name: "app", root: lib, cfg: "" },
+        { package: "app", kind: ["test"], name: "it", root: it, cfg: "test" },
       ],
       unsaved: [[lib, "unsaved"]],
     },
   ]);
-  const place = (crate, group, file, order) => ({
-    package: "app",
-    group,
-    crate,
-    root: file.split(path.sep).join("/"),
-    module: "shared",
-    order,
-  });
   assert.deepEqual(graph.files.get(shared), [
-    { place: place("app", 0, lib, [4]), cfg: "", types: new Set([7]) },
-    { place: place("it", 1, it, [10]), cfg: "test", types: null },
+    { place: first, cfg: "", types: new Set([7]) },
+    { place: second, cfg: "test", types: null },
   ]);
   assert.deepEqual(graph.paths, new Map([[shared, "stamp"]]));
   assert.deepEqual(graph.referring, [shared]);

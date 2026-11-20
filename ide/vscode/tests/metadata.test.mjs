@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { workspaceTargets } from "../out/metadata.js";
 
-test("workspace targets keep their groups, gated ones included, without build scripts", () => {
+test("workspace targets keep their Cargo kinds and names, gated ones included", () => {
   const target = (kind, name, required = []) => ({
     kind: [kind],
     name,
@@ -30,23 +30,17 @@ test("workspace targets keep their groups, gated ones included, without build sc
     packages: [shop, model],
     workspace_members: ["shop"],
   });
-  assert.deepEqual(
-    targets.map(({ package: pkg, group, name, root }) => ({
-      package: pkg,
-      group,
-      name,
-      root,
-    })),
-    [
-      { package: "shop", name: "shop", group: 0, root: "/ws/shop.rs" },
-      {
-        package: "shop",
-        name: "check_model",
-        group: 1,
-        root: "/ws/check-model.rs",
-      },
-      { package: "shop", name: "example", group: 2, root: "/ws/example.rs" },
-      { package: "shop", name: "bench", group: 3, root: "/ws/bench.rs" },
-    ],
-  );
+  const listed = (kind, name) => ({
+    package: "shop",
+    kind: [kind],
+    name,
+    root: `/ws/${name}.rs`,
+  });
+  assert.deepEqual(targets, [
+    listed("lib", "shop"),
+    listed("test", "check-model"),
+    listed("example", "example"),
+    listed("bench", "bench"),
+    listed("custom-build", "build-script"),
+  ]);
 });

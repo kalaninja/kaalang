@@ -1,26 +1,39 @@
-//! Where a file stands in the Cargo module tree, as the editor reports it, and
-//! where each of its types stands.
+//! Where a file stands in the Cargo module tree, as the module tree walk gives
+//! it, and where each of its types stands.
 
 use std::path::Path;
 
-use kaalang_workspace::CargoTarget;
-use serde::Deserialize;
+use kaalang_workspace::{CargoTarget, crate_name, target_group};
+use serde::{Deserialize, Serialize};
 
-/// A Cargo target, the crate-relative module, and the source positions from
-/// the crate root through module declarations to the file, or to a type's name.
-#[derive(Clone, Deserialize)]
-pub(super) struct Place {
+/// A Cargo target as its cards are ordered and headed.
+#[derive(Clone, Deserialize, Serialize)]
+pub(crate) struct Target {
     package: String,
     group: u8,
     #[serde(rename = "crate")]
     name: String,
     root: String,
-    pub module: String,
-    order: Vec<u32>,
 }
 
-impl Place {
-    pub fn krate(&self) -> CargoTarget<'_> {
+impl Target {
+    /// The target `cargo metadata` lists with `kinds` and `name`, none for a
+    /// build script.
+    pub(crate) fn of_cargo(
+        package: String,
+        kinds: &[String],
+        name: &str,
+        root: String,
+    ) -> Option<Self> {
+        Some(Self {
+            package,
+            group: target_group(kinds)?,
+            name: crate_name(name),
+            root,
+        })
+    }
+
+    pub(crate) fn cargo_target(&self) -> CargoTarget<'_> {
         CargoTarget {
             package: &self.package,
             group: self.group,
@@ -28,8 +41,33 @@ impl Place {
             root: Path::new(&self.root),
         }
     }
+}
 
-    pub fn key(&self, focus: Option<&Place>) -> ((bool, bool, CargoTarget<'_>), &[u32]) {
+/// A target, the crate-relative module, and the source positions from the
+/// crate root through module declarations to the file, or to a type's name.
+#[derive(Clone, Deserialize, Serialize)]
+pub(crate) struct Place {
+    #[serde(flatten)]
+    target: Target,
+    pub module: String,
+    order: Vec<usize>,
+}
+
+impl Place {
+    pub(crate) fn new(target: Target, module: String, order: Vec<usize>) -> Self {
+        Self {
+            target,
+            module,
+            order,
+        }
+    }
+
+    pub fn krate(&self) -> CargoTarget<'_> {
+        self.target.cargo_target()
+    }
+
+    /// The card order of RFC 0009 §4.3 around a `focus`, if any.
+    pub fn key(&self, focus: Option<&Place>) -> ((bool, bool, CargoTarget<'_>), &[usize]) {
         let krate = self.krate();
         let focus = focus.map(Place::krate);
         (
@@ -49,7 +87,7 @@ impl Place {
             module.push_str(inline);
         }
         let mut order = self.order.clone();
-        order.push(offset);
+        order.push(offset as usize);
         Self {
             module,
             order,

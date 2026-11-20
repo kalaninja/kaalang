@@ -262,25 +262,17 @@ async function readMetadata(
   }
 }
 
-/** The workspace's targets, each with the set rust-analyzer gives its package. */
+/** The workspace's targets, each with the set rust-analyzer reads its root with. */
 async function configured(
   metadata: Metadata,
   log: (line: string) => void,
 ): Promise<CargoRoot[]> {
-  const sets = new Map<string, Promise<string>>();
   const roots = await Promise.all(
-    workspaceTargets(metadata).map(async (target) => {
-      let set = sets.get(target.packageId);
-      if (!set) {
-        set = analyzedCfg(target.root, log);
-        sets.set(target.packageId, set);
-      }
-      return {
-        ...target,
-        cfg: await set,
-        root: vscode.Uri.file(target.root).toString(),
-      };
-    }),
+    workspaceTargets(metadata).map(async (target) => ({
+      ...target,
+      cfg: await analyzedCfg(target.root, log),
+      root: vscode.Uri.file(target.root).toString(),
+    })),
   );
   const key = JSON.stringify(roots);
   const known = shapes.get(key);
