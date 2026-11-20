@@ -750,6 +750,14 @@ impl Source {
     }
 }
 
+/// Whether the routes of two connections may share a run, and split or join
+/// where they touch: they leave one exit, reach one destination, or leave side
+/// exits of one node, which fan out along one row.
+#[must_use]
+pub fn may_share_run(left: (Source, Destination), right: (Source, Destination)) -> bool {
+    left.0 == right.0 || left.1 == right.1 || left.0.is_side_exit_beside(right.0)
+}
+
 impl From<Source> for Vertex {
     fn from(source: Source) -> Self {
         match source {

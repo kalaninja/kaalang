@@ -39,24 +39,28 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     Ok(flow)
 }
 
+/// Whether a parameter is a flow input: every one but `_`.
+pub(crate) fn is_flow_input(argument: &FnArg) -> bool {
+    !matches!(argument, FnArg::Typed(argument)
+        if matches!(argument.pat.as_ref(), Pat::Wild(wildcard) if wildcard.attrs.is_empty()))
+}
+
 /// Extracts identifier flow parameters, preserving mutability in the signature.
 fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
     function
         .sig
         .inputs
         .iter()
-        .filter_map(|argument| match argument {
-            FnArg::Typed(argument) => match argument.pat.as_ref() {
-                Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
-                pattern => Some(
-                    simple_binding(pattern, "kaalang flow parameters", true)
-                        .map(|input| input.unraw()),
-                ),
-            },
+        .filter(|argument| is_flow_input(argument))
+        .map(|argument| match argument {
+            FnArg::Typed(argument) => {
+                simple_binding(&argument.pat, "kaalang flow parameters", true)
+                    .map(|input| input.unraw())
+            }
             // A receiver is a flow input like any other, under the one name
             // Rust gives it. Its wire is the receiver itself, so no capture
             // rebinds it and no spelling other than the authored one is legal.
-            FnArg::Receiver(receiver) => Some(Ok(Ident::new("self", receiver.self_token.span()))),
+            FnArg::Receiver(receiver) => Ok(Ident::new("self", receiver.self_token.span())),
         })
         .collect()
 }

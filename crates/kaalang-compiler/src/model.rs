@@ -4,7 +4,9 @@ use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
 use quote::ToTokens;
 use syn::{Expr, ExprPath, FnArg, Pat, PatIdent, ReturnType, ext::IdentExt};
 
-use crate::{construct::Arrangement, executions::Executions, topology::Topology};
+use crate::{
+    construct::Arrangement, executions::Executions, parse::is_flow_input, topology::Topology,
+};
 
 /// Semantic analysis and lowering plan, before diagram construction.
 #[derive(Clone)]
@@ -270,6 +272,32 @@ pub struct Input {
     /// transition, which carries it, so the dependency enters there. It binds
     /// nothing and does not decide whether the block runs.
     pub derived: bool,
+}
+
+impl Analysis {
+    /// Each flow input's binding, in flow-input order: `None` for the
+    /// receiver, whose one name is `self`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a flow input is not an identifier binding, which parsing
+    /// rejects.
+    #[must_use]
+    pub fn flow_input_bindings(&self) -> Vec<Option<&PatIdent>> {
+        let inputs = self
+            .parameters
+            .iter()
+            .filter(|parameter| is_flow_input(parameter));
+        inputs
+            .map(|parameter| match parameter {
+                FnArg::Receiver(_) => None,
+                FnArg::Typed(parameter) => match parameter.pat.as_ref() {
+                    Pat::Ident(binding) => Some(binding),
+                    _ => unreachable!("flow inputs are identifier bindings"),
+                },
+            })
+            .collect()
+    }
 }
 
 /// A flow's named inputs and blocks, wire-validated by the time consumers see it.

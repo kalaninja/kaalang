@@ -10,7 +10,9 @@ use crate::{
         Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
     },
     model::Flow,
-    topology::{Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex},
+    topology::{
+        Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex, may_share_run,
+    },
 };
 
 /// Abstract coordinates with separate lines for ranks and gap lanes, and space
@@ -221,7 +223,7 @@ pub(super) fn meetings(
     right: (Source, Destination),
     right_line: &[Point],
 ) -> (bool, Vec<Point>) {
-    let shared = left.0 == right.0 || left.1 == right.1 || left.0.is_side_exit_beside(right.0);
+    let shared = may_share_run(left, right);
     let mut points = if shared {
         bundle_meetings(left_line, right_line)
     } else {

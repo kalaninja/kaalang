@@ -7,7 +7,7 @@ use kaalang_compiler::{
     topology::{Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology},
 };
 use proc_macro2::Span;
-use syn::{FnArg, Pat, PatIdent, ext::IdentExt};
+use syn::{PatIdent, ext::IdentExt};
 
 pub(crate) use self::stage::derive_stage;
 use crate::text::RichText;
@@ -387,15 +387,9 @@ fn end_input(model: &SemanticModel, binding: impl Fn(ProducerId) -> Span) -> Vec
 /// Rust gives it.
 fn named_parameters(analysis: &Analysis) -> Vec<String> {
     analysis
-        .parameters
-        .iter()
-        .filter_map(|parameter| match parameter {
-            FnArg::Receiver(_) => Some("self".to_owned()),
-            FnArg::Typed(parameter) => match parameter.pat.as_ref() {
-                Pat::Ident(binding) => Some(binding_label(binding)),
-                _ => None,
-            },
-        })
+        .flow_input_bindings()
+        .into_iter()
+        .map(|binding| binding.map_or_else(|| "self".to_owned(), binding_label))
         .collect()
 }
 
