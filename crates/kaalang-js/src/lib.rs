@@ -88,22 +88,36 @@ pub fn relationship_targets(text: &str, cfg: &str) -> Result<String, JsError> {
     answer(types::relationship_targets(text, cfg))
 }
 
-/// The active types' name offsets and the external modules this file declares
-/// for `cfg`. Each module has a path, its name's UTF-16 offset, and the
-/// candidate files to try relative to the containing directory.
-/// `owns_directory` holds for a crate root, `mod.rs`, or an explicit `#[path]`.
+/// The module trees of the Cargo targets `roots`, a JSON array of `{"package",
+/// "group", "name", "root", "cfg"}`, read through `host`, as JSON:
+/// `{"files": {canonical: [{"target", "module", "order", "types"}]},
+/// "referring": [canonical], "complete"}`. Each file lists its places in the
+/// order RFC 0009 §4.3 gives cards: the position of its target in `roots`,
+/// its module's path from the crate root, the UTF-16 offsets of the module
+/// names from the root's down to its own, and those of its types' names,
+/// `null` when it cannot be read. `referring` lists the files that may hold a
+/// relationship. A tree is not `complete` when a file that exists could not
+/// be read or parsed, or a module has two files.
+///
+/// `host` answers `join(parent, parts)`, the path of a module file's
+/// candidate starting in the directory of the file at `parent`;
+/// `canonical(path)`, the canonical path of the file there or `undefined`; and
+/// `read(canonical)`. What each file declares is kept between calls until
+/// [`forget_modules`] forgets it.
 ///
 /// # Errors
 ///
-/// Throws when `cfg` or `text` does not parse.
-#[wasm_bindgen(js_name = moduleItems)]
-pub fn module_items(
-    text: &str,
-    cfg: &str,
-    file_stem: &str,
-    owns_directory: bool,
-) -> Result<String, JsError> {
-    answer(modules::items(text, cfg, file_stem, owns_directory))
+/// Throws when `roots` or a `cfg` does not parse.
+#[wasm_bindgen(js_name = moduleTree)]
+pub fn module_tree(roots: &str, host: &modules::ModuleHost) -> Result<String, JsError> {
+    answer(modules::tree(roots, host))
+}
+
+/// Forgets what [`module_tree`] read of the file at the canonical `path`, or
+/// of every file when none.
+#[wasm_bindgen(js_name = forgetModules)]
+pub fn forget_modules(path: Option<String>) {
+    modules::forget(path);
 }
 
 /// What `text`, read for the target `cfg`, declares that kaalang draws, in

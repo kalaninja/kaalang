@@ -197,6 +197,13 @@ impl<'a> SourceFile<'a> {
         &self.items
     }
 
+    /// What the target compiles of the file, for a caller that keeps it
+    /// beyond the text.
+    #[must_use]
+    pub fn into_items(self) -> Vec<Item> {
+        self.items
+    }
+
     /// The bytes under `span`, a span of what was read from this file,
     /// counted from the start of the text as given: a byte order mark and a
     /// shebang line count.

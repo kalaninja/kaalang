@@ -5,7 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-test("the module reader survives invalid Rust and restarts after a Wasm trap", async (t) => {
+const require = createRequire(import.meta.url);
+
+test("the module worker survives invalid Rust and restarts after a Wasm trap", async (t) => {
   const directory = await fs.mkdtemp(
     path.join(os.tmpdir(), "kaalang-module-worker-"),
   );
@@ -15,6 +17,10 @@ test("the module reader survives invalid Rust and restarts after a Wasm trap", a
     new URL("../out/module-sources.js", import.meta.url),
     reader,
   );
+  await fs.copyFile(
+    new URL("../out/cache.js", import.meta.url),
+    path.join(directory, "cache.js"),
+  );
   const wasm = path.join(directory, "wasm");
   await fs.mkdir(wasm);
   await fs.writeFile(path.join(wasm, "kaalang_js_bg.wasm"), "");
@@ -22,21 +28,52 @@ test("the module reader survives invalid Rust and restarts after a Wasm trap", a
     path.join(wasm, "kaalang_js.mjs"),
     `
     export function initSync() {}
-    export function moduleItems(text) {
+    export function relationshipTargets(text) {
       if (text === "invalid") throw new Error("parse error");
       if (text === "trap") throw new WebAssembly.RuntimeError("unreachable");
-      return JSON.stringify({modules: [], types: [text.length]});
+      return JSON.stringify([text.length]);
     }`,
   );
-  const { moduleItems, stopModuleWorker } = createRequire(import.meta.url)(
-    reader,
-  );
+  const { relationshipTargets, stopModuleWorker } = require(reader);
   t.after(stopModuleWorker);
-  const read = (text) => moduleItems(text, "", "lib", true);
+  const read = (text) => relationshipTargets(text, "");
   assert.deepEqual(await Promise.all([read("invalid"), read("ok")]), [
     null,
-    { modules: [], types: [2] },
+    [2],
   ]);
   assert.equal(await read("trap"), null);
-  assert.deepEqual(await read("again"), { modules: [], types: [5] });
+  assert.deepEqual(await read("again"), [5]);
+});
+
+test("a module path keeps its dot segment after a directory symlink until a change forgets it", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "kaalang-tree-host-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = (name) => path.join(root, name);
+  await fs.mkdir(file("branch/inner"), { recursive: true });
+  await fs.writeFile(file("child.rs"), "struct Decoy;");
+  try {
+    await fs.symlink(file("branch/inner"), file("linked"), "dir");
+  } catch (error) {
+    if (error.code !== "EPERM") throw error;
+    return t.skip(
+      "Creating a directory symlink needs this platform's permission",
+    );
+  }
+  const { forgetFound, treeHost } = require("../out/module-sources.js");
+  const found = new Map();
+  const consulted = new Map();
+  const unsaved = new Map();
+  const host = treeHost(found, unsaved, consulted);
+  const candidate = host.join(file("lib.rs"), ["linked/../child.rs"]);
+  assert.equal(host.canonical(candidate), undefined);
+  // The watch for a missing module stands where the file system would put it.
+  const physical = path.join(await fs.realpath(file("branch")), "child.rs");
+  assert.ok(consulted.has(physical));
+  await fs.writeFile(physical, "struct Chosen;");
+  assert.equal(host.canonical(candidate), undefined);
+  forgetFound(found, physical);
+  assert.equal(host.canonical(candidate), physical);
+  assert.equal(host.read(physical), "struct Chosen;");
+  unsaved.set(physical, "struct Unsaved;");
+  assert.equal(host.read(physical), "struct Unsaved;");
 });

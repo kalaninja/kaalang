@@ -232,15 +232,17 @@ is read too, as rust-analyzer reads it.
 A type diagram's incoming cards come from rust-analyzer's references to the
 focus; kaalang resolves no Rust path for the editor. A reference search stops at
 a `use` that renames the type, so where one does, the host checks through
-rust-analyzer's definition every relationship target in the module files the
-compiler finds as the CLI does. rust-analyzer reads a file that several targets
-include in one crate, the first its status report lists, so the host sends each
-file once, with that crate's set and place in the module tree: code that crate
-leaves inactive, as the editor shows it, draws no card, and neither do the other
-copies, which the CLI draws. The panel follows Rust editors in the workspace
-folders and the sources their Cargo targets include elsewhere. It opens what a
-click finds as the editor's own go-to does, from where the cursor stands, so
-that the diagram follows only the target and going back returns. In Restricted
-Mode it runs no cargo, whose binary the workspace's configuration may name, and
-rust-analyzer does not run: what rust-analyzer gives, the set, the types,
-incoming cards, module paths, and go-to actions, waits for trust.
+rust-analyzer's definition every relationship target in the targets' module
+trees, which the bindings walk in a worker as the CLI walks them, the host
+giving only file-system calls and the editor's unsaved texts. rust-analyzer
+reads a file that several targets include in one crate, the first its status
+report lists, so the host sends each file once, with that crate's set and place
+in the module tree: code that crate leaves inactive, as the editor shows it,
+draws no card, and neither do the other copies, which the CLI draws. The panel
+follows Rust editors in the workspace folders and the sources their Cargo
+targets include elsewhere. It opens what a click finds as the editor's own go-to
+does, from where the cursor stands, so that the diagram follows only the target
+and going back returns. In Restricted Mode it runs no cargo, whose binary the
+workspace's configuration may name, and rust-analyzer does not run: what
+rust-analyzer gives, the set, the types, incoming cards, module paths, and go-to
+actions, waits for trust.

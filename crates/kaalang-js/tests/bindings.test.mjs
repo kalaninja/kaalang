@@ -3,6 +3,7 @@
 
 import assert from "node:assert";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -137,33 +138,89 @@ test("an active relationship exposes its final identifier in UTF-16", () => {
   assert.deepEqual(JSON.parse(kaalang.relationshipTargets(source, "")), []);
 });
 
-test("one source can own different module files in two Cargo targets", () => {
-  const source = "// 🦀\nstruct Focus;\n#[cfg(test)] enum Extra {}\nmod child;";
-  const items = (cfg, owns) =>
-    JSON.parse(kaalang.moduleItems(source, cfg, "shared", owns));
-  const normal = items("", false);
-  assert.deepEqual(normal.types, [source.indexOf("Focus")]);
-  const [child] = normal.modules;
-  assert.equal(child.module, "child");
-  assert.equal(child.offset, source.indexOf("child"));
-  const files = (entry) =>
-    entry.files.map(({ parts, ownsDirectory }) => [
-      path.posix.join(...parts),
-      ownsDirectory,
-    ]);
-  assert.deepEqual(files(child), [
-    ["shared/child.rs", false],
-    ["shared/child/mod.rs", true],
+test("a module tree gives each file its places in card order", (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "kaalang-tree-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const sources = {
+    "src/lib.rs": '// 🦀\nmod shared;\n#[path = "shared.rs"] mod alias;',
+    "src/shared.rs": "#[cfg(test)] struct Tested;\nstruct Same;\nmod child;",
+    "src/shared/child.rs": "struct First; // refer",
+    "src/child.rs": "struct Second;",
+    "tests/it.rs": '#[path = "../src/shared.rs"] mod shared;',
+  };
+  for (const [name, text] of Object.entries(sources)) {
+    fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
+    fs.writeFileSync(path.join(root, name), text);
+  }
+  const file = (name) => fs.realpathSync(path.join(root, name));
+  let reads = [];
+  const host = {
+    join: (parent, parts) => path.join(path.dirname(parent), ...parts),
+    canonical: (at) =>
+      fs.statSync(at, { throwIfNoEntry: false })?.isFile()
+        ? fs.realpathSync(at)
+        : undefined,
+    read(at) {
+      reads.push(at);
+      return fs.readFileSync(at, "utf8");
+    },
+  };
+  const target = (name, group, source, cfg) => ({
+    package: "app",
+    group,
+    name,
+    root: path.join(root, source),
+    cfg,
+  });
+  const roots = [
+    target("it", 1, "tests/it.rs", "test"),
+    target("app", 0, "src/lib.rs", ""),
+  ];
+  const tree = () =>
+    JSON.parse(kaalang.moduleTree(JSON.stringify(roots), host));
+  const { files, referring, complete } = tree();
+  assert.equal(complete, true);
+  const at = (name, text) => sources[name].indexOf(text);
+  const same = at("src/shared.rs", "Same");
+  assert.deepEqual(files[file("src/shared.rs")], [
+    {
+      target: 1,
+      module: "shared",
+      order: [at("src/lib.rs", "shared")],
+      types: [same],
+    },
+    {
+      target: 1,
+      module: "alias",
+      order: [at("src/lib.rs", "alias")],
+      types: [same],
+    },
+    {
+      target: 0,
+      module: "shared",
+      order: [at("tests/it.rs", "shared;")],
+      types: [at("src/shared.rs", "Tested"), same],
+    },
   ]);
-  const explicit = items("test", true);
-  assert.deepEqual(explicit.types, [
-    source.indexOf("Focus"),
-    source.indexOf("Extra"),
-  ]);
-  assert.deepEqual(files(explicit.modules[0]), [
-    ["child.rs", false],
-    ["child/mod.rs", true],
-  ]);
+  const modules = (name) => files[file(name)].map(({ module }) => module);
+  assert.deepEqual(modules("src/shared/child.rs"), ["shared::child"]);
+  assert.deepEqual(modules("src/child.rs"), ["alias::child", "shared::child"]);
+  assert.deepEqual(referring, [file("src/shared/child.rs")]);
+
+  // Only a forgotten file is read again; one that cannot be read leaves the tree incomplete.
+  reads = [];
+  kaalang.forgetModules(file("src/child.rs"));
+  host.read = (at) => {
+    reads.push(at);
+    throw new Error("denied");
+  };
+  const unread = tree();
+  assert.deepEqual([...new Set(reads)], [file("src/child.rs")]);
+  assert.equal(unread.complete, false);
+  assert.deepEqual(
+    unread.files[file("src/child.rs")].map(({ types }) => types),
+    [null, null],
+  );
 });
 
 test("every fixture's first type draws its golden diagram", () => {

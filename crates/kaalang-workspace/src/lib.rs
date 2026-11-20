@@ -8,8 +8,10 @@
 pub use self::{
     cargo_target::CargoTarget,
     modules::{ExternalModule, ModuleDirectory, ModuleFile, module_items},
+    walk::{Files, TreeFile, walk},
 };
 
 mod cargo_target;
 mod modules;
 pub mod names;
+mod walk;

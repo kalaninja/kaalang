@@ -5,7 +5,7 @@ use kaalang_compiler::{SourceFile, type_name};
 use syn::{Expr, ExprLit, Item, ItemMod, Lit, Meta, ext::IdentExt};
 
 /// A file's external module, including any inline modules around it.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExternalModule {
     /// The module path within this file, with raw identifiers as authored.
     pub module: String,
@@ -16,7 +16,7 @@ pub struct ExternalModule {
 }
 
 /// One source file a module declaration may load.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleFile {
     /// Parts to join, starting in the declaring file's parent directory.
     /// A literal `#[path]` remains one part for the host's filesystem to read.
@@ -25,7 +25,21 @@ pub struct ModuleFile {
     pub owns_directory: bool,
 }
 
+impl ModuleFile {
+    /// The directory the file's default submodules start in: its own, or
+    /// `name/` beside a `name.rs`.
+    pub(crate) fn directory(&self) -> ModuleDirectory {
+        let stem = self
+            .parts
+            .last()
+            .and_then(|file| file.strip_suffix(".rs"))
+            .filter(|_| !self.owns_directory);
+        ModuleDirectory::for_file(stem.unwrap_or(""), self.owns_directory)
+    }
+}
+
 /// The directory Rust searches from a file or an inline module within it.
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct ModuleDirectory {
     parts: Vec<String>,
     /// At file scope an explicit path starts in the file's parent directory.
@@ -34,8 +48,7 @@ pub struct ModuleDirectory {
 
 impl ModuleDirectory {
     /// A crate root, a `mod.rs`, or an explicit `#[path]` owns its directory.
-    #[must_use]
-    pub fn for_file(file_stem: &str, owns_directory: bool) -> Self {
+    pub(crate) fn for_file(file_stem: &str, owns_directory: bool) -> Self {
         Self {
             parts: if owns_directory || file_stem.is_empty() {
                 Vec::new()
@@ -47,8 +60,7 @@ impl ModuleDirectory {
     }
 
     /// The directory an inline module declares for its children.
-    #[must_use]
-    pub fn inline(&self, declaration: &ItemMod) -> Self {
+    fn inline(&self, declaration: &ItemMod) -> Self {
         let (base, path) = self.base(declaration);
         let mut parts = base.to_vec();
         parts.push(path.unwrap_or_else(|| declaration.ident.unraw().to_string()));
@@ -59,8 +71,7 @@ impl ModuleDirectory {
     }
 
     /// The candidates for an out-of-line module, in lookup order.
-    #[must_use]
-    pub fn files(&self, declaration: &ItemMod) -> Vec<ModuleFile> {
+    fn files(&self, declaration: &ItemMod) -> Vec<ModuleFile> {
         let (base, path) = self.base(declaration);
         let mut parts = base.to_vec();
         if let Some(path) = path {
@@ -111,14 +122,13 @@ impl ModuleDirectory {
 }
 
 /// Every external module and the name offsets of every struct, enum, union
-/// and alias `file` compiles, in declaration order. The same file can own its
-/// directory in one inclusion and have its submodules under `file_stem/` in
-/// another.
+/// and alias `file` compiles, in declaration order, its default submodules in
+/// `directory`. The same file can own its directory in one inclusion and have
+/// its submodules under `name/` in another.
 #[must_use]
 pub fn module_items(
     file: &SourceFile<'_>,
-    file_stem: &str,
-    owns_directory: bool,
+    directory: &ModuleDirectory,
 ) -> (Vec<ExternalModule>, Vec<usize>) {
     fn collect(
         file: &SourceFile<'_>,
@@ -156,14 +166,7 @@ pub fn module_items(
     }
     let mut modules = Vec::new();
     let mut types = Vec::new();
-    collect(
-        file,
-        file.items(),
-        "",
-        &ModuleDirectory::for_file(file_stem, owns_directory),
-        &mut modules,
-        &mut types,
-    );
+    collect(file, file.items(), "", directory, &mut modules, &mut types);
     (modules, types)
 }
 
@@ -171,7 +174,7 @@ pub fn module_items(
 mod tests {
     use kaalang_compiler::{CfgSet, SourceFile};
 
-    use super::{ModuleFile, module_items};
+    use super::{ModuleDirectory, ModuleFile, module_items};
 
     fn candidate(parts: &[&str], owns_directory: bool) -> ModuleFile {
         ModuleFile {
@@ -184,7 +187,7 @@ mod tests {
     fn two_inclusions_of_one_file_search_different_directories() {
         let root = "mod shared; #[path = \"shared.rs\"] mod copy;";
         let file = SourceFile::parse(root, CfgSet::EMPTY).unwrap();
-        let (modules, _) = module_items(&file, "lib", true);
+        let (modules, _) = module_items(&file, &ModuleDirectory::for_file("", true));
         assert_eq!(modules[0].module, "shared");
         assert_eq!(
             modules[0].files,
@@ -197,9 +200,10 @@ mod tests {
         assert_eq!(modules[1].files, [candidate(&["shared.rs"], true)]);
 
         let file = SourceFile::parse("mod r#match;", CfgSet::EMPTY).unwrap();
-        let children = |owned| module_items(&file, "shared", owned).0.remove(0);
-        let direct = children(modules[0].files[0].owns_directory);
-        let copied = children(modules[1].files[0].owns_directory);
+        let children =
+            |declared: &ModuleFile| module_items(&file, &declared.directory()).0.remove(0);
+        let direct = children(&modules[0].files[0]);
+        let copied = children(&modules[1].files[0]);
         assert_eq!(direct.module, "r#match");
         assert_eq!(
             direct.files,
@@ -238,7 +242,7 @@ mod tests {
             "#,
         );
         let file = SourceFile::parse(source, &"unix".parse().unwrap()).unwrap();
-        let (modules, types) = module_items(&file, "shared", false);
+        let (modules, types) = module_items(&file, &ModuleDirectory::for_file("shared", false));
         assert_eq!(modules.len(), 2);
         assert_eq!(modules[0].module, "r#type::inner::explicit");
         assert_eq!(modules[0].offset, source.find("explicit;").unwrap());

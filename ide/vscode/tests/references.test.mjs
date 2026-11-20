@@ -66,14 +66,11 @@ async function host(texts) {
       documentText: async (uri) => texts.get(uri.toString()),
     },
     "./card-places": {
-      MAY_REFER: /\brefer\b/,
       forgetModules: () => {},
       editorTree: async () => ({
-        referring: new Map(
-          [review, other]
-            .filter((key) => texts.has(key))
-            .map((key) => [key, texts.get(key)]),
-        ),
+        referring: [review, other]
+          .filter((key) => texts.has(key))
+          .map((key) => fileURLToPath(key)),
       }),
     },
     "./module-sources": {

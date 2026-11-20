@@ -16,8 +16,8 @@ use std::{
 use cargo_metadata::{CargoOpt, DependencyKind, MetadataCommand, Target};
 use kaalang_compiler::{Declarations, FlowPath, Place, Question};
 use kaalang_workspace::{
-    ModuleFile,
-    names::{Crate as CompiledCrate, Def, Input, ModuleTree, Resolver},
+    Files,
+    names::{Crate as CompiledCrate, Def, ModuleTree, Resolver},
 };
 use syn::ext::IdentExt;
 
@@ -143,14 +143,8 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 .unwrap_or_default();
             let cfg = cfg_set(target, printed, &features)?;
             let root = target.src_path.clone().into_std_path_buf();
-            let mut sources = BTreeSet::new();
-            let tree = ModuleTree::read(
-                file(root.clone(), true, &mut sources),
-                &cfg,
-                |module, parent, candidates| {
-                    module_source(module, parent, candidates, &mut sources)
-                },
-            );
+            let mut sources = Sources::default();
+            let tree = ModuleTree::read(root.clone(), &cfg, &mut sources);
             let group = target_group(target);
             let names = CompiledCrate {
                 package_id: package.id.to_string(),
@@ -178,7 +172,7 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 group,
                 dependency_only,
                 root,
-                sources,
+                sources: sources.0,
                 skipped: tree.skipped,
                 names,
             });
@@ -619,55 +613,25 @@ pub(super) fn with_skipped(mut message: String, skipped: &BTreeSet<String>) -> S
     message
 }
 
-/// Chooses which Rust module file exists and records the paths an export must protect.
-fn module_source(
-    module: &str,
-    parent: &Path,
-    candidates: Vec<ModuleFile>,
-    sources: &mut BTreeSet<PathBuf>,
-) -> Input {
-    let base = parent.parent().unwrap_or(Path::new(""));
-    let mut candidates = candidates.into_iter().map(|candidate| {
-        (
-            base.join(candidate.parts.iter().collect::<PathBuf>()),
-            candidate.owns_directory,
-        )
-    });
-    let first = candidates.next().expect("every module has a candidate");
-    let (path, owns_directory) = match candidates.next() {
-        Some(second) if !first.0.is_file() => second,
-        Some(second) if second.0.is_file() => {
-            let name = module
-                .trim_end_matches("::")
-                .rsplit("::")
-                .next()
-                .unwrap_or(module);
-            let error = io::Error::other(format!(
-                "module `{name}` is ambiguous: both this file and `{}` exist",
-                second.0.display()
-            ));
-            sources.extend([first.0.clone(), second.0]);
-            return Input {
-                path: first.0,
-                owns_directory: first.1,
-                contents: Err(error),
-            };
-        }
-        _ => first,
-    };
-    file(path, owns_directory, sources)
-}
+/// The file system, recording each existing source an export must protect,
+/// even one that cannot be read.
+#[derive(Default)]
+struct Sources(BTreeSet<PathBuf>);
 
-fn file(path: PathBuf, owns_directory: bool, sources: &mut BTreeSet<PathBuf>) -> Input {
-    let contents = fs::canonicalize(&path).and_then(|canonical| {
-        // An existing source needs protection even when reading its contents fails.
-        sources.insert(canonical.clone());
-        fs::read_to_string(&canonical).map(|source| (canonical, source))
-    });
-    Input {
-        path,
-        owns_directory,
-        contents,
+impl Files for Sources {
+    fn canonical(&mut self, path: &Path) -> io::Result<Option<PathBuf>> {
+        match fs::canonicalize(path) {
+            Ok(canonical) => {
+                self.0.insert(canonical.clone());
+                Ok(Some(canonical))
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    fn read(&mut self, canonical: &Path) -> io::Result<String> {
+        fs::read_to_string(canonical)
     }
 }
 

@@ -15,10 +15,10 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { compileFunction } from "node:vm";
 import { fileStamp } from "../out/cache.js";
-import { forgetModules, moduleTree } from "../out/card-places.js";
+import { forgetFound, treeHost } from "../out/module-sources.js";
 
 const uri = (fsPath) => ({ scheme: "file", fsPath });
 
@@ -193,50 +193,23 @@ test(
         "Creating a directory symlink needs this platform's permission",
       );
     }
-    const roots = [
-      {
-        root: pathToFileURL(main).href,
-        package: "app",
-        group: 0,
-        name: "app",
-        cfg: "",
-      },
-    ];
-    const tree = () =>
-      moduleTree(
-        roots,
-        (uri) => readFile(fileURLToPath(uri), "utf8"),
-        async (text) => ({
-          modules:
-            text === source
-              ? [
-                  {
-                    module: "model",
-                    offset: source.indexOf("model;"),
-                    files: [{ parts: [modulePath], ownsDirectory: true }],
-                  },
-                ]
-              : [],
-          types: text === source ? [] : [7],
-        }),
-      );
-    const graph = await tree();
-    const firstPath = await realpath(first);
-    assert.ok(graph.files.has(firstPath));
+    const found = new Map();
+    const consulted = new Map();
+    const host = treeHost(found, new Map(), consulted);
+    const model = host.join(main, [modulePath]);
+    assert.equal(host.canonical(model), await realpath(first));
     const events = new EventEmitter();
     const watch = moduleWatches((file) => {
-      forgetModules(file);
+      forgetFound(found, file);
       events.emit("changed");
     });
     t.after(() => watch.clear());
-    watch.update(roots, graph.paths, new Map());
+    watch.update([], new Set(consulted.keys()), consulted);
     const changed = once(events, "changed");
     if (process.platform === "win32") await rm(current);
     await rename(current + "-next", current);
     await changed;
-    const after = await tree();
-    assert.ok(after.files.has(await realpath(second)));
-    assert.equal(after.files.has(firstPath), false);
+    assert.equal(host.canonical(model), await realpath(second));
   },
 );
 

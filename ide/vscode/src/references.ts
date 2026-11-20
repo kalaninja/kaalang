@@ -1,13 +1,17 @@
 import { realpath } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 import * as vscode from "vscode";
 
 import { analyzerClient, locations } from "./analyzer";
 import { cached } from "./cache";
-import { editorTree, forgetModules, MAY_REFER } from "./card-places";
+import { editorTree, forgetModules } from "./card-places";
 import { documentText, openDocument } from "./documents";
 import { relationshipTargets } from "./module-sources";
 import { coordinates, offsets } from "./offsets";
 import { located } from "./target";
+
+/** Every relationship annotation contains this Rust identifier. */
+const MAY_REFER = /\brefer\b/;
 
 /** One revision of the sources and Cargo configuration. Diagnostics can repeat within it. */
 function sourceRevision() {
@@ -95,9 +99,9 @@ export async function referringFiles(
   );
   if (renamed) {
     const graph = await editorTree(focus.roots);
-    for (const [uri, text] of graph?.referring ?? []) {
+    for (const file of graph?.referring ?? []) {
+      const uri = pathToFileURL(file).href;
       const key = aliases.get(await physical(uri, revision)) ?? uri;
-      if (!texts.has(key)) texts.set(key, text);
       if (!found.has(key)) found.set(key, []);
     }
   }
