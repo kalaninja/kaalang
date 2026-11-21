@@ -101,7 +101,7 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
                 topology
                     .cycle_boundaries
                     .iter()
-                    .filter(|nested| owns(nested.header))
+                    .filter(|nested| boundary.encloses(nested.header))
                     .flat_map(|nested| {
                         std::iter::once(nested.entry)
                             .chain(nested.results.iter().map(|&result| Vertex::from(result)))

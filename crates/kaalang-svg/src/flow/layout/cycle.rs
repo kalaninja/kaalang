@@ -44,7 +44,7 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
             .filter(|(outer, last)| {
                 outer.caps.is_none()
                     && **last == row
-                    && (outer.header..outer.end).contains(&boundary.header)
+                    && (outer.header == boundary.header || outer.encloses(boundary.header))
             })
             .count();
         padding[row] = padding[row].max((layers as i32 - 1) * VERTICAL_PADDING);
@@ -80,7 +80,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
         boxes.extend(
             regions
                 .iter()
-                .filter(|(header, _)| (boundary.header + 1..boundary.end).contains(header))
+                .filter(|(header, _)| boundary.encloses(*header))
                 .map(|(_, region)| region.bounds()),
         );
         let body_bottom = boxes.iter().map(|bounds| bounds.3).max();
@@ -264,7 +264,8 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
             let climbing = scene.topology.cycles.iter().any(|cycle| {
                 edge.source == Source::Junction(cycle.tail)
                     && edge.destination == Vertex::Junction(cycle.entry)
-                    && !(boundary.header..boundary.end).contains(&cycle.header)
+                    && cycle.header != boundary.header
+                    && !boundary.encloses(cycle.header)
             });
             if !climbing {
                 continue;
@@ -287,8 +288,8 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
             .zip(&scene.cycle_regions)
         {
             if other.header == boundary.header
-                || (boundary.header + 1..boundary.end).contains(&other.header)
-                || (other.header + 1..other.end).contains(&boundary.header)
+                || boundary.encloses(other.header)
+                || other.encloses(boundary.header)
                 || !overlaps(region.bounds(), theirs.bounds())
             {
                 continue;
@@ -366,8 +367,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             }
             let source_owned = owns_vertex(Vertex::from(edge.source));
             let destination_owned = owns_vertex(edge.destination);
-            let crosses_interface =
-                edge.destination == boundary.entry || boundary.results.contains(&edge.source);
+            let crosses_interface = boundary.crosses_interface(edge.source, edge.destination);
             if source_owned
                 && destination_owned
                 && edge
@@ -402,8 +402,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if nested.header == boundary.header {
                 continue;
             }
-            let nested_owned = (boundary.header + 1..boundary.end).contains(&nested.header);
-            let enclosing = (nested.header + 1..nested.end).contains(&boundary.header);
+            let nested_owned = boundary.encloses(nested.header);
+            let enclosing = nested.encloses(boundary.header);
             if (nested_owned && !contains(region.bounds(), nested_region.bounds()))
                 || (!nested_owned
                     && !enclosing

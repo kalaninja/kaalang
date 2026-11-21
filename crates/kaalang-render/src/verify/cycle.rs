@@ -32,15 +32,11 @@ impl Bodies {
                 .map(|boundary| {
                     let owned = topology.boundary_vertices(flow, boundary);
                     let inside = |vertex: Vertex| owned.contains(&vertex);
-                    let interface = |edge: &Connection| {
-                        edge.destination == boundary.entry
-                            || boundary.results.contains(&edge.source)
-                    };
                     let (mut internal, mut foreign_routes) = (Vec::new(), Vec::new());
                     for (index, edge) in topology.connections.iter().enumerate() {
                         if inside(Vertex::from(edge.source)) && inside(edge.destination) {
                             internal.push(index);
-                        } else if !interface(edge) {
+                        } else if !boundary.crosses_interface(edge.source, edge.destination) {
                             foreign_routes.push(index);
                         }
                     }

@@ -969,7 +969,7 @@ fn continuation_starts_below_the_completed_nested_cycle() {
         .topology
         .cycle_boundaries
         .iter()
-        .find(|boundary| (boundary.header + 1..boundary.end).contains(&inner.header))
+        .find(|boundary| boundary.encloses(inner.header))
         .expect("the inner cycle is enclosed");
     let outer = scene
         .topology

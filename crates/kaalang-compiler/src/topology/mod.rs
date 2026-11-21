@@ -1338,6 +1338,13 @@ impl CycleBoundary {
         (self.header + 1..self.end).contains(&header)
     }
 
+    /// Whether a connection from `source` to `destination` crosses this
+    /// boundary through its interface: into its entry, or out of a result.
+    #[must_use]
+    pub fn crosses_interface(&self, source: Source, destination: Destination) -> bool {
+        destination == self.entry || self.results.contains(&source)
+    }
+
     /// Projection allocates entry junctions before removing redundant ones.
     fn entry_junction(&self) -> usize {
         let Vertex::Junction(junction) = self.entry else {
