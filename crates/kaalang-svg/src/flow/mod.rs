@@ -25,6 +25,7 @@ pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderE
     for stage in &mut model.stages {
         kaalang_render::compact_arrangement(stage);
     }
+    let direct_entry = kaalang_render::keep_header(&mut model);
     let mut hotspots = Vec::new();
     let start = start_text(&item, &header);
     validate_labels(&model, signature, &start, &parameters, &return_type)?;
@@ -38,8 +39,8 @@ pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderE
             validate_description(&analysis.description, span, "stage description")?;
             validate_labels(stage, signature, &start, &[], &return_type)?;
         }
-        let scene =
-            layout::layout_staged(&model, &start, &parameters, &return_type).map_err(unroutable)?;
+        let scene = layout::layout_staged(&model, direct_entry, &start, &parameters, &return_type)
+            .map_err(unroutable)?;
         let parts = std::iter::once(None).chain((0..model.stages.len()).map(Some));
         for ((local, placement), part) in scene.parts.iter().zip(parts) {
             navigation::collect(local, &model, part, *placement, &mut hotspots);

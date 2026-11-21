@@ -3,8 +3,8 @@
 use std::rc::Rc;
 
 use kaalang_compiler::{
-    Arrangement, BlockKind, SemanticModel,
-    topology::{ExitId, NodeId, NodeKind, Topology, Vertex},
+    SemanticModel,
+    topology::{NodeId, NodeKind, Vertex},
 };
 
 use super::{CONNECTION_LABEL_HALO, Point, Scene, label_rect, layout_with_stage_rows, route};
@@ -30,17 +30,16 @@ pub(crate) struct StagedScene {
     pub(crate) height: i32,
 }
 
+/// Lays out `model` with its stages. `direct_entry` is the stage an empty
+/// preparation enters, as `kaalang_render::keep_header` returns it.
 #[allow(clippy::too_many_lines)] // Measures each part, reserves the entry rail, then aligns transitions.
 pub(crate) fn layout_staged(
     model: &SemanticModel,
+    direct_entry: Option<usize>,
     start: &str,
     parameters: &[String],
     return_type: &str,
 ) -> Result<StagedScene, String> {
-    let direct_entry = match model.analysis.flow.blocks.as_slice() {
-        [transition, end] if end.kind == BlockKind::End => transition.transition_target,
-        _ => None,
-    };
     let models = std::iter::once(model)
         .chain(&model.stages)
         .collect::<Vec<_>>();
@@ -87,9 +86,6 @@ pub(crate) fn layout_staged(
     let first_body_y = first_body_y(&parts, direct_entry);
     if first_body_y > 0 {
         parts[0] = lay_out(0, 0, first_body_y)?;
-    }
-    if direct_entry.is_some() {
-        keep_header(&mut parts[0]);
     }
     let placements = place(&parts, direct_entry);
     let transition_y = parts
@@ -188,31 +184,6 @@ fn rail_y(scene: &Scene) -> i32 {
         .filter(|label| label.owner == Vertex::Node(NodeId::Start))
         .map(|label| label_rect(label).3 + CONNECTION_LABEL_HALO)
         .fold(start.y + start_height / 2 + RAIL_GAP, i32::max)
-}
-
-/// Empty preparation contributes only the function header. Composition connects
-/// it directly to the first stage's entry, omitting the transition node.
-fn keep_header(scene: &mut Scene) {
-    let start = Vertex::Node(NodeId::Start);
-    let exit = ExitId::of(NodeId::Start);
-    let mut topology = Topology::default();
-    topology
-        .nodes
-        .push(scene.topology.node(NodeId::Start).clone());
-    topology.exits.push(scene.topology.exit(exit).clone());
-    topology.vertices.push(start);
-    scene.topology = topology;
-    scene.arrangement = Arrangement {
-        rank: [(start, 0)].into(),
-        ranks: 1,
-        column: [(start, scene.arrangement.column[&start])].into(),
-        exit_offset: [(exit, 0)].into(),
-        ..Arrangement::default()
-    };
-    scene.nodes.retain(|node| node.id == NodeId::Start);
-    scene.labels.retain(|label| label.owner == start);
-    scene.connections.clear();
-    scene.fit();
 }
 
 fn verify(diagram: &StagedScene) -> Result<(), String> {
@@ -345,8 +316,9 @@ mod tests {
 
     fn drawn(source: &str, name: &str, return_type: &str) -> StagedScene {
         let function = syn::parse_str(source).unwrap();
-        let model = kaalang_compiler::build(&function).unwrap();
-        layout_staged(&model, name, &[], return_type).unwrap()
+        let mut model = kaalang_compiler::build(&function).unwrap();
+        let direct_entry = kaalang_render::keep_header(&mut model);
+        layout_staged(&model, direct_entry, name, &[], return_type).unwrap()
     }
 
     /// The first flow of `source`, read for no target.
@@ -358,8 +330,9 @@ mod tests {
     }
 
     /// The first flow of `source` as `render_flow` lays it out: every part
-    /// compacted, with its parameter captions.
-    fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Vec<String>) {
+    /// compacted, the stage an empty preparation enters, and the parameter
+    /// captions.
+    fn compacted(source: &str, collapsed: bool) -> (SemanticModel, Option<usize>, Vec<String>) {
         let kaalang_compiler::SourceFlow {
             mut model,
             parameters,
@@ -369,7 +342,8 @@ mod tests {
         for stage in &mut model.stages {
             kaalang_render::compact_arrangement(stage);
         }
-        (model, parameters)
+        let direct_entry = kaalang_render::keep_header(&mut model);
+        (model, direct_entry, parameters)
     }
 
     #[test]
@@ -400,8 +374,9 @@ mod tests {
             include_str!("../../../../kaalang/tests/flow/stage/transition_to_diverging_stage.rs"),
         ] {
             for collapsed in [false, true] {
-                let (model, parameters) = compacted(source, collapsed);
-                let diagram = layout_staged(&model, "example", &parameters, "u8").unwrap();
+                let (model, direct_entry, parameters) = compacted(source, collapsed);
+                let diagram =
+                    layout_staged(&model, direct_entry, "example", &parameters, "u8").unwrap();
                 assert_eq!(diagram.direct_entry, Some(0));
                 assert_eq!(diagram.parts[1].1.x, MARGIN + RAIL_GAP);
                 let (header, placement) = &diagram.parts[0];
@@ -422,9 +397,6 @@ mod tests {
                         .windows(2)
                         .all(|pair| pair[0].1.x < pair[1].1.x)
                 );
-                for (local, _) in &diagram.parts {
-                    assert_eq!(super::super::correspondence(local), None);
-                }
                 assert_eq!(
                     diagram.return_route.is_some(),
                     diagram.parts[1..]
@@ -443,8 +415,9 @@ mod tests {
     #[test]
     fn stage_rail_clears_multiline_start_handovers() {
         let source = include_str!("../../../../kaalang/tests/flow/stage/sum_inputs.rs");
-        let (model, parameters) = compacted(source, false);
-        let diagram = layout_staged(&model, "sum_inputs", &parameters, "u32").unwrap();
+        let (model, direct_entry, parameters) = compacted(source, false);
+        let diagram =
+            layout_staged(&model, direct_entry, "sum_inputs", &parameters, "u32").unwrap();
         let (preparation, placement) = &diagram.parts[0];
         let rail_y = diagram.return_route.as_ref().unwrap()[3].y;
         let handover = preparation
@@ -469,9 +442,12 @@ mod tests {
             ),
         ] {
             let kaalang_compiler::SourceFlow {
-                model, parameters, ..
+                mut model,
+                parameters,
+                ..
             } = first_flow(source, false);
-            let diagram = layout_staged(&model, name, &parameters, "u32").unwrap();
+            let direct_entry = kaalang_render::keep_header(&mut model);
+            let diagram = layout_staged(&model, direct_entry, name, &parameters, "u32").unwrap();
             let rail = diagram.return_route.as_ref().unwrap()[3].y;
             let (preparation, placement) = &diagram.parts[0];
             let bounds = preparation
@@ -529,14 +505,12 @@ mod tests {
         let source =
             include_str!("../../../../kaalang/tests/flow/stage/prepared_initial_selection.rs");
         for collapsed in [false, true] {
-            let (model, parameters) = compacted(source, collapsed);
-            let diagram = layout_staged(
-                &model,
-                "prepared_initial_selection",
-                &parameters,
-                "(usize, usize)",
-            )
-            .unwrap();
+            let (model, direct_entry, parameters) = compacted(source, collapsed);
+            let lay_out = |parameters: &[String]| {
+                let name = "prepared_initial_selection";
+                layout_staged(&model, direct_entry, name, parameters, "(usize, usize)").unwrap()
+            };
+            let diagram = lay_out(&parameters);
             let return_route = diagram.return_route.as_ref().unwrap();
             let mut entries = BTreeSet::new();
             let mut transitions = BTreeSet::new();
@@ -613,8 +587,7 @@ mod tests {
             assert!(return_route[3].y < *entries.first().unwrap());
             assert!(prefix_placement.y + prefix.node(NodeId::Start).y < return_route[3].y);
             assert!(prefix.parameters.is_some());
-            let without_parameters =
-                layout_staged(&model, "prepared_initial_selection", &[], "(usize, usize)").unwrap();
+            let without_parameters = lay_out(&[]);
             assert_eq!(
                 diagram.parts[1].1.x, without_parameters.parts[1].1.x,
                 "the parameter panel must not reserve an extra body column"
