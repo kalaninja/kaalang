@@ -16,8 +16,8 @@
   and lowers the verified plan to Rust. It also parses type declarations and
   expands datatypes. Behind its `source` feature it reads flows and types from
   the text of a file for the renderers, which read no source themselves, says
-  what each drawn element of a flow or a type stands for there, and finds the
-  flow or type declared at an offset.
+  what each drawn element of a flow or a type stands for there, and lists where
+  each flow and type is declared.
 - `crates/kaalang-workspace/` reads a Cargo workspace for the diagrams: its
   targets in the order their cards stand, which file a module declaration loads,
   each target's module tree, and how Rust paths resolve across those trees. The
