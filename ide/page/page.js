@@ -39,7 +39,9 @@ let cells = 0;
  *   focus in, the focus's own included, read once, in the crate the engine
  *   reads it in, with the references' `offsets`. A `place` is where a text
  *   stands in the workspace's module tree, as `drawType` takes it. The focus
- *   draws in the cfg set of `target`;
+ *   draws in the cfg set of `target`. When the sources change during a search,
+ *   a host may leave it unanswered: the page asks again after an edit of its
+ *   own text, and after `changed`, which the host sends for any other change;
  * - `{type: "changed"}` when the engine may answer `referrers` otherwise: it
  *   has analyzed more, or a document was saved.
  *
@@ -142,6 +144,7 @@ export function start(root, host) {
         drawn.type === type &&
         drawn.version === version
       ) {
+        type?.unchanged(host);
         show(null);
         return;
       }

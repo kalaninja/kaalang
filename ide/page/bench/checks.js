@@ -553,6 +553,19 @@ const checks = {
     );
   },
 
+  async "an edit undone before its drawing asks the host again"() {
+    const page = open();
+    page.show(member, member.indexOf("Member"));
+    await settled();
+    const [asked] = page.requests;
+    // A host drops the search an edit overtakes; the undo leaves nothing to draw.
+    page.show(`${member}\n`, member.indexOf("Member"));
+    page.show(member, member.indexOf("Member"));
+    await settled();
+    const again = page.requests.findLast((r) => r.type === "referrers");
+    return again.id !== asked.id && again.offset === asked.offset;
+  },
+
   async "after a trap, the next text draws"() {
     const page = open();
     page.show(deep, inFlow);

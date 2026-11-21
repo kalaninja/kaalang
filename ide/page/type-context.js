@@ -62,6 +62,16 @@ export class TypeContext {
     this.#refreshing = false;
   }
 
+  /**
+   * The text is the drawn one again. A host may have dropped the request an
+   * edit overtook, so it asks again.
+   */
+  unchanged(host) {
+    if (this.#edited && this.#waiting) {
+      this.ask(host, this.#referrers.uri, this.#referrers.offset);
+    }
+  }
+
   /** Asks for the references to the focus named at `offset` of `uri`, once per text. */
   ask(host, uri, offset) {
     if (this.#referrers && !this.#edited) return;

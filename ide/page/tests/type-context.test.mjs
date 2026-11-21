@@ -63,6 +63,24 @@ test("a refresh keeps the finished diagram until its answer arrives", () => {
   assert.ok(context.canPublish());
 });
 
+test("an edit undone before its drawing asks again while the request waits", () => {
+  const context = new TypeContext("Focus");
+  const requests = [];
+  const host = { send: (message) => requests.push(message) };
+  context.ask(host, "a.rs", 7);
+  context.unchanged(host);
+  context.edited();
+  context.unchanged(host);
+  context.unchanged(host);
+  context.receive({ ...requests.at(-1), files: [] });
+  context.edited();
+  context.unchanged(host);
+  assert.deepEqual(
+    requests.map(({ offset }) => offset),
+    [7, 7],
+  );
+});
+
 test("an edit asks again and draws the other files' cards meanwhile", () => {
   const context = new TypeContext("Focus");
   const requests = [];
