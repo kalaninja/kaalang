@@ -21,14 +21,8 @@ order is execution order: each block runs where it is written, in every
 execution that reaches it.
 
 A validated flow is drawable: a flow whose required connections have no
-conforming diagram under [RFC 0002](0002-visual-language.md) is rejected at
-compile time, like violations of the syntactic and semantic rules below.
-
-This RFC defines kaalang's syntax and semantics.
-[RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md) describes how the
-language is translated to Rust, and
-[RFC 0002: kaalang Visual Language](0002-visual-language.md) defines its visual
-representation.
+conforming diagram in the visual language is rejected at compile time, like
+violations of the syntactic and semantic rules below.
 
 ## 2. Terminology
 
@@ -122,8 +116,7 @@ when no description is written. A question may carry an ordered `#[yes]` and
 carries two or more ordered `#[case("description")]` attributes. Transfers have
 no attributes or descriptions.
 
-Source comments remain ordinary Rust comments. Block, question-branch, and case
-descriptions come from their attributes.
+Source comments remain ordinary Rust comments.
 
 Actions, calls, and cycles may declare no outputs; questions and choices must
 declare theirs. Such a block written without `let`, or with the pattern
@@ -609,8 +602,6 @@ fn decide(request: Request) -> Decision {
 
 Unreachable-code warnings remain visible for unfinished flows;
 `#[allow(unreachable_code)]` on the function silences them.
-[RFC 0004 §6](0004-rust-lowering.md#6-placeholders-and-function-attributes)
-describes how lowering preserves placeholders and function attributes.
 
 ### 5.1 Zero-computation flow
 
@@ -1011,7 +1002,4 @@ input := "mut"? identifier | "&" "mut"? identifier
 Outputs within one declaration are distinct. In a `call_statement`, `rust_path`
 may not be a single identifier that names one of the block's captured aliases.
 Tuple construction in a transfer value does not implicitly destructure a
-captured tuple-valued wire. Every other constraint the grammar leaves open is
-stated with its rule: descriptions and computational control flow in section 3,
-block and transfer kinds in section 4, function forms and flow parameters in
-section 5, and repeated output names in section 6.
+captured tuple-valued wire.

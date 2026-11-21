@@ -1,7 +1,6 @@
 # RFC 0010: Type card paths
 
 - Status: accepted
-- Types: [RFC 0009: Types](0009-types.md)
 
 ## 1. Motivation and scope
 

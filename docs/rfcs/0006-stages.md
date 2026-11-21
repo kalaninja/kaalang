@@ -1,11 +1,6 @@
 # RFC 0006: Stages
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
-- Lowering: [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md)
-- Markdown: [RFC 0005: Markdown](0005-markdown.md)
 
 ## 1. Motivation and scope
 
@@ -884,133 +879,9 @@ of that name. The selected output either supplies the next visit's smaller count
 or enters `finish`. The incoming and outgoing `count` occurrences do not merge
 within one visit.
 
-### 8.7 Knuth–Morris–Pratt search
-
-KMP finds the first occurrence of a byte pattern in a byte slice. Its search
-naturally separates into stages for comparison, advancement, and fallback to a
-shorter matching prefix. Every transition finishes the current visit; no visit
-leaves a recursive call or a subproblem waiting to resume.
-
-Preparation calls `prefix_table(pattern)`, an ordinary flow with nested cycles.
-For each position `i`, `prefix[i]` is the length of the longest proper prefix of
-`pattern[..=i]` that is also its suffix. The table stays in the common outer
-data scope alongside the text position and the length already matched.
-
-```rust
-#[kaalang]
-fn kmp_search(text: &[u8], pattern: &[u8]) -> Option<usize> {
-    #[call("Build a table for reusing matched beginnings of the pattern.")]
-    let prefix = |pattern| prefix_table(pattern);
-
-    #[action("Start at the first text byte with no pattern bytes matched.")]
-    let (mut position, mut matched) = || (0usize, 0usize);
-
-    #[question("Is the pattern empty?")]
-    #[no("NO")]
-    #[yes("YES")]
-    let (nonempty, empty) = |pattern| pattern.is_empty();
-
-    #[action("An empty pattern matches at the start of the text.")]
-    let finish = |empty| Some(0usize);
-
-    #[question("Can the pattern fit inside the text?")]
-    #[yes("YES")]
-    #[no("NO")]
-    let (compare, too_long) = |nonempty, text, pattern| pattern.len() <= text.len();
-
-    #[action("The pattern is longer than the text; report no match.")]
-    let finish = |too_long| None;
-
-    #[stage("Compare the next pattern byte.")]
-    let (step, retry) = |compare| {
-        #[action("Read the current text byte and the next unmatched pattern byte.")]
-        let (text_byte, pattern_byte) =
-            |text, pattern, position, matched| (text[position], pattern[matched]);
-
-        #[question("Do these two bytes match?")]
-        #[yes("YES")]
-        #[no("NO")]
-        let (extend, retry) = |text_byte, pattern_byte| text_byte == pattern_byte;
-
-        #[action("Count this byte as one more matched pattern byte.")]
-        let step = |extend, matched| matched + 1;
-    };
-
-    #[stage("Move to the next text byte.")]
-    let (compare, finish) = |step| {
-        #[action("Move past this text byte and remember how many pattern bytes matched.")]
-        |step, &mut position, &mut matched| {
-            *position += 1;
-            *matched = step;
-        };
-
-        #[question("Has the whole pattern matched?")]
-        #[no("NO")]
-        #[yes("YES")]
-        let (remaining, found) = |pattern, matched| matched == pattern.len();
-
-        #[action("Report where the matching part of the text begins.")]
-        let finish = |found, position, matched| Some(position - matched);
-
-        #[question("Are there more text bytes to read?")]
-        #[yes("YES")]
-        #[no("NO")]
-        let (compare, exhausted) = |remaining, text, position| position < text.len();
-
-        #[action("The text has ended without a full match; report no match.")]
-        let finish = |exhausted| None;
-    };
-
-    #[stage("Reuse a shorter match.")]
-    let (compare, step) = |retry| {
-        #[question("Have any bytes at the start of the pattern already matched?")]
-        #[yes("YES")]
-        #[no("NO")]
-        let (shorten, skip) = |matched| matched > 0;
-
-        #[action("Use the table to keep a shorter matched beginning; retry this text byte.")]
-        let compare = |shorten, &prefix, &mut matched| {
-            *matched = prefix[*matched - 1];
-        };
-
-        #[action("Start a new match after this text byte.")]
-        let step = |skip| 0usize;
-    };
-
-    #[stage("Return the search result.")]
-    |finish| {
-        |finish| return finish;
-    };
-}
-```
-
-The `compare` and `retry` entries carry unit signals. `step` carries the new
-matched length: comparison supplies `matched + 1`, while fallback at zero
-supplies `0` to skip an unmatched text byte. `finish` carries `Option<usize>`.
-An empty pattern selects it immediately with `Some(0)`; a pattern longer than
-the text selects `None`. A successful search returns the first match's byte
-offset.
-
-Before each comparison, `position < text.len()` and `matched < pattern.len()`.
-The `matched` bytes immediately before `position` equal `pattern[..matched]`. A
-successful comparison advances both positions; a mismatch with a nonempty
-matched prefix follows `prefix[matched - 1]` without advancing through the text.
-That fallback strictly shortens the prefix and returns to comparison of the same
-text byte. A mismatch at zero advances only the text position. Advancement
-checks completion before requesting the next comparison, keeping every indexed
-read in bounds.
-
-The text position never decreases, and each fallback decreases a matched length
-that can grow only when a byte is consumed. Together with linear prefix-table
-construction, this gives `O(text.len() + pattern.len())` time and
-`O(pattern.len())` table space. Stage visits use constant stack space under the
-lowering in §6.2.
-
 ## 9. Changes to earlier RFCs
 
-This RFC supersedes the provisions below for flows declaring stages. Earlier
-released RFC texts remain unchanged. Ordinary flow and cycle rules continue to
-apply within preparation and each stage unless explicitly changed here.
+This RFC supersedes the provisions below for flows declaring stages.
 
 - **RFC 0001 §§2–4 and §8:** introduce stage declarations after preparation. A
   stage has one entry and declared alternative outputs, which require `Copy`
@@ -1044,12 +915,7 @@ apply within preparation and each stage unless explicitly changed here.
   values without those bounds. Constructor checks report diagnostics at the
   binding that declares the signal, as in §6.2 here.
 
-Concrete compiler and renderer types remain implementation choices.
-
 ## 10. Acceptance scenarios
-
-These scenarios define required stage behavior and visual representation in
-addition to the ordinary flow and cycle rules in RFCs 0001–0004.
 
 | Scenario                                                                         | Required result                                                                                                                           |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1098,7 +964,6 @@ addition to the ordinary flow and cycle rules in RFCs 0001–0004.
 | Stage route ending without a signal or return                                    | Reject an empty stage or a route reaching its body end without a selected signal or return.                                               |
 | Divergence through stage transitions                                             | Accept with declared signal exits and no terminal stage.                                                                                  |
 | Unreachable stage                                                                | Reject using finite graph reachability.                                                                                                   |
-| KMP search with a separate prefix-table flow                                     | Match direct search on empty inputs, absent and repeated patterns, and overlapping prefixes; preserve the text position during fallback.  |
 | Copy values on stage transitions                                                 | Carry unit, primitives, tuples, arrays, shared references, and user-defined Copy types under ordinary Rust lifetime rules.                |
 | Different entry types and several producers for one entry                        | Infer each destination type independently; reject mismatched incoming types.                                                              |
 | &mut capture of a received stage entry or mut on a stage output binding          | Reject; the received entry is immutable and stage output declarations carry no mut permission. A cycle's own working binding is separate. |

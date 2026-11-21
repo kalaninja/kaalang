@@ -1,9 +1,6 @@
 # RFC 0009: Types
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
 
 ## 1. Motivation and scope
 
@@ -511,10 +508,8 @@ Acceptance scenarios:
 
 ## 8. Compatibility and exclusions
 
-Beyond the provisions §2.5, §4.2, and §6 name, this RFC does not supersede the
-execution, lowering, or control-flow drawing rules in the accepted RFCs. Their
-flow terms retain their existing meanings. A type relationship is not evidence
-of execution order or of a value being moved or borrowed.
+A type relationship is not evidence of execution order or of a value being moved
+or borrowed.
 
 The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The

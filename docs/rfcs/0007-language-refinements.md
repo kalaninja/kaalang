@@ -1,12 +1,6 @@
 # RFC 0007: Language refinements
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
-- Lowering: [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md)
-- Markdown: [RFC 0005: Markdown](0005-markdown.md)
-- Stages: [RFC 0006: Stages](0006-stages.md)
 
 ## 1. Motivation and scope
 
@@ -659,7 +653,7 @@ whose height would make a label unreadable.
 ## 7. Changes to earlier RFCs
 
 This RFC supersedes the provisions below in every flow, whether or not it
-declares stages. Earlier released RFC texts remain unchanged.
+declares stages.
 
 - **RFC 0001 §§4.5–4.6 and §8:** replace the cycle's complete data-capture
   header with an optional single gate and inherited outer data scope. The gate
@@ -748,23 +742,7 @@ declares stages. Earlier released RFC texts remain unchanged.
   single break result and implicit repetition. Preserve stage declaration order,
   entry and transition icons, and inter-stage rails.
 
-For cycle migration, create any formerly captured owned working state before the
-cycle and keep data captures on its inner blocks. Replace the structural break's
-value with a same-named local producer for a declared output. A unit completion
-needs a named unit output. Replace each implicit repeating route with a path to
-the cycle's common continue, merging its gate wires as needed. If a repeating
-branch has consumed its non-`Copy` wire, use the consuming action's unit output
-to gate the continue as in §2.3. A former tuple of simultaneous results becomes
-one tuple-valued output followed by ordinary destructuring outside the cycle.
-The selected output is exported only after its route's remaining work, so the
-migrated branch structure must make that work and the continue mutually
-exclusive.
-
-Concrete compiler and renderer types remain implementation choices.
-
 ## 8. Acceptance scenarios
-
-These scenarios define required language behavior and visual representation.
 
 | Scenario                                                                                             | Required result                                                                                                     |
 | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |

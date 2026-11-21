@@ -1,7 +1,6 @@
 # RFC 0004: kaalang Rust Lowering
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
 
 ## 1. Overview
 
@@ -23,8 +22,7 @@ their plain Rust spellings do not demonstrate macro hygiene. The examples omit
 the prologue that moves each named parameter into its wire and withdraws the
 authored name, and omit unit control-wire bindings and generated lint attributes
 where the branch structure already shows their role. Structural returns are
-shown as native Rust `return` statements. Internal names and the generator's own
-data structures are implementation details.
+shown as native Rust `return` statements.
 
 ## 2. Bindings, scopes, actions, and calls
 
@@ -555,8 +553,6 @@ move performed only by a completing break.
 
 Analysis and plan verification record at most one representative iteration per
 cycle. They replay each authored block once, verify captures and source order,
-check that a break belongs to the active cycle, and record outcomes as
-`ExecutionOutcome::Return { block_index }` or
-`ExecutionOutcome::Repeat { loop_index }`. Break completion is an internal
-result-boundary transfer, not a public outcome. No cycle plan may contain a
-structural return.
+check that a break belongs to the active cycle, and record each outcome as a
+return or a repeat. Break completion is an internal result-boundary transfer,
+not an outcome. No cycle plan may contain a structural return.
