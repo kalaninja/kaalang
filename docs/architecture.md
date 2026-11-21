@@ -1,37 +1,5 @@
 # Compiler and SVG Pipeline
 
-The language and algorithm contracts live in [the RFCs](rfcs/).
-
-## Crate boundaries
-
-| Crate                                                         | Responsibility                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`kaalang`](../crates/kaalang/src/lib.rs)                     | Re-export the public macro; own executable examples, compile-fail tests, and generated fixture diagrams.                                                                                                                                                                                                                                                                     |
-| [`kaalang-macros`](../crates/kaalang-macros/src/lib.rs)       | Parse the item and delegate checking the attribute's arguments and expanding a flow or a datatype to the compiler.                                                                                                                                                                                                                                                           |
-| [`kaalang-compiler`](../crates/kaalang-compiler/src/lib.rs)   | Analyze flows, verify execution plans, project topology, decide and check arrangements, and lower plans to Rust. Parse type declarations and expand datatypes. Behind the `source` feature, read flows and types from the text of a file for the renderers, say what each drawn element of a flow or a type stands for there, and list where each flow and type is declared. |
-| [`kaalang-render`](../crates/kaalang-render/src/lib.rs)       | Compact verified arrangements using shared compiler checks and additional cycle-boundary checks; cut an empty preparation to its start; place a type diagram's incoming cards in rows and columns and shorten their headers.                                                                                                                                                 |
-| [`kaalang-svg`](../crates/kaalang-svg/src/lib.rs)             | Derive captions, measure and verify pixel geometry, compose stages, list each diagram's hotspots, lay out type diagrams, and serialize standalone SVG.                                                                                                                                                                                                                       |
-| [`kaalang-cli`](../crates/kaalang-cli/src/main.rs)            | Read Cargo metadata for one compilation target, read each target's module tree and select the flow or type a Rust path names through `kaalang-workspace`, order its incoming cards, render the SVG, and write it to the selected destination.                                                                                                                                |
-| [`kaalang-testing`](../crates/kaalang-testing/src/lib.rs)     | Share the executable fixture corpus, generated probes, cycle shapes, and performance harness with tests; unpublished.                                                                                                                                                                                                                                                        |
-| [`kaalang-workspace`](../crates/kaalang-workspace/src/lib.rs) | Order Cargo targets as their cards stand, find the files module declarations load, read each target's module tree, and resolve Rust paths across those trees: to a flow, a type, or a relationship's target. The compiler knows no workspace.                                                                                                                                |
-| [`kaalang-js`](../crates/kaalang-js/src/lib.rs)               | Expose diagram rendering, declaration ranges, and module lookup to JavaScript through WebAssembly. Translate byte positions to UTF-16 offsets; unpublished.                                                                                                                                                                                                                  |
-
-```mermaid
-flowchart TD
-    P[Parse] --> SC[Scope]
-    SC --> R[Resolve]
-    R --> A[Analyze]
-    A --> PL[Plan]
-    PL --> PR[Project]
-    PR --> AR[Arrange]
-    AR --> L[Lower]
-    AR --> C[Compaction]
-    C --> X[Captions]
-    X --> PX[Pixel layout]
-    PX --> V[Verification]
-    V --> S[Serialization]
-```
-
 ## Compiler steps
 
 | Step    | Implementation                                                                                                                                   | Algorithm                                                                                                                                                                                                    | Artifact                                                                                         |
@@ -58,23 +26,15 @@ first, and a requested collapsed one only after it succeeds.
 
 ## Execution representation
 
-[`analyze_local`](../crates/kaalang-compiler/src/lib.rs) selects one of two
-exact representations. Local flows with at most `ENUMERATED_HISTORY_LIMIT`
-finite histories use the ordinary execution list. When the product of declared
-alternatives exceeds that threshold,
-[`symbolic/walk/`](../crates/kaalang-compiler/src/symbolic/walk/mod.rs) first
-builds conditions and counts the actual domain with a capped query. A small
-actual domain still uses the ordinary path.
-
-Larger domains retain an ordered, reduced decision graph in
+[`analyze_local`](../crates/kaalang-compiler/src/lib.rs) selects one of the two
+representations of
+[RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis): the
+ordinary execution list for at most `ENUMERATED_HISTORY_LIMIT` histories,
+otherwise the decision graph in
 [`symbolic/condition.rs`](../crates/kaalang-compiler/src/symbolic/condition.rs).
-It shares decision suffixes and records conditions for block participation,
-producer occurrences, capture dependencies, and final outcomes. Cycles,
-preparation, and stage transitions use this same representation without
-unfolding iterations or visits. Validation, plan verification, and connection
-reduction query the whole domain; concrete witnesses supply only union facts.
-[RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis)
-specifies the algorithm.
+When the product of declared alternatives exceeds the limit,
+[`symbolic/walk/`](../crates/kaalang-compiler/src/symbolic/walk/mod.rs) counts
+the actual domain first.
 
 [`Executions`](../crates/kaalang-compiler/src/executions.rs) hides the storage
 choice. `len()` counts without materializing summaries; its `Vec` interface
@@ -84,46 +44,44 @@ ordinary implementation is the reference for
 
 ## Staged flows
 
-A flow that declares stages uses separate local analyses and diagrams for
-preparation and each stage. `Analysis::stages` and `SemanticModel::stages`
-retain declaration order; reachability and Rust constructor ordering use the
-shared transition graph.
+The root `Analysis` and `SemanticModel` of a staged flow hold preparation; their
+`stages` hold each stage's own, in declaration order.
 
 Preparation is analyzed twice. The preliminary pass skips producer-usage checks
 to find outer-plan bindings available on every completing route. Stage analyses
 then determine which common wires they use; those dependencies are added to
 preparation's transitions before the final pass checks usage.
 
-| Step    | Implementation                                                                                                                                     | Algorithm                                                                                                                                                                                                                                                                                                                                                                               |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Split   | [`parse/stage.rs`](../crates/kaalang-compiler/src/parse/stage.rs)                                                                                  | Split preparation from the stage declarations, resolve every entry and declared output, and append one transition block per possible signal.                                                                                                                                                                                                                                            |
-| Analyze | [`stage.rs`](../crates/kaalang-compiler/src/stage.rs)                                                                                              | Derive common outer data, analyze the local parts with their boundary dependencies, and reject stages unreachable in the transition graph.                                                                                                                                                                                                                                              |
-| Arrange | [`topology/stage.rs`](../crates/kaalang-compiler/src/topology/stage.rs), [`construct/stage.rs`](../crates/kaalang-compiler/src/construct/stage.rs) | Order every other local sink before each transition, place a part's transitions on one final rank, and verify their row and distinct columns.                                                                                                                                                                                                                                           |
-| Lower   | [`codegen/stage.rs`](../crates/kaalang-compiler/src/codegen/stage.rs)                                                                              | Keep preparation's outer scope around a labeled dispatcher loop whose state is a balanced `Result` sum of the stage entries; each arm runs one stage's local plan, in visit order.                                                                                                                                                                                                      |
-| Compose | [`flow/layout/staged.rs`](../crates/kaalang-svg/src/flow/layout/staged.rs)                                                                         | Measure each compacted part with the common entry and transition height, align transitions on one row, and place preparation left of stages in declaration order. Empty preparation, which [`kaalang-render`](../crates/kaalang-render/src/stage.rs) cuts to its start, contributes only the function header. Verify the composed rails and return contour against every part's bounds. |
+| Step    | Implementation                                                                                                                                                                     | Specified by                                                                                                                         |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Split   | [`parse/stage.rs`](../crates/kaalang-compiler/src/parse/stage.rs)                                                                                                                  | [RFC 0006 §2](rfcs/0006-stages.md#2-preparation-and-stage-declarations)                                                              |
+| Analyze | [`stage.rs`](../crates/kaalang-compiler/src/stage.rs)                                                                                                                              | [RFC 0006 §6.1](rfcs/0006-stages.md#61-finite-analysis), [RFC 0007 §5.1](rfcs/0007-language-refinements.md#51-finite-cycle-analysis) |
+| Arrange | [`topology/stage.rs`](../crates/kaalang-compiler/src/topology/stage.rs), [`construct/stage.rs`](../crates/kaalang-compiler/src/construct/stage.rs)                                 | [RFC 0006 §7.4](rfcs/0006-stages.md#74-composition-and-completion)                                                                   |
+| Lower   | [`codegen/stage.rs`](../crates/kaalang-compiler/src/codegen/stage.rs)                                                                                                              | [RFC 0006 §6.2](rfcs/0006-stages.md#62-rust-lowering)                                                                                |
+| Compose | [`flow/layout/staged.rs`](../crates/kaalang-svg/src/flow/layout/staged.rs), after [`kaalang-render`](../crates/kaalang-render/src/stage.rs) cuts an empty preparation to its start | [RFC 0006 §7](rfcs/0006-stages.md#7-visual-representation)                                                                           |
 
-## Arrangement algorithms
+## Arrangement search
 
-| Order      | Algorithm                               | What it does                                                                                                                                                                                                                         |
-| ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Primary    | Preferred, conflict-guided search       | Starts with earliest ranks, unsunk cycle tails, preferred contour sides, and direct corridors. A reported conflict widens the responsible route (`direct` → `deferred` → `aside`), flips the responsible contour, or sinks its tail. |
-| Fallback 1 | Deciding sweep with straight back edges | Enumerates legal vertex/case-row events, frontier orders and shared-rail exchanges while solving persistent column inequalities. Completed witnesses are reconstructed and independently checked.                                    |
-| Fallback 2 | Deciding sweep with flexible back edges | Repeats the complete sweep with variable, possibly bent back-edge corridors. Exhaustion rules out the remaining legal arrangements.                                                                                                  |
+[`construct/`](../crates/kaalang-compiler/src/construct/mod.rs) runs the
+decision procedure of
+[RFC 0003 §2.1](rfcs/0003-svg-renderer.md#21-the-decision-procedure) under the
+placement rules of
+[§2.2](rfcs/0003-svg-renderer.md#22-branch-and-case-placement), trying the
+arrangements of [§2.5](rfcs/0003-svg-renderer.md#25-presentation) first.
+[RFC 0007 §6.2](rfcs/0007-language-refinements.md#62-result-junctions-and-construction)
+replaces the break junction and rejects an exit enclosed between repeating
+routes before construction, and
+[RFC 0008 §6.1](rfcs/0008-cycle-forms.md#61-expanded-for-cycle) places a for
+cycle between its caps. Static constraint contradictions can reject a topology
+before the sweep.
 
-Static constraint contradictions can reject a topology before the sweep;
-otherwise rejection requires exhaustion with flexible back edges. The production
-searches have no timeout, retry, coordinate, or bend limit that can reject a
-topology. The separate exhaustive procedure under
+The separate exhaustive procedure under
 [`construct/tests/reference.rs`](../crates/kaalang-compiler/src/construct/tests/reference.rs)
-is a test oracle, not a runtime fallback. It uses separate event enumeration, a
-sparse difference constraint graph with strongly connected components and
-longest paths, and a separate strip router. It retains fresh coordinates for
-every live path on each row instead of production's interval projection and
-transitive-closure key. Positive-only preliminary attempts speed up witness
-discovery; their exhaustion always falls through to the full enumeration. A
-bound on the states it visits panics rather than count as a negative answer. It
-shares topology facts and the independent verifier with production, not
-transitions, pruning, column solver or reconstruction.
+is a test oracle, not a runtime fallback. It shares topology facts and the
+independent verifier with production, not transitions, pruning, column solver or
+reconstruction. Positive-only preliminary attempts speed up witness discovery;
+their exhaustion always falls through to the full enumeration. A bound on the
+states it visits panics rather than count as a negative answer.
 
 Exhaustive comparisons cover distributor bodies and ordered-question bodies and
 count drawn, refused, and earlier-rejected outcomes separately. Neither domain
@@ -138,7 +96,7 @@ not replace them.
 The memo cache stops growing at `MEMO_CACHE_BYTES`. That limits a performance
 optimization, not the search: a state it does not hold is explored again.
 
-## Rendering steps and fallbacks
+## Rendering steps
 
 `kaalang-svg` keeps each diagram's steps in its own module, `flow/` and
 `datatype/`, over the text measurement in `text.rs` and the SVG markup in
@@ -147,16 +105,15 @@ optimization, not the search: a state it does not hold is explored again.
 `kaalang-render`'s
 [`ArrangementVerifier`](../crates/kaalang-render/src/verify/mod.rs) checks each
 compaction candidate with the compiler's shared arrangement checks and the
-cycle-boundary checks. `kaalang-svg` assigns dimensions and spacing to the
-compacted arrangement; its rows, columns, and corridors stay fixed.
+cycle-boundary checks.
 
-| Step                                                                                                             | Primary path                                                                                                                                                                                         | Artifact                           | Fallback                                                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Compaction](../crates/kaalang-render/src/compact.rs)                                                            | Iterate verified local simplifications: pull contours inward, shorten routes, straighten branch departures, merge lanes and columns, lift vertices, fold rows.                                       | Compacted `Arrangement`.           | Keep the previous verified arrangement whenever a candidate fails. The process finds a deterministic local fixed point, not a global minimum.                                       |
-| [Labels and captions](../crates/kaalang-svg/src/flow/captions/mod.rs), [text](../crates/kaalang-svg/src/text.rs) | Validate raw and interpreted label characters for XML; derive semantic labels and take the quoted source text as read; interpret restricted Markdown and measure formulas once per caption.          | `Captions`.                        | A formula that cannot be laid out or exceeds the height limit stays literal; one wider than its label is clipped with an ellipsis.                                                  |
-| [Pixel layout](../crates/kaalang-svg/src/flow/layout/mod.rs)                                                     | Wrap measured text, realize the arrangement with narrow gaps for routing-only columns, and increase bounded slack when labels and back edges share a gap.                                            | `Scene`.                           | Retry the same arrangement with standard column spacing, including the same bounded slack loop. A visible cycle caption may shorten or disappear; its full text remains accessible. |
-| [Verification](../crates/kaalang-svg/src/flow/layout/mod.rs)                                                     | Check route geometry and arrangement correspondence, then labels, cycle boundaries, canvas bounds, and correspondence again after final translation. Verify staged composition before serialization. | Verified `Scene` or `StagedScene`. | None: an unverified scene is never serialized.                                                                                                                                      |
-| [Serialization](../crates/kaalang-svg/src/flow/svg/mod.rs), [markup](../crates/kaalang-svg/src/markup.rs)        | Write escaped Unicode, embedded CSS, accessible text, nodes, boundaries, and paths to one standalone SVG string.                                                                                     | Standalone SVG `String`.           | None.                                                                                                                                                                               |
+| Step                | Implementation                                                                                                     | Artifact                           | Specified by                                                                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Compaction          | [`compact.rs`](../crates/kaalang-render/src/compact.rs)                                                            | Compacted `Arrangement`.           | [RFC 0003 §2.3](rfcs/0003-svg-renderer.md#23-independent-checks)                                                                                                                                                   |
+| Labels and captions | [`flow/captions/`](../crates/kaalang-svg/src/flow/captions/mod.rs), [`text.rs`](../crates/kaalang-svg/src/text.rs) | `Captions`.                        | [RFC 0002 §6](rfcs/0002-visual-language.md#6-wires-and-labels), [RFC 0005 §§4–5](rfcs/0005-markdown.md#4-presentation-and-accessibility), [RFC 0007 §6.4](rfcs/0007-language-refinements.md#64-oversized-formulas) |
+| Pixel layout        | [`flow/layout/`](../crates/kaalang-svg/src/flow/layout/mod.rs)                                                     | `Scene`.                           | [RFC 0003 §2.4](rfcs/0003-svg-renderer.md#24-why-every-checked-arrangement-has-a-realization), [RFC 0007 §6.3](rfcs/0007-language-refinements.md#63-aligning-node-heights)                                         |
+| Verification        | [`flow/layout/`](../crates/kaalang-svg/src/flow/layout/mod.rs)                                                     | Verified `Scene` or `StagedScene`. | [RFC 0003 §2.3](rfcs/0003-svg-renderer.md#23-independent-checks), [§4](rfcs/0003-svg-renderer.md#4-validation-and-failures)                                                                                        |
+| Serialization       | [`flow/svg/`](../crates/kaalang-svg/src/flow/svg/mod.rs), [`markup.rs`](../crates/kaalang-svg/src/markup.rs)       | Standalone SVG `String`.           | [RFC 0003 §3](rfcs/0003-svg-renderer.md#3-svg-output)                                                                                                                                                              |
 
 Before these steps, the compiler's
 [`SourceFile`](../crates/kaalang-compiler/src/source/mod.rs) parses the Rust
@@ -170,11 +127,9 @@ feature, which the macro leaves off, since rustc gives it tokens.
 
 Between verification and serialization `kaalang-svg` reads the hotspots it
 returns beside the SVG from the verified scene in
-[`flow/navigation.rs`](../crates/kaalang-svg/src/flow/navigation.rs): a
-rectangle for every node, drawn cycle boundary, and wire name, with the source
-it stands for, and for every segment of a connection and every merge, with its
-ribbon. What a node draws, where a producer binds its wire, and what a `return`
-hands to end are the compiler's facts, in
+[`flow/navigation.rs`](../crates/kaalang-svg/src/flow/navigation.rs). What a
+node draws, where a producer binds its wire, and what a `return` hands to end
+are the compiler's facts, in
 [`source/spans.rs`](../crates/kaalang-compiler/src/source/spans.rs), and so is
 the ribbon of each connection and merge, in
 [`source/ribbons.rs`](../crates/kaalang-compiler/src/source/ribbons.rs). Neither
@@ -197,21 +152,21 @@ each card draws into the focus. For the CLI and the bindings alike, the
 `CargoTarget` of `kaalang-workspace` tells each target's group and crate name
 from what `cargo metadata` lists, orders the cards' targets, and gives each
 card's group, and `card_headers` of `kaalang-render` shortens their paths by
-RFC 0010. A rendering error names its card, so the CLI can name its file and the
-editor can leave an invalid incoming card out. Beside the SVG the renderer
-returns the hotspots of
-[`datatype/navigation.rs`](../crates/kaalang-svg/src/datatype/navigation.rs):
-every path a tile's type names, every relationship's target, and every incoming
-card's header, each with its card. Where each path stands in a field's type,
-where each relationship names its target, and which relationships an editor's
-source offsets identify are the compiler's facts, in
+[RFC 0010 §2](rfcs/0010-type-card-paths.md#2-displayed-paths). A rendering error
+names its card, so the CLI can name its file and the editor can leave an invalid
+incoming card out. Beside the SVG the renderer returns the hotspots of
+[`datatype/navigation.rs`](../crates/kaalang-svg/src/datatype/navigation.rs),
+each with its card. Where each path stands in a field's type, where each
+relationship names its target, and which relationships an editor's source
+offsets identify are the compiler's facts, in
 [`source/cards.rs`](../crates/kaalang-compiler/src/source/cards.rs).
 
-| Step                                                                                                      | Work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Reading](../crates/kaalang-svg/src/datatype/mod.rs)                                                      | Read each card's form, representation, and tiles from its type as the compiler read it, with the text it quotes from the declaration, and validate every label for XML.                                                                                                                                                                                                                                                                                                                                                                                                   |
-| [Card layout](../crates/kaalang-svg/src/datatype/layout.rs)                                               | Wrap and measure each card, place the incoming cards above the focus in the cells `card_cells` gives for the requested column count, or else for the most columns that keep each row as wide as a screen or the focus, and route each drawn relationship without crossings: an incoming card lists its tiles, whose lines start on its right side and join its column's trunk down into the focus; the focus's own lines leave a struct's row below it, a union field from its side, and a variant through its groove and port, and join its trunk, which climbs over it. |
-| [Serialization](../crates/kaalang-svg/src/datatype/svg.rs), [markup](../crates/kaalang-svg/src/markup.rs) | Write the cards, their rules and text, and the routes to one standalone SVG string.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+[`datatype/mod.rs`](../crates/kaalang-svg/src/datatype/mod.rs) reads each card
+from its type as the compiler read it and validates every label for XML,
+[`datatype/layout.rs`](../crates/kaalang-svg/src/datatype/layout.rs) places the
+cards and routes the lines by [RFC 0009 §4.2](rfcs/0009-types.md#42-structure)
+and [§4.3](rfcs/0009-types.md#43-arrangement), and
+[`datatype/svg.rs`](../crates/kaalang-svg/src/datatype/svg.rs) serializes them.
 
 ## IDEs
 

@@ -52,18 +52,17 @@
   producers of one wire before any capture.
 - **frame**: one sequence level: the root, preparation, a stage body, or one
   iteration of a cycle body.
-- **cycle**: the only name for the kaalang repetition block. A loop cycle
-  completes through a declared output and repeats at `continue`; a for cycle
-  completes when its items run out. "loop" names only Rust's `loop`, the loop
-  cycle form, and the loop marker.
+- **cycle**: the only name for the kaalang repetition block. A **loop cycle**,
+  with a Rust `loop` body, completes through a declared output and repeats at
+  `continue`; a **for cycle**, a Rust `for` loop, completes when its items run
+  out. "loop" names only Rust's `loop`, the loop cycle form, and the loop
+  marker.
 - **iteration**: one execution of a cycle body.
 - **gate**: a wire whose availability lets a block or transfer take part in a
   route; a cycle header may name one.
 - **export**: passes one selected value out of a cycle at its **result
   boundary**, or to another stage through a transition. At a cycle, a **boundary
   consumer** is the implicit by-value use of the exported wire.
-- **loop cycle**, **for cycle**: the two cycle forms, with a Rust `loop` body or
-  a Rust `for` loop.
 - **item wires**: the wires a for cycle's item pattern binds for one iteration.
 - **for-entry**, **for-end**: the caps above and below an expanded for cycle's
   body.

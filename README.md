@@ -73,9 +73,8 @@ between `|...|` and names the wires it produces after `let`.
 | Four declarations of `end`                 | The branches are mutually exclusive. Their results merge into one wire for the shared continuation.                              |
 | `\|end\| return end;`                      | The flow returns whichever branch supplied `end`.                                                                                |
 
-For `number = 9`, only `fizz` is selected, so only the “Use `Fizz` for this
-number” action runs. The diagram's connections show execution paths; input and
-output names appear as labels along those paths.
+The diagram's connections show execution paths; input and output names appear as
+labels along those paths.
 
 The `#[kaa]` macro translates the capture notation into ordinary Rust bindings
 and control flow. Blocks execute in source order along the selected path. Rust
@@ -99,9 +98,6 @@ let end = |plain| {                                      // output = |inputs|
 | Outputs              | `let end =`             | Omit for an effect returning `()`. Use `let (left, right) =` to expose two outputs. |
 | Inputs               | `\|plain\|`             | Omit it when there are no inputs. Every wire used by the body must be listed here.  |
 | Body                 | `{ plain.to_string() }` | A Rust expression. An action may omit the braces, as in the full example.           |
-
-Actions can also create a value without inputs, consume inputs without producing
-outputs, or perform an effect with neither:
 
 ```rust ignore
 // No inputs: the capture list can be omitted.
@@ -287,8 +283,6 @@ current state:
 
 [Source](https://github.com/kalaninja/kaalang/blob/main/crates/kaalang/tests/flow/stage/state_machine_without_stages.rs)
 
-Both versions follow the same path.
-
 ### Stages in practice: quicksort
 
 ```rust
@@ -403,9 +397,7 @@ With the partitioning cycle collapsed, the four stages are easier to see:
 
 ## Types
 
-A struct, enum, union, or type alias marked `#[kaa]` is a datatype. Its fields
-carry descriptions, and a field can name the type it stands for, even when Rust
-stores only a key:
+A struct, enum, union, or type alias marked `#[kaa]` is a datatype:
 
 ```rust ignore
 #[kaa("A **shop order**, with its revision history and split shipments.")]
@@ -454,45 +446,24 @@ forms, and `-` for private.
 
 ## Try it
 
-Add the macro to a project:
-
 ```sh
-cargo add kaalang
+cargo add kaalang                        # the macro
+cargo install kaalang-cli                # the CLI, from crates.io
+cargo install --path crates/kaalang-cli  # or from a repository checkout
 ```
 
-Install the released CLI from crates.io:
-
-```sh
-cargo install kaalang-cli
-```
-
-Or install the version from the current repository checkout:
-
-```sh
-cargo install --path crates/kaalang-cli
-```
-
-Run the gallery and its checks from a repository checkout.
+In a repository checkout, run the gallery and its checks, then draw a flow and a
+type through the CLI:
 
 ```sh
 cargo run -p kaalang --example gallery
-```
-
-Draw the `FizzBuzz` diagram through the CLI.
-
-```sh
 cargo kaalang diagram --flow fizzbuzz::fizzbuzz -o fizzbuzz.svg
-```
-
-The flow is named by its path from the crate root; `--collapse-cycles` draws the
-collapsed cycle view. The output is a standalone SVG that needs no external
-rendering tools.
-
-Draw the `Order` type the same way, by its path:
-
-```sh
 cargo kaalang diagram --type order::Order
 ```
+
+A flow or a type is named by its path from the crate root; `--collapse-cycles`
+draws the collapsed cycle view. The output is a standalone SVG that needs no
+external rendering tools.
 
 ## Read more
 
