@@ -1,7 +1,5 @@
 //! What rendering costs. Nothing else bounds layout and serialization, so a
 //! routing change that doubled them would show up only as a slow test suite.
-//!
-//! Wall-clock, in the unoptimized dev profile.
 
 use std::time::{Duration, Instant};
 
@@ -12,29 +10,29 @@ use kaalang_testing::{
     probes::accepted,
 };
 
-// Ordinary and stress fixtures have separate corpus passes, with both expanded
-// and collapsed diagrams for every cycle fixture. Each diagram is also checked
-// against its fixture tier's diagram budget.
-/// Per-diagram allowance for 353 ordinary diagrams: serial p50 4.72 s on a core
-/// with 1.8 GHz base frequency and Turbo Boost disabled, with about 50% headroom.
-/// A diagram is read from its source and rendered, so its budget stands on its own.
-const RENDER_CORPUS_DIAGRAM_BUDGET: Duration = Duration::from_millis(20);
-/// Per-diagram allowance for seven stress diagrams: serial p50 3.63 s on the
-/// same core, with about 50% headroom.
-const RENDER_CORPUS_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(800);
-/// One ordinary fixture diagram: collapsed `kmp_search` measured a median of
-/// 62 ms on the same core.
-const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(100);
-/// One stress-fixture diagram, against a worst measured median of about 1.00 s
-/// on the same core.
-const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1225);
+// Every timing below was measured on an Intel Core i7-12800H efficiency core at
+// 1.8 GHz, with Turbo Boost disabled and the `performance` platform profile.
+
+/// Per-diagram allowance over the ordinary corpus, whose median serial pass
+/// took about 12.7 ms a diagram. A diagram is read from its source and
+/// rendered, so its budget stands on its own.
+const RENDER_CORPUS_DIAGRAM_BUDGET: Duration = Duration::from_millis(25);
+/// Per-diagram allowance over the stress corpus, whose median serial pass took
+/// about 530 ms a diagram.
+const RENDER_CORPUS_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(1100);
+/// One ordinary fixture diagram, against a typical median of about 10 ms and a
+/// worst of about 72 ms.
+const RENDER_DIAGRAM_BUDGET: Duration = Duration::from_millis(150);
+/// One stress-fixture diagram, against a worst median of about 1.02 s, with
+/// twice that cost rounded up.
+const RENDER_STRESS_DIAGRAM_BUDGET: Duration = Duration::from_millis(2100);
 
 // Generated probes sit outside the fixture corpus.
-/// One rendered generated probe, against a worst measured figure of about 4.4 s:
+/// One rendered generated probe, against a worst measured figure of about 7.7 s:
 /// `4 cycles and 120 steps` expanded, some 250 blocks. The geometry costs eight
 /// to thirty-five times the decision below it at that size. Only `cargo kaalang`
-/// pays this; a macro expansion never renders.
-const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(12);
+/// and the IDE page pay this; a macro expansion never renders.
+const GENERATED_RENDER_BUDGET: Duration = Duration::from_secs(16);
 
 /// Reads the flow at `position` for the fixture target and renders it.
 fn draw(source: &str, position: usize, collapse_cycles: bool) -> Result<String, String> {

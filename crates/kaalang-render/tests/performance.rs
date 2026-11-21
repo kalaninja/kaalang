@@ -1,6 +1,4 @@
 //! What renderer-independent structural compaction costs.
-//!
-//! Wall-clock, in the unoptimized dev profile used by renderer tools.
 
 use std::time::{Duration, Instant};
 
@@ -9,8 +7,11 @@ use kaalang_testing::{
     probes::{flow, nested_cycles},
 };
 
-/// The bound on building and compacting one generated probe, against a measured
-/// median of about 740 ms before compaction moved out of the compiler crate.
+// Every timing below was measured on an Intel Core i7-12800H efficiency core at
+// 1.8 GHz, with Turbo Boost disabled and the `performance` platform profile.
+
+/// The bound on building and compacting one generated probe, against a worst
+/// measured figure of about 1.4 s.
 const GENERATED_BUILD_AND_COMPACT_BUDGET: Duration = Duration::from_secs(3);
 
 /// A serial flow leaves compaction almost nothing to do, so the check is that a
