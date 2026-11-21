@@ -191,7 +191,7 @@ impl<'a> SourceFile<'a> {
     }
 
     /// What the target compiles of the file, for a caller to list its flows
-    /// with [`flows`] or its types with [`type_items`].
+    /// with [`fn@flows`] or its types with [`type_items`].
     #[must_use]
     pub fn items(&self) -> &[Item] {
         &self.items
@@ -214,7 +214,7 @@ impl<'a> SourceFile<'a> {
     }
 
     /// Reads the flow at `position` among the file's flows, counted in source
-    /// order as [`flows`] lists them, with each cycle as one node when
+    /// order as [`fn@flows`] lists them, with each cycle as one node when
     /// `collapse_cycles` is set. The caller selected it by its own rules.
     ///
     /// # Errors
