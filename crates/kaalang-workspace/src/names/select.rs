@@ -1,5 +1,6 @@
 //! Selects the flows a Rust path names among the files of a crate, as rustc
-//! resolves a path to a function, asking the resolver how names resolve.
+//! resolves a path to a function, asking the resolver how names resolve, and
+//! the types a path names from crate roots.
 
 use std::{collections::BTreeSet, rc::Rc};
 
@@ -10,7 +11,7 @@ use syn::{
     TypeParamBound, TypePath, ext::IdentExt,
 };
 
-use super::{Def, Resolver, resolve::same_item};
+use super::{Def, Resolver, TypeRef, resolve::same_item};
 
 /// A flow a flow path names.
 pub struct FoundFlow {
@@ -88,6 +89,39 @@ impl Resolver<'_> {
                         in_file: flow.path.clone(),
                     });
                 }
+            }
+        }
+        Ok(found)
+    }
+
+    /// The types `path` names from the root of each crate of `roots`, in
+    /// `roots` order, each with a number the types of one declaration share:
+    /// a file that several crates include, or one crate reads twice, declares
+    /// a type in each.
+    ///
+    /// # Errors
+    ///
+    /// Returns the root crate from which glob imports make a name ambiguous.
+    pub fn select_types(
+        &self,
+        path: &str,
+        roots: &[usize],
+    ) -> Result<Vec<(TypeRef, usize)>, usize> {
+        let Ok(path) = syn::parse_str::<Path>(path) else {
+            return Ok(Vec::new());
+        };
+        let mut found: Vec<(TypeRef, usize)> = Vec::new();
+        for &root in roots {
+            match self.find(root, 0, &path) {
+                Def::Type(ty) if found.iter().all(|(other, _)| *other != ty) => {
+                    let first = found
+                        .iter()
+                        .position(|(other, _)| self.place(*other) == self.place(ty))
+                        .unwrap_or(found.len());
+                    found.push((ty, first));
+                }
+                Def::Ambiguous(_) => return Err(root),
+                _ => {}
             }
         }
         Ok(found)

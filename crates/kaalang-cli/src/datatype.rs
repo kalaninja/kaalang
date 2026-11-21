@@ -9,7 +9,7 @@ use std::{
 use kaalang_compiler::{SourceError, SourceFile, SourceType, TypeDeclaration};
 use kaalang_render::CardPath;
 use kaalang_svg::{TypeCard, TypeOptions};
-use kaalang_workspace::names::{Def, Resolution, Resolver, TypeRef};
+use kaalang_workspace::names::{Resolution, Resolver, TypeRef};
 use syn::spanned::Spanned;
 
 use crate::workspace::{self, Crate};
@@ -210,7 +210,6 @@ fn focus(
     package: Option<&str>,
     skipped: &BTreeSet<String>,
 ) -> Result<TypeRef, String> {
-    let target = syn::parse_str::<syn::Path>(path).ok();
     let searched: Vec<usize> = order(crates, usize::MAX)
         .into_iter()
         .filter(|&krate| {
@@ -218,39 +217,25 @@ fn focus(
                 && package.is_none_or(|package| crates[krate].package == package)
         })
         .collect();
-    let mut found: Vec<TypeRef> = Vec::new();
-    for &krate in &searched {
-        match target
-            .as_ref()
-            .map(|target| resolver.find(krate, 0, target))
-        {
-            Some(Def::Type(declared)) if !found.contains(&declared) => {
-                found.push(declared);
-            }
-            Some(Def::Ambiguous(_)) => {
-                return Err(format!(
-                    "the type path `{path}` is ambiguous through glob imports in {}",
-                    crates[krate].label()
-                ));
-            }
-            _ => {}
-        }
-    }
-    let one_declaration = |candidates: &[TypeRef]| {
-        candidates.iter().enumerate().all(|(i, ty)| {
-            candidates[..i]
-                .iter()
-                .all(|previous| resolver.place(*ty) == resolver.place(*previous))
-        })
+    let mut found = resolver.select_types(path, &searched).map_err(|root| {
+        format!(
+            "the type path `{path}` is ambiguous through glob imports in {}",
+            crates[root].label()
+        )
+    })?;
+    let one_declaration = |types: &[(TypeRef, usize)]| {
+        types
+            .iter()
+            .all(|(_, declaration)| *declaration == types[0].1)
     };
     match found.as_slice() {
         [] => {
             let message = SourceError::TypeNotFound(path.to_owned()).to_string();
             Err(workspace::with_skipped(message, skipped))
         }
-        [first, ..] if one_declaration(&found) => Ok(*first),
+        [(first, _), ..] if one_declaration(&found) => Ok(*first),
         _ => {
-            let package = |ty: &TypeRef| &crates[ty.krate].package;
+            let package = |(ty, _): &(TypeRef, usize)| &crates[ty.krate].package;
             found.sort_by_key(package);
             let listed: Vec<(&Crate, String)> = found
                 .chunk_by(|left, right| package(left) == package(right))
@@ -261,7 +246,7 @@ fn focus(
                         group
                     }
                 })
-                .map(|declared| {
+                .map(|(declared, _)| {
                     let krate = &crates[declared.krate];
                     let module = &krate.modules[krate.types[declared.id].module];
                     (krate, module.file.path.display().to_string())

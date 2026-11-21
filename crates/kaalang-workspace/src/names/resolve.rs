@@ -105,7 +105,7 @@ impl<'a> Resolver<'a> {
     /// A declaration's physical source position, shared by all inclusions of
     /// its file, which rustc compiles as a type each.
     #[must_use]
-    pub fn place(&self, ty: TypeRef) -> (&'a Path, proc_macro2::LineColumn) {
+    pub(super) fn place(&self, ty: TypeRef) -> (&'a Path, proc_macro2::LineColumn) {
         let krate = self.crates[ty.krate];
         let entry = &krate.types[ty.id];
         (&krate.modules[entry.module].file.canonical, entry.position)
