@@ -1,4 +1,5 @@
-// The navigation requests sent to the editor's running rust-analyzer client.
+// The editor's running rust-analyzer client: the navigation requests sent to
+// it, and the crates its status report lists.
 interface Position {
   line: number;
   character: number;

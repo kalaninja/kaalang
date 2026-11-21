@@ -19,9 +19,7 @@ mod stage;
 pub(crate) enum WireList {
     /// The displayed captures of a node.
     Capture(NodeId),
-    /// The hand-over of an exit.
     Handover(ExitId),
-    /// The wires that meet at a junction.
     Junction(usize),
 }
 
@@ -150,12 +148,11 @@ impl Captions {
         }
     }
 
-    /// The names one label lists.
     pub(crate) fn names(&self, list: WireList) -> &[String] {
         self.wires(list).map_or(&[], |wires| &wires.names)
     }
 
-    /// Where the producer of each of those names binds it.
+    /// Where the producer of each name of `list` binds it.
     pub(crate) fn bindings(&self, list: WireList) -> &[Option<Span>] {
         self.wires(list).map_or(&[], |wires| &wires.bindings)
     }
@@ -229,7 +226,6 @@ fn derive_with_parameters(
         let label = match node.id {
             NodeId::Start => RichText::marked_code(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::code(return_type),
-            // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
                 None if node.kind == NodeKind::Call => {

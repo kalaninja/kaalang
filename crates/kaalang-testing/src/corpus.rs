@@ -23,14 +23,12 @@ fn fixture_flows(source: &str) -> syn::Result<Vec<FlowItem>> {
     Ok(kaalang_compiler::flows(&file.items))
 }
 
-/// Fixture suites to load.
 #[derive(Clone, Copy)]
 pub enum Suite {
     /// Flow fixtures outside the stress suite.
     Ordinary,
     /// Hand-written stress fixtures.
     Stress,
-    /// Both ordinary and stress fixtures.
     All,
 }
 
@@ -74,8 +72,8 @@ impl fmt::Display for Diagram {
     }
 }
 
-/// Every diagram the selected fixtures draw: each flow expanded, and collapsed
-/// too in a fixture with a cycle, in declaration order for [`TARGET_CFG`].
+/// Every diagram the selected fixtures draw, each flow in its [`views`], in
+/// declaration order for [`TARGET_CFG`].
 ///
 /// # Panics
 ///

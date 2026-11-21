@@ -80,7 +80,7 @@ pub(super) struct Replay<'a> {
     /// blocks in another sequence.
     last: Option<usize>,
     dependencies: BTreeSet<CaptureDependency>,
-    /// Only the innermost active body may be the target of a native continue.
+    /// The active cycle bodies, innermost last.
     pub(super) cycle_indices: Vec<usize>,
 }
 
@@ -217,7 +217,6 @@ mod tests {
     use super::*;
     use crate::model::SemanticModel;
 
-    /// Replays a lowered plan against a built model's own executions.
     fn replays(model: &SemanticModel, lowered: &ExecutionPlan) -> bool {
         plan(
             &model.analysis.flow,

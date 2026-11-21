@@ -390,8 +390,6 @@ pub(super) fn find<'a>(
     let selected = |krate: &Crate| {
         !krate.dependency_only && package.is_none_or(|package| krate.package == package)
     };
-    // A crate's search spans its own files and those of the libraries it may
-    // use, as a trait's default method may be in one.
     let roots: Vec<(usize, Vec<usize>)> = (0..crates.len())
         .filter(|&index| selected(&crates[index]))
         .map(|index| {

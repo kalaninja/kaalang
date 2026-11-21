@@ -1,4 +1,5 @@
-//! Serializes an expanded cycle boundary.
+//! Serializes a collapsed cycle node, an expanded loop cycle's boundary, and a
+//! for cycle's caps.
 
 use std::fmt::Write;
 

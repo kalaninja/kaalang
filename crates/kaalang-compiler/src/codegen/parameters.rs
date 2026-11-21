@@ -7,9 +7,8 @@ use syn::{FnArg, ItemFn, Pat, PatIdent, ext::IdentExt};
 
 use super::Bindings;
 
-/// Moves every named parameter into its hygienic wire binding. A wildcard
-/// parameter provides no wire. The receiver is its own wire: Rust forbids
-/// rebinding `self`, and no other spelling can reach it.
+/// A wildcard parameter provides no wire. The receiver is its own wire: Rust
+/// forbids rebinding `self`, and no other spelling can reach it.
 pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings, scope: Span) -> TokenStream2 {
     let wires = function
         .sig
@@ -33,7 +32,6 @@ pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings, scope: Span) -> T
     quote!(#(#wires)*)
 }
 
-/// One parameter's hygienic wire binding.
 fn wire(parameter: &PatIdent, bindings: &Bindings) -> TokenStream2 {
     let ident = &parameter.ident;
     let name = ident.unraw();

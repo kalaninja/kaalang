@@ -8,8 +8,8 @@ use serde::Serialize;
 
 use crate::utf16;
 
-/// The answer. Each wire of a ribbon is listed once, in `wires`, since every
-/// strip of a connection repeats its ribbon.
+/// Each wire of a ribbon is listed once, in `wires`, since every strip of a
+/// connection repeats its ribbon.
 #[derive(Serialize)]
 struct Drawn {
     svg: String,

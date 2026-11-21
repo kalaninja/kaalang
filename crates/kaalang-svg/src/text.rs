@@ -294,7 +294,6 @@ fn math_font() -> Option<&'static MathFont> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-/// A contiguous piece of text whose characters share the same style.
 pub(crate) struct StyledSpan {
     pub(crate) text: String,
     pub(crate) style: Style,
@@ -1160,7 +1159,6 @@ fn line(clusters: &[Cluster]) -> RichText {
     line
 }
 
-/// Height and baseline positions for a wrapped block of label text.
 pub(crate) struct TextBlockMetrics {
     pub(crate) height: i32,
     pub(crate) baselines: Vec<i32>,

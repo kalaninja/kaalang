@@ -13,7 +13,7 @@ use syn::{Error, Result};
 use crate::model::{BlockKind, BranchSelection, Execution, Flow, ProducerId, WireMerge};
 
 /// The selections one producer occurrence sits inside: what its block inherited
-/// by capture, plus the branch it selects when the block is a question or choice.
+/// by capture, plus the branch it selects when the block is a selector.
 fn occurrence(
     flow: &Flow,
     inherited: &BTreeSet<BranchSelection>,

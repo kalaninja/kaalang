@@ -9,7 +9,6 @@ const vscode = acquireVsCodeApi();
 const root = document.querySelector("#page");
 const { worker, glue, module } = root.dataset;
 
-/** A blob URL holding the script at `url`. */
 async function blob(url) {
   const text = await (await fetch(url)).text();
   return URL.createObjectURL(new Blob([text], { type: "text/javascript" }));

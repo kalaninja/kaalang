@@ -100,7 +100,6 @@ struct Tile {
     drawn: bool,
 }
 
-/// Reads what one card shows of its type.
 fn read(card: &TypeCard<'_>) -> Result<Card, RenderError> {
     let ty = card.ty;
     let structure = structure(ty, card.relationships);

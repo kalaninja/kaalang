@@ -24,7 +24,6 @@ mod cards;
 mod ribbons;
 mod spans;
 
-/// An error produced while reading a flow or a type from a source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SourceError {
     /// The input is not a syntactically valid Rust file.
@@ -109,7 +108,6 @@ pub struct SourceFile<'a> {
     tokenized: &'a str,
     /// How many bytes of the given text precede the tokenized text.
     prefix: usize,
-    /// What the target compiles of the file.
     items: Vec<Item>,
     /// Where each function and type the file declares starts, at its first
     /// attribute, a `cfg` the target removed included, by where its name
@@ -351,7 +349,6 @@ impl<'a> SourceFile<'a> {
         })
     }
 
-    /// Every type declaration with its path within the file.
     fn type_items(&self) -> &[(String, Item)] {
         self.types.get_or_init(|| type_items(&self.items))
     }
@@ -362,8 +359,6 @@ impl<'a> SourceFile<'a> {
         collapsed_text(&self.tokenized[span.byte_range()])
     }
 
-    /// The generic parameters a declaration keeps for its target, each as
-    /// authored, between angle brackets, or nothing when it keeps none.
     fn generics(&self, generics: &Generics) -> String {
         if generics.params.is_empty() {
             return String::new();
@@ -376,7 +371,6 @@ impl<'a> SourceFile<'a> {
         format!("<{}>", parameters.join(", "))
     }
 
-    /// The authored flow header without its parameters and return type.
     fn header(&self, signature: &Signature) -> String {
         let start = signature.span().byte_range().start;
         // The generics follow from the parameters the target keeps.
@@ -525,7 +519,6 @@ fn type_bounds(item: &Item) -> Option<Range<usize>> {
     Some(start.byte_range().start..end.byte_range().end)
 }
 
-/// Records where a declaration named `name` starts, at its first attribute.
 fn record(attributes: &[Attribute], name: &Ident, starts: &mut BTreeMap<usize, usize>) {
     if let Some(first) = attributes.first() {
         starts.insert(
@@ -536,10 +529,10 @@ fn record(attributes: &[Attribute], name: &Ident, starts: &mut BTreeMap<usize, u
 }
 
 /// One flow of a source file, validated, with the text its diagram quotes from
-/// its signature. Only [`SourceFile::flow`] makes one.
+/// its signature. Only [`SourceFile::flow`] and [`SourceFile::flow_named`] make
+/// one.
 #[non_exhaustive]
 pub struct SourceFlow {
-    /// The function, with its path within the file.
     pub item: FlowItem,
     /// Its model, with each cycle as one node when the caller asked for that.
     pub model: SemanticModel,
@@ -564,7 +557,6 @@ pub struct SourceType {
     pub visibility: Visibility,
     /// The whole declaration, its attributes included.
     pub span: Span,
-    /// Its form, generics, description, and annotations.
     pub declaration: TypeDeclaration,
     /// The generic parameters the target keeps, each as authored, between
     /// angle brackets, or nothing when it keeps none.
@@ -611,7 +603,6 @@ pub fn line_and_column(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-/// Reports a flow-level error at its source position.
 fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
     let (line, column) = line_and_column(error.span());
     SourceError::InvalidFlow {
@@ -622,7 +613,6 @@ fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
     }
 }
 
-/// A type declaration's visibility.
 fn visibility(item: &Item) -> Option<&Visibility> {
     match item {
         Item::Struct(declaration) => Some(&declaration.vis),

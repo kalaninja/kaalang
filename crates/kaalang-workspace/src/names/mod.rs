@@ -110,7 +110,6 @@ pub struct TypeEntry {
 }
 
 impl Crate {
-    /// The Cargo target it compiles, as cards order it.
     #[must_use]
     pub fn target(&self) -> CargoTarget<'_> {
         CargoTarget {

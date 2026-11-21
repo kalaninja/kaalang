@@ -141,7 +141,6 @@ fn generics(generics: &mut Generics, holds: &mut Holds<'_>) {
     });
 }
 
-/// Keeps the elements of `list` whose attributes hold.
 fn kept<T, P: Default>(
     list: &mut Punctuated<T, P>,
     holds: &mut Holds<'_>,
@@ -251,7 +250,7 @@ pub(crate) fn cfg_attributes(attributes: &[Attribute]) -> Vec<Attribute> {
         .collect()
 }
 
-/// The comma-separated parts of `tokens`, without an empty trailing one.
+/// The comma-separated parts of `tokens`, without the empty ones.
 pub(crate) fn split_at_commas(tokens: TokenStream) -> Vec<TokenStream> {
     let mut parts = vec![TokenStream::new()];
     for token in tokens {

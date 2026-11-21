@@ -1,7 +1,6 @@
 use kaalang::kaa;
 
-/// The end node is captioned with the return type, so a long one has to wrap
-/// inside the node like any other label.
+/// A long return type wraps inside the end node like any other label.
 #[kaa]
 fn wrap_a_long_return_type(
     input: u8,

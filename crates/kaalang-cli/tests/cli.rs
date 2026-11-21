@@ -1198,7 +1198,6 @@ pub struct Payment {
 const LINUX: &str = "x86_64-unknown-linux-gnu";
 const WINDOWS: &str = "x86_64-pc-windows-msvc";
 
-/// Draws `item` from `directory` for `target` and returns the diagram.
 fn drawn(directory: &Path, item: &str, target: &str) -> String {
     let rendered = run(
         directory,
@@ -1212,7 +1211,6 @@ fn drawn(directory: &Path, item: &str, target: &str) -> String {
     fs::read_to_string(directory.join("drawn.svg")).expect("the diagram was written")
 }
 
-/// Asserts that running `line` from `directory` finds no such type or flow.
 fn not_found(directory: &Path, line: &str) {
     let failed = run(directory, line);
     assert!(!failed.status.success(), "{line}");

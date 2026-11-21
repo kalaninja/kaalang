@@ -17,7 +17,7 @@ import {
   workspaceTargets,
 } from "./metadata";
 
-/** Each crate reads its module tree with the set rust-analyzer gives its package. */
+/** Each crate reads its module tree with the set rust-analyzer gives its root. */
 export interface CargoRoot extends CargoTarget {
   cfg: string;
 }
@@ -52,7 +52,6 @@ let restricted = false;
 /** Whether a missing answer of rust-analyzer was logged since its last answer. */
 let unanalyzed = false;
 
-/** Whether `event` changes a setting the targets or the set depend on. */
 export function affectsCfg(event: vscode.ConfigurationChangeEvent): boolean {
   return SECTIONS.some((section) => event.affectsConfiguration(section));
 }
@@ -177,7 +176,6 @@ export async function analyzedCfg(
   return trusted(log) ? ((await analyzedCrates(file, log))[0]?.cfg ?? "") : "";
 }
 
-/** Whether the workspace is trusted; Restricted Mode is logged once. */
 function trusted(log: (line: string) => void): boolean {
   if (vscode.workspace.isTrusted) return true;
   if (!restricted) {

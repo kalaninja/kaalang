@@ -278,8 +278,6 @@ fn adjacent_labels_share_only_identical_ordered_captures() {
     }
 }
 
-/// A branch-local block written above a merge invents no hand-over and no
-/// capture.
 #[test]
 fn a_branch_local_block_before_a_merge_invents_no_label() {
     let (_, captions) = fixture(

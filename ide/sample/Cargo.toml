@@ -1,4 +1,3 @@
-# The workspace every supported IDE opens for manual checks; README.md lists them.
 [workspace]
 members = ["billing", "shop"]
 resolver = "3"

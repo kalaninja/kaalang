@@ -258,14 +258,9 @@ enum Question<'a, X> {
     },
 }
 
-/// Selects the flows `path` names among the files' declarations, as the
-/// compiler resolves a path to a function. A plain path names a free function,
-/// a trait's default method, or a type's inherent method, and when the type
-/// has none of that name, its method from each trait it implements. A
-/// qualified path names the method as the trait implements it for the type, or
-/// the trait's default method when the `impl` block keeps it. `names` answers
-/// how names resolve. Returns each match as its file's position and its
-/// position among that file's flows.
+/// Selects the flows `path` names among the files' declarations, by RFC 0009
+/// §6. `names` answers how names resolve. Returns each match as its file's
+/// position and its position among that file's flows.
 fn select<X: Copy>(
     path: &FlowPath,
     files: &[(X, &Declarations)],
@@ -663,7 +658,6 @@ fn arguments_match(
     })
 }
 
-/// Whether two syntax trees print the same tokens.
 fn same_tokens(left: &impl ToTokens, right: &impl ToTokens) -> bool {
     left.to_token_stream().to_string() == right.to_token_stream().to_string()
 }

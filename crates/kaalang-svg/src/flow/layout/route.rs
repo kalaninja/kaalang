@@ -58,7 +58,6 @@ pub(super) fn exit_anchor(scene: &Scene, exit: ExitId, destination: Destination)
 
 /// Realizes every iteration back edge: out of its tail, up the lane the arrangement
 /// chose beside its body, and horizontally into its entry junction.
-/// The lane sits just outside the body it climbs past.
 pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<Connection> {
     let mut drawn: Vec<(usize, i32)> = Vec::new();
     let mut connections = Vec::new();
@@ -432,7 +431,6 @@ fn touches(connection: &Connection, node: NodeId) -> bool {
         || connection.destination == Destination::Node(node)
 }
 
-/// Whether any segment of a route passes through a rectangle.
 pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
     points
         .windows(2)

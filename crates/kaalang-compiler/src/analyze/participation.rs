@@ -1,5 +1,5 @@
-//! Checks that the questions and choices deciding whether a block executes
-//! form a chain of nested selections rather than independent ones.
+//! Checks that the selectors deciding whether a block executes form a chain of
+//! nested selections rather than independent ones.
 //!
 //! Branch placement rejects independent selections even after disjoint partial
 //! merges. This pass checks capture ancestry and the order of normal cycle exits.
@@ -11,13 +11,8 @@ use syn::{Error, Result};
 use super::{comparison, frame::Frames};
 use crate::model::{BlockKind, Flow};
 
-/// For every computational block, the questions and choices that decide it. A
-/// question or choice decides a block when two executions select different
-/// branches of it, agree at every other question or choice they both run, and
-/// differ in whether the block participates. A question or choice on a path
-/// that one execution cut short runs in only one of the two and takes no part
-/// in the comparison. A repeating execution skips a block only when it neither
-/// encloses nor passes that block before its tail. Each block compares the
+/// For every block but the end, the selectors that decide it, as RFC 0001 §2
+/// defines deciding and RFC 0007 §4.1 refines it. Each block compares the
 /// selections its frame sees.
 pub(super) fn deciders(flow: &Flow, frames: &Frames<'_>) -> Vec<BTreeSet<usize>> {
     let mut found = vec![BTreeSet::new(); flow.blocks.len() - 1];
@@ -181,8 +176,7 @@ mod tests {
         }
     }
 
-    /// The questions deciding each computational block of one fixture, in
-    /// authored order.
+    /// The selectors deciding each block of one fixture, in authored order.
     fn fixture(source: &str, flow: &str) -> Vec<Vec<usize>> {
         let model = build(&crate::tests::fixture(source, flow)).expect("the fixture is valid");
         deciders(

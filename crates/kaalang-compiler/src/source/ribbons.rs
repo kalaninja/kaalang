@@ -12,11 +12,10 @@ use crate::{
     topology::{Connection, ExitId, NodeId, NodeKind, Source, Vertex},
 };
 
-/// The ribbon of each drawn connection and junction of one local flow: the
-/// wires in scope there that a block further along captures. A wire stands as
-/// its producer; once alternative producers meet, the first of them stands for
-/// the merged wire. A connection that carries different wires in different
-/// executions carries them all.
+/// The ribbon of each drawn connection and junction of one local flow. A wire
+/// stands as its producer; once alternative producers meet, the first of them
+/// stands for the merged wire. A connection that carries different wires in
+/// different executions carries them all.
 pub struct Ribbons {
     /// Per connection, in [`Topology::connections`] order, in source order.
     pub connections: Vec<Vec<ProducerId>>,
@@ -28,8 +27,6 @@ pub struct Ribbons {
 }
 
 impl SemanticModel {
-    /// The ribbon of each connection and junction this model draws.
-    ///
     /// A wire rides from the exit that provides it towards every block that
     /// captures it, as far as the last such capture; a borrow does not end it.
     /// So one provided before a split reaches every branch that captures it,
@@ -311,7 +308,6 @@ fn or(into: &mut [u64], from: &[u64]) {
     }
 }
 
-/// Wires captured at each vertex.
 type Captures<'a> = BTreeMap<Vertex, BTreeSet<&'a Ident>>;
 
 /// The wires each vertex captures, borrowed or not, from every edge that
@@ -391,7 +387,8 @@ fn captured(model: &SemanticModel) -> (Captures<'_>, Captures<'_>) {
 }
 
 /// The edges in an order where each connection follows those entering the
-/// vertex it leaves. Back edges, which close cycles, come last.
+/// vertex it leaves. Back edges and a for cycle's undrawn links, which close
+/// cycles, come last.
 fn forward(before: &[Vec<usize>], after: &[Vec<usize>], connections: usize) -> Vec<usize> {
     let mut waiting: Vec<usize> = before
         .iter()

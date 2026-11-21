@@ -16,7 +16,6 @@ pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
     )
 }
 
-/// A choice owns the `#[kaa::case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let block_description = description(syntax.kind_attribute, "kaalang block")?;
     let cases = syntax.accept_companions(&["case"])?;

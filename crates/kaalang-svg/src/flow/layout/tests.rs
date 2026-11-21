@@ -1520,8 +1520,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     assert_eq!((drawn, refused), (1095, 1740));
 }
 
-/// Every generated cycle with two outputs the model accepts renders, expanded
-/// and collapsed.
+/// Over generated cycles with two outputs.
 #[test]
 fn every_accepted_alternative_output_shape_renders_in_both_views() {
     let mut drawn = 0;

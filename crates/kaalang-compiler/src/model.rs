@@ -11,20 +11,15 @@ use crate::{
 /// Semantic analysis and lowering plan, before diagram construction.
 #[derive(Clone)]
 pub struct Analysis {
-    /// The authored flow function name.
     pub name: Ident,
     pub parameters: Vec<FnArg>,
     pub return_type: ReturnType,
     /// The resolved blocks and wires, ending with the implicit completion boundary.
     pub flow: Flow,
-    /// The verified lowering plan.
     pub execution_plan: ExecutionPlan,
-    /// Structural summaries in [`Execution`]'s derived order. Accessing the
-    /// complete slice enumerates all executions on demand.
     pub executions: Executions,
     /// Every continuation group, ordered by branching block, then branch list.
     pub convergence_groups: Vec<ConvergenceGroup>,
-    /// Implicit junctions of equally named alternative outputs, before captures.
     pub merges: Vec<WireMerge>,
     /// Other locally analyzed parts of a staged flow, in declaration order.
     pub stages: Vec<StageAnalysis>,
@@ -43,7 +38,6 @@ pub struct StageAnalysis {
     pub span: Span,
 }
 
-/// An analyzed flow with a verified diagram arrangement. See [`Analysis`].
 pub struct SemanticModel {
     pub analysis: Analysis,
     pub topology: Topology,
@@ -92,7 +86,8 @@ pub struct Block {
     /// The authored captures, in order. A loop cycle's are its optional gate and
     /// a for cycle's its header captures, then its derived inputs.
     pub inputs: Vec<Input>,
-    /// The authored body normalized to a plain block expression.
+    /// The authored body, normalized to a plain block expression; a call keeps
+    /// its one application and a return its value.
     pub body: Expr,
     pub span: Span,
     /// The enclosing cycle block, if this block belongs to an iteration.
@@ -192,7 +187,6 @@ impl Block {
             .ident
     }
 
-    /// The callee path as authored.
     fn callee_path(&self) -> &ExprPath {
         let Expr::Call(application) = &self.body else {
             unreachable!("parse::call validates a call body as one application")
@@ -249,7 +243,6 @@ const fn delimiters(delimiter: Delimiter) -> (&'static str, &'static str) {
     }
 }
 
-/// One positional branch of a question.
 #[derive(Clone)]
 pub struct QuestionBranch {
     /// Whether a true question body selects this branch.
@@ -257,7 +250,6 @@ pub struct QuestionBranch {
     pub description: Option<String>,
 }
 
-/// One consuming or borrowing block input.
 #[derive(Clone)]
 pub struct Input {
     /// Whether the input borrows the wire rather than binding its value.
@@ -525,14 +517,12 @@ impl Flow {
     }
 }
 
-/// One occurrence that provides a wire: a flow input or one block output.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ProducerId {
     FlowInput(usize),
     BlockOutput { block: usize, output: usize },
 }
 
-/// One block input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CaptureId {
     pub block: usize,
@@ -555,7 +545,6 @@ pub struct BranchSelection {
     pub branch: usize,
 }
 
-/// A finite execution summary with at most one iteration per cycle.
 /// Start is implicit; `Return` reaches end. Blocks run in source order.
 /// All vectors are sorted and deduplicated; field order defines the derived order.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -638,7 +627,7 @@ pub enum ExecutionOutcome {
 }
 
 impl Execution {
-    /// Reports whether an authored block runs in this execution.
+    /// Whether the block runs in this execution.
     #[must_use]
     pub fn participates(&self, block: usize) -> bool {
         self.blocks.binary_search(&block).is_ok()
@@ -654,9 +643,8 @@ impl Execution {
     }
 }
 
-/// A dependency-derived shared continuation of one question, choice, or cycle
-/// with several outputs.
-/// This projection does not prescribe the scopes or joins used by lowering.
+/// Derived from dependencies; it does not prescribe the scopes or joins used by
+/// lowering.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConvergenceGroup {
     pub branching_block: usize,
@@ -667,9 +655,6 @@ pub struct ConvergenceGroup {
     pub continuation: Vec<usize>,
 }
 
-/// One implicit convergence point for a logical wire. Repeated output names
-/// always join here before any consumer captures the wire. This junction is
-/// neither an authored block nor a new producer occurrence.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WireMerge {
     pub wire: Ident,

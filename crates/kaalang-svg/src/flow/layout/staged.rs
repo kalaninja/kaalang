@@ -162,7 +162,6 @@ fn first_body_y(parts: &[Scene], direct_entry: Option<usize>) -> i32 {
     scene.rows(&super::vertical_gaps(scene)).top[1] + shift
 }
 
-/// The stage transitions one part draws.
 fn transitions(scene: &Scene) -> impl Iterator<Item = &super::Node> {
     scene
         .topology

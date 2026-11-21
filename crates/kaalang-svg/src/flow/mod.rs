@@ -10,7 +10,6 @@ pub(crate) mod layout;
 mod navigation;
 mod svg;
 
-/// Renders a flow and lists its hotspots.
 pub(crate) fn render(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderError> {
     let SourceFlow {
         item,

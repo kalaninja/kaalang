@@ -222,7 +222,6 @@ pub(super) fn exports(blocks: &mut Vec<Block>, header: usize) -> Result<()> {
     Ok(())
 }
 
-/// A cycle completes by producing a declared output, never by an authored break.
 pub(super) fn structural_break(expression: &ExprBreak) -> Error {
     Error::new_spanned(
         expression,

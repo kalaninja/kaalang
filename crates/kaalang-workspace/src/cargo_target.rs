@@ -32,7 +32,7 @@ pub fn crate_name(target: &str) -> String {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CargoTarget<'a> {
     pub package: &'a str,
-    /// Library and binaries, tests, examples, then benches.
+    /// As [`target_group`] numbers it.
     pub group: u8,
     pub name: &'a str,
     pub root: &'a Path,

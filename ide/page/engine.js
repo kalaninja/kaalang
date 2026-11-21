@@ -24,7 +24,7 @@ export class Crash extends Error {}
  */
 
 /**
- * @typedef {object} Card One card of a type diagram.
+ * @typedef {object} Card
  * @property {number} source
  * @property {string} path The type's path within its text.
  * @property {number} start Where its name starts.
@@ -32,7 +32,7 @@ export class Crash extends Error {}
  */
 
 /**
- * @typedef {object} Wire One wire of a ribbon.
+ * @typedef {object} Wire
  * @property {string} name
  * @property {number} start Where its producer binds it.
  * @property {number} end
@@ -73,7 +73,6 @@ export function createEngine(wasm) {
       return;
     }
     if ("crash" in data) {
-      // Fails this call with every other the worker held.
       end(new Crash(data.crash));
       return;
     }
@@ -154,7 +153,6 @@ export function createEngine(wasm) {
   };
 }
 
-/** Fetches and compiles the module at `url`. */
 async function compile(url) {
   const response = await fetch(url);
   if (!response.ok) {

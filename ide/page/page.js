@@ -1,9 +1,10 @@
 // The page every supported IDE shows: the flow or the type at the editor's
 // cursor, drawn again as the text is typed, and the ribbon of a clicked
 // connection or merge.
-// A host gives the text, the cursor, and what the editor's engine knows: the
-// wires' types, the references to a type, and its module. It carries out what a
-// click asks for and never touches the module.
+// A host gives the text, the cursor, where each text stands in the module tree,
+// and what the editor's engine knows: the wires' types and the references to a
+// type. It carries out what a click asks for and never touches the page's
+// bindings.
 
 import { Crash, createEngine } from "./engine.js";
 import { carryingAt, innermost, request, wires } from "./hotspots.js";
@@ -371,7 +372,6 @@ export function start(root, host) {
       popup.style.top = `${y}px`;
     }
     root.append(popup);
-    // The first name takes the focus, or the list itself when it names none.
     popup.tabIndex = -1;
     (popup.querySelector("button") ?? popup).focus();
     if (listed.length > 0) {
@@ -502,7 +502,7 @@ export function start(root, host) {
   };
 }
 
-/** Fit the clickable source ranges to the glyphs the browser actually drew. */
+/** Fit the clickable source ranges to the glyphs the browser drew. */
 function measureFieldText(svg, outlines) {
   if (!svg.getClientRects().length) return false;
   const lines = svg.querySelectorAll(".field-type > tspan[x]");

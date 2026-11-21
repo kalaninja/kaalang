@@ -1,7 +1,6 @@
 //! Geometry predicates shared by abstract-grid and pixel verification.
 //! Coordinates use downward-growing `y`.
 
-/// One point of an orthogonal plane.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Point {
     pub x: i32,

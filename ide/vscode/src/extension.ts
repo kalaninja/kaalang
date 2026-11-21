@@ -2,8 +2,7 @@
 // and does for the page what it cannot: hands it the text and the cursor of the
 // workspace's Rust document it follows, with the cfg set rust-analyzer sees it
 // under, carries out a click with the editor's own actions, reads a wire's type
-// and a type's module from the editor's hover, and finds the references to a
-// type.
+// from the editor's hover, and finds the references to a type.
 
 import * as path from "node:path";
 import * as vscode from "vscode";
@@ -84,7 +83,6 @@ export function activate(context: vscode.ExtensionContext): void {
     if (moved) void sendCfg();
   }
 
-  /** Hands the page the cfg set of the followed document. */
   async function sendCfg(): Promise<void> {
     if (panel === undefined || source === undefined) {
       return;
@@ -324,9 +322,9 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 /**
- * The webview's page. A worker must come from the page's own origin and the
- * extension's files come from another, so `webview.js` loads the worker and the
- * bindings' glue as blob URLs; the SVG brings its own `<style>`.
+ * The webview's page. Its policy admits the blob URLs `webview.js` loads the
+ * worker and the bindings' glue as, and inline styles: the SVG brings its own
+ * `<style>`.
  */
 function html(webview: vscode.Webview, out: vscode.Uri): string {
   const asset = (path: string) =>

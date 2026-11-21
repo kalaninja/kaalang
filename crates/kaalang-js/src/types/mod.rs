@@ -96,7 +96,6 @@ impl<'a> Source<'a> {
     }
 }
 
-/// The answer.
 #[derive(Serialize)]
 struct Drawn {
     svg: String,

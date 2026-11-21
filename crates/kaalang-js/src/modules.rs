@@ -97,7 +97,6 @@ struct Declared {
     refers: bool,
 }
 
-/// What the trees read, kept between calls.
 #[derive(Default)]
 struct Cache {
     /// By canonical path, then by set and directory.

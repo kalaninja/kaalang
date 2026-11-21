@@ -128,8 +128,8 @@ pub(crate) fn walked(function: &syn::ItemFn) -> Option<(Flow, Vec<Execution>)> {
     Some((flow, executions))
 }
 
-/// The one question or choice that both executions run with different
-/// outcomes, when every other one they both run agrees.
+/// The one selector that both executions run with different outcomes, when
+/// every other one they both run agrees.
 ///
 /// Walks the two selection lists together: each is sorted by block, and an
 /// execution summary runs every block at most once, so a block appears in one
@@ -526,7 +526,7 @@ pub(crate) fn captured(flow: &Flow, mut captured: impl FnMut(ProducerId) -> bool
             {
                 continue;
             }
-            // No fixture reaches the question or choice arm: an uncaptured
+            // No fixture reaches this error for a question or choice: an uncaptured
             // branch output also leaves its execution without a root return,
             // which the walk reports first. Kept because that is not proven.
             // The hidden choice of a for cycle produces the item the author named.
@@ -548,7 +548,7 @@ pub(crate) fn captured(flow: &Flow, mut captured: impl FnMut(ProducerId) -> bool
 /// consumers may be conditional.
 fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -> Result<()> {
     // A repeated name is consumed by its implicit merge. Downstream captures
-    // refer to the merged value, not to a raw question or choice output.
+    // refer to the merged value, not to a raw branch output.
     let merged_wires = merges
         .iter()
         .map(|merge| &merge.wire)
@@ -601,7 +601,6 @@ fn branch_outputs(flow: &Flow, executions: &[Execution], merges: &[WireMerge]) -
     Ok(())
 }
 
-/// An execution produced the wire `name` a second time.
 pub(crate) fn produced_twice(name: &Ident) -> Error {
     Error::new(
         name.span(),

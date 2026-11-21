@@ -161,7 +161,6 @@ impl Bindings {
         })
     }
 
-    /// Declares one inferred gate per gated wire.
     fn gate_declarations(&self) -> TokenStream2 {
         let mut gates = self.gates.values().collect::<Vec<_>>();
         gates.sort();

@@ -54,7 +54,7 @@ pub fn draw_flow(
 /// its path within its text and the range of its name. A `source` is 0 for
 /// `text` and n for the nth file of `context`, whose ranges count its own text.
 /// A path's `fieldText` gives its field-type line and UTF-16 range on that
-/// line.
+/// line; a target whose relationship line reaches the focus has `focus: true`.
 ///
 /// `context` is JSON, empty for none. The focus's text and each entry of
 /// `files` carry the editor's reference `offsets` and, when known, the text's

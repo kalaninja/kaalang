@@ -1,14 +1,4 @@
-//! Routes never cross, and run inside a card only along a groove. An incoming
-//! card lists its tiles one under another, so each reaches the card's right
-//! side: a line starts there, level with its target, and joins its column's
-//! trunk, which drops into the focus. The focus sets a struct's tiles side
-//! by side, each row widened to the card's edge, and is widened to reach under
-//! every trunk. Its own lines leave each tile where it touches the card's edge:
-//! a struct's from the bottom edge into one bus below the card, a union's from
-//! the right side. An enum variant's tiles do not all reach an edge, so each
-//! variant ends in a groove, used or not, whose bus leaves the focus through a
-//! port on its right side. All of them join one trunk there, which climbs and
-//! arrives at the focus's top edge right of every incoming line.
+//! Lays out a type diagram by RFC 0009 §4.2 and §4.3. Routes never cross.
 
 use std::num::NonZeroUsize;
 
@@ -68,7 +58,7 @@ const CORRIDOR: i32 = 48;
 pub(super) struct TypeScene {
     pub(super) width: i32,
     pub(super) height: i32,
-    /// The incoming cards in source order, then the focus.
+    /// The incoming cards in the given order, then the focus.
     pub(super) cards: Vec<CardShape>,
     /// Where the focus stands among `cards`: last.
     pub(super) focus: usize,
@@ -312,7 +302,7 @@ struct Row {
     right: i32,
 }
 
-/// Sets the incoming cards side by side in source order, each group from a new
+/// Sets the incoming cards side by side in the given order, each group from a new
 /// row, wrapping into further rows after `columns` cards, or else into rows no
 /// wider than `limit`. The cards of a column share its width and one trunk,
 /// which drops through the gap right of the column into the focus.

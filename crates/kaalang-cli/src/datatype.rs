@@ -124,10 +124,8 @@ fn relationships(
     Ok(drawn)
 }
 
-/// Renders the focus under its incoming types in diagram order. A file that
-/// several modules include gives each of them its own types, as rustc compiles
-/// them. Each package's library and binaries, its tests, its examples, and its
-/// benches start a new row.
+/// Renders the focus under its incoming types, in the order and rows of
+/// RFC 0009 §4.3.
 fn render(
     crates: &[Crate],
     focus: TypeRef,
@@ -260,10 +258,8 @@ fn focus(
     }
 }
 
-/// The crates in diagram order: `first`, the rest of its package, then the
-/// other packages by name. Within a package, its library and binaries come
-/// first, then its tests, examples, and benches, each by name and then by the
-/// path of its root.
+/// The crates in the card order of RFC 0009 §4.3, `first` being the focus
+/// type's.
 fn order(crates: &[Crate], first: usize) -> Vec<usize> {
     let focus = crates.get(first).map(|krate| krate.target());
     let mut order: Vec<usize> = (0..crates.len()).collect();

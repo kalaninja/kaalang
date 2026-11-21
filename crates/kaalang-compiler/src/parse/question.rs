@@ -12,7 +12,6 @@ pub(super) fn answer_before_question(attribute: &Attribute) -> Error {
     )
 }
 
-/// A question branches on a boolean, so it declares a yes and a no output.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let description = description(syntax.kind_attribute, "kaalang block")?;
     let question_branches = answers(&syntax)?;

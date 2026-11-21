@@ -65,10 +65,8 @@ fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
         .collect()
 }
 
-/// How a capture of the receiver is spelled, and the wire it names: the
-/// receiver's own spelling. A receiver taken by reference borrows, however it
-/// is spelled; every other receiver, including `mut self` and `self: Box<Self>`,
-/// is a value like `mut name: T` is.
+/// How RFC 0001 §5 spells a capture of the receiver, with whether it borrows
+/// and whether mutably.
 pub(crate) fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
     let borrows = match &receiver.kind {
         ReceiverKind::Reference(_, _, mutability) => Some(mutability.is_some()),
@@ -91,8 +89,7 @@ fn body_captures(flow: &Flow, function: &ItemFn) -> Result<()> {
     receiver_captures(flow, function.sig.receiver())
 }
 
-/// Checks every use of the receiver. A capture names a receiver and is spelled
-/// the way the signature declares it; a body that reads `self` captures it.
+/// Checks every use of the receiver against RFC 0001 §5.
 ///
 /// The receiver binds itself, so a capture cannot borrow or move it into
 /// anything else and nothing can put the name out of a body's reach. This walk
@@ -469,7 +466,6 @@ impl<'a> BlockSyntax<'a> {
     }
 }
 
-/// A block body carries neither attributes nor a label.
 fn decorated_body(body: impl ToTokens) -> Error {
     Error::new_spanned(
         body,
@@ -508,9 +504,8 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
                     "kaalang blocks do not support `let else`",
                 ));
             }
-            // A block that captures nothing may omit its empty capture list:
-            // `let output = body;` is `let output = || body;`. A closure or
-            // body written by another macro arrives in an invisible group.
+            // A closure or body written by another macro arrives in an
+            // invisible group.
             let closure = match ungrouped(initializer.expr.as_ref()) {
                 Expr::Closure(closure) if !closure.attrs.is_empty() => {
                     return Err(Error::new_spanned(
@@ -973,7 +968,6 @@ pub(crate) fn literal_text(literal: &LitStr) -> String {
     }
 }
 
-/// Extracts an identifier binding, optionally permitting an authored `mut`.
 fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident> {
     match pattern {
         Pat::Ident(binding)

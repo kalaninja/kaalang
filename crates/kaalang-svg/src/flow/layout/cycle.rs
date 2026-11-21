@@ -56,7 +56,7 @@ pub(super) fn dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     block_dimensions(label, NODE_LABEL_WIDTH - MARKER_SPACE, NODE_MIN_HEIGHT)
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines)] // One cohesive pass bounds each cycle region and fits its caption.
 pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
     let point = |vertex| match vertex {
         Vertex::Node(node) => Some(scene.top_anchor(node)),
@@ -301,7 +301,7 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
     wanted
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines)] // One loop holds each region to every boundary rule.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     if scene.topology.cycle_boundaries.len() != scene.cycle_regions.len() {
         return Some("a cycle boundary is missing from the diagram".to_owned());

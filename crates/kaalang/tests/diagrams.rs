@@ -136,10 +136,8 @@ fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
 }
 
 /// One diagram for every type of a fixture without flows, as the fixture
-/// target compiles it, named after the type, except the first: the subject of
-/// the `case` is named after it. A type's incoming types are those in the same
-/// file whose `refer` names it bare, a convention that stands in for the
-/// resolver of `cargo kaalang`.
+/// target compiles it. Incoming types are matched by the bare name a `refer`
+/// writes, standing in for the resolver of `cargo kaalang`.
 fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(String, String)> {
     let fixture = fixture.display();
     let types: Vec<SourceType> = kaalang_compiler::type_items(file.items())

@@ -1,4 +1,4 @@
-//! Builds a choice's nested lowering when its joins fit nested case ranges.
+//! Builds a choice's nested lowering when its joins are disjoint or nested.
 
 use std::collections::BTreeSet;
 
@@ -19,7 +19,7 @@ pub(crate) fn dispatch(index: usize, branches: Vec<Branch>, joins: Vec<Join>) ->
 /// selection inside one case may send its routes to different joins, and a
 /// repeat of an inner cycle reaches only joins it passes before its tail.
 /// Every join wraps the whole dispatch, so case order does not constrain
-/// lowering. A false answer here marks a compiler bug.
+/// lowering.
 pub(super) fn joinable(joins: &[(BTreeSet<usize>, BTreeSet<usize>)]) -> bool {
     let apart = |(taken, _): &(BTreeSet<usize>, BTreeSet<usize>),
                  (other, reaching): &(BTreeSet<usize>, BTreeSet<usize>)| {

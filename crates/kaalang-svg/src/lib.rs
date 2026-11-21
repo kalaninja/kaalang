@@ -11,7 +11,6 @@ use kaalang_compiler::{SourceFlow, SourceType, line_and_column};
 use proc_macro2::Span;
 use syn::Visibility;
 
-/// Appends one line to the SVG.
 macro_rules! emit {
     ($svg:expr, $($argument:tt)*) => {
         writeln!($svg, $($argument)*).expect("writing to a String cannot fail")
@@ -32,7 +31,6 @@ mod flow;
 mod markup;
 mod text;
 
-/// Presentation options for one rendered type diagram.
 #[derive(Clone, Copy, Default)]
 pub struct TypeOptions {
     /// How many incoming cards a row holds. Without it, a row holds as many
@@ -40,7 +38,6 @@ pub struct TypeOptions {
     pub columns: Option<NonZeroUsize>,
 }
 
-/// An error produced while rendering a kaalang flow or type diagram.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RenderError {
     /// A verified arrangement could not be realized in pixels. This is a
@@ -85,9 +82,7 @@ impl fmt::Display for RenderError {
 impl Error for RenderError {}
 
 /// Renders a flow as it was read from its source file. Returns the SVG and its
-/// hotspots: every node that draws a source construct, every drawn cycle
-/// boundary, every wire name in a label, and every segment of a connection and
-/// every merge, with its ribbon.
+/// hotspots.
 ///
 /// # Errors
 ///
@@ -100,8 +95,8 @@ pub fn render_flow(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderErr
     flow::render(flow)
 }
 
-/// What a [`Hotspot`] shows. It states what the drawing stands for and leaves
-/// what a click does to the reader.
+/// States what the drawing stands for and leaves what a click does to the
+/// reader.
 #[derive(Clone, Debug)]
 pub enum HotspotKind {
     /// A node, or a drawn cycle boundary. Its span is the source the node
@@ -208,7 +203,6 @@ pub(crate) fn render_path(
     render_flow(flow).map(|(svg, _)| svg)
 }
 
-/// One card of a type diagram.
 #[derive(Clone, Copy)]
 pub struct TypeCard<'a> {
     /// The type the card draws, as it was read from the file that declares it.
@@ -225,7 +219,6 @@ pub struct TypeCard<'a> {
 /// A card the renderer could not draw, numbered as in its hotspots.
 #[derive(Debug)]
 pub struct CardError {
-    /// Zero for the focus, then the incoming cards in their given order.
     pub card: usize,
     pub error: RenderError,
 }
@@ -245,16 +238,13 @@ impl Error for CardError {
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
 /// `groups` gives each incoming card's group: a card of another group than the
-/// card before it starts a new row, and a group wraps into further rows after
-/// `options.columns` cards, or where it would grow wider than a screen, or than
-/// the focus when it is wider. Returns the SVG and its hotspots: every path a
-/// tile's type names, every relationship's target, and every incoming card's
-/// header.
+/// card before it starts a new row. Returns the SVG and its hotspots.
 ///
 /// # Errors
 ///
-/// Returns the first [`CardError`] in drawing order when a card's text
-/// contains a character XML 1.0 cannot represent.
+/// Returns a [`CardError`] for the focus card, or else for the first incoming
+/// card in the given order, whose text contains a character XML 1.0 cannot
+/// represent.
 ///
 /// # Panics
 ///
@@ -400,7 +390,6 @@ mod tests {
         );
     }
 
-    /// Renders the flow at `path` within `source`, read for no target.
     fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
         render_path(source, path, false)
     }
@@ -514,8 +503,6 @@ mod tests {
         );
     }
 
-    /// A character reference decodes before the diagram is written, so the
-    /// character it names is validated too.
     #[test]
     fn reports_an_invalid_character_a_reference_introduces() {
         let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";

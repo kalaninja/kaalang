@@ -259,7 +259,6 @@ pub(super) fn project_for_end(
     });
 }
 
-/// Orders everything in each for body before its for-end.
 pub(super) fn precede_for_ends(flow: &Flow, topology: &mut Topology) {
     for position in 0..topology.cycle_boundaries.len() {
         let boundary = &topology.cycle_boundaries[position];
@@ -414,8 +413,6 @@ fn replace_junctions(topology: &mut Topology, replacements: &BTreeMap<usize, Sou
     topology.index();
 }
 
-/// Follow the side occupied by the repeating routes of the first selection.
-/// Without a common rightmost branch, the back edge starts on the left contour.
 pub(super) fn prefer_left(model: &Analyzed<'_>, header: usize) -> bool {
     if let Some(symbolic) = model.symbolic {
         return symbolic.clone().prefer_left(model.flow, header);

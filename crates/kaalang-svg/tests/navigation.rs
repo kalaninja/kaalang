@@ -135,7 +135,6 @@ fn bare(name: &str) -> &str {
     name.strip_prefix("mut ").unwrap_or(name)
 }
 
-/// What a hotspot shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Kind {
     Node,
@@ -266,7 +265,6 @@ fn assert_ribbons_match_the_drawing(what: &str, source: &str, drawn: &Drawn, hot
     }
 }
 
-/// Checks every hotspot of one diagram against what its SVG draws.
 fn assert_hotspots_match_the_drawing(what: &str, source: &str, svg: &str, hotspots: &[Located]) {
     let drawn = drawn(svg);
     for hotspot in hotspots {
@@ -794,7 +792,7 @@ fn count_to(limit: usize) -> usize {
     );
 }
 
-/// The source under each code hotspot, in source order.
+/// The source under each node hotspot, in source order.
 fn code<'a>(source: &'a str, hotspots: &[Located]) -> Vec<&'a str> {
     let mut code: Vec<_> = hotspots
         .iter()

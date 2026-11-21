@@ -19,7 +19,6 @@ fn render_view(source: &str, path: &str, collapse_cycles: bool) -> Result<String
         .map(|(svg, _)| svg)
 }
 
-/// Renders the flow at `path` within `source`, read for no target.
 fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
     render_view(source, path, false)
 }
@@ -413,7 +412,6 @@ fn quoted<'a>(line: &'a str, name: &str) -> &'a str {
         .0
 }
 
-/// The first line of `svg` that contains `needle`.
 fn first_line<'a>(svg: &'a str, needle: &str) -> &'a str {
     svg.lines()
         .find(|line| line.contains(needle))

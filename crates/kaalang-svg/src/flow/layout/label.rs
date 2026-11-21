@@ -33,7 +33,6 @@ const BRANCH_RISE: i32 = BRANCH_LABEL_FONT / 2 + CONNECTION_LABEL_HALO;
 const DROP: i32 = 18;
 /// Drop of a larger question-branch description below its exit.
 const BRANCH_DROP: i32 = 20;
-/// What separates the names of a wire label.
 const NAME_SEPARATOR: &str = ", ";
 
 /// Where a label's lines stack against the point it marks.
@@ -197,7 +196,7 @@ fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
         .map_or(anchor, |x| Point { x, y: anchor.y })
 }
 
-/// The label one exit draws: its branch description, or else its handover
+/// The label one exit draws: its branch description, or else its hand-over
 /// unless a merge or a shared capture label already names it.
 fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label> {
     let anchor = exit_label_anchor(scene, exit);
@@ -382,8 +381,6 @@ pub(crate) fn name_rects(label: &Label, names: &[String]) -> Vec<(usize, (i32, i
 }
 
 /// Checks final labels against the canvas, nodes, panel, and back edges.
-/// Intermediate transformations use `clearance`: later steps can still move
-/// rails away from labels and translate the scene inside the canvas.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     clearance(scene)
         .or_else(|| {

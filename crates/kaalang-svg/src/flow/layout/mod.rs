@@ -75,11 +75,9 @@ pub(crate) const BRANCH_LINE_HEIGHT: i32 = 18;
 pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
 /// Distance between two horizontal runs sharing one row gap.
 const LANE: i32 = 20;
-/// Text budget inside a rectangular node.
 pub(crate) const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 /// Branch icons lose horizontal space to their slanted sides.
 const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * BRANCH_LABEL_PADDING_X;
-/// Text budget inside a case icon.
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 
 #[derive(Clone, Default)]
@@ -106,7 +104,6 @@ pub(crate) struct Scene {
     /// The vertices every expanded cycle boundary holds, including cycles
     /// that have no repeating execution and therefore no back edge.
     region_bodies: Vec<BTreeSet<Vertex>>,
-    /// The strings its nodes, exits, and junctions show.
     pub(crate) captions: Rc<Captions>,
     pub(crate) nodes: Vec<Node>,
     pub(crate) parameters: Option<ParameterPanel>,
@@ -137,7 +134,6 @@ impl CycleRegion {
         (self.left, self.top, self.right, self.bottom)
     }
 
-    /// The bounds grown by `by` on every side.
     pub(super) const fn padded(&self, by: i32) -> (i32, i32, i32, i32) {
         (
             self.left - by,
@@ -194,7 +190,6 @@ pub(crate) struct Label {
 
 #[derive(Clone, Copy)]
 pub(crate) enum LabelKind {
-    /// The names of one wire list.
     Wire(WireList),
     Branch,
 }
@@ -424,8 +419,7 @@ enum Blocked {
     Narrow(i32),
 }
 
-/// Checks that pixels preserve the arrangement's rows, columns, ports, and
-/// contour anchors after translation. Crossing-free geometry alone cannot
+/// Checks correspondence after translation: crossing-free geometry alone cannot
 /// detect a swapped column or a disconnected port.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
     let gaps = vertical_gaps(scene);
@@ -756,14 +750,12 @@ impl Scene {
         }
     }
 
-    /// The rank the arrangement gave one vertex.
     pub(super) fn rank(&self, vertex: Vertex) -> usize {
         self.arrangement.rank[&vertex]
     }
 
     /// Column centre under a strictly increasing map. Content columns reserve
-    /// measured widths; routing-only columns need one lane. Each gap grows only
-    /// for the back edge reaches that enter it.
+    /// measured widths.
     pub(super) fn column_x(&self, column: i32) -> i32 {
         let distance: i32 = (0.min(column)..0.max(column))
             .map(|at| self.column_gap(at))
