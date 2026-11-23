@@ -77,3 +77,13 @@ test("a module path keeps its dot segment after a directory symlink until a chan
   unsaved.set(physical, "struct Unsaved;");
   assert.equal(host.read(physical), "struct Unsaved;");
 });
+
+test("a saved file is read without its byte order mark", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "kaalang-tree-host-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const saved = path.join(root, "lib.rs");
+  await fs.writeFile(saved, "\uFEFFstruct Saved;");
+  const { treeHost } = require("../out/module-sources.js");
+  const host = treeHost(new Map(), new Map(), new Map());
+  assert.equal(host.read(saved), "struct Saved;");
+});

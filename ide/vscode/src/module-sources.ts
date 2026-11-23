@@ -169,7 +169,9 @@ export function treeHost(
       consulted.set(entry.physical, entry.stamp);
       return entry.canonical;
     },
-    read: (file: string) => unsaved.get(file) ?? readFileSync(file, "utf8"),
+    // The editor's text, in which the page counts offsets, has no byte order mark.
+    read: (file: string) =>
+      unsaved.get(file) ?? readFileSync(file, "utf8").replace(/^\uFEFF/, ""),
   };
 }
 
