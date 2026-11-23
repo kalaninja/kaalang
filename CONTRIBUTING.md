@@ -78,10 +78,10 @@ Before committing:
   baseline: it compares the construction with the independent procedure over the
   whole declared domain, and the two analysis paths over every generated cycle
   shape; no other check reaches the nested cycle shapes in bulk.
-- After a change to the IDE page, try it with `just ide browser`; every check on
-  its `checks.html` must pass.
+- After a change to the IDE page, try it with `just ide page-open`; every check
+  on its `checks.html` must pass.
 - After a change to the VS Code extension, or to the page it shows, check the
-  cases of `ide/sample/README.md` with `just ide vscode`.
+  cases of `ide/sample/README.md` with `just ide vscode-open`.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A

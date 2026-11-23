@@ -39,7 +39,8 @@
   `ide/page/bench/` tries it in a browser with a stub host, and `checks.html`
   there plays its races.
 - `ide/sample/` is the Cargo workspace every supported IDE opens for manual
-  checks; its README lists the cases, and `just ide sample` keeps it building.
+  checks; its README lists the cases, and `just ide sample-check` keeps it
+  building.
 - `ide/vscode/` is the VS Code extension, in TypeScript: it shows the page in a
   webview, in place of a Rust editor or beside it.
 
@@ -47,10 +48,10 @@ Recipes live in `justfile` and `just/` and run from the repository root with
 [just](https://just.systems); `just` and `just <module>` list them. Every recipe
 runs in a Docker image built from `Dockerfile`, so the host needs only just and
 Docker, but for two: the release recipes run cargo on the host for its crates.io
-credentials, and `just ide vscode` opens the host's VS Code. The images install
-the tools pinned in `mise/` with [mise](https://mise.jdx.dev). A recipe rebuilds
-its image when those files change. Downloaded crates and npm packages stay in
-the ignored `.cache/`, and the VS Code extension's dependencies in
+credentials, and `just ide vscode-open` opens the host's VS Code. The images
+install the tools pinned in `mise/` with [mise](https://mise.jdx.dev). A recipe
+rebuilds its image when those files change. Downloaded crates and npm packages
+stay in the ignored `.cache/`, and the VS Code extension's dependencies in
 `ide/vscode/node_modules/`.
 
 ## Compiler steps

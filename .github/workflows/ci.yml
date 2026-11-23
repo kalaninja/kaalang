@@ -47,14 +47,10 @@ jobs:
           path: |
             .cache/cargo
             target
-          key: cargo-${{ hashFiles('Cargo.lock', 'mise/config.toml') }}
+            ide/sample/target
+          key: cargo-${{ hashFiles('Cargo.lock', 'ide/sample/Cargo.lock', 'mise/config.toml') }}
       - uses: extractions/setup-just@v3
-      - run: just ide check
-      - run: just rust clippy
-      - run: just rust test
-      - run: just wasm test
-      - run: just ide test
-      - run: just rust svg
+      - run: just ci validate
       - run: git add -A && git diff --cached --exit-code
 
   # Linux containers do not run on these runners, so they install the same
