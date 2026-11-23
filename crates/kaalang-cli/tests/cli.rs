@@ -206,6 +206,20 @@ fn failed_render_keeps_the_existing_output() {
 }
 
 #[test]
+fn a_file_in_place_of_a_module_directory_does_not_make_the_module_ambiguous() {
+    let directory = package("cli-file-for-directory", "mod model; pub struct Root;");
+    write(&directory, "src/model.rs", "pub struct Member;");
+    write(&directory, "src/model", "a file, not a directory");
+
+    let result = run(&directory, "diagram --type model::Member -o out.svg");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+#[test]
 fn skipped_module_paths_allow_replacing_an_unrelated_diagram() {
     let directory = package(
         "cli-skipped-paths",

@@ -507,7 +507,15 @@ impl Files for Sources {
                 self.0.insert(canonical.clone());
                 Ok(Some(canonical))
             }
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
+            // A path through a regular file names nothing, as for rustc.
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::NotFound | io::ErrorKind::NotADirectory
+                ) =>
+            {
+                Ok(None)
+            }
             Err(error) => Err(error),
         }
     }
