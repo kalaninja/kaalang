@@ -4,6 +4,10 @@
 set -euo pipefail
 
 if [[ "${1##*/}" == performance-* && -r /sys/devices/cpu_atom/cpus ]]; then
-  exec taskset -c "$(< /sys/devices/cpu_atom/cpus)" "$@"
+  cores=$(< /sys/devices/cpu_atom/cpus)
+  # A cpuset can exclude the cores the processor lists.
+  if taskset -c "$cores" true 2> /dev/null; then
+    exec taskset -c "$cores" "$@"
+  fi
 fi
 exec "$@"
