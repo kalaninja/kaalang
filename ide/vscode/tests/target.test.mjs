@@ -248,6 +248,29 @@ test("a manifest outside the workspace folders is watched once, until the extens
   assert.equal(watched.size, 0);
 });
 
+test("the last set of rust-analyzer stands while it gives none", async () => {
+  const workspace = { isTrusted: true };
+  let cfg = ["test", "unix"];
+  const host = await targetHost(workspace, () =>
+    cfg ? status({ name: "hub", package: "hub", cfg }) : status(),
+  );
+  const file = path.resolve("hub", "src", "lib.rs");
+  const logs = [];
+  const read = () => {
+    host.forgetAnalyzedCfg();
+    return host.analyzedCfg(file, (line) => logs.push(line));
+  };
+  assert.equal(await read(), "test\nunix");
+  // It restarts: the set stays, and it is asked again each time.
+  cfg = undefined;
+  assert.equal(await read(), "test\nunix");
+  assert.equal(await read(), "test\nunix");
+  assert.equal(host.asked.length, 3);
+  assert.deepEqual(logs, []);
+  cfg = ["test"];
+  assert.equal(await read(), "test");
+});
+
 test("a file several targets include stands where rust-analyzer reads it", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-root-owner-"));
   t.after(() => rm(root, { recursive: true, force: true }));

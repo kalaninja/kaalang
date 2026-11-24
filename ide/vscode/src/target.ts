@@ -44,6 +44,8 @@ function cargoCache() {
 let cache = cargoCache();
 /** rust-analyzer's crates by file; their sets change as it loads the workspace and reruns build scripts. */
 let analyzed = new Map<string, Promise<AnalyzedCrate[]>>();
+/** Its last answer by file, which stands while it restarts or reloads the workspace and gives none. */
+const answered = new Map<string, AnalyzedCrate[]>();
 /** One array per distinct list of roots, so that module trees stay cached while it holds. */
 let shapes = new Map<string, CargoRoot[]>();
 
@@ -213,10 +215,13 @@ async function analyzedCrates(
   });
   if (crates.length) {
     unanalyzed = false;
+    answered.set(file, crates);
     return crates;
   }
   // rust-analyzer may still be loading the workspace: ask again next time.
   analyzed.delete(file);
+  const last = answered.get(file);
+  if (last) return last;
   if (!unanalyzed) {
     unanalyzed = true;
     log(
