@@ -965,16 +965,15 @@ mod tests {
     }
 
     #[test]
-    fn a_foreign_attribute_and_raw_cfg_keep_their_own_meanings() {
+    fn a_raw_cfg_attribute_configures_like_a_plain_one() {
         let source = r#"
             mod sample {
-                use other::{helper as kaa};
-                #[kaalang::kaa] #[kaa("a foreign option")]
+                #[kaalang::kaa]
                 fn flow(#[r#cfg_attr(all(), r#cfg(any()))] (a,b): (u8,u8), value: u8) -> u8 {
                     |value| return value;
                 }
                 struct Destination;
-                #[kaalang::kaa("The owner.")] #[kaa("a foreign option")]
+                #[kaalang::kaa("The owner.")]
                 struct Owner<#[r#cfg(any())] Destination> {
                     #[r#cfg_attr(all(), kaa::refer(Destination, "The destination."))] id: u8,
                 }
@@ -985,25 +984,6 @@ mod tests {
         let owner = source.ty("sample::Owner").unwrap();
         assert_eq!(owner.declaration.description.as_deref(), Some("The owner."));
         assert_eq!(owner.declaration.relationships().len(), 1);
-    }
-
-    #[test]
-    fn a_parent_import_preserves_the_identity_of_bare_kaa() {
-        for local in ["super::super::kaa", "crate::kaa"] {
-            for (root, duplicate) in [("kaalang::kaa", true), ("other::kaa", false)] {
-                let source = format!(
-                    "use {root}; mod a {{ mod b {{ use {local}; #[kaa] #[kaalang::kaa] {COPY} }} }}"
-                );
-                let file = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
-                let flow = file.flow(0, false);
-                if duplicate {
-                    assert!(matches!(flow, Err(SourceError::InvalidFlow { message, .. })
-                        if message == "a function takes one `#[kaa]` attribute"));
-                } else {
-                    assert!(flow.is_ok());
-                }
-            }
-        }
     }
 
     #[test]

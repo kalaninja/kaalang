@@ -4,8 +4,6 @@ use cargo_platform::{Cfg, CfgExpr};
 use proc_macro2::{Delimiter, TokenStream, TokenTree};
 use syn::Lit;
 
-mod imports;
-
 /// The cfg set of one compilation target, as `rustc --print cfg` prints it:
 /// one `name` or `key="value"` per line, such as `unix` or `target_os="linux"`,
 /// with a `feature="…"` line for each enabled feature. A source file is read
@@ -33,7 +31,6 @@ impl CfgSet {
     /// crate for its target.
     pub fn configure(&self, file: &mut syn::File) {
         crate::configure(file, &mut |predicate| self.holds(predicate));
-        imports::distinguish_imports(file);
     }
 }
 

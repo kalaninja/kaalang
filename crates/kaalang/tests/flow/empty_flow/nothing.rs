@@ -1,6 +1,5 @@
-use core::prelude::v1::test as kaa;
+use kaalang::kaa;
 
-#[kaalang::kaa]
 #[kaa]
 fn nothing() {
     return;
