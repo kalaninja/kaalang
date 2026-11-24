@@ -15,7 +15,8 @@ pub(super) fn write<'a>(
 ) -> io::Result<()> {
     let path = destination(output)?;
     // Opening without truncating also checks the existing file's write permissions.
-    let existing = match OpenOptions::new().write(true).open(&path) {
+    // The handle closes with the lookup: Windows may refuse to rename over an open file.
+    let replaced = match OpenOptions::new().write(true).open(&path) {
         Ok(mut file) => {
             let metadata = file.metadata()?;
             if !metadata.is_file() {
@@ -51,20 +52,20 @@ pub(super) fn write<'a>(
                     _ => {}
                 }
             }
-            Some(file)
+            Some(metadata.permissions())
         }
         Err(error) if error.kind() == ErrorKind::NotFound => None,
         Err(error) => return Err(error),
     };
-    let mut file = create_sibling(&path, existing.is_some())?;
+    let replacing = replaced.is_some();
+    let mut file = create_sibling(&path, replacing)?;
     // The replacement keeps the old file's mode, but not its owner or ACL.
-    if let Some(existing) = &existing {
-        file.as_file()
-            .set_permissions(existing.metadata()?.permissions())?;
+    if let Some(permissions) = replaced {
+        file.as_file().set_permissions(permissions)?;
     }
     file.write_all(svg.as_bytes())?;
     file.as_file().sync_all()?;
-    publish(file, &path, existing.is_some())
+    publish(file, &path, replacing)
 }
 
 fn publish(temporary: NamedTempFile, path: &Path, replacing: bool) -> io::Result<()> {
