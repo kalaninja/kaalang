@@ -11,6 +11,7 @@ import {
 
 import { fileStamp, realFile, realPath } from "./cache";
 import type { Placement } from "./card-places";
+import { editorText } from "./offsets";
 
 /** A Cargo target, as `cargo metadata` lists it, whose module tree the bindings read from the file `root`. */
 export interface TreeRoot {
@@ -169,9 +170,8 @@ export function treeHost(
       consulted.set(entry.physical, entry.stamp);
       return entry.canonical;
     },
-    // The editor's text, in which the page counts offsets, has no byte order mark.
     read: (file: string) =>
-      unsaved.get(file) ?? readFileSync(file, "utf8").replace(/^\uFEFF/, ""),
+      unsaved.get(file) ?? editorText(readFileSync(file, "utf8")),
   };
 }
 

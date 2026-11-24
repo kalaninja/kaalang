@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import test from "node:test";
 
-import { coordinates, offsets } from "../out/offsets.js";
+import { coordinates, editorText, offsets } from "../out/offsets.js";
 
 test("a position counts the line breaks before it, whatever their kind", () => {
   const at = offsets("a\r\nbc\rdef\ng");
@@ -34,4 +34,16 @@ test("positions sent to the language server round-trip Unicode and mixed line en
     assert.equal(at.offsetAt(line, character), offset);
   }
   assert.deepEqual(at.positionAt(3), { line: 0, character: 2 });
+});
+
+test("a saved file's mixed line endings become the kind most of them are", () => {
+  assert.equal(editorText("a\r\nb\nc\n"), "a\nb\nc\n");
+  assert.equal(editorText("a\r\nb\r\nc\n"), "a\r\nb\r\nc\r\n");
+  assert.equal(editorText("a\r\nb\n"), "a\nb\n");
+  assert.equal(editorText("a\rb\n"), "a\nb\n");
+});
+
+test("a saved file's one kind of line ending and its text stay", () => {
+  assert.equal(editorText("a\r\nb\r\n"), "a\r\nb\r\n");
+  assert.equal(editorText("\uFEFFa\nb"), "a\nb");
 });

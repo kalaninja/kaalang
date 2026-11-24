@@ -17,10 +17,12 @@ test("the module worker survives invalid Rust and restarts after a Wasm trap", a
     new URL("../out/module-sources.js", import.meta.url),
     reader,
   );
-  await fs.copyFile(
-    new URL("../out/cache.js", import.meta.url),
-    path.join(directory, "cache.js"),
-  );
+  for (const name of ["cache.js", "offsets.js"]) {
+    await fs.copyFile(
+      new URL(`../out/${name}`, import.meta.url),
+      path.join(directory, name),
+    );
+  }
   const wasm = path.join(directory, "wasm");
   await fs.mkdir(wasm);
   await fs.writeFile(path.join(wasm, "kaalang_js_bg.wasm"), "");

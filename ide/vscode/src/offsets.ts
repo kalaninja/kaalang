@@ -2,6 +2,20 @@
 // reach them.
 
 /**
+ * A saved file's text as VS Code shows it, in which the page counts offsets:
+ * without a byte order mark, and with mixed line endings turned into the kind
+ * most of them are, a line feed when neither is.
+ */
+export function editorText(saved: string): string {
+  const text = saved.replace(/^\uFEFF/, "");
+  // Most files have one kind of line ending, which stays.
+  if (!text.includes("\r") || !/(?<!\r)\n|\r(?!\n)/.test(text)) return text;
+  const ends = text.match(/\r\n|\r|\n/g) ?? [];
+  const returns = ends.filter((end) => end !== "\n").length;
+  return text.replace(/\r\n|\r|\n/g, returns > ends.length / 2 ? "\r\n" : "\n");
+}
+
+/**
  * The offset, in UTF-16 code units, of each position in `text`, given by its
  * line and character, a line ending at a line feed, a carriage return, or
  * both. A position past its line stands at the line's end, and one past the

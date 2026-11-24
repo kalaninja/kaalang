@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import { realFile } from "./cache";
+import { editorText } from "./offsets";
 
 /** Reopening a URI returns the current document even after its editor closed. */
 export async function openDocument(
@@ -32,5 +33,7 @@ export async function documentText(uri: vscode.Uri): Promise<string> {
     );
     if (dirty) return dirty.getText();
   }
-  return new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+  return editorText(
+    new TextDecoder().decode(await vscode.workspace.fs.readFile(uri)),
+  );
 }
