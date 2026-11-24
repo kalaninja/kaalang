@@ -1509,11 +1509,10 @@ fn cfg_test_holds_in_test_targets_only() {
 }
 
 #[test]
-fn a_procedural_macro_is_read_for_the_host() {
-    let os = std::env::consts::OS;
+fn a_procedural_macro_is_read_for_the_named_target() {
     let directory = package(
         "cli-target-proc-macro",
-        &format!("#[cfg(all(proc_macro, target_os = \"{os}\"))]\npub struct OnHost;\n"),
+        "#[cfg(all(proc_macro, target_family = \"wasm\"))]\npub struct OnTarget;\n",
     );
     write(
         &directory,
@@ -1525,31 +1524,25 @@ fn a_procedural_macro_is_read_for_the_host() {
     );
     let rendered = run(
         &directory,
-        "diagram --type OnHost --target wasm32-unknown-unknown",
+        "diagram --type OnTarget --target wasm32-unknown-unknown",
     );
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
 }
 
 #[test]
-fn a_procedural_macros_dependencies_are_read_for_the_host() {
-    let os = std::env::consts::OS;
+fn a_procedural_macros_type_refers_to_the_type_read_for_the_named_target() {
     let directory = workspace(
-        "cli-host-dependencies",
+        "cli-target-proc-macro-dependency",
         &[
-            ("macros", "use bridge::Member;\n"),
-            ("bridge", "pub use model::Member;\n"),
+            (
+                "macros",
+                "#[kaa]\nstruct Rule {\n    #[kaa::refer(model::Member, \"m\")]\n    m: u8,\n}\n",
+            ),
             (
                 "model",
-                &format!(
-                    "pub struct Member {{\n\
-                     #[cfg(target_os = \"{os}\")] pub host_field: u8,\n\
-                     #[cfg(not(target_os = \"{os}\"))] pub target_field: u8,\n\
-                     }}\nimpl Member {{\n\
-                     #[cfg(target_os = \"{os}\")] {}\n\
-                     #[cfg(not(target_os = \"{os}\"))] {}\n}}\n",
-                    method("route", "self", "Host method."),
-                    method("route", "self", "Target method."),
-                ),
+                "pub struct Member {\n\
+                 #[cfg(target_family = \"wasm\")] pub target_field: u8,\n\
+                 #[cfg(not(target_family = \"wasm\"))] pub host_field: u8,\n}\n",
             ),
         ],
     );
@@ -1557,42 +1550,14 @@ fn a_procedural_macros_dependencies_are_read_for_the_host() {
         &directory,
         "macros/Cargo.toml",
         &format!(
-            "{}[lib]\nproc-macro = true\n\n[target.'cfg(target_os = \"{os}\")'.dependencies]\nbridge = {{ path = \"../bridge\" }}\n",
+            "{}[lib]\nproc-macro = true\n\n[dependencies]\nmodel = {{ path = \"../model\" }}\n",
             manifest("macros")
         ),
     );
-    write(
-        &directory,
-        "bridge/Cargo.toml",
-        &format!(
-            "{}[target.'cfg(target_os = \"{os}\")'.dependencies]\nmodel = {{ path = \"../model\" }}\n",
-            manifest("bridge")
-        ),
-    );
-    for (package, present, absent) in [
-        ("macros", "host_field", "target_field"),
-        ("model", "target_field", "host_field"),
-    ] {
-        let svg = drawn(
-            &directory,
-            &format!("--type Member -p {package}"),
-            "wasm32-unknown-unknown",
-        );
-        assert!(svg.contains(present), "{package}: {svg}");
-        assert!(!svg.contains(absent), "{package}: {svg}");
-    }
-    for (package, present, absent) in [
-        ("macros", "Host method.", "Target method."),
-        ("model", "Target method.", "Host method."),
-    ] {
-        let svg = drawn(
-            &directory,
-            &format!("--flow Member::route -p {package}"),
-            "wasm32-unknown-unknown",
-        );
-        assert!(svg.contains(present), "{package}: {svg}");
-        assert!(!svg.contains(absent), "{package}: {svg}");
-    }
+    let svg = drawn(&directory, "--type Member", "wasm32-unknown-unknown");
+    assert!(svg.contains("Rule"), "{svg}");
+    assert!(svg.contains("target_field"), "{svg}");
+    assert!(!svg.contains("host_field"), "{svg}");
 }
 
 #[test]

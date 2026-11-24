@@ -210,10 +210,7 @@ fn focus(
 ) -> Result<TypeRef, String> {
     let searched: Vec<usize> = order(crates, usize::MAX)
         .into_iter()
-        .filter(|&krate| {
-            !crates[krate].dependency_only
-                && package.is_none_or(|package| crates[krate].package == package)
-        })
+        .filter(|&krate| package.is_none_or(|package| crates[krate].package == package))
         .collect();
     let mut found = resolver.select_types(path, &searched).map_err(|root| {
         format!(

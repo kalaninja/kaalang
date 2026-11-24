@@ -27,6 +27,9 @@
   `name/mod.rs` instead of reading one of them.
 - A datatype with a relationship no longer fails to compile under
   `forbid(unused_imports)`.
+- `cargo kaalang diagram --target` reads a procedural macro and the libraries it
+  depends on for the named target, as it reads every other crate, so a type they
+  declare keeps its card.
 
 ## 0.3.0 - 2026-11-12
 

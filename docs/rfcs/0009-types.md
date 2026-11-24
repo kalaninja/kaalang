@@ -412,10 +412,10 @@ two apply to every member. The compilation target's cfg set is what
 `feature = "…"` for each feature `cargo metadata` resolves for the crate's
 package, and `test` in test and bench targets. That resolution counts the
 features a dev-dependency enables, as `cargo test` does and `cargo build` does
-not. As cargo builds a procedural macro for the host, without the flags, its set
-is the host's, with `proc_macro`; and a target whose required features are not
-all enabled is not read, as cargo does not build it. A `cfg` holds when its
-predicate holds for that set, as cargo decides a
+not. A procedural macro is read for the same compilation target, with
+`proc_macro` in its set, though cargo builds it for the host; and a target whose
+required features are not all enabled is not read, as cargo does not build it. A
+`cfg` holds when its predicate holds for that set, as cargo decides a
 `[target.'cfg(…)'.dependencies]` table; any other name is unset, one a build
 script sets included. Cargo's configuration files are not read, so their
 `build.target` and `rustflags` do not apply. An unknown compilation target is a

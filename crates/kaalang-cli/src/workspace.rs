@@ -6,7 +6,7 @@ use std::{
     collections::BTreeSet,
     env,
     fmt::Write as _,
-    fs, io, iter,
+    fs, io,
     ops::Deref,
     path::{Path, PathBuf},
     process::Command,
@@ -49,8 +49,6 @@ pub(super) struct TargetOptions {
 pub(super) struct Crate {
     /// The target as errors list it: `` lib `app` ``.
     pub(super) target: String,
-    /// An additional host reading of a library, reached through dependencies only.
-    pub(super) dependency_only: bool,
     /// Existing source paths, including unreadable files and both sides of an ambiguous module.
     pub(super) sources: BTreeSet<PathBuf>,
     /// Each file that could not be read or parsed, with the reason.
@@ -74,11 +72,11 @@ impl Crate {
 }
 
 /// Reads every target of every workspace member, in package name order, once
-/// `package`, when given, is found among them, each as cargo compiles it for
-/// the target `options` name.
+/// `package`, when given, is found among them, each for the target `options`
+/// name: a procedural macro too, though cargo builds it for the host.
 pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<Vec<Crate>, String> {
-    let printed = rustc_cfg(options.target.as_deref(), true)?;
-    let metadata = metadata(package, options, options.target.as_deref())?;
+    let printed = rustc_cfg(options.target.as_deref())?;
+    let metadata = metadata(package, options)?;
     let mut packages = metadata.workspace_packages();
     if let Some(package) = package
         && !packages.iter().any(|member| *member.name == package)
@@ -88,23 +86,6 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
         ));
     }
     packages.sort_by(|left, right| left.name.cmp(&right.name));
-    // Cargo builds a procedural macro for the host, without the target's flags.
-    let host = if options.target.is_some()
-        && packages
-            .iter()
-            .any(|package| package.targets.iter().any(Target::is_proc_macro))
-    {
-        Some((
-            rustc_cfg(None, false)?,
-            self::metadata(package, options, None)?,
-        ))
-    } else {
-        None
-    };
-
-    let host_dependencies = host
-        .as_ref()
-        .map_or_else(BTreeSet::new, |(_, metadata)| host_dependencies(metadata));
     let mut crates = Vec::new();
     for package in packages {
         // A build script draws no cards.
@@ -112,30 +93,19 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
             let kinds: Vec<String> = target.kind.iter().map(ToString::to_string).collect();
             Some((target, target_group(&kinds)?))
         });
-        for ((target, group), dependency_only) in targets.flat_map(|(target, group)| {
-            let also_host = (target.is_lib() || target.is_rlib() || target.is_dylib())
-                && host_dependencies.contains(&package.id);
-            iter::once(((target, group), false)).chain(also_host.then_some(((target, group), true)))
-        }) {
-            let for_host = host.is_some() && (target.is_proc_macro() || dependency_only);
-            let (printed, metadata) = if for_host {
-                let (printed, metadata) = host.as_ref().expect("the host was read");
-                (printed, metadata)
-            } else {
-                (&printed, &metadata)
-            };
+        for (target, group) in targets {
             let resolved = metadata
                 .resolve
                 .as_ref()
                 .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package.id));
             // Cargo builds no target whose required features are off.
-            if !required_features(&target.required_features, package, resolved, metadata) {
+            if !required_features(&target.required_features, package, resolved, &metadata) {
                 continue;
             }
             let features: Vec<String> = resolved
                 .map(|node| node.features.iter().map(ToString::to_string).collect())
                 .unwrap_or_default();
-            let cfg = cfg_set(target, printed, &features)?;
+            let cfg = cfg_set(target, &printed, &features)?;
             let root = target.src_path.clone().into_std_path_buf();
             let mut sources = Sources::default();
             let tree = ModuleTree::read(root.clone(), &cfg, &mut sources);
@@ -146,7 +116,6 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
                 name: crate_name(&target.name),
                 root,
                 library: group == 0 && !target.is_bin(),
-                host: for_host,
                 dependencies: resolved
                     .into_iter()
                     .flat_map(|node| &node.deps)
@@ -164,7 +133,6 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
             };
             crates.push(Crate {
                 target: target_label(target),
-                dependency_only,
                 sources: sources.0,
                 skipped: tree.skipped,
                 names,
@@ -172,40 +140,6 @@ pub(super) fn crates(package: Option<&str>, options: &TargetOptions) -> Result<V
         }
     }
     Ok(crates)
-}
-
-/// Libraries a procedural macro reaches through normal dependencies run on the host too.
-fn host_dependencies(metadata: &cargo_metadata::Metadata) -> BTreeSet<cargo_metadata::PackageId> {
-    let mut pending: Vec<_> = metadata
-        .workspace_packages()
-        .into_iter()
-        .filter(|package| package.targets.iter().any(Target::is_proc_macro))
-        .map(|package| package.id.clone())
-        .collect();
-    let mut found = BTreeSet::new();
-    while let Some(package) = pending.pop() {
-        if !found.insert(package.clone()) {
-            continue;
-        }
-        if let Some(node) = metadata
-            .resolve
-            .as_ref()
-            .and_then(|resolve| resolve.nodes.iter().find(|node| node.id == package))
-        {
-            pending.extend(
-                node.deps
-                    .iter()
-                    .filter(|dependency| {
-                        dependency
-                            .dep_kinds
-                            .iter()
-                            .any(|kind| kind.kind == DependencyKind::Normal)
-                    })
-                    .map(|dependency| dependency.pkg.clone()),
-            );
-        }
-    }
-    found
 }
 
 /// Whether every local or dependency-qualified requirement is enabled.
@@ -277,16 +211,15 @@ fn cfg_set(
         .map_err(|error| format!("could not read the cfg rustc printed: {error}"))
 }
 
-/// The workspace as `cargo metadata` describes it for `target`, or the host,
-/// with the features `options` select. As with
+/// The workspace as `cargo metadata` describes it for the target `options`
+/// name, or the host, with the features they select. As with
 /// `cargo build -p`, a feature without a package is `package`'s.
 fn metadata(
     package: Option<&str>,
     options: &TargetOptions,
-    target: Option<&str>,
 ) -> Result<cargo_metadata::Metadata, String> {
-    let triple = match target {
-        Some(triple) => triple.to_owned(),
+    let triple = match &options.target {
+        Some(triple) => triple.clone(),
         None => host()?,
     };
     let mut command = MetadataCommand::new();
@@ -317,15 +250,13 @@ fn metadata(
 }
 
 /// What `rustc --print cfg` prints for `target`, or the host, with the flags
-/// cargo passes when `flags` is set.
-fn rustc_cfg(target: Option<&str>, flags: bool) -> Result<String, String> {
+/// cargo passes.
+fn rustc_cfg(target: Option<&str>) -> Result<String, String> {
     let mut arguments = vec!["--print".to_owned(), "cfg".to_owned()];
     if let Some(target) = target {
         arguments.extend(["--target".to_owned(), target.to_owned()]);
     }
-    if flags {
-        arguments.extend(rustflags());
-    }
+    arguments.extend(rustflags());
     rustc(&arguments)
 }
 
@@ -387,19 +318,12 @@ pub(super) fn find<'a>(
     package: Option<&str>,
 ) -> Result<Found<'a>, String> {
     let resolver = Resolver::new(crates.iter().map(|krate| &krate.names));
-    let selected = |krate: &Crate| {
-        !krate.dependency_only && package.is_none_or(|package| krate.package == package)
-    };
+    let selected = |krate: &Crate| package.is_none_or(|package| krate.package == package);
     let roots: Vec<(usize, Vec<usize>)> = (0..crates.len())
         .filter(|&index| selected(&crates[index]))
         .map(|index| {
-            let krate = &crates[index];
-            let spanned = (0..crates.len()).filter(|&source| {
-                let other = &crates[source];
-                source == index
-                    || other.library
-                        && (other.host == krate.host || other.host && !other.dependency_only)
-            });
+            let spanned =
+                (0..crates.len()).filter(|&source| source == index || crates[source].library);
             (index, spanned.collect())
         })
         .collect();

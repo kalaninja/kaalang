@@ -79,8 +79,7 @@ impl<'a> Resolver<'a> {
                 for (name, package) in &krate.dependencies {
                     if let Some((index, _)) = libraries
                         .iter()
-                        .filter(|(_, library)| library.package_id == *package)
-                        .min_by_key(|(_, library)| library.host != krate.host)
+                        .find(|(_, library)| library.package_id == *package)
                     {
                         names.push((name.clone(), *index));
                     }
@@ -90,9 +89,7 @@ impl<'a> Resolver<'a> {
                     names.extend(
                         libraries
                             .iter()
-                            .filter(|(_, library)| {
-                                library.package_id == krate.package_id && library.host == krate.host
-                            })
+                            .filter(|(_, library)| library.package_id == krate.package_id)
                             .map(|(index, library)| (library.name.clone(), *index)),
                     );
                 }

@@ -29,7 +29,6 @@ pub struct Crate {
     /// The target's own source path.
     pub root: PathBuf,
     pub library: bool,
-    pub host: bool,
     pub dependencies: Vec<(String, String)>,
     pub cfg: CfgSet,
     pub modules: Vec<Module>,
@@ -431,7 +430,6 @@ fn library(package: &str, source: &str) -> Crate {
         name: package.replace('-', "_"),
         root: PathBuf::from(format!("/{package}/src/lib.rs")),
         library: true,
-        host: false,
         dependencies: Vec::new(),
         cfg,
         modules: tree.modules,
