@@ -2,29 +2,19 @@
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use syn::{AttrStyle, Attribute, Error, Ident, Item, Meta, Path, Result};
+use syn::{AttrStyle, Attribute, Error, Item, Meta, Result};
 
 use crate::{conditional, configure, datatype, datatype::expand_type, expand, parse};
 
-/// Whether `attribute` is kaalang's own, written `#[kaa]` or through its
-/// crate path as `#[kaalang::kaa]`. Another crate's `kaa` is not.
+/// Whether `attribute` is kaalang's own: its path ends in `kaa`, as `#[kaa]`
+/// and `#[kaalang::kaa]` do.
 #[must_use]
 pub(crate) fn is_kaalang_attribute(attribute: &Attribute) -> bool {
-    bare_kaa(attribute.path()) || qualified_kaa(attribute.path())
-}
-
-pub(crate) fn kaa_name(name: &Ident) -> bool {
-    name == "kaa" || name == "r#kaa"
-}
-
-pub(crate) fn bare_kaa(path: &Path) -> bool {
-    path.get_ident().is_some_and(kaa_name)
-}
-
-pub(crate) fn qualified_kaa(path: &Path) -> bool {
-    path.segments.len() == 2
-        && (path.segments[0].ident == "kaalang" || path.segments[0].ident == "r#kaalang")
-        && kaa_name(&path.segments[1].ident)
+    attribute
+        .path()
+        .segments
+        .last()
+        .is_some_and(|segment| segment.ident == "kaa" || segment.ident == "r#kaa")
 }
 
 /// Expands the attribute, letting rustc evaluate conditional parameters before
@@ -69,8 +59,8 @@ pub fn expand_attribute(
                 && !BUILT_IN.iter().any(|name| attr.path().is_ident(name))
                 && parse::annotation_name(attr).is_none()
         }) {
-            // rustc resolves the remaining attribute macros. Even a bare `kaa`
-            // may be an unrelated import, and our macro may have another name.
+            // rustc resolves the remaining attribute macros, and any of them
+            // may be our macro under another name.
             let owner = defining_crate();
             attrs.push(syn::parse_quote!(#[#owner::__kaa_applied]));
         }

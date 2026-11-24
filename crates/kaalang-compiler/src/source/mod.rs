@@ -775,11 +775,10 @@ mod tests {
     }
 
     #[test]
-    fn a_flow_requires_an_exact_kaalang_attribute() {
-        assert_eq!(
-            flow_error("#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n"),
-            SourceError::FlowNotFound(0)
-        );
+    fn a_flow_is_found_under_a_reexported_attribute() {
+        let source = format!("#[facade::kaa]\n{COPY}");
+        let file = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
+        assert!(file.flow(0, false).is_ok());
     }
 
     /// What `source`, read for `target`, declares where `marker` starts.
