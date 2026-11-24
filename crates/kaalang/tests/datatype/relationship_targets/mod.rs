@@ -65,3 +65,20 @@ fn relationships_name_their_target_apart_from_the_field_type() {
     assert_eq!(known.map(|member| member.name.as_str()), Some("Sam"));
     assert_eq!(report.assignee, team.lead);
 }
+
+#[test]
+fn a_forbidden_unused_import_admits_a_relationship_check() {
+    #![forbid(unused_imports)]
+    #[kaa]
+    struct Badge {
+        #[kaa::refer(Member, "The holder.")]
+        holder: MemberId,
+    }
+    assert_eq!(
+        Badge {
+            holder: MemberId(7)
+        }
+        .holder,
+        MemberId(7)
+    );
+}

@@ -1,5 +1,10 @@
 error[E0432]: unresolved import `Member`
  --> tests/datatype/compile_fail/unknown_target.rs:5:18
   |
+3 | #[kaa("A report.")]
+  | ------------------- in this attribute macro expansion
+4 | struct Report {
 5 |     #[kaa::refer(Member, "The author.")]
   |                  ^^^^^^ no external crate `Member`
+  |
+  = note: this error originates in the attribute macro `kaa` (in Nightly builds, run with -Z macro-backtrace for more info)

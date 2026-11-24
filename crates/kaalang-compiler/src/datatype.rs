@@ -3,7 +3,7 @@
 
 use std::iter;
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{
     Attribute, Error, Generics, Ident, Item, LitStr, Meta, Path, Result, Token, Type, Visibility,
@@ -322,20 +322,27 @@ pub(crate) fn expansion(arguments: &TokenStream, mut item: Item) -> Result<(Item
         }
     };
 
-    // Each import is spanned at its target, where rustc reports an unknown one,
-    // and stands under its field's `cfg`, as the target may.
+    // Each import stands under its field's `cfg`, as the target may.
     checks.extend(
         declaration
             .relationships()
             .into_iter()
             .map(|relationship| {
-                let (target, cfgs) = (&relationship.target, &relationship.cfgs);
-                quote_spanned!(target.span()=> #(#cfgs)* #[allow(unused_imports)] use #target as _;)
+                let (import, cfgs) = (import(&relationship.target), &relationship.cfgs);
+                quote!(#(#cfgs)* #import)
             })
             .collect::<TokenStream>(),
     );
     let checks = (!checks.is_empty()).then(|| quote! { const _: () = { #checks }; });
     Ok((item, quote!(#checks)))
+}
+
+/// The import that has rustc resolve `target`, placed at it, where rustc
+/// reports an unknown one. Nothing uses the import, and rustc reports no lint
+/// in a macro's own span, while an `allow` would fail under `forbid`.
+fn import(target: &Path) -> TokenStream {
+    let span = Span::mixed_site().located_at(target.span());
+    quote_spanned!(span=> use #target as _;)
 }
 
 fn expand_fields<'a>(
@@ -389,10 +396,7 @@ fn expand_annotations(
         match validate(std::slice::from_ref(annotation)) {
             Ok(target) => {
                 if let Some(target) = target {
-                    checks.extend(guarded(
-                        quote_spanned!(target.span()=> #[allow(unused_imports)] use #target as _;),
-                        &[],
-                    ));
+                    checks.extend(guarded(import(&target), &[]));
                 }
                 for &(previous, prior) in &valid {
                     if let Err(error) = validate(&[Attribute::clone(prior), annotation.clone()]) {
@@ -725,7 +729,7 @@ mod tests {
             "{expanded}"
         );
         assert!(
-            expanded.contains("# [cfg (all (unix))] # [allow (unused_imports)] use Device as _ ;"),
+            expanded.contains("# [cfg (all (unix))] use Device as _ ;"),
             "{expanded}"
         );
     }
@@ -760,9 +764,8 @@ mod tests {
         };
         let expanded = expand_type(&TokenStream::new(), item).unwrap().to_string();
         assert!(
-            expanded.contains(
-                "# [cfg (feature = \"audit\")] # [cfg (not (test))] # [allow (unused_imports)] use Auditor as _ ;"
-            ),
+            expanded
+                .contains("# [cfg (feature = \"audit\")] # [cfg (not (test))] use Auditor as _ ;"),
             "{expanded}"
         );
     }

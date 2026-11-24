@@ -25,6 +25,8 @@
   inclusion, as rustc compiles it, each with its own card.
 - `cargo kaalang diagram` reports a module that has both `name.rs` and
   `name/mod.rs` instead of reading one of them.
+- A datatype with a relationship no longer fails to compile under
+  `forbid(unused_imports)`.
 
 ## 0.3.0 - 2026-11-12
 
