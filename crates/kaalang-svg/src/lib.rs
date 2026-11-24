@@ -229,11 +229,7 @@ impl fmt::Display for CardError {
     }
 }
 
-impl Error for CardError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.error)
-    }
-}
+impl Error for CardError {}
 
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
