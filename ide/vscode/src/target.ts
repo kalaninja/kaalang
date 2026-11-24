@@ -192,6 +192,20 @@ export async function located(
   return { cfg: crate?.cfg ?? "", roots: primary?.roots ?? [] };
 }
 
+/**
+ * `file` as rust-analyzer knows it: below the path its workspace folder was
+ * opened by, which a symlink makes differ from the real one Cargo names.
+ */
+export function analyzedPath(file: string): string {
+  for (const { uri } of vscode.workspace.workspaceFolders ?? []) {
+    if (uri.scheme !== "file") continue;
+    const real = realFile(uri.fsPath);
+    if (real !== uri.fsPath && (file + path.sep).startsWith(real + path.sep))
+      return uri.fsPath + file.slice(real.length);
+  }
+  return file;
+}
+
 /** Each crate rust-analyzer reads `file` in, the one it shows first; none until it can tell. */
 async function analyzedCrates(
   file: string,
@@ -203,7 +217,9 @@ async function analyzedCrates(
     try {
       const status = await client.sendRequest<string>(
         "rust-analyzer/analyzerStatus",
-        { textDocument: { uri: vscode.Uri.file(file).toString() } },
+        {
+          textDocument: { uri: vscode.Uri.file(analyzedPath(file)).toString() },
+        },
       );
       return statusCrates(status);
     } catch (error) {

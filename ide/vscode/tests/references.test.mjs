@@ -29,7 +29,7 @@ const place = (module) => ({
  * in. The workspace's module tree holds every file that may refer to it, and
  * only `Author` in `review` names the focus.
  */
-async function host(texts) {
+async function host(texts, analyzedPath = (file) => file) {
   const state = { references: [root], queries: 0 };
   const uri = (key) => ({
     toString: () => key,
@@ -51,6 +51,7 @@ async function host(texts) {
       },
     },
     "./target": {
+      analyzedPath,
       located: async (file) => ({
         cfg: `cfg of ${file.toString()}`,
         place: place(new URL(file.toString()).pathname),
@@ -80,7 +81,7 @@ async function host(texts) {
       analyzerClient: () => ({}),
       locations: async (_client, uri) => {
         ++state.queries;
-        return uri === review
+        return uri.endsWith("/integration.rs")
           ? [{ uri: root, position: { line: 0, character: 7 } }]
           : [];
       },
@@ -133,6 +134,25 @@ test("a renaming use brings in each file whose target's definition is the focus,
   const asked = loaded.state.queries;
   await referring(loaded);
   assert.equal(loaded.state.queries, asked + 1);
+});
+
+test("a file the module tree names goes by the path rust-analyzer knows", async () => {
+  const opened = "file:///opened/integration.rs";
+  const texts = new Map([
+    [root, "struct Focus;"],
+    [alias, "pub use crate::Focus as Author;"],
+    [review, author],
+    [opened, author],
+  ]);
+  const loaded = await host(texts, (file) =>
+    file.replace("/project/", "/opened/"),
+  );
+  loaded.state.references = [root, alias];
+  const { files } = await referring(loaded);
+  assert.deepEqual(
+    files.map(({ uri }) => uri),
+    [opened],
+  );
 });
 
 test("a source change asks the definitions again", async () => {

@@ -8,7 +8,7 @@ import { editorTree, forgetModules } from "./card-places";
 import { documentText, openDocument } from "./documents";
 import { relationshipTargets } from "./module-sources";
 import { coordinates, offsets } from "./offsets";
-import { located } from "./target";
+import { analyzedPath, located } from "./target";
 
 /** Every relationship annotation contains this Rust identifier. */
 const MAY_REFER = /\brefer\b/;
@@ -100,7 +100,7 @@ export async function referringFiles(
   if (renamed) {
     const graph = await editorTree(focus.roots);
     for (const file of graph?.referring ?? []) {
-      const uri = pathToFileURL(file).href;
+      const uri = pathToFileURL(analyzedPath(file)).href;
       const key = aliases.get(await physical(uri, revision)) ?? uri;
       if (!found.has(key)) found.set(key, []);
     }

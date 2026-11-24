@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -269,6 +277,33 @@ test("the last set of rust-analyzer stands while it gives none", async () => {
   assert.deepEqual(logs, []);
   cfg = ["test"];
   assert.equal(await read(), "test");
+});
+
+test("rust-analyzer is asked by the path its workspace folder was opened with", async (t) => {
+  const root = await realpath(
+    await mkdtemp(path.join(os.tmpdir(), "kaalang-opened-")),
+  );
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const [real, link] = [path.join(root, "real"), path.join(root, "link")];
+  await mkdir(real);
+  try {
+    await symlink(real, link, "dir");
+  } catch (error) {
+    if (error.code !== "EPERM") throw error;
+    return t.skip(
+      "Creating a directory symlink needs this platform's permission",
+    );
+  }
+  const workspace = { isTrusted: true, workspaceFolders: [{ uri: uri(link) }] };
+  const host = await targetHost(workspace, () => status());
+  // Cargo names the real file, the editor the opened one, and another folder has neither.
+  for (const file of [real, link, root])
+    await host.analyzedCfg(path.join(file, "lib.rs"), () => {});
+  assert.deepEqual(host.asked, [
+    path.join(link, "lib.rs"),
+    path.join(link, "lib.rs"),
+    path.join(root, "lib.rs"),
+  ]);
 });
 
 test("a file several targets include stands where rust-analyzer reads it", async (t) => {
