@@ -63,6 +63,11 @@ export function forgetCfg(): void {
   forgetAnalyzedCfg();
 }
 
+/** Forgets the targets, after a source file appears or disappears: Cargo finds them by their files. */
+export function forgetTargets(): void {
+  cache.metadata.clear();
+}
+
 /** Asks rust-analyzer again, which may have loaded the workspace or rerun build scripts since. */
 export function forgetAnalyzedCfg(): void {
   analyzed = new Map();

@@ -18,6 +18,7 @@ import {
   analyzedCfg,
   forgetAnalyzedCfg,
   forgetCfg,
+  forgetTargets,
   located,
 } from "./target";
 
@@ -253,6 +254,11 @@ export function activate(context: vscode.ExtensionContext): void {
     forgetReferences(source);
     changed(page);
   }
+  /** A source file appeared or disappeared, which may add or remove a Cargo target. */
+  function sourceSetChanged(source: vscode.Uri): void {
+    forgetTargets();
+    sourcesChanged(source);
+  }
   const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(
@@ -312,9 +318,9 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     manifests,
     sources,
-    sources.onDidCreate(sourcesChanged),
+    sources.onDidCreate(sourceSetChanged),
     sources.onDidChange(sourcesChanged),
-    sources.onDidDelete(sourcesChanged),
+    sources.onDidDelete(sourceSetChanged),
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
     manifests.onDidDelete(reread),

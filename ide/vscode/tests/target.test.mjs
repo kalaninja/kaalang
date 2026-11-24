@@ -148,6 +148,40 @@ test("each target takes the set rust-analyzer reads its root with, gated ones in
   assert.equal(existsSync(file("Cargo.lock")), false);
 });
 
+test("a source file created after the targets were listed becomes a target once they are forgotten", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-new-target-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(path.join(root, "src"));
+  await writeFile(
+    path.join(root, "Cargo.toml"),
+    '[package]\nname="hub"\nversion="0.1.0"\nedition="2024"\n',
+  );
+  await writeFile(path.join(root, "src/lib.rs"), "");
+  const folder = { uri: uri(root) };
+  const workspace = {
+    isTrusted: true,
+    workspaceFolders: [folder],
+    getWorkspaceFolder: () => folder,
+    getConfiguration: () => ({ get: () => undefined }),
+  };
+  const host = await targetHost(
+    workspace,
+    () => status({ name: "hub", package: "hub", cfg: ["test"] }),
+    roots,
+  );
+  const targets = async () =>
+    (
+      await host.located(uri(path.join(root, "src/lib.rs")), () => {})
+    ).roots.map(({ name }) => name);
+  assert.deepEqual(await targets(), ["hub"]);
+
+  await mkdir(path.join(root, "tests"));
+  await writeFile(path.join(root, "tests/extra.rs"), "");
+  assert.deepEqual(await targets(), ["hub"]);
+  host.forgetTargets();
+  assert.deepEqual(await targets(), ["hub", "extra"]);
+});
+
 test("a file several targets include stands where rust-analyzer reads it", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-root-owner-"));
   t.after(() => rm(root, { recursive: true, force: true }));
