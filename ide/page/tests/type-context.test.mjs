@@ -97,3 +97,23 @@ test("an edit asks again and draws the other files' cards meanwhile", () => {
   );
   assert.ok(context.canPublish());
 });
+
+test("a refresh that finds the same references keeps the drawing", () => {
+  const context = new TypeContext("Focus");
+  const requests = [];
+  const host = { send: (message) => requests.push(message) };
+  const files = () => [
+    { uri: "b.rs", text: "b", cfg: "", offsets: [1], place },
+  ];
+  context.ask(host, "a.rs", 7);
+  context.receive({ ...requests.at(-1), focus: { place }, files: files() });
+  context.refresh(host);
+  assert.ok(
+    context.receive({ ...requests.at(-1), focus: { place }, files: files() }),
+  );
+  assert.equal(context.version, 1);
+  assert.ok(context.canPublish());
+  context.refresh(host);
+  context.receive({ ...requests.at(-1), focus: { place }, files: [] });
+  assert.equal(context.version, 2);
+});

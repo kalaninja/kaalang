@@ -90,9 +90,16 @@ export class TypeContext {
     if (message.type !== "referrers" || message.id !== this.#referrers?.id)
       return false;
     this.#waiting = false;
-    this.#files = message.files;
-    this.#place = message.focus?.place;
-    ++this.version;
+    const place = message.focus?.place;
+    // A refresh that finds the same references leaves the drawing as it is.
+    if (
+      JSON.stringify([message.files, place]) !==
+      JSON.stringify([this.#files, this.#place])
+    ) {
+      this.#files = message.files;
+      this.#place = place;
+      ++this.version;
+    }
     return true;
   }
 }

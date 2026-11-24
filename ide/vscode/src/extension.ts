@@ -301,7 +301,11 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (affectsCfg(event)) reconfigure();
     }),
-    vscode.languages.onDidChangeDiagnostics(() => changed()),
+    // Other extensions publish diagnostics too, for files the engine does not read.
+    vscode.languages.onDidChangeDiagnostics(({ uris }) => {
+      if (uris.some((uri) => uri.path.endsWith(".rs") || knownModule(uri)))
+        changed();
+    }),
     vscode.workspace.onDidChangeWorkspaceFolders(reconfigure),
     vscode.workspace.onDidCloseTextDocument((document) => {
       if (edited.has(document)) sourcesChanged(document.uri);
