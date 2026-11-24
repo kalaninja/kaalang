@@ -2,6 +2,7 @@
 interface Package {
   id: string;
   name: string;
+  manifest_path: string;
   targets: {
     name: string;
     kind: string[];
@@ -12,6 +13,7 @@ interface Package {
 export interface Metadata {
   packages: Package[];
   workspace_members: string[];
+  workspace_root: string;
 }
 
 /**

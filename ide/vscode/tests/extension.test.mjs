@@ -74,6 +74,7 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     "./card-places": { watchModuleSources: ignore },
     "./target": {
       forgetAnalyzedCfg: ignore,
+      watchOutsideManifests: ignore,
       analyzedCfg: async () => "",
       located: (uri) => {
         if (!ownership.has(uri)) ownership.set(uri, Promise.withResolvers());

@@ -20,6 +20,7 @@ import {
   forgetCfg,
   forgetTargets,
   located,
+  watchOutsideManifests,
 } from "./target";
 
 /** The panel's type, which the `when` clauses in package.json name. */
@@ -265,6 +266,7 @@ export function activate(context: vscode.ExtensionContext): void {
     log,
     { dispose: stopModuleWorker },
     watchModuleSources(sourcesChanged),
+    watchOutsideManifests(reread),
     vscode.commands.registerCommand("kaalang.showDiagram", () =>
       show(vscode.ViewColumn.Active),
     ),

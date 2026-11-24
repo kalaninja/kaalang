@@ -61,7 +61,15 @@ async function targetHost(workspace, answer, cardPlaces) {
     },
   };
   const modules = {
-    vscode: { workspace, Uri: { file: uri } },
+    vscode: {
+      workspace,
+      Uri: { file: uri },
+      RelativePattern: class {
+        constructor(base, pattern) {
+          Object.assign(this, { base, pattern });
+        }
+      },
+    },
     "./analyzer": { analyzerClient: () => client, statusCrates },
     ...(cardPlaces && { "./card-places": cardPlaces }),
   };
@@ -180,6 +188,64 @@ test("a source file created after the targets were listed becomes a target once 
   assert.deepEqual(await targets(), ["hub"]);
   host.forgetTargets();
   assert.deepEqual(await targets(), ["hub", "extra"]);
+});
+
+test("a manifest outside the workspace folders is watched once, until the extension stops", async (t) => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-outside-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const file = (...parts) => path.join(root, ...parts);
+  await writeFile(
+    file("Cargo.toml"),
+    '[workspace]\nmembers = ["app", "billing"]\nresolver = "3"\n',
+  );
+  for (const name of ["app", "billing"]) {
+    await mkdir(file(name, "src"), { recursive: true });
+    await writeFile(file(name, "src/lib.rs"), "");
+    await writeFile(
+      file(name, "Cargo.toml"),
+      `[package]\nname = "${name}"\nversion = "0.1.0"\nedition = "2024"\n`,
+    );
+  }
+  // The folder is opened below its Cargo workspace's root.
+  const folder = { uri: uri(file("app")) };
+  const watched = new Map();
+  const workspace = {
+    isTrusted: true,
+    workspaceFolders: [folder],
+    getWorkspaceFolder: ({ fsPath }) =>
+      fsPath.startsWith(file("app") + path.sep) ? folder : undefined,
+    getConfiguration: () => ({ get: () => undefined }),
+    createFileSystemWatcher({ base, pattern }) {
+      assert.equal(pattern, "Cargo.toml");
+      const watch = {
+        onDidCreate() {},
+        onDidChange: (handle) => (watch.change = handle),
+        onDidDelete() {},
+        dispose: () => watched.delete(base.fsPath),
+      };
+      watched.set(base.fsPath, watch);
+      return watch;
+    },
+  };
+  const host = await targetHost(
+    workspace,
+    () => status({ name: "app", package: "app", cfg: [] }),
+    roots,
+  );
+  let changes = 0;
+  const watches = host.watchOutsideManifests(() => ++changes);
+  await host.located(uri(file("app/src/lib.rs")), () => {});
+  assert.deepEqual([...watched.keys()].sort(), [root, file("billing")]);
+  const first = watched.get(root);
+  first.change();
+  assert.equal(changes, 1);
+  // Forgetting the targets leaves no time in which a change goes unseen.
+  host.forgetCfg();
+  await host.located(uri(file("app/src/lib.rs")), () => {});
+  assert.equal(watched.get(root), first);
+  assert.equal(watched.size, 2);
+  watches.dispose();
+  assert.equal(watched.size, 0);
 });
 
 test("a file several targets include stands where rust-analyzer reads it", async (t) => {

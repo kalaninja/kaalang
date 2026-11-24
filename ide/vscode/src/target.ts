@@ -47,6 +47,14 @@ let analyzed = new Map<string, Promise<AnalyzedCrate[]>>();
 /** One array per distinct list of roots, so that module trees stay cached while it holds. */
 let shapes = new Map<string, CargoRoot[]>();
 
+/**
+ * The watches of the manifests outside every workspace folder, which the
+ * editor's own watcher leaves out. Each stays until the extension stops, so
+ * that no change falls between two readings of the targets.
+ */
+let outside = new Map<string, vscode.Disposable>();
+let manifestChanged: (() => void) | undefined;
+
 /** Whether Restricted Mode was logged: once is enough. */
 let restricted = false;
 /** Whether a missing answer of rust-analyzer was logged since its last answer. */
@@ -61,6 +69,51 @@ export function forgetCfg(): void {
   cache = cargoCache();
   shapes = new Map();
   forgetAnalyzedCfg();
+}
+
+/**
+ * Reports a change of a manifest outside every workspace folder: a folder
+ * opened below its Cargo workspace's root has the root's manifest, and other
+ * members', outside it.
+ */
+export function watchOutsideManifests(changed: () => void): vscode.Disposable {
+  manifestChanged = changed;
+  return {
+    dispose() {
+      manifestChanged = undefined;
+      for (const watch of outside.values()) watch.dispose();
+      outside = new Map();
+    },
+  };
+}
+
+function watchManifests(metadata: Metadata): void {
+  const changed = manifestChanged;
+  if (!changed) return;
+  const members = new Set(metadata.workspace_members);
+  const manifests = [
+    path.join(metadata.workspace_root, "Cargo.toml"),
+    ...metadata.packages
+      .filter(({ id }) => members.has(id))
+      .map(({ manifest_path }) => manifest_path),
+  ];
+  for (const manifest of manifests) {
+    if (
+      outside.has(manifest) ||
+      vscode.workspace.getWorkspaceFolder(vscode.Uri.file(manifest))
+    )
+      continue;
+    const watch = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(
+        vscode.Uri.file(path.dirname(manifest)),
+        "Cargo.toml",
+      ),
+    );
+    watch.onDidCreate(changed);
+    watch.onDidChange(changed);
+    watch.onDidDelete(changed);
+    outside.set(manifest, watch);
+  }
 }
 
 /** Forgets the targets, after a source file appears or disappears: Cargo finds them by their files. */
@@ -218,7 +271,11 @@ async function configuredWorkspace(
   const metadata = await cached(
     revision.metadata,
     JSON.stringify([root, extraEnv]),
-    () => readMetadata(root, env, log),
+    async () => {
+      const metadata = await readMetadata(root, env, log);
+      if (metadata) watchManifests(metadata);
+      return metadata;
+    },
   );
   return {
     roots: metadata ? await configured(metadata, log) : [],
