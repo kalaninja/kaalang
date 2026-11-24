@@ -261,6 +261,18 @@ export function activate(context: vscode.ExtensionContext): void {
     sourcesChanged(source);
   }
   const sources = vscode.workspace.createFileSystemWatcher("**/*.rs");
+  /** Where Cargo finds targets: a folder removed or renamed is reported alone, without its files. */
+  const folders = vscode.workspace.createFileSystemWatcher(
+    "**/{tests,examples,benches,bin}{,/*}",
+    false,
+    true,
+  );
+  function targetFolderChanged(folder: vscode.Uri): void {
+    // The source watcher reports a file, and a build fills `target/*/examples`.
+    // shortcut: a build directory named otherwise reconfigures on each build, compare with the metadata's `target_directory` then.
+    const relative = vscode.workspace.asRelativePath(folder, false);
+    if (!/\.rs$|(^|\/)target\//.test(relative)) reread();
+  }
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(
     log,
@@ -327,6 +339,9 @@ export function activate(context: vscode.ExtensionContext): void {
     sources.onDidCreate(sourceSetChanged),
     sources.onDidChange(sourcesChanged),
     sources.onDidDelete(sourceSetChanged),
+    folders,
+    folders.onDidCreate(targetFolderChanged),
+    folders.onDidDelete(targetFolderChanged),
     manifests.onDidCreate(reread),
     manifests.onDidChange(reread),
     manifests.onDidDelete(reread),

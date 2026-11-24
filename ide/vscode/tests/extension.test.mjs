@@ -4,6 +4,17 @@ import path from "node:path";
 import test from "node:test";
 import { compileFunction } from "node:vm";
 
+const ignore = () => {};
+/** An API whose events never fire, unless `api` takes their handlers. */
+const events = (api = {}) =>
+  new Proxy(api, {
+    get: (target, name) =>
+      target[name] ??
+      (typeof name === "string" && name.startsWith("onDid")
+        ? ignore
+        : undefined),
+  });
+
 test("the diagram keeps a pending external Rust editor when its webview takes focus", async () => {
   const uri = (path) => ({
     scheme: "file",
@@ -26,16 +37,6 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     ownership = new Map(),
     shown = [],
     targets = [];
-  const ignore = () => {};
-  // Only active-editor changes fire in this scenario.
-  const events = (api = {}) =>
-    new Proxy(api, {
-      get: (target, name) =>
-        target[name] ??
-        (typeof name === "string" && name.startsWith("onDid")
-          ? ignore
-          : undefined),
-    });
   let changeEditor;
   const webview = events({
     asWebviewUri: (uri) => uri,
@@ -115,4 +116,52 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     uri: local.document.uri.toString(),
     cfg: "",
   });
+});
+
+test("a removed target folder reads the targets again, a source or built file does not", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let removed;
+  let forgotten = 0;
+  const modules = {
+    vscode: {
+      Uri: { joinPath: ignore },
+      commands: { registerCommand: ignore },
+      window: events({ createOutputChannel: ignore }),
+      workspace: events({
+        asRelativePath: ({ path }) => path.replace("/target/workspace/", ""),
+        createFileSystemWatcher: (pattern) =>
+          events(
+            pattern.includes("tests")
+              ? { onDidDelete: (handle) => (removed = handle) }
+              : {},
+          ),
+      }),
+      languages: events(),
+    },
+    "./card-places": { watchModuleSources: ignore },
+    "./references": { forgetReferences: ignore },
+    "./target": {
+      forgetCfg: () => ++forgotten,
+      forgetAnalyzedCfg: ignore,
+      watchOutsideManifests: ignore,
+    },
+  };
+  const host = {};
+  const source = await readFile(
+    new URL("../out/extension.js", import.meta.url),
+    "utf8",
+  );
+  compileFunction(source, ["exports", "require"])(
+    host,
+    (name) => modules[name] ?? {},
+  );
+  host.activate({ subscriptions: [] });
+
+  removed({ path: "/target/workspace/tests/api.rs" });
+  removed({ path: "/target/workspace/target/debug/examples/api-1f" });
+  t.mock.timers.tick(500);
+  assert.equal(forgotten, 0);
+  removed({ path: "/target/workspace/tests" });
+  t.mock.timers.tick(500);
+  assert.equal(forgotten, 1);
 });
