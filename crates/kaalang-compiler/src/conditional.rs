@@ -104,15 +104,16 @@ pub(super) fn parameters(
             let Meta::List(list) = &attr.meta else {
                 return None;
             };
-            match list.path.get_ident()?.to_string().as_str() {
-                "allow" | "warn" | "deny" | "forbid" => Some(quote!(#attr)),
-                "expect" => {
-                    // The original item owns the lint expectation.
-                    let lints = &list.tokens;
-                    Some(quote!(#[allow(#lints)]))
-                }
-                _ => None,
-            }
+            let level = match list.path.get_ident()?.to_string().as_str() {
+                "allow" | "warn" | "deny" => return Some(quote!(#attr)),
+                // The original item owns the lint expectation.
+                "expect" => quote!(allow),
+                // A relationship check allows its own import, which `forbid` rejects.
+                "forbid" => quote!(deny),
+                _ => return None,
+            };
+            let lints = &list.tokens;
+            Some(quote!(#[#level(#lints)]))
         });
         quote!(#shell #(#lints)* const _: () = { #body };)
     }))

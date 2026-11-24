@@ -92,3 +92,16 @@ fn a_disabled_generic_does_not_shadow_the_relationship_target() {
     }
     assert_eq!(Inventory { id: 23 }.id, 23);
 }
+
+#[test]
+fn a_forbidden_lint_admits_the_relationship_check_of_a_conditional_generic() {
+    #[forbid(unused_imports)]
+    #[kaa]
+    struct Inventory<#[cfg(any())] Device> {
+        #[kaa::refer(Device, "The registered device.")]
+        id: u32,
+        #[cfg(any())]
+        storage: Device,
+    }
+    assert_eq!(Inventory { id: 23 }.id, 23);
+}
