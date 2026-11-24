@@ -12,6 +12,7 @@ async function places(tree) {
   const require = createRequire(built);
   const asked = [];
   const modules = {
+    vscode: { workspace: { isTrusted: true, textDocuments: [] } },
     "./module-sources": {
       moduleTree: async (roots, unsaved) => {
         asked.push({ roots, unsaved });
@@ -88,4 +89,33 @@ test("a failed worker gives an incomplete, empty tree", async () => {
   const graph = await workspaceTree([], []);
   assert.equal(graph.complete, false);
   assert.equal(graph.files.size, 0);
+});
+
+const ROOTS = [
+  {
+    package: "app",
+    kind: ["lib"],
+    name: "app",
+    root: pathToFileURL(path.resolve("project", "src", "lib.rs")).href,
+    cfg: "",
+  },
+];
+
+test("a tree a file left incomplete is read once", async () => {
+  const { asked, editorTree } = await places({
+    files: {},
+    referring: [],
+    complete: false,
+    stamps: [],
+  });
+  assert.equal((await editorTree(ROOTS)).complete, false);
+  await editorTree(ROOTS);
+  assert.equal(asked.length, 1);
+});
+
+test("a failed worker is asked again", async () => {
+  const { asked, editorTree } = await places(null);
+  await editorTree(ROOTS);
+  await editorTree(ROOTS);
+  assert.equal(asked.length, 2);
 });

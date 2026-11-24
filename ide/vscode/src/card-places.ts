@@ -35,6 +35,8 @@ export interface Graph {
   referring: string[];
   /** A file that failed to parse or read could declare more modules. */
   complete: boolean;
+  /** The worker gave no tree, so the next call asks it again. */
+  failed?: true;
 }
 
 let trees = new WeakMap<CargoRoot[], Promise<Graph>>();
@@ -71,6 +73,7 @@ export async function workspaceTree(
       paths: new Map(),
       referring: [],
       complete: false,
+      failed: true,
     };
   const readings = Object.entries(tree.files).map(([file, places]) => {
     const found = places.map(({ target, place, types }) => ({
@@ -108,7 +111,8 @@ export function editorTree(roots: CargoRoot[]): Promise<Graph> | undefined {
       for (const file of [...graph.paths.keys(), ...graph.files.keys()])
         known.add(file);
     }
-    if (!graph.complete) cache.delete(roots);
+    // A file's failure lasts until a change, which forgets the trees.
+    if (graph.failed) cache.delete(roots);
     return graph;
   });
   cache.set(roots, pending);
