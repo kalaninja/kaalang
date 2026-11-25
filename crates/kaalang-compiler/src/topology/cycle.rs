@@ -65,7 +65,6 @@ pub(super) fn order_exits(
 pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();
     for boundary in &topology.cycle_boundaries {
-        let owns = |block| (boundary.header + 1..boundary.end).contains(&block);
         // A completing loop cycle continues from its result junctions, a for
         // cycle from its for-end.
         let targets = match boundary.caps {
@@ -81,10 +80,12 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
                     NodeId::Block(block) | NodeId::Case { choice: block, .. } => block,
                     NodeId::Start => return None,
                 };
-                (owns(block) && Vertex::Node(node.id) != target).then_some(Connection {
-                    source: Source::Exit(ExitId::of(node.id)),
-                    destination: target,
-                })
+                (boundary.encloses(block) && Vertex::Node(node.id) != target).then_some(
+                    Connection {
+                        source: Source::Exit(ExitId::of(node.id)),
+                        destination: target,
+                    },
+                )
             }));
             order.extend(
                 topology

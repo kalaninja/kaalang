@@ -12,7 +12,7 @@ import { analyzedPath, located } from "./target";
 /** Every relationship annotation contains this Rust identifier. */
 const MAY_REFER = /\brefer\b/;
 
-/** One revision of the sources and Cargo configuration. Diagnostics can repeat within it. */
+/** The definitions found in one revision of the sources and Cargo configuration, kept while only diagnostics change. */
 function sourceRevision() {
   return {
     resolved: new Map<string, ReturnType<typeof locations>>(),

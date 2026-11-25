@@ -348,9 +348,9 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
 
 /// The rectangle of each name of a wire label on each line it is drawn on,
 /// with the name's position among `names`, the names the label joined. A name
-/// the label wraps has one rectangle per line. Each runs from its first
-/// glyph's left edge to its last one's right edge, and from a font size above
-/// its baseline to half of one below, as `label_rect` bounds a line.
+/// the label wraps has one rectangle per line. Each spans the name's advance
+/// width, and runs from a font size above its baseline to half of one below,
+/// as `label_rect` bounds a line.
 pub(crate) fn name_rects(label: &Label, names: &[String]) -> Vec<(usize, (i32, i32, i32, i32))> {
     let font_size = label.kind.font_size();
     let baselines = block_metrics(&label.lines, font_size, label.kind.line_height()).baselines;

@@ -1205,8 +1205,8 @@ pub(crate) fn block_metrics(
     TextBlockMetrics { height, baselines }
 }
 
-/// The horizontal ink bounds of ordered, disjoint byte ranges in wrapped code.
-/// A range spanning lines visits each line it occupies.
+/// The horizontal advance bounds of ordered, disjoint byte ranges in wrapped
+/// code. A range spanning lines visits each line it occupies.
 pub(crate) fn code_ranges(
     lines: &[RichText],
     font: i32,

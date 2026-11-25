@@ -11,11 +11,7 @@ import * as vscode from "vscode";
 import { type AnalyzedCrate, analyzerClient, statusCrates } from "./analyzer";
 import { cached, realFile } from "./cache";
 import { fileReadings, type Placement } from "./card-places";
-import {
-  type CargoRoot as CargoTarget,
-  type Metadata,
-  workspaceTargets,
-} from "./metadata";
+import { type CargoTarget, type Metadata, workspaceTargets } from "./metadata";
 
 /** Each crate reads its module tree with the set rust-analyzer gives its root. */
 export interface CargoRoot extends CargoTarget {

@@ -76,7 +76,7 @@ struct Scope {
 
 /// Where a name may be used from: anywhere, or inside a module of its crate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Visibility {
+enum Visibility {
     Public,
     Within(usize),
 }

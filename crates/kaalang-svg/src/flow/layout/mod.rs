@@ -419,8 +419,9 @@ enum Blocked {
     Narrow(i32),
 }
 
-/// Checks correspondence after translation: crossing-free geometry alone cannot
-/// detect a swapped column or a disconnected port.
+/// Checks that pixels keep the arrangement's rows, columns, ports, and contour
+/// anchors: crossing-free geometry alone cannot detect a swapped column or a
+/// disconnected port.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
     let gaps = vertical_gaps(scene);
     let rows = scene.rows(&gaps);

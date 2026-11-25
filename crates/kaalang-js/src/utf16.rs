@@ -31,8 +31,7 @@ impl Offsets {
 
 /// The byte where the character holding each of the UTF-16 code units
 /// `offsets` starts, or the end of `text` just past its last unit, in one pass
-/// over it, in no particular order. An offset further on has none: JavaScript
-/// passes a negative offset as one past any text.
+/// over it, in no particular order. An offset further on has none.
 pub(crate) fn bytes(text: &str, offsets: &[u32]) -> Vec<usize> {
     let mut wanted = offsets.to_vec();
     wanted.sort_unstable();

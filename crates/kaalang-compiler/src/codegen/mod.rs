@@ -214,7 +214,7 @@ fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2)
     let mut captures = input_bindings(&block.inputs, bindings);
     let mut value = transfer_value(&block.body);
     // A hidden export forwards a declared output, which may be named
-    // `_like_this`: no author reads it here, so clippy is to report no read.
+    // `_like_this`: no author reads it here, so clippy must not report the read.
     if block.kind == BlockKind::Export {
         captures = hidden(captures);
         value = value.map(hidden);
@@ -391,8 +391,8 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
             // `allow` would fail under `forbid`; rustc reports no unread `_name`,
             // and clippy would report this read of one.
             let read = (!alias.to_string().starts_with('_')).then(|| quote!(let _ = #alias;));
-            // The statements take the expansion's hygiene, where clippy reports
-            // no binding of a unit control wire.
+            // The binding takes the expansion's hygiene, where clippy reports no
+            // binding of a unit control wire.
             quote_spanned!(Span::mixed_site().located_at(alias.span())=>
                 let #binding_mut #alias = #borrow #borrow_mut #wire;
                 #read
@@ -411,6 +411,8 @@ pub fn expand(function: ItemFn) -> Result<ItemFn> {
     expand_in_scope(function, Span::mixed_site())
 }
 
+/// Expands as [`expand`] does, binding the parameters at `scope`, the span the
+/// shell's signature gives their identifiers.
 pub(crate) fn expand_in_scope(mut function: ItemFn, scope: Span) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
     if !analysis.stages.is_empty() {

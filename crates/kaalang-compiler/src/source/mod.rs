@@ -420,7 +420,7 @@ impl<'a> SourceFile<'a> {
 }
 
 /// Bytes syn strips before tokenizing a whole Rust file.
-pub(crate) fn source_prefix(text: &str, file: &syn::File) -> usize {
+fn source_prefix(text: &str, file: &syn::File) -> usize {
     usize::from(text.starts_with('\u{feff}')) * '\u{feff}'.len_utf8()
         + file.shebang.as_ref().map_or(0, String::len)
 }

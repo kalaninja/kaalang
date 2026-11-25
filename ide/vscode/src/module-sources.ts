@@ -12,15 +12,7 @@ import {
 import { fileStamp, realFile, realPath } from "./cache";
 import type { Placement } from "./card-places";
 import { editorText } from "./offsets";
-
-/** A Cargo target, as `cargo metadata` lists it, whose module tree the bindings read from the file `root`. */
-export interface TreeRoot {
-  package: string;
-  kind: string[];
-  name: string;
-  root: string;
-  cfg: string;
-}
+import type { CargoRoot } from "./target";
 
 /**
  * The bindings' module trees, with each path the walk consulted, a missing
@@ -58,7 +50,7 @@ function call(name: Name, args: unknown[]): Promise<unknown> {
  * before the disk; `null` when the worker failed.
  */
 export function moduleTree(
-  roots: TreeRoot[],
+  roots: CargoRoot[],
   unsaved: [string, string][],
 ): Promise<Tree | null> {
   // A string crosses threads faster than the objects it describes.
@@ -175,7 +167,7 @@ export function treeHost(
   };
 }
 
-/** Forgets what `found` holds of `file` under any spelling, or everything; `names` are its physical paths. */
+/** Forgets what `found` holds of `file` under any spelling, or everything, and returns the spellings it forgot. */
 export function forgetFound(
   found: Map<string, Found>,
   file?: string,
@@ -203,7 +195,7 @@ async function serve(port: MessagePort): Promise<void> {
   });
   const found = new Map<string, Found>();
   const jobs = {
-    moduleTree(roots: TreeRoot[], unsaved: [string, string][]): string {
+    moduleTree(roots: CargoRoot[], unsaved: [string, string][]): string {
       const consulted = new Map<string, string>();
       const host = treeHost(found, new Map(unsaved), consulted);
       const tree = bindings.moduleTree(JSON.stringify(roots), host);

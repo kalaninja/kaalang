@@ -21,7 +21,7 @@ export interface Metadata {
  * A package target as `cargo metadata` lists it: the bindings tell from its
  * kinds and name which row its cards start and what its crate is named.
  */
-export interface CargoRoot {
+export interface CargoTarget {
   package: string;
   kind: string[];
   name: string;
@@ -32,7 +32,7 @@ export interface CargoRoot {
  * The workspace's targets, those with required features that are off
  * included: rust-analyzer reads them too.
  */
-export function workspaceTargets(metadata: Metadata): CargoRoot[] {
+export function workspaceTargets(metadata: Metadata): CargoTarget[] {
   const members = new Set(metadata.workspace_members);
   return metadata.packages
     .filter((pkg) => members.has(pkg.id))

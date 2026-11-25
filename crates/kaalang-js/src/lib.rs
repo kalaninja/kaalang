@@ -2,9 +2,8 @@
 //!
 //! Every offset and range that crosses to JavaScript counts UTF-16 code units
 //! of the text as given, as JavaScript strings and the editors' APIs do; the
-//! column an error's message gives counts characters. A call
-//! answers in JSON, a string JavaScript owns, and the module forgets the text
-//! it parsed.
+//! column an error's message gives counts characters. A call answers in JSON, a
+//! string JavaScript owns, and the module forgets the text it parsed.
 
 use kaalang_compiler::SourceFile;
 use wasm_bindgen::{JsError, prelude::wasm_bindgen};

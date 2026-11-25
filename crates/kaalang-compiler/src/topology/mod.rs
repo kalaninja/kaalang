@@ -185,6 +185,19 @@ pub(crate) fn linked(pairs: &[(usize, usize)]) -> Topology {
 }
 
 impl Topology {
+    /// Every vertex a cycle boundary holds: its body's, the cycles nested in
+    /// it included, its entry, and its results.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `boundary` is not one of this topology's.
+    #[must_use]
+    pub fn boundary_vertices(&self, flow: &Flow, boundary: &CycleBoundary) -> BTreeSet<Vertex> {
+        let mut vertices = self.body_vertices(flow, boundary.header);
+        vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
+        vertices
+    }
+
     /// Vertices drawn inside the cycle body beginning at `header`: its own
     /// blocks and their cases, together with its entry and tail and those of the
     /// cycles nested in it.
@@ -194,23 +207,6 @@ impl Topology {
     /// Panics if `header` is not a cycle header in the corresponding flow.
     #[must_use]
     pub fn body_vertices(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
-        self.body(flow, header)
-    }
-
-    /// Every vertex a cycle boundary holds: its body's, the cycles nested in
-    /// it included, its entry, and its results.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `boundary` is not one of this topology's.
-    #[must_use]
-    pub fn boundary_vertices(&self, flow: &Flow, boundary: &CycleBoundary) -> BTreeSet<Vertex> {
-        let mut vertices = self.body(flow, boundary.header);
-        vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
-        vertices
-    }
-
-    fn body(&self, flow: &Flow, header: usize) -> BTreeSet<Vertex> {
         let end = flow.blocks[header].cycle_end.expect("a cycle owns a body");
         let body = header + 1..end;
         let results = self
@@ -1320,10 +1316,10 @@ pub struct Caps {
 }
 
 impl CycleBoundary {
-    /// Whether the cycle whose header block is `header` lies inside this one.
+    /// Whether `block`, such as a nested cycle's header, lies inside this cycle.
     #[must_use]
-    pub fn encloses(&self, header: usize) -> bool {
-        (self.header + 1..self.end).contains(&header)
+    pub fn encloses(&self, block: usize) -> bool {
+        (self.header + 1..self.end).contains(&block)
     }
 
     /// Whether a connection from `source` to `destination` crosses this
