@@ -30,8 +30,6 @@
   inclusion, as rustc compiles it, each with its own card.
 - `cargo kaalang diagram` reports a module that has both `name.rs` and
   `name/mod.rs` instead of reading one of them.
-- A datatype with a relationship no longer fails to compile under
-  `forbid(unused_imports)`.
 - `cargo kaalang diagram --target` reads a procedural macro and the libraries it
   depends on for the named target, as it reads every other crate, so a type they
   declare keeps its card.
@@ -124,10 +122,6 @@
 - `cargo kaalang` finds flows marked `#[kaalang::kaalang]`.
 - Blocks, cycles, and stages written through `macro_rules!` fragments parse like
   directly written ones.
-- A choice arm that diverges, such as `_ => unreachable!()`, no longer makes the
-  generated code warn.
-- Generated code no longer silences the user's own lints inside cycles, and it
-  compiles under `#![forbid(unused_mut)]`.
 - `cargo kaalang` refuses an output path that resolves to its source file,
   including through symbolic and hard links.
 - Arrangement verification rejects coordinates that overflow.
