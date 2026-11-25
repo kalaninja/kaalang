@@ -4,6 +4,7 @@ mod braced_body_from_a_macro;
 mod choice_body_from_a_macro;
 mod choice_scope_ends_before_continuation;
 mod diverging_case;
+mod partial_choice_todo;
 mod run_choice;
 mod run_choice_skeleton_with_a_shared_consumer;
 mod run_choice_with_guard;

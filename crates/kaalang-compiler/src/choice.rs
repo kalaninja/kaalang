@@ -11,22 +11,6 @@ pub fn choice_match(body: &Expr) -> Option<&ExprMatch> {
     }
 }
 
-/// Reports whether a block body is exactly an argument-free `todo!()` call.
-#[must_use]
-pub fn is_todo_body(body: &Expr) -> bool {
-    single_body_expression(body).is_some_and(is_todo_macro)
-}
-
-/// Reports whether an expression is an argument-free `todo!()` call.
-pub(crate) fn is_todo_macro(expression: &Expr) -> bool {
-    let Expr::Macro(expression) = crate::parse::ungrouped(expression) else {
-        return false;
-    };
-    expression.attrs.is_empty()
-        && expression.mac.path.is_ident("todo")
-        && expression.mac.tokens.is_empty()
-}
-
 /// Extracts the only expression from a plain, unlabeled block, looking through
 /// the invisible group a body written by another macro arrives in.
 fn single_body_expression(body: &Expr) -> Option<&Expr> {

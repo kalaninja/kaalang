@@ -1,4 +1,4 @@
-error: a kaalang choice body must contain exactly one `match` expression or `todo!()`
+error: a kaalang choice body must contain exactly one `match` expression
  --> tests/flow/choice/compile_fail/choice_body_type.rs:8:43
   |
 8 |     let (negative, nonnegative) = |input| { true };

@@ -66,11 +66,9 @@ impl Analysis {
                 );
             }
             NodeId::Case { choice, branch } => {
-                let block = &flow.blocks[choice];
-                return Some(
-                    choice_match(&block.body)
-                        .map_or(block.span, |choice| choice.arms[branch].span()),
-                );
+                let choice =
+                    choice_match(&flow.blocks[choice].body).expect("choice bodies are validated");
+                return Some(choice.arms[branch].span());
             }
             NodeId::Block(index) => index,
         };

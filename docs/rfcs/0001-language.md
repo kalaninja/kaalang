@@ -338,11 +338,10 @@ The match scrutinee is evaluated exactly once. Unlike question outputs, choice
 outputs are not restricted to `()`, and different outputs may carry different
 Rust types. Like question outputs, they are branch outputs (section 6).
 
-An implemented choice body contains exactly one `match` expression. An exact
-whole-body `todo!()` is also a valid placeholder; every downstream branch still
-undergoes type checking. An individual match arm cannot consist solely of
-`todo!()`, with or without braces. Match bindings and block locals remain scoped
-to the selected arm; downstream code receives only declared wires.
+A choice body contains exactly one `match` expression; a whole-body `todo!()` is
+rejected. An arm may be the placeholder `todo!()`; every downstream branch still
+undergoes type checking. Match bindings and block locals remain scoped to the
+selected arm; downstream code receives only declared wires.
 
 The selected arm's value leaves the match before the branch continues. A case
 value is therefore owned or borrows data that outlives the choice, such as a
@@ -982,8 +981,7 @@ choice_statement :=
     "let" "(" output_binding "," output_binding ("," output_binding)* ","? ")" "="
     "|" input_list "|" choice_body ";"
 
-choice_expression := rust_match_expression | "todo!()"
-choice_body := choice_expression | "{" choice_expression "}"
+choice_body := rust_match_expression | "{" rust_match_expression "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"

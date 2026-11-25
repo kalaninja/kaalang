@@ -258,7 +258,10 @@ case continuation. This scope boundary implements
 
 Nested labeled blocks let each case pass its value directly into an ordinary
 `let` binding. Each arm breaks out of its input and match-arm scopes before its
-continuation runs.
+continuation runs. Each arm's value is taken beside an alternative that never
+runs, which the example omits: an arm that diverges, such as
+`_ => unreachable!()`, then leaves no lowered code for Rust to report as
+unreachable.
 
 ```rust
 use kaalang::kaalang;
@@ -428,16 +431,17 @@ diverging plan emits no return.
 
 ## 6. Placeholders and function attributes
 
-An authored `todo!()` remains in the lowered body. For a choice placeholder,
-lowering also emits the downstream case continuations so Rust checks every
-branch even though reaching the placeholder panics. This preserves the
-placeholder behavior specified by [RFC 0001 §4.4](0001-language.md#44-choice).
+An authored `todo!()` remains in the lowered body. A choice arm that is a
+placeholder is lowered as any other arm, with its case continuation, so Rust
+checks every branch even though reaching the placeholder panics. This preserves
+the placeholder behavior specified by
+[RFC 0001 §4.4](0001-language.md#44-choice).
 
-A placeholder diverges, so Rust reports code lowered after it as unreachable.
-Lowering does not suppress `unreachable_code`; a workspace that denies warnings
-rejects such an unfinished flow unless the author opts out. An authored
-`#[allow(unreachable_code)]` on the function is re-emitted with the function's
-other attributes, implementing the opt-out described by
+A placeholder that is a whole body diverges, so Rust reports code lowered after
+it as unreachable. Lowering does not suppress `unreachable_code`; a workspace
+that denies warnings rejects such an unfinished flow unless the author opts out.
+An authored `#[allow(unreachable_code)]` on the function is re-emitted with the
+function's other attributes, implementing the opt-out described by
 [RFC 0001 §5](0001-language.md#5-flow-inputs-and-outputs).
 
 Expansion replaces the kaalang body and preserves the authored function's name,

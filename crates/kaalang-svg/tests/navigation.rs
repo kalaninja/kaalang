@@ -908,21 +908,6 @@ fn a_transition_a_stage_selects_again_draws_that_stage() {
 }
 
 #[test]
-fn a_case_of_an_unwritten_choice_draws_the_choice() {
-    let source = include_str!(
-        "../../kaalang/tests/flow/choice/run_choice_skeleton_with_a_shared_consumer.rs"
-    );
-    let (_, hotspots) = draw(source, 0, false).unwrap();
-    let choice = &code(source, &hotspots)
-        .into_iter()
-        .filter(|code| code.starts_with("#[kaa::choice("))
-        .collect::<Vec<_>>();
-    // The choice's select node, and each of its cases.
-    assert!(choice.len() > 2, "{choice:?}");
-    assert!(choice.iter().all(|code| *code == choice[0]), "{choice:?}");
-}
-
-#[test]
 fn ranges_count_the_byte_order_mark_and_the_shebang() {
     let prefix = "\u{feff}#!/usr/bin/env rustx\n";
     let prefixed = format!("{prefix}{SOURCE}");

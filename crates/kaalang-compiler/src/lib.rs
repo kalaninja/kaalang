@@ -35,10 +35,7 @@ pub use self::{
         WireMerge,
     },
 };
-pub(crate) use self::{
-    attribute::is_kaalang_attribute,
-    choice::{choice_match, is_todo_body},
-};
+pub(crate) use self::{attribute::is_kaalang_attribute, choice::choice_match};
 
 mod analyze;
 mod attribute;

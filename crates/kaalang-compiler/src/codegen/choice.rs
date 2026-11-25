@@ -8,48 +8,25 @@
 
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::Lifetime;
+use syn::{Expr, Lifetime};
 
-use super::{Bindings, block_body, input_bindings, join};
-use crate::{Block, Branch, Flow, Join, choice_match, is_todo_body};
+use super::{Bindings, input_bindings, join};
+use crate::{Block, Branch, Flow, Join, choice_match};
 
 /// Rebuilds the authored match, letting the caller decide what each arm
 /// evaluates to.
 fn authored_match(
     block: &Block,
     input_bindings: &TokenStream2,
-    arm_value: impl Fn(usize, TokenStream2) -> TokenStream2,
+    arm_value: impl Fn(usize, &Expr) -> TokenStream2,
 ) -> TokenStream2 {
-    if is_todo_body(&block.body) {
-        let body = block_body(&block.body);
-        let numbered = (0..block.outputs.len() - 1).map(|case| {
-            let value = arm_value(case, quote!(todo!()));
-            quote!(#case => #value,)
-        });
-        let last = arm_value(block.outputs.len() - 1, quote!(todo!()));
-        // The braces make the attribute sit on a statement: a join binds the
-        // dispatch as an initializer, where an attribute on a bare expression
-        // is rejected.
-        return quote! {{
-            #[allow(clippy::diverging_sub_expression)]
-            match {
-                #input_bindings
-                #body
-            } {
-                #(#numbered)*
-                _ => #last,
-            }
-        }};
-    }
-
     let choice = choice_match(&block.body).expect("choice bodies are validated");
     let match_attrs = &choice.attrs;
     let scrutinee = &choice.expr;
     let arms = choice.arms.iter().enumerate().map(|(case, arm)| {
         let attrs = &arm.attrs;
         let pattern = &arm.pat;
-        let value = &arm.body;
-        let value = arm_value(case, quote!(#value));
+        let value = arm_value(case, &arm.body);
         quote! {
             #(#attrs)*
             #pattern => #value,
@@ -78,6 +55,7 @@ pub(crate) fn emit(
     let cases = block.outputs.len();
     // The hygienic binding that carries the selected case value out of its arm.
     let value = Ident::new("__kaalang_case_value", Span::mixed_site());
+    let unreached = Ident::new("__kaalang_unreached", Span::mixed_site());
     let labels = (0..cases)
         .map(|case| {
             Lifetime::new(
@@ -92,14 +70,22 @@ pub(crate) fn emit(
     let mut dispatch = authored_match(
         block,
         &input_bindings(&block.inputs, bindings),
-        |case, arm_value| {
+        |case, arm| {
             let label = &labels[case];
-            // An arm such as `_ => unreachable!()` may diverge, which leaves
-            // the generated `break` unreachable.
+            // An arm such as `_ => unreachable!()` diverges, and Rust would
+            // report the `break` after it. Beside a branch that never runs, the
+            // value keeps a type of its own, so nothing diverges. A `()` arm
+            // stays as written: in braces clippy would report it as unneeded.
+            let arm = if matches!(arm, Expr::Tuple(unit) if unit.elems.is_empty()) {
+                quote!(#arm)
+            } else {
+                quote!(if true { #arm } else {
+                    const fn #unreached<T>() -> T { ::core::unreachable!() }
+                    #unreached()
+                })
+            };
             quote!({
-                #[allow(clippy::diverging_sub_expression)]
-                let #value = #arm_value;
-                #[allow(unreachable_code)]
+                let #value = #arm;
                 break #label #value;
             })
         },

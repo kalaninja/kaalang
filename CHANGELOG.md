@@ -2,6 +2,11 @@
 
 ## 0.4.0 - unreleased
 
+### Breaking
+
+- A choice body is always a `match`: a placeholder `todo!()` goes in an arm, and
+  a whole-body `todo!()` is rejected.
+
 ### Added
 
 - The VS Code extension shows the flow or type at the cursor. Click a connection
