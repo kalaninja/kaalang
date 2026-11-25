@@ -105,7 +105,7 @@ function start() {
 }
 
 /** Keep `..` for the filesystem: the preceding directory may be a symlink. */
-export function moduleFile(parent: string, parts: string[]): string {
+function moduleFile(parent: string, parts: string[]): string {
   let file = path.dirname(parent);
   for (const part of parts) {
     const root = path.parse(part).root;
