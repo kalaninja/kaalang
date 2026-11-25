@@ -428,8 +428,8 @@ implicit repeats target that cycle's own generated label under
 [RFC 0004 §7](0004-rust-lowering.md#7-cycles).
 
 An illustrative lowering of the counting flow in §8.1, omitting hygiene,
-parameter withdrawal, and lint details as in RFC 0004 and showing the mutable
-capture explicitly:
+parameter withdrawal, and the reads of capture aliases as in RFC 0004 and
+showing the mutable capture explicitly:
 
 ```rust
 fn count_to(limit: usize) -> usize {

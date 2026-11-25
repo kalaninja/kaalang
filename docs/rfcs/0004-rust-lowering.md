@@ -20,9 +20,9 @@ the relevant bindings, scopes, and control flow, not a promised token-for-token
 expansion. Names beginning with `wire_` stand for hygienic generated bindings;
 their plain Rust spellings do not demonstrate macro hygiene. The examples omit
 the prologue that moves each named parameter into its wire and withdraws the
-authored name, and omit unit control-wire bindings and generated lint attributes
-where the branch structure already shows their role. Structural returns are
-shown as native Rust `return` statements.
+authored name, the generated read of each capture alias, and unit control-wire
+bindings where the branch structure already shows their role. Structural returns
+are shown as native Rust `return` statements.
 
 ## 2. Bindings, scopes, actions, and calls
 
@@ -63,8 +63,10 @@ producers. Permitted mutable captures get mutable internal output bindings and
 bindings after merges. These internal modifiers have expansion spans, so unused
 internal mutability raises no author-facing warning. An output's authored `mut`
 is a permission and need not be exercised. Function parameters and authored body
-locals retain their normal Rust lints. Capture aliases suppress unused-variable
-lints; transfer and persistent cycle bindings also suppress unused mutability.
+locals retain their normal Rust lints. Lowering emits no lint attribute, so the
+lint levels the author sets, `forbid` included, govern the lowered code. Lowered
+code reads a capture alias once, unless its name begins with `_`, so a capture
+that only places its block is not reported as unused.
 
 Input aliases belong to their block's scope. Either kind of borrowed capture can
 produce a reference that outlives the alias when the underlying owner remains

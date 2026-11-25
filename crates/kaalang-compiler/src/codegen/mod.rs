@@ -2,7 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
+use proc_macro2::{Group, Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::{ToTokens, quote, quote_spanned};
 use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, Stmt, ext::IdentExt, token::Mut};
 
@@ -211,18 +211,39 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
 /// root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let captures = input_bindings(&block.inputs, bindings);
-    let value = transfer_value(&block.body);
-    // A hidden export forwards a declared output, which may be named `_like_this`.
-    let allow = (block.kind == BlockKind::Export)
-        .then(|| quote!(#[allow(clippy::used_underscore_binding)]));
+    let mut captures = input_bindings(&block.inputs, bindings);
+    let mut value = transfer_value(&block.body);
+    // A hidden export forwards a declared output, which may be named
+    // `_like_this`: no author reads it here, so clippy is to report no read.
+    if block.kind == BlockKind::Export {
+        captures = hidden(captures);
+        value = value.map(hidden);
+    }
     quote_spanned! {block.span=>
-        #allow
         {
             #captures
             #exit #value;
         }
     }
+}
+
+/// Gives each identifier the expansion's hygiene at its own place.
+fn hidden(tokens: TokenStream2) -> TokenStream2 {
+    tokens
+        .into_iter()
+        .map(|token| match token {
+            TokenTree::Group(group) => {
+                let mut inner = Group::new(group.delimiter(), hidden(group.stream()));
+                inner.set_span(group.span());
+                inner.into()
+            }
+            TokenTree::Ident(mut ident) => {
+                ident.set_span(Span::mixed_site().located_at(ident.span()));
+                ident.into()
+            }
+            token => token,
+        })
+        .collect()
 }
 
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
@@ -366,9 +387,15 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
             } else {
                 (mutable, None)
             };
-            quote_spanned!(alias.span()=>
-                #[allow(unused_variables, clippy::let_unit_value)]
+            // The read keeps an alias used that only places its block, where an
+            // `allow` would fail under `forbid`; rustc reports no unread `_name`,
+            // and clippy would report this read of one.
+            let read = (!alias.to_string().starts_with('_')).then(|| quote!(let _ = #alias;));
+            // The statements take the expansion's hygiene, where clippy reports
+            // no binding of a unit control wire.
+            quote_spanned!(Span::mixed_site().located_at(alias.span())=>
                 let #binding_mut #alias = #borrow #borrow_mut #wire;
+                #read
             )
         });
 

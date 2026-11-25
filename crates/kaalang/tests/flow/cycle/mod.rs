@@ -14,6 +14,7 @@ mod const_noncopy_gate;
 mod consume_before_continue;
 mod count_to;
 mod cycle_on_each_branch;
+mod cycle_output_named_by_a_macro;
 mod diverging_middle_branch;
 mod early_result_then_cycle;
 mod empty_capture_continue;

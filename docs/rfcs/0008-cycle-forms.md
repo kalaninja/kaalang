@@ -230,7 +230,8 @@ fn sum(values: &[i64]) -> i64 {
 }
 ```
 
-Illustrative Rust, omitting unit control-wire bindings and lint allowances:
+Illustrative Rust, omitting unit control-wire bindings and the reads of capture
+aliases:
 
 ```rust
 fn sum(wire_values: &[i64]) -> i64 {
