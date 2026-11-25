@@ -48,7 +48,7 @@ export class Crash extends Error {}
 /**
  * @param {Wasm} wasm
  */
-export function createEngine(wasm) {
+export function createBindings(wasm) {
   let compiled;
   /** @type {Worker | null} */
   let worker = null;

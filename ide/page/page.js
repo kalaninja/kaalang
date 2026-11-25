@@ -6,7 +6,7 @@
 // type. It carries out what a click asks for and never touches the page's
 // bindings.
 
-import { Crash, createEngine } from "./engine.js";
+import { Crash, createBindings } from "./bindings.js";
 import { carryingAt, innermost, request, wires } from "./hotspots.js";
 import { TypeContext } from "./type-context.js";
 
@@ -19,7 +19,7 @@ let cells = 0;
 /**
  * @typedef {object} Host
  * @property {(message: object) => void} send Carries a message to the host.
- * @property {import('./engine.js').Wasm} wasm Where the bindings' files are.
+ * @property {import('./bindings.js').Wasm} wasm Where the bindings' files are.
  */
 
 /**
@@ -81,7 +81,7 @@ export function start(root, host) {
   const collapse = root.querySelector(".kaalang-collapse");
   const banner = root.querySelector(".kaalang-banner");
   const diagram = root.querySelector(".kaalang-diagram");
-  const engine = createEngine(host.wasm);
+  const bindings = createBindings(host.wasm);
 
   const state = {
     uri: "",
@@ -121,7 +121,7 @@ export function start(root, host) {
     const current = generation;
     const { text, cfg, cursor, collapseCycles } = state;
     try {
-      const declared = await engine.declaredAt(text, cfg, cursor);
+      const declared = await bindings.declaredAt(text, cfg, cursor);
       if (current !== generation) {
         return;
       }
@@ -153,7 +153,7 @@ export function start(root, host) {
       let texts;
       let result;
       if (shown.type === undefined) {
-        result = await engine.drawFlow(
+        result = await bindings.drawFlow(
           text,
           cfg,
           shown.flow,
@@ -164,7 +164,7 @@ export function start(root, host) {
         const context = type.sources(state.uri, text);
         uris = context.uris;
         texts = context.texts;
-        result = await engine.drawType(
+        result = await bindings.drawType(
           text,
           cfg,
           shown.type,

@@ -1,6 +1,6 @@
 // One instance of the bindings, answering the page's calls in the order they
 // come. A trap leaves the instance broken, so the worker reports it and closes;
-// the engine starts another.
+// the page starts another.
 
 /** The message of the last panic, which the bindings write before a trap. */
 let panic = null;

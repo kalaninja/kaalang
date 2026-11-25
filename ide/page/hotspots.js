@@ -2,8 +2,8 @@
 // leads to and what the page asks the host for it; without, the ribbon of the
 // merge or of the connections under the pointer.
 
-/** @typedef {import('./engine.js').Hotspot} Hotspot */
-/** @typedef {import('./engine.js').Wire} Wire */
+/** @typedef {import('./bindings.js').Hotspot} Hotspot */
+/** @typedef {import('./bindings.js').Wire} Wire */
 
 /**
  * The hotspot a navigating click at a point in the SVG's user units lands on:
@@ -113,7 +113,7 @@ function area(hotspot) {
  * @param {Hotspot} hotspot
  * @param {string[]} uris
  * @param {string[]} [texts] Each card's source snapshot, for a jump outside the focus.
- * @param {import("./engine.js").Card} [focus] The declaration a drawn relationship reaches.
+ * @param {import("./bindings.js").Card} [focus] The declaration a drawn relationship reaches.
  */
 export function request(hotspot, uris, texts, focus) {
   const source = hotspot.source ?? 0;
