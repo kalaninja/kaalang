@@ -27,7 +27,8 @@ vscode-test: (tooling::build "rust")
 
 # Build the VS Code extension into ide/vscode/out, with the page and the bindings.
 vscode-build: wasm::build (tooling::build "fmt")
-    ./scripts/docker/run-tooling.sh kaalang-fmt sh -c 'cd ide/vscode && npm ci && npx tsc'
+    rm -rf ide/vscode/out
+    ./scripts/docker/run-tooling.sh kaalang-fmt sh -c 'cd ide/vscode && npm ci --cache ../../.cache/npm && npx tsc'
     mkdir -p ide/vscode/out/page ide/vscode/out/wasm
     cp ide/page/*.js ide/page/page.css ide/vscode/out/page/
     cp ide/vscode/src/webview.js ide/vscode/out/

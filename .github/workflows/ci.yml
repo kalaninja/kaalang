@@ -48,7 +48,7 @@ jobs:
             .cache/cargo
             target
             ide/sample/target
-          key: cargo-${{ hashFiles('Cargo.lock', 'ide/sample/Cargo.lock', 'mise/config.toml') }}
+          key: cargo-${{ hashFiles('Cargo.lock', 'mise/config.toml') }}
       - uses: extractions/setup-just@v3
       - run: just ci validate
       - run: git add -A && git diff --cached --exit-code
