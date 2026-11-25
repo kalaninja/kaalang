@@ -305,10 +305,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.window.onDidChangeActiveTextEditor(follow),
     // VS Code reports a selection moved by an edit in every editor of the
-    // document, so another editor's would take the diagram over.
+    // document, so another editor's would take the diagram over. The source's
+    // own leaves a pending follow of another editor in place.
     vscode.window.onDidChangeTextEditorSelection(({ textEditor }) => {
       if (textEditor === source) {
-        follow(textEditor);
+        send();
       }
     }),
     // A save changes no text but reports a change too.

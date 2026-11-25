@@ -15,29 +15,33 @@ const events = (api = {}) =>
         : undefined),
   });
 
-test("the diagram keeps a pending external Rust editor when its webview takes focus", async () => {
-  const uri = (path) => ({
-    scheme: "file",
-    path,
-    toString: () => `file://${path}`,
-  });
-  const editor = (path) => ({
-    document: {
-      uri: uri(path),
-      languageId: "rust",
-      getText: () => path,
-      offsetAt: () => 0,
-    },
-    selection: { active: 0 },
-  });
-  const external = editor("/outside.rs"),
-    pending = editor("/other.rs"),
-    local = editor("/workspace/lib.rs");
+const uri = (path) => ({
+  scheme: "file",
+  path,
+  toString: () => `file://${path}`,
+});
+const editor = (path) => ({
+  document: {
+    uri: uri(path),
+    languageId: "rust",
+    getText: () => path,
+    offsetAt: () => 0,
+  },
+  selection: { active: 0 },
+});
+const named = (editors) => editors.map((e) => e.document.uri.toString());
+const located = { place: {}, cfg: "", roots: [] };
+
+/**
+ * The extension showing a diagram of `active` with the folder `/workspace`
+ * open, where locating an editor's source waits for `pending(editor)`.
+ */
+async function following(active) {
   const commands = new Map(),
     ownership = new Map(),
     shown = [],
     targets = [];
-  let changeEditor;
+  const handlers = {};
   const webview = events({
     asWebviewUri: (uri) => uri,
     postMessage(message) {
@@ -53,11 +57,11 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     ViewColumn: { Active: 1 },
     commands: { registerCommand: (name, handle) => commands.set(name, handle) },
     window: events({
-      activeTextEditor: external,
+      activeTextEditor: active,
       createOutputChannel: () => ({ appendLine: ignore }),
-      onDidChangeActiveTextEditor: (handle) => {
-        changeEditor = handle;
-      },
+      onDidChangeActiveTextEditor: (handle) => (handlers.changeEditor = handle),
+      onDidChangeTextEditorSelection: (handle) =>
+        (handlers.changeSelection = handle),
       createWebviewPanel: () => events({ webview }),
     }),
     workspace: events({
@@ -93,29 +97,50 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
     (name) => modules[name] ?? {},
   );
   host.activate({ extensionUri: uri("/extension"), subscriptions: [] });
-
   commands.get("kaalang.showDiagram")();
-  const first = ownership.get(external.document.uri);
-  changeEditor(undefined);
-  first.resolve({ place: {}, cfg: "", roots: [] });
-  await first.promise;
-  assert.deepEqual(shown, [external.document.uri.toString()]);
-
-  changeEditor(pending);
-  const second = ownership.get(pending.document.uri);
-  changeEditor(local);
-  second.resolve({ place: {}, cfg: "", roots: [] });
-  await second.promise;
-  assert.deepEqual(
+  return {
+    ...handlers,
+    pending: (editor) => ownership.get(editor.document.uri),
     shown,
-    [external, local].map((e) => e.document.uri.toString()),
-  );
+    targets,
+  };
+}
+
+test("the diagram keeps a pending external Rust editor when its webview takes focus", async () => {
+  const external = editor("/outside.rs"),
+    pending = editor("/other.rs"),
+    local = editor("/workspace/lib.rs");
+  const host = await following(external);
+  const first = host.pending(external);
+  host.changeEditor(undefined);
+  first.resolve(located);
+  await first.promise;
+  assert.deepEqual(host.shown, named([external]));
+
+  host.changeEditor(pending);
+  const second = host.pending(pending);
+  host.changeEditor(local);
+  second.resolve(located);
+  await second.promise;
+  assert.deepEqual(host.shown, named([external, local]));
   await new Promise(setImmediate);
-  assert.deepEqual(targets.at(-1), {
+  assert.deepEqual(host.targets.at(-1), {
     type: "target",
     uri: local.document.uri.toString(),
     cfg: "",
   });
+});
+
+test("an edit in the source leaves a pending external Rust editor to follow", async () => {
+  const local = editor("/workspace/lib.rs"),
+    external = editor("/outside.rs");
+  const host = await following(local);
+  host.changeEditor(external);
+  const pending = host.pending(external);
+  host.changeSelection({ textEditor: local });
+  pending.resolve(located);
+  await pending.promise;
+  assert.deepEqual(host.shown.at(-1), external.document.uri.toString());
 });
 
 /**
