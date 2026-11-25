@@ -198,13 +198,22 @@ test("a source file created after the targets were listed becomes a target once 
   assert.deepEqual(await targets(), ["hub", "extra"]);
 });
 
-test("a build directory named otherwise is known once its workspace is read", async (t) => {
+test("a build directory named otherwise is known by the opened folder's path once its workspace is read", async (t) => {
   const root = await realpath(
     await mkdtemp(path.join(os.tmpdir(), "kaalang-build-")),
   );
   t.after(() => rm(root, { recursive: true, force: true }));
-  const file = (...parts) => path.join(root, ...parts);
-  await mkdir(file("src"));
+  const [real, link] = [path.join(root, "real"), path.join(root, "link")];
+  await mkdir(path.join(real, "src"), { recursive: true });
+  try {
+    await symlink(real, link, "dir");
+  } catch (error) {
+    if (error.code !== "EPERM") throw error;
+    return t.skip(
+      "Creating a directory symlink needs this platform's permission",
+    );
+  }
+  const file = (...parts) => path.join(link, ...parts);
   await mkdir(file(".cargo"));
   await writeFile(
     file("Cargo.toml"),
@@ -212,7 +221,7 @@ test("a build directory named otherwise is known once its workspace is read", as
   );
   await writeFile(file(".cargo/config.toml"), '[build]\ntarget-dir = "out"\n');
   await writeFile(file("src/lib.rs"), "");
-  const folder = { uri: uri(root) };
+  const folder = { uri: uri(link) };
   const host = await targetHost(
     {
       isTrusted: true,

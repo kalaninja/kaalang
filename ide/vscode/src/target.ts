@@ -306,7 +306,8 @@ async function configuredWorkspace(
       const metadata = await readMetadata(root, env, log);
       if (metadata) {
         watchManifests(metadata);
-        buildDirectories.add(metadata.target_directory);
+        // Cargo names the real path, a watcher the opened one.
+        buildDirectories.add(analyzedPath(metadata.target_directory));
       }
       return metadata;
     },
