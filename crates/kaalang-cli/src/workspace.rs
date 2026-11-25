@@ -306,6 +306,15 @@ fn rustc(arguments: &[String]) -> Result<String, String> {
         .map_err(|error| format!("{} printed no UTF-8: {error}", rustc.display()))
 }
 
+/// The crates in the card order of RFC 0009 §4.3, `first` being the focus
+/// type's.
+pub(super) fn order(crates: &[Crate], first: usize) -> Vec<usize> {
+    let focus = crates.get(first).map(|krate| krate.target());
+    let mut order: Vec<usize> = (0..crates.len()).collect();
+    order.sort_by_key(|&index| crates[index].target().order(focus));
+    order
+}
+
 /// Finds the one flow that `path` selects from its crate root, resolved as the
 /// compiler resolves it, in every target of every workspace member, or only of
 /// `package`. A crate's search spans its own files and those of the
@@ -319,7 +328,8 @@ pub(super) fn find<'a>(
 ) -> Result<Found<'a>, String> {
     let resolver = Resolver::new(crates.iter().map(|krate| &krate.names));
     let selected = |krate: &Crate| package.is_none_or(|package| krate.package == package);
-    let roots: Vec<(usize, Vec<usize>)> = (0..crates.len())
+    let roots: Vec<(usize, Vec<usize>)> = order(crates, usize::MAX)
+        .into_iter()
         .filter(|&index| selected(&crates[index]))
         .map(|index| {
             let spanned =

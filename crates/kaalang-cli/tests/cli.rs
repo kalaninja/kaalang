@@ -1688,6 +1688,30 @@ fn a_flow_two_crates_read_under_their_own_cfgs_is_found_once() {
 }
 
 #[test]
+fn a_flow_a_test_and_an_example_share_is_drawn_as_the_test_reads_it() {
+    let directory = package("cli-shared-file-flow-order", "");
+    write(
+        &directory,
+        "src/review.rs",
+        &SOURCE.replace(
+            "fn route(",
+            "pub fn route(#[cfg(test)] _tested: u8, #[cfg(not(test))] _shown: u8, ",
+        ),
+    );
+    for target in ["examples/demo.rs", "tests/it.rs"] {
+        write(
+            &directory,
+            target,
+            "#[path = \"../src/review.rs\"]\nmod review;\n",
+        );
+    }
+    let rendered = run(&directory, "diagram --flow review::route");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("route.svg")).unwrap();
+    assert!(svg.contains("_tested") && !svg.contains("_shown"), "{svg}");
+}
+
+#[test]
 fn a_type_refers_to_itself_as_self() {
     let directory = package(
         "cli-type-self",

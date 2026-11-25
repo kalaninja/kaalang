@@ -12,7 +12,7 @@ use kaalang_svg::{TypeCard, TypeOptions};
 use kaalang_workspace::names::{Resolution, Resolver, TypeRef};
 use syn::spanned::Spanned;
 
-use crate::workspace::{self, Crate};
+use crate::workspace::{self, Crate, order};
 
 /// Draws the type whose path from its crate root is `path`, taken from
 /// `package` when given. A file that cannot be read or parsed, or a type whose
@@ -253,15 +253,6 @@ fn focus(
             ))
         }
     }
-}
-
-/// The crates in the card order of RFC 0009 §4.3, `first` being the focus
-/// type's.
-fn order(crates: &[Crate], first: usize) -> Vec<usize> {
-    let focus = crates.get(first).map(|krate| krate.target());
-    let mut order: Vec<usize> = (0..crates.len()).collect();
-    order.sort_by_key(|&index| crates[index].target().order(focus));
-    order
 }
 
 /// The focus's header and each incoming card's, by RFC 0010.
