@@ -210,6 +210,9 @@ export function activate(context: vscode.ExtensionContext): void {
       ++following;
       ++navigation;
       panel = undefined;
+      // Without a panel nothing reads the trees: the next one walks again.
+      stopModuleWorker();
+      forgetReferences();
     });
   }
 
