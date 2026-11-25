@@ -7,7 +7,7 @@ use kaalang_compiler::{CfgSet, SourceFile};
 use syn::{Item, UseTree, ext::IdentExt};
 
 pub use self::{
-    resolve::{Def, Resolution, Resolver, TypeRef},
+    resolve::{Resolution, Resolver, TypeRef},
     select::{FlowPath, FoundFlow},
 };
 #[cfg(doc)]
@@ -427,7 +427,7 @@ fn library(package: &str, source: &str) -> Crate {
         package_id: package.to_owned(),
         package: package.to_owned(),
         group: 0,
-        name: package.replace('-', "_"),
+        name: crate::crate_name(package),
         root: PathBuf::from(format!("/{package}/src/lib.rs")),
         library: true,
         dependencies: Vec::new(),

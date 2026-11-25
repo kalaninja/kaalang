@@ -37,7 +37,7 @@ pub enum Resolution {
 
 /// What a path resolves to.
 #[derive(Clone, PartialEq, Eq)]
-pub enum Def {
+pub(super) enum Def {
     Type(TypeRef),
     Module(usize, usize),
     /// A trait: its crate, its module, and its name.
@@ -127,14 +127,14 @@ impl<'a> Resolver<'a> {
 
     /// What `path`, as written in `module` of crate `krate`, names.
     #[must_use]
-    pub fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+    pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, false)
     }
 
     /// A query has not been checked by rustc: a bare missing name cannot use
     /// the fallback for external types unless its scope could provide it.
     #[must_use]
-    pub fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
+    pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
         Some(match self.find(krate, module, path) {
             Def::Ambiguous(_) => return None,
             Def::Type(_) | Def::Unknown(_) => true,
@@ -205,13 +205,13 @@ impl<'a> Resolver<'a> {
     /// segment passes over a module or type that shares the name, as in
     /// `mod checkout; pub use checkout::checkout;`.
     #[must_use]
-    pub fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
+    pub(super) fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, true)
     }
 
     /// Compares types after expanding aliases in their own scopes.
     #[must_use]
-    pub fn types_match(
+    pub(super) fn types_match(
         &self,
         query_scope: (usize, usize),
         query: &syn::Type,

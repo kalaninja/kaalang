@@ -11,7 +11,10 @@ use syn::{
     TypeParamBound, TypePath, ext::IdentExt,
 };
 
-use super::{Def, Resolver, TypeRef, resolve::same_item};
+use super::{
+    Resolver, TypeRef,
+    resolve::{Def, same_item},
+};
 
 /// A flow a flow path names.
 pub struct FoundFlow {
