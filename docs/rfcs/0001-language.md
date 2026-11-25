@@ -578,8 +578,8 @@ impl Rectangle {
 }
 ```
 
-A `todo!()` body is a placeholder that keeps its Rust behavior and panics if
-execution reaches it:
+A `todo!()` body, other than a choice's (§4.4), is a placeholder that keeps its
+Rust behavior and panics if execution reaches it:
 
 ```rust
 use kaalang::kaalang;

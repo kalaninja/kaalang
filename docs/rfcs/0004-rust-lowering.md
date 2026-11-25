@@ -260,10 +260,9 @@ case continuation. This scope boundary implements
 
 Nested labeled blocks let each case pass its value directly into an ordinary
 `let` binding. Each arm breaks out of its input and match-arm scopes before its
-continuation runs. Each arm's value is taken beside an alternative that never
-runs, which the example omits: an arm that diverges, such as
-`_ => unreachable!()`, then leaves no lowered code for Rust to report as
-unreachable.
+continuation runs. Each arm's value is paired with a branch that never runs,
+omitted from the example, so a diverging arm such as `_ => unreachable!()`
+leaves no code Rust reports as unreachable.
 
 ```rust
 use kaalang::kaalang;

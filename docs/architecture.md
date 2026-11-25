@@ -174,9 +174,9 @@ file, removes what the compilation target does not compile, takes the flow at
 the position the caller selected, builds its model, and cuts the text the
 diagram quotes from its signature. The entry point
 [`render_flow`](../crates/kaalang-svg/src/lib.rs) takes that flow. `kaalang-svg`
-reads no source text; it reports a label's position from the span it received,
-with the compiler's `line_and_column`. Positions need the compiler's `source`
-feature, which the macro leaves off, since rustc gives it tokens.
+reports a label's position from the span it received, with the compiler's
+`line_and_column`. Positions need the compiler's `source` feature, which the
+macro leaves off, since rustc gives it tokens.
 
 Between verification and serialization `kaalang-svg` reads the hotspots it
 returns beside the SVG from the verified scene in
@@ -223,14 +223,13 @@ and [§4.3](rfcs/0009-types.md#43-arrangement), and
 
 ## IDEs
 
-kaalang supports VS Code. Every supported IDE shows
-[`ide/page/`](../ide/page/page.js), a page in plain JavaScript. It runs
-`kaalang-js` in a worker, draws the flow or the type at the editor's cursor,
-lists the ribbon of a clicked connection or merge, and asks its host to reveal a
-range, to run the editor's own go-to action at a position, for the types of
-values, and for the files that refer to a type, each with its references and its
-place in the module tree; a host gives the text, the cursor, the target's cfg
-set, and what the editor knows.
+kaalang supports VS Code. The [page](../ide/page/page.js) runs `kaalang-js` in a
+worker, draws the flow or the type at the editor's cursor, lists the ribbon of a
+clicked connection or merge, and asks its host to reveal a range, to run the
+editor's own go-to action at a position, for the types of values, and for the
+files that refer to a type, each with its references and its place in the module
+tree; a host gives the text, the cursor, the target's cfg set, and what the
+editor knows.
 
 In VS Code, [`ide/vscode/`](../ide/vscode/src/target.ts) takes that set from
 rust-analyzer, whose status report gives the set of each crate a file belongs
@@ -248,26 +247,25 @@ a `use` that renames the type, so where one does, the host checks through
 rust-analyzer's definition every relationship target in the targets' module
 trees, which the bindings walk in a worker as the CLI walks them, the host
 giving only file-system calls and the editor's unsaved texts. rust-analyzer
-reads a file that several targets include in one crate, the first its status
-report lists, so the host sends each file once, with that crate's set and place
-in the module tree: code that crate leaves inactive, as the editor shows it,
-draws no card, and neither do the other copies, which the CLI draws. The panel
+reads a file that several targets include in the context of one crate, the first
+its status report lists, so the host sends each file once, with that crate's set
+and place in the module tree: code inactive there, as the editor shows it, draws
+no card, and neither do the other inclusions, which the CLI draws. The panel
 follows Rust editors in the workspace folders and the sources their Cargo
-targets include elsewhere. It opens what a click finds as the editor's own go-to
-does, from where the cursor stands, so that the diagram follows only the target
-and going back returns. In Restricted Mode it runs no cargo, whose binary the
-workspace's configuration may name, and rust-analyzer does not run: what
-rust-analyzer gives, the set, the types, incoming cards, module paths, and go-to
-actions, waits for trust.
+targets include elsewhere. It opens what a click finds through the editor's own
+go-to, from the cursor's position, so the diagram changes only when the editor
+reaches the target, and Go Back returns to the cursor. In Restricted Mode it
+runs no cargo, whose binary the workspace's configuration may name, and
+rust-analyzer does not run: what rust-analyzer gives, the set, the types,
+incoming cards, module paths, and go-to actions, waits for trust.
 
 ## Performance budgets
 
 Each crate bounds the stages it owns: `kaalang-compiler` analysis, topology
 construction, and lowering to Rust; `kaalang-render` structural compaction; and
-`kaalang-svg` measurement and serialization. They share fixture sources and
-generated probes through `kaalang-testing`, and the compiler and SVG corpus
-budgets share one harness for warm-up, measurement, statistics, and the
-aggregate and per-item checks.
+`kaalang-svg` measurement and serialization. The compiler and SVG corpus budgets
+share one harness for warm-up, measurement, statistics, and the aggregate and
+per-item checks.
 
 The fixture corpus is read from the checked-in test fixtures, so it grows with
 the language. Ordinary and stress fixtures run in separate corpus tests, each

@@ -281,7 +281,7 @@ serialization; do not reparse in the serializer or strip markers after layout.
 
 Every renderer must follow the same notation and literal fallback rules.
 
-## 6. Compatibility and RFC integration
+## 6. Changes to earlier RFCs
 
 This RFC supersedes the following provisions only within the scope of
 description formatting:

@@ -75,13 +75,12 @@ Before committing:
 - After a change to `construct/`, `analyze/`, `symbolic/`, the shapes in
   `kaalang-testing`, or any rule those answers rest on, run
   `just rust test-exhaustive`. It takes about half a minute and stays out of the
-  baseline: it compares the construction with the independent procedure over the
-  whole declared domain, and the two analysis paths over every generated cycle
-  shape; no other check reaches the nested cycle shapes in bulk.
+  baseline; no other check reaches the nested cycle shapes in bulk.
 - After a change to the IDE page, try it with `just ide page-open`; every check
   on its `checks.html` must pass.
-- After a change to the VS Code extension, or to the page it shows, check the
-  cases of `ide/sample/README.md` with `just ide vscode-open`.
+- After a change under `ide/`, check the cases of `ide/sample/README.md` in
+  every supported IDE: `just ide vscode-open`, then **Show Diagram to the Side**
+  in the editor title.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A
