@@ -114,7 +114,7 @@ export function createEngine(wasm) {
 
   return {
     /**
-     * @returns {Promise<{flow: number, path: string} | {type: string, start: number} | null>}
+     * @returns {Promise<{flow: number, path: string} | {type: string} | null>}
      */
     async declaredAt(text, cfg, offset) {
       if (declarations?.text !== text || declarations.cfg !== cfg) {
@@ -138,7 +138,7 @@ export function createEngine(wasm) {
       }
       const at = items[low - 1];
       if (!at || offset > at[1]) return null;
-      return at[2].type !== undefined ? { ...at[2], start: at[0] } : at[2];
+      return at[2];
     },
     /**
      * @returns {Promise<{svg: string, hotspots: Hotspot[], wires: Wire[]} | null>}

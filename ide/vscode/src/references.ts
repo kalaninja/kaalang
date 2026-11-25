@@ -1,9 +1,8 @@
-import { realpath } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import * as vscode from "vscode";
 
 import { analyzerClient, locations } from "./analyzer";
-import { cached } from "./cache";
+import { cached, realFile } from "./cache";
 import { editorTree, forgetModules } from "./card-places";
 import { documentText, openDocument } from "./documents";
 import { relationshipTargets } from "./module-sources";
@@ -17,7 +16,6 @@ const MAY_REFER = /\brefer\b/;
 function sourceRevision() {
   return {
     resolved: new Map<string, ReturnType<typeof locations>>(),
-    paths: new Map<string, Promise<string>>(),
   };
 }
 
@@ -77,10 +75,10 @@ export async function referringFiles(
   ]);
   // Keep an open symlink's URI for the page even when the provider or Cargo
   // names the same physical file through its canonical path.
-  const aliases = new Map([[await physical(source, revision), source]]);
+  const aliases = new Map([[physical(source), source]]);
   const found = new Map<string, vscode.Position[]>();
   for (const { uri, range } of references) {
-    const file = await physical(uri.toString(), revision);
+    const file = physical(uri.toString());
     const key = aliases.get(file) ?? uri.toString();
     aliases.set(file, key);
     found.set(key, [...(found.get(key) ?? []), range.start]);
@@ -101,7 +99,7 @@ export async function referringFiles(
     const graph = await editorTree(focus.roots);
     for (const file of graph?.referring ?? []) {
       const uri = pathToFileURL(analyzedPath(file)).href;
-      const key = aliases.get(await physical(uri, revision)) ?? uri;
+      const key = aliases.get(physical(uri)) ?? uri;
       if (!found.has(key)) found.set(key, []);
     }
   }
@@ -157,13 +155,9 @@ function renames(
 }
 
 /** A reference and its definition can use a symlink and its real path. */
-function physical(uri: string, revision: typeof current): Promise<string> {
-  return cached(revision.paths, uri, async () => {
-    const file = vscode.Uri.parse(uri);
-    return file.scheme === "file"
-      ? realpath(file.fsPath).catch(() => file.fsPath)
-      : file.toString();
-  });
+function physical(uri: string): string {
+  const file = vscode.Uri.parse(uri);
+  return file.scheme === "file" ? realFile(file.fsPath) : file.toString();
 }
 
 /**
@@ -182,7 +176,7 @@ async function namingFocus(
   const client = analyzerClient();
   const targets = await relationshipTargets(text, cfg);
   if (!client || !targets) return [];
-  const focusPath = await physical(focus.uri, revision);
+  const focusPath = physical(focus.uri);
   const { resolved } = revision;
   const at = coordinates(text);
   const named = await batch(
@@ -199,7 +193,7 @@ async function namingFocus(
           if (
             location.position.line === focus.name.line &&
             location.position.character === focus.name.character &&
-            (await physical(location.uri, revision)) === focusPath
+            physical(location.uri) === focusPath
           )
             return [offset];
         }
