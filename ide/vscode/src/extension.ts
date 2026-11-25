@@ -19,6 +19,7 @@ import {
   forgetAnalyzedCfg,
   forgetCfg,
   forgetTargets,
+  inBuildDirectory,
   located,
   watchOutsideManifests,
 } from "./target";
@@ -268,10 +269,14 @@ export function activate(context: vscode.ExtensionContext): void {
     true,
   );
   function targetFolderChanged(folder: vscode.Uri): void {
-    // The source watcher reports a file, and a build fills `target/*/examples`.
-    // shortcut: a build directory named otherwise reconfigures on each build, compare with the metadata's `target_directory` then.
+    // The source watcher reports a file, and a build fills `examples` in its
+    // build directory: a workspace not read yet has it where Cargo puts it by default.
     const relative = vscode.workspace.asRelativePath(folder, false);
-    if (!/\.rs$|(^|\/)target\//.test(relative)) reread();
+    if (
+      !/\.rs$|(^|\/)target\//.test(relative) &&
+      !inBuildDirectory(folder.fsPath)
+    )
+      reread();
   }
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(

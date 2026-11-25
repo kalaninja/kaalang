@@ -128,7 +128,8 @@ test("a removed target folder reads the targets again, a source or built file do
       commands: { registerCommand: ignore },
       window: events({ createOutputChannel: ignore }),
       workspace: events({
-        asRelativePath: ({ path }) => path.replace("/target/workspace/", ""),
+        asRelativePath: ({ fsPath }) =>
+          fsPath.replace("/target/workspace/", ""),
         createFileSystemWatcher: (pattern) =>
           events(
             pattern.includes("tests")
@@ -143,6 +144,7 @@ test("a removed target folder reads the targets again, a source or built file do
     "./target": {
       forgetCfg: () => ++forgotten,
       forgetAnalyzedCfg: ignore,
+      inBuildDirectory: (file) => file.startsWith("/target/workspace/out/"),
       watchOutsideManifests: ignore,
     },
   };
@@ -157,11 +159,12 @@ test("a removed target folder reads the targets again, a source or built file do
   );
   host.activate({ subscriptions: [] });
 
-  removed({ path: "/target/workspace/tests/api.rs" });
-  removed({ path: "/target/workspace/target/debug/examples/api-1f" });
+  removed({ fsPath: "/target/workspace/tests/api.rs" });
+  removed({ fsPath: "/target/workspace/target/debug/examples/api-1f" });
+  removed({ fsPath: "/target/workspace/out/debug/examples/api-1f" });
   t.mock.timers.tick(500);
   assert.equal(forgotten, 0);
-  removed({ path: "/target/workspace/tests" });
+  removed({ fsPath: "/target/workspace/tests" });
   t.mock.timers.tick(500);
   assert.equal(forgotten, 1);
 });

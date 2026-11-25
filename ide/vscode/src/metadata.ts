@@ -14,6 +14,7 @@ export interface Metadata {
   packages: Package[];
   workspace_members: string[];
   workspace_root: string;
+  target_directory: string;
 }
 
 /**

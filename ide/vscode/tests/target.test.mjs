@@ -198,6 +198,38 @@ test("a source file created after the targets were listed becomes a target once 
   assert.deepEqual(await targets(), ["hub", "extra"]);
 });
 
+test("a build directory named otherwise is known once its workspace is read", async (t) => {
+  const root = await realpath(
+    await mkdtemp(path.join(os.tmpdir(), "kaalang-build-")),
+  );
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const file = (...parts) => path.join(root, ...parts);
+  await mkdir(file("src"));
+  await mkdir(file(".cargo"));
+  await writeFile(
+    file("Cargo.toml"),
+    '[package]\nname="hub"\nversion="0.1.0"\nedition="2024"\n',
+  );
+  await writeFile(file(".cargo/config.toml"), '[build]\ntarget-dir = "out"\n');
+  await writeFile(file("src/lib.rs"), "");
+  const folder = { uri: uri(root) };
+  const host = await targetHost(
+    {
+      isTrusted: true,
+      workspaceFolders: [folder],
+      getWorkspaceFolder: () => folder,
+      getConfiguration: () => ({ get: () => undefined }),
+    },
+    () => status({ name: "hub", package: "hub", cfg: [] }),
+    roots,
+  );
+  const built = file("out/debug/examples/hub-1f");
+  assert.equal(host.inBuildDirectory(built), false);
+  await host.located(uri(file("src/lib.rs")), () => {});
+  assert.equal(host.inBuildDirectory(built), true);
+  assert.equal(host.inBuildDirectory(file("examples/hub.rs")), false);
+});
+
 test("a manifest outside the workspace folders is watched once, until the extension stops", async (t) => {
   const root = await mkdtemp(path.join(os.tmpdir(), "kaalang-outside-"));
   t.after(() => rm(root, { recursive: true, force: true }));

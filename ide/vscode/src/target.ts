@@ -57,6 +57,19 @@ let shapes = new Map<string, CargoRoot[]>();
 let outside = new Map<string, vscode.Disposable>();
 let manifestChanged: (() => void) | undefined;
 
+/**
+ * The build directories of the workspaces read so far. One stays after a
+ * setting moves it: what a build left there is no target either.
+ */
+const buildDirectories = new Set<string>();
+
+/** Whether `file` lies in the build directory of a workspace read so far. */
+export function inBuildDirectory(file: string): boolean {
+  return [...buildDirectories].some((directory) =>
+    file.startsWith(directory + path.sep),
+  );
+}
+
 /** Whether Restricted Mode was logged: once is enough. */
 let restricted = false;
 /** Whether a missing answer of rust-analyzer was logged since its last answer. */
@@ -291,7 +304,10 @@ async function configuredWorkspace(
     JSON.stringify([root, extraEnv]),
     async () => {
       const metadata = await readMetadata(root, env, log);
-      if (metadata) watchManifests(metadata);
+      if (metadata) {
+        watchManifests(metadata);
+        buildDirectories.add(metadata.target_directory);
+      }
       return metadata;
     },
   );
