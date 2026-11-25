@@ -42,7 +42,7 @@ fn lines(svg: &str, class: &str) -> Vec<(i32, i32)> {
 fn each_diagram(file: &SourceFile<'_>, mut check: impl FnMut(&[&SourceType], &str, &[Hotspot])) {
     let types: Vec<SourceType> = kaalang_compiler::type_items(file.items())
         .iter()
-        .filter_map(|(path, _)| file.ty(path).ok())
+        .map(|(path, _)| file.ty(path).unwrap_or_else(|error| panic!("{error}")))
         .collect();
     let naming = |ty: &SourceType, name: &str| corpus::naming(&ty.declaration, name);
     for focus in &types {
@@ -79,7 +79,7 @@ fn each_diagram(file: &SourceFile<'_>, mut check: impl FnMut(&[&SourceType], &st
 fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
     let mut checked = 0;
     for (path, source) in corpus::files(Suite::Ordinary) {
-        let file = SourceFile::parse(&source, CfgSet::EMPTY).expect("the fixture parses");
+        let file = SourceFile::parse(&source, &corpus::TARGET).expect("the fixture parses");
         each_diagram(&file, |cards, svg, hotspots| {
             let what = format!("{} in {}", cards[0].path, path.display());
             let (width, height) = (number(svg, "width"), number(svg, "height"));
