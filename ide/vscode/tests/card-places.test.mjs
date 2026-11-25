@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { compileFunction } from "node:vm";
 
 /** The built `card-places` module over a worker that answers `tree`. */
@@ -35,7 +35,7 @@ test("each reading of the bindings' trees takes its target's place and set", asy
     package: "app",
     kind: [kind],
     name,
-    root: pathToFileURL(file).href,
+    root: file,
     cfg,
   });
   const roots = [
@@ -96,7 +96,7 @@ const ROOTS = [
     package: "app",
     kind: ["lib"],
     name: "app",
-    root: pathToFileURL(path.resolve("project", "src", "lib.rs")).href,
+    root: path.resolve("project", "src", "lib.rs"),
     cfg: "",
   },
 ];

@@ -1,7 +1,6 @@
 // Workspace source files and the places of their declarations in Cargo
 // targets, as the bindings walk the targets' module trees in the module worker.
 
-import { fileURLToPath } from "node:url";
 import type * as vscode from "vscode";
 
 import { realFile } from "./cache";
@@ -63,10 +62,7 @@ export async function workspaceTree(
   roots: CargoRoot[],
   unsaved: [string, string][],
 ): Promise<Graph> {
-  const tree = await moduleTree(
-    roots.map((target) => ({ ...target, root: fileURLToPath(target.root) })),
-    unsaved,
-  );
+  const tree = await moduleTree(roots, unsaved);
   if (!tree)
     return {
       files: new Map(),
@@ -140,19 +136,18 @@ export function watchModuleSources(
 }
 
 /**
- * Every Cargo reading of a file, in diagram order: an empty list outside every
- * workspace target, `null` when the module tree cannot tell. `typeOffset`
- * keeps the readings that declare a type there.
+ * Every Cargo reading of the file at the real path `file`, in diagram order:
+ * an empty list outside every workspace target, `null` when the module tree
+ * cannot tell. `typeOffset` keeps the readings that declare a type there.
  */
 export async function fileReadings(
-  uri: string,
+  file: string,
   roots: CargoRoot[],
   typeOffset?: number,
 ): Promise<Reading[] | null> {
   const graph = await editorTree(roots);
   if (!graph) return null;
-  const actual = uri.startsWith("file:") && realFile(fileURLToPath(uri));
-  const readings = actual ? graph.files.get(actual) : undefined;
+  const readings = graph.files.get(file);
   const active =
     typeOffset === undefined
       ? readings

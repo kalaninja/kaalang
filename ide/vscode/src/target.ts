@@ -151,36 +151,33 @@ export async function located(
   log: (line: string) => void,
   typeOffset?: number,
 ): Promise<Located> {
-  if (!trusted(log)) return { cfg: "", roots: [] };
+  if (!trusted(log) || file.scheme !== "file") return { cfg: "", roots: [] };
   const revision = cache;
   const folder = vscode.workspace.getWorkspaceFolder(file);
-  const source = file.scheme === "file" ? realFile(file.fsPath) : undefined;
-  const [crate] = source ? await analyzedCrates(source, log) : [];
-  const directory = source && folder ? path.dirname(source) : undefined;
-  const primary = directory
-    ? await configuredWorkspace(revision, file, directory, log)
+  const source = realFile(file.fsPath);
+  const [crate] = await analyzedCrates(source, log);
+  const primary = folder
+    ? await configuredWorkspace(revision, file, path.dirname(source), log)
     : undefined;
   const candidates: (() => Promise<Workspace>)[] = [];
   if (primary) candidates.push(async () => primary);
   // A configured target or #[path] module can live outside its package or folder.
   // Only start Cargo in directories that belong to a trusted editor workspace.
-  if (source) {
-    const others = new Map(revision.projects);
-    for (const candidate of vscode.workspace.workspaceFolders ?? [])
-      others.set(candidate.uri.fsPath, candidate.uri);
-    for (const [directory, resource] of others) {
-      if (directory !== primary?.workspaceRoot)
-        candidates.push(() =>
-          configuredWorkspace(revision, resource, directory, log),
-        );
-    }
+  const others = new Map(revision.projects);
+  for (const candidate of vscode.workspace.workspaceFolders ?? [])
+    others.set(candidate.uri.fsPath, candidate.uri);
+  for (const [directory, resource] of others) {
+    if (directory !== primary?.workspaceRoot)
+      candidates.push(() =>
+        configuredWorkspace(revision, resource, directory, log),
+      );
   }
   const checked = new Set<CargoRoot[]>();
   for (const candidate of candidates) {
     const { roots } = await candidate();
     if (!roots.length || checked.has(roots)) continue;
     checked.add(roots);
-    const readings = await fileReadings(file.toString(), roots, typeOffset);
+    const readings = await fileReadings(source, roots, typeOffset);
     if (!readings?.length) continue;
     const reading =
       readings.find(
@@ -352,7 +349,6 @@ async function configured(
     workspaceTargets(metadata).map(async (target) => ({
       ...target,
       cfg: await analyzedCfg(target.root, log),
-      root: vscode.Uri.file(target.root).toString(),
     })),
   );
   const key = JSON.stringify(roots);

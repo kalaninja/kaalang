@@ -39,9 +39,9 @@ const status = (...crates) =>
 
 /** A module tree in which each crate root is read only as its own crate's root. */
 const roots = {
-  fileReadings: async (uri, targets) =>
+  fileReadings: async (file, targets) =>
     targets
-      .filter(({ root }) => root === uri)
+      .filter(({ root }) => root === file)
       .map(({ cfg, package: pkg, name, root }) => ({
         cfg,
         place: {
@@ -333,7 +333,7 @@ test("a file several targets include stands where rust-analyzer reads it", async
     () => status({ name: shown, package: "hub", cfg: ["test"] }),
     {
       fileReadings: async (asked, targets, typeOffset) => {
-        assert.equal(asked, source.toString());
+        assert.equal(asked, source.fsPath);
         // In diagram order: the library first.
         return targets
           .map(({ cfg, name }) => ({

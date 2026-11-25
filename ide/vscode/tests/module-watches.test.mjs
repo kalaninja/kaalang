@@ -131,7 +131,7 @@ test("a workspace's watches move to its new roots when a cfg set changes", async
   const updates = new EventEmitter();
   const watch = moduleWatches((file) => updates.emit(file));
   t.after(() => watch.clear());
-  const roots = (cfg) => [{ root: "file:///lib.rs", cfg }];
+  const roots = (cfg) => [{ root: "/lib.rs", cfg }];
   watch.update(roots(""), new Set([first]), new Map());
   watch.update(roots("test"), new Set([second]), new Map());
   let stale = false;
