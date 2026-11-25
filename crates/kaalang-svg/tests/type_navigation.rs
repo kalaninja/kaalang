@@ -36,6 +36,47 @@ fn lines(svg: &str, class: &str) -> Vec<(i32, i32)> {
     lines
 }
 
+/// The unescaped text of each line `lines` lists.
+fn line_texts(svg: &str, class: &str) -> Vec<String> {
+    let mut texts = Vec::new();
+    for text in svg.split(&format!("<text class=\"{class}\"")).skip(1) {
+        let (text, _) = text.split_once("</text>").expect("a text closes");
+        for tspan in text.split("<tspan x=\"").skip(1) {
+            let (_, content) = tspan.split_once('>').expect("the tspan opens");
+            let (content, _) = content.split_once("</tspan>").expect("the tspan closes");
+            texts.push(
+                content
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&apos;", "'")
+                    .replace("&quot;", "\"")
+                    .replace("&amp;", "&"),
+            );
+        }
+    }
+    texts
+}
+
+/// Whether the field-type line a path's hotspot counts to, among the `lines`
+/// and their `texts`, is the one at `baseline` and holds the path, as the page
+/// finds its glyphs there.
+fn counts_its_line(
+    hotspot: &Hotspot,
+    baseline: i32,
+    lines: &[(i32, i32)],
+    texts: &[String],
+) -> bool {
+    let field = hotspot.field_text.as_ref().expect("a path has its line");
+    lines
+        .get(field.line)
+        .is_some_and(|&(_, line)| line == baseline)
+        && texts.get(field.line) == Some(&field.text)
+        && field
+            .text
+            .get(field.range.clone())
+            .is_some_and(|part| !part.is_empty())
+}
+
 /// Calls `check` with each type of `file` drawn as the focus under the other
 /// types of the file whose relationships name it bare, as the fixture diagrams
 /// draw them: the cards, the focus first, the SVG, and its hotspots.
@@ -84,6 +125,7 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
             let what = format!("{} in {}", cards[0].path, path.display());
             let (width, height) = (number(svg, "width"), number(svg, "height"));
             let types = lines(svg, "field-type");
+            let type_texts = line_texts(svg, "field-type");
             let targets = lines(svg, "target");
             for (number, card) in cards.iter().enumerate() {
                 let of = |kind: fn(&HotspotKind) -> Option<usize>| -> Vec<&Hotspot> {
@@ -120,6 +162,10 @@ fn every_card_names_its_paths_targets_and_header_where_it_draws_them() {
                             .iter()
                             .any(|&(x, line)| line == baseline && x <= hotspot.left),
                         "{what}: {hotspot:?} is on no type's line"
+                    );
+                    assert!(
+                        counts_its_line(hotspot, baseline, &types, &type_texts),
+                        "{what}: {hotspot:?} counts another line"
                     );
                 }
                 let drawn_targets = of(|kind| match kind {
