@@ -1,7 +1,7 @@
 //! What [`crate::declared_ranges`] answers: where a source text declares what
 //! kaalang draws.
 
-use kaalang_compiler::{Declared, SourceFile};
+use kaalang_compiler::Declared;
 use serde_json::{Value, json};
 
 use crate::utf16;
@@ -15,17 +15,14 @@ fn value(declared: Declared) -> Value {
 
 /// The answer as JSON, or why the text cannot be read.
 pub(crate) fn ranges(text: &str, cfg: &str) -> Result<String, String> {
-    let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
+    let file = crate::parse(text, cfg)?;
     let offsets = utf16::Offsets::new(text);
     let ranges: Vec<_> = file
         .declared_ranges()
         .into_iter()
         .map(|(range, declared)| {
-            (
-                offsets.at(range.start),
-                offsets.at(range.end),
-                value(declared),
-            )
+            let (start, end) = offsets.range(&range);
+            (start, end, value(declared))
         })
         .collect();
     serde_json::to_string(&ranges).map_err(|error| error.to_string())

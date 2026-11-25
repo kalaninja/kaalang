@@ -6,6 +6,7 @@
 //! answers in JSON, a string JavaScript owns, and the module forgets the text
 //! it parsed.
 
+use kaalang_compiler::SourceFile;
 use wasm_bindgen::{JsError, prelude::wasm_bindgen};
 
 mod declared;
@@ -15,6 +16,11 @@ mod fixture;
 mod modules;
 mod types;
 mod utf16;
+
+/// `text` as the target `cfg` compiles it, or why it cannot be read.
+fn parse<'a>(text: &'a str, cfg: &str) -> Result<SourceFile<'a>, String> {
+    SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())
+}
 
 /// Draws the flow at `position` among those that the target `cfg` compiles in
 /// `text`, with each cycle as one node when `collapse_cycles` is set, as JSON:

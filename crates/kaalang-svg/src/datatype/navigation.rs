@@ -72,16 +72,14 @@ pub(super) fn collect(scene: &TypeScene, focus: &Card, incoming: &[&Card]) -> Ve
                     first_line += block.lines.len();
                 }
                 (Text::Target, Some(tile)) => {
-                    if let (Some(target), Some(span)) =
-                        (&tiles[tile].target, tiles[tile].target_span)
-                    {
+                    if let Some((target, span)) = &tiles[tile].target {
                         push(
                             HotspotKind::Target {
                                 card: number,
                                 focus: tiles[tile].drawn,
                             },
                             target_rect(block, target),
-                            span,
+                            *span,
                             None,
                         );
                     }

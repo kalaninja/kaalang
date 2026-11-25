@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use kaalang_compiler::{SourceError, SourceFile};
+use kaalang_compiler::SourceError;
 use kaalang_svg::{HotspotKind, RibbonWire};
 use serde::Serialize;
 
@@ -56,7 +56,7 @@ pub(crate) fn flow(
     collapse_cycles: bool,
     path: Option<String>,
 ) -> Result<String, String> {
-    let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
+    let file = crate::parse(text, cfg)?;
     let selected = match path {
         Some(path) => file.flow_named(&path, position, collapse_cycles),
         None => match file.flow(position, collapse_cycles) {
@@ -69,10 +69,7 @@ pub(crate) fn flow(
     };
     let (svg, hotspots) = kaalang_svg::render_flow(flow).map_err(|error| error.to_string())?;
     let offsets = utf16::Offsets::new(text);
-    let range = |span| {
-        let range = file.range(span);
-        (offsets.at(range.start), offsets.at(range.end))
-    };
+    let range = |span| offsets.range(&file.range(span));
     let mut wires = Vec::new();
     let mut listed = BTreeMap::new();
     // The positions of `ribbon` in `wires`, each listed at its first use. A

@@ -12,7 +12,7 @@ mod order;
 
 /// Where the editor can ask for the definitions of a file's relationship targets.
 pub(crate) fn relationship_targets(text: &str, cfg: &str) -> Result<String, String> {
-    let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
+    let file = crate::parse(text, cfg)?;
     let offsets = utf16::Offsets::new(text);
     let targets: Vec<_> = file
         .relationship_offsets()
@@ -61,9 +61,8 @@ struct Source<'a> {
 
 impl<'a> Source<'a> {
     fn read(text: &'a str, cfg: &str, editor: &'a References) -> Result<Self, String> {
-        let file = SourceFile::parse(text, &cfg.parse()?).map_err(|error| error.to_string())?;
         Ok(Self {
-            file,
+            file: crate::parse(text, cfg)?,
             offsets: utf16::Offsets::new(text),
             references: utf16::bytes(text, &editor.offsets),
             editor,
@@ -91,8 +90,7 @@ impl<'a> Source<'a> {
 
     /// The UTF-16 range of `span`, a span of this text.
     fn range(&self, span: proc_macro2::Span) -> (u32, u32) {
-        let range = self.file.range(span);
-        (self.offsets.at(range.start), self.offsets.at(range.end))
+        self.offsets.range(&self.file.range(span))
     }
 }
 
@@ -198,11 +196,11 @@ pub(crate) fn ty(text: &str, cfg: &str, path: &str, context: &str) -> Result<Str
                 source(number).range(hotspot.span.expect("a card's hotspot has a span"));
             Spot {
                 field_text: hotspot.field_text.as_ref().map(|field| {
-                    let offsets = utf16::Offsets::new(&field.text);
+                    let (start, end) = utf16::Offsets::new(&field.text).range(&field.range);
                     [
                         u32::try_from(field.line).expect("a diagram has few lines"),
-                        offsets.at(field.range.start),
-                        offsets.at(field.range.end),
+                        start,
+                        end,
                     ]
                 }),
                 kind,

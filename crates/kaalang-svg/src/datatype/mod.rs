@@ -93,9 +93,8 @@ struct Tile {
     /// The paths `ty` names.
     paths: Vec<NamedPath>,
     description: Option<String>,
-    target: Option<String>,
-    /// Where the target names its type.
-    target_span: Option<Span>,
+    /// The relationship's target, with where it names its type.
+    target: Option<(String, Span)>,
     /// Whether a line leaves this tile for the focus.
     drawn: bool,
 }
@@ -136,8 +135,8 @@ fn structure(ty: &SourceType, drawn: &[usize]) -> Structure {
             paths: field.paths.clone(),
             description,
             drawn: relationship.is_some_and(|(at, _)| drawn.contains(&at)),
-            target: relationship.map(|(_, relationship)| relationship.target.clone()),
-            target_span: relationship.map(|(_, relationship)| relationship.target_span),
+            target: relationship
+                .map(|(_, relationship)| (relationship.target.clone(), relationship.target_span)),
         }
     };
     let mut read = ty.fields.iter().enumerate();
@@ -211,11 +210,13 @@ fn validate(card: &Card, path: &str, span: Span) -> Result<(), RenderError> {
         _ => &[],
     };
     let names = variants.iter().map(|variant| &variant.name);
-    let labels = [&card.name, &card.kind].into_iter().chain(names).chain(
-        tiles
-            .iter()
-            .flat_map(|tile| tile.label.iter().chain([&tile.ty]).chain(&tile.target)),
-    );
+    let labels = [&card.name, &card.kind]
+        .into_iter()
+        .chain(names)
+        .chain(tiles.iter().flat_map(|tile| {
+            let target = tile.target.iter().map(|(target, _)| target);
+            tile.label.iter().chain([&tile.ty]).chain(target)
+        }));
     for label in labels {
         validate_label(label, span, format!("label of type `{path}`"))?;
     }

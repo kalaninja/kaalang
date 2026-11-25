@@ -509,7 +509,7 @@ impl SizedTile {
             .map(|text| Text::Description.parse(text));
         // The target is a Rust path, set in code like the type above it, after
         // a triangle that stays legible at its size where an arrow does not.
-        let target = tile.target.as_deref().map(|target| {
+        let target = tile.target.as_ref().map(|(target, _)| {
             let mut text = RichText::literal("▸ ");
             text.push_styled(target, Text::Type.style());
             text
@@ -1109,8 +1109,7 @@ mod tests {
             ty: "MemberId".to_owned(),
             paths: Vec::new(),
             description: Some("A description that wraps over a few lines in its tile.".to_owned()),
-            target: target.map(str::to_owned),
-            target_span: None,
+            target: target.map(|target| (target.to_owned(), proc_macro2::Span::call_site())),
             drawn,
         }
     }

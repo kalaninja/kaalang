@@ -1,6 +1,8 @@
 //! Offsets between a text's bytes, as Rust counts them, and its UTF-16 code
 //! units, as JavaScript counts them.
 
+use std::ops::Range;
+
 /// The UTF-16 offset of every character boundary of a text, by its byte.
 pub(crate) struct Offsets(Vec<u32>);
 
@@ -19,6 +21,11 @@ impl Offsets {
     /// The UTF-16 offset of `byte`, a character boundary.
     pub(crate) fn at(&self, byte: usize) -> u32 {
         self.0[byte]
+    }
+
+    /// The UTF-16 range of `bytes`, which character boundaries bound.
+    pub(crate) fn range(&self, bytes: &Range<usize>) -> (u32, u32) {
+        (self.at(bytes.start), self.at(bytes.end))
     }
 }
 
