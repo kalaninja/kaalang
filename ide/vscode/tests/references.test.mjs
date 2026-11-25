@@ -136,6 +136,37 @@ test("a renaming use brings in each file whose target's definition is the focus,
   assert.equal(loaded.state.queries, asked + 1);
 });
 
+test("a renaming use is found across comments, nested ones included", async () => {
+  const texts = new Map([
+    [root, "struct Focus;"],
+    [
+      alias,
+      "pub use crate::Focus /* a /* nested */ note */ as // why\n Author;",
+    ],
+    [review, author],
+  ]);
+  const loaded = await host(texts);
+  loaded.state.references = [root, alias];
+  const { files } = await referring(loaded);
+  assert.deepEqual(
+    files.map(({ uri }) => uri),
+    [review],
+  );
+});
+
+test("a qualified path that casts the focus to a trait asks no definition", async () => {
+  const texts = new Map([
+    [root, "struct Focus;"],
+    [alias, "type Name = <Focus as Named>::Name;"],
+    [review, author],
+  ]);
+  const loaded = await host(texts);
+  loaded.state.references = [root, alias];
+  const { files } = await referring(loaded);
+  assert.deepEqual(files, []);
+  assert.equal(loaded.state.queries, 0);
+});
+
 test("a file the module tree names goes by the path rust-analyzer knows", async () => {
   const opened = "file:///opened/integration.rs";
   const texts = new Map([

@@ -140,18 +140,55 @@ export async function referringFiles(
   };
 }
 
-/** Whether a reference among `positions` of `text` is a `use` that renames the type. */
+/**
+ * Whether a reference among `positions` of `text` is a `use` that renames the
+ * type: the name, `as`, the new name, then what ends it in a `use`, which
+ * leaves out `<Focus as Trait>`.
+ */
 function renames(
   text: string | undefined,
   positions: vscode.Position[],
 ): boolean {
   if (text === undefined) return false;
   const at = offsets(text);
-  const renamed = /(?:r#)?\p{ID_Continue}+\s+as\b/uy;
-  return positions.some((position) => {
-    renamed.lastIndex = at(position.line, position.character);
-    return renamed.test(text);
+  const tokens = [
+    /(?:r#)?\p{ID_Continue}+/uy,
+    /as(?!\p{ID_Continue})/uy,
+    /(?:r#)?\p{ID_Continue}+/uy,
+    /[;,}]/y,
+  ];
+  return positions.some(({ line, character }) => {
+    let offset = at(line, character);
+    return tokens.every((token, index) => {
+      token.lastIndex = index ? afterGap(text, offset) : offset;
+      if (!token.test(text)) return false;
+      offset = token.lastIndex;
+      return true;
+    });
   });
+}
+
+/** The offset past the whitespace and comments at `offset`, which Rust allows between tokens. */
+function afterGap(text: string, offset: number): number {
+  // Block comments nest.
+  let depth = 0;
+  while (offset < text.length) {
+    if (text.startsWith("/*", offset)) {
+      depth++;
+      offset += 2;
+    } else if (depth && text.startsWith("*/", offset)) {
+      depth--;
+      offset += 2;
+    } else if (depth || /\s/u.test(text[offset])) {
+      offset++;
+    } else if (text.startsWith("//", offset)) {
+      const end = text.indexOf("\n", offset);
+      offset = end < 0 ? text.length : end;
+    } else {
+      break;
+    }
+  }
+  return offset;
 }
 
 /** A reference and its definition can use a symlink and its real path. */
