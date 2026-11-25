@@ -118,10 +118,13 @@ test("the diagram keeps a pending external Rust editor when its webview takes fo
   });
 });
 
-test("a removed target folder reads the targets again, a source or built file does not", async (t) => {
-  t.mock.timers.enable({ apis: ["setTimeout"] });
-  let removed;
-  let forgotten = 0;
+/**
+ * The extension activated with the `target` module's `forget…` functions,
+ * where `out` is a build directory, and a watcher's handlers by a part of its
+ * pattern.
+ */
+async function watching(target) {
+  const watchers = new Map();
   const modules = {
     vscode: {
       Uri: { joinPath: ignore },
@@ -130,22 +133,26 @@ test("a removed target folder reads the targets again, a source or built file do
       workspace: events({
         asRelativePath: ({ fsPath }) =>
           fsPath.replace("/target/workspace/", ""),
-        createFileSystemWatcher: (pattern) =>
-          events(
-            pattern.includes("tests")
-              ? { onDidDelete: (handle) => (removed = handle) }
-              : {},
-          ),
+        createFileSystemWatcher: (pattern) => {
+          const handlers = {};
+          watchers.set(pattern, handlers);
+          return events({
+            onDidCreate: (handle) => (handlers.created = handle),
+            onDidDelete: (handle) => (handlers.deleted = handle),
+          });
+        },
       }),
       languages: events(),
     },
     "./card-places": { watchModuleSources: ignore },
     "./references": { forgetReferences: ignore },
     "./target": {
-      forgetCfg: () => ++forgotten,
+      forgetCfg: ignore,
       forgetAnalyzedCfg: ignore,
+      forgetTargets: ignore,
       inBuildDirectory: (file) => file.startsWith("/target/workspace/out/"),
       watchOutsideManifests: ignore,
+      ...target,
     },
   };
   const host = {};
@@ -158,6 +165,15 @@ test("a removed target folder reads the targets again, a source or built file do
     (name) => modules[name] ?? {},
   );
   host.activate({ subscriptions: [] });
+  return (part) => [...watchers].find(([pattern]) => pattern.includes(part))[1];
+}
+
+test("a removed target folder reads the targets again, a source or built file does not", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let forgotten = 0;
+  const { deleted: removed } = (
+    await watching({ forgetCfg: () => ++forgotten })
+  )("tests");
 
   removed({ fsPath: "/target/workspace/tests/api.rs" });
   removed({ fsPath: "/target/workspace/target/debug/examples/api-1f" });
@@ -166,5 +182,19 @@ test("a removed target folder reads the targets again, a source or built file do
   assert.equal(forgotten, 0);
   removed({ fsPath: "/target/workspace/tests" });
   t.mock.timers.tick(500);
+  assert.equal(forgotten, 1);
+});
+
+test("a source file a build writes leaves the targets, a workspace one forgets them", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let forgotten = 0;
+  const { created, deleted } = (
+    await watching({ forgetTargets: () => ++forgotten })
+  )("*.rs");
+
+  created({ fsPath: "/target/workspace/target/debug/build/api-1f/out/gen.rs" });
+  deleted({ fsPath: "/target/workspace/out/package/api-0.1.0/src/lib.rs" });
+  assert.equal(forgotten, 0);
+  created({ fsPath: "/target/workspace/tests/api.rs" });
   assert.equal(forgotten, 1);
 });

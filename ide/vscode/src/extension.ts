@@ -256,8 +256,20 @@ export function activate(context: vscode.ExtensionContext): void {
     forgetReferences(source);
     changed(page);
   }
+  /**
+   * Whether a build wrote what a watcher reports: no Cargo target is there,
+   * and a module file there has a watch of its own. A workspace not read yet
+   * has its build directory where Cargo puts it by default.
+   */
+  function built(uri: vscode.Uri): boolean {
+    return (
+      /(^|\/)target\//.test(vscode.workspace.asRelativePath(uri, false)) ||
+      inBuildDirectory(uri.fsPath)
+    );
+  }
   /** A source file appeared or disappeared, which may add or remove a Cargo target. */
   function sourceSetChanged(source: vscode.Uri): void {
+    if (built(source)) return;
     forgetTargets();
     sourcesChanged(source);
   }
@@ -269,14 +281,8 @@ export function activate(context: vscode.ExtensionContext): void {
     true,
   );
   function targetFolderChanged(folder: vscode.Uri): void {
-    // The source watcher reports a file, and a build fills `examples` in its
-    // build directory: a workspace not read yet has it where Cargo puts it by default.
-    const relative = vscode.workspace.asRelativePath(folder, false);
-    if (
-      !/\.rs$|(^|\/)target\//.test(relative) &&
-      !inBuildDirectory(folder.fsPath)
-    )
-      reread();
+    // The source watcher reports a file.
+    if (!folder.fsPath.endsWith(".rs") && !built(folder)) reread();
   }
   follow(vscode.window.activeTextEditor);
   context.subscriptions.push(
@@ -342,7 +348,9 @@ export function activate(context: vscode.ExtensionContext): void {
     manifests,
     sources,
     sources.onDidCreate(sourceSetChanged),
-    sources.onDidChange(sourcesChanged),
+    sources.onDidChange((source) => {
+      if (!built(source)) sourcesChanged(source);
+    }),
     sources.onDidDelete(sourceSetChanged),
     folders,
     folders.onDidCreate(targetFolderChanged),
