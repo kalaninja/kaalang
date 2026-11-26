@@ -32,7 +32,8 @@ RUN apt-get update \
 
 COPY mise/config.toml mise/config.wasm.toml mise/
 
-RUN mise install \
+# A token lifts GitHub's anonymous rate limit for the wasm-bindgen download.
+RUN --mount=type=secret,id=github_token,env=GITHUB_TOKEN mise install \
     && chmod -R a+rwX /opt/cargo /opt/rustup /mise \
     && mise exec -- cargo clippy --version \
     && mise exec -- sh -c 'test -d "$(rustc --print sysroot)/lib/rustlib/src/rust/library"' \

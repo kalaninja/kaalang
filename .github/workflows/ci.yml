@@ -40,6 +40,7 @@ jobs:
           target: rust
           load: true
           tags: kaalang-rust
+          secrets: github_token=${{ secrets.GITHUB_TOKEN }}
           cache-from: type=gha,scope=rust
           cache-to: type=gha,scope=rust,mode=max
       - uses: actions/cache@v4
