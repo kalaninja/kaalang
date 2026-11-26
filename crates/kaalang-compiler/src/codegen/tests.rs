@@ -1,6 +1,7 @@
 //! What `expand` emits for a flow, checked on the Rust it produces rather
 //! than on the tokens it assembles.
 
+use proc_macro2::Span;
 use quote::{ToTokens, format_ident};
 use syn::{Expr, ItemFn, Stmt, parse_quote, visit::Visit};
 
@@ -311,11 +312,11 @@ fn conditional_stage_histories_preserve_constructor_order_and_dispatcher_rust() 
             crate::stage::visit_order(&reference, &reference.stages)
         );
         assert_eq!(
-            super::stage::expand(function.clone(), &analysis)
+            super::stage::expand(function.clone(), &analysis, Span::mixed_site())
                 .expect("the staged probe expands")
                 .to_token_stream()
                 .to_string(),
-            super::stage::expand(function, &reference)
+            super::stage::expand(function, &reference, Span::mixed_site())
                 .expect("the reference expands")
                 .to_token_stream()
                 .to_string()

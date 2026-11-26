@@ -8,8 +8,9 @@ use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::model::{BranchSelection, Execution, Flow, Passes, ProducerId, WireMerge};
 
-/// The executions as each frame of the flow sees them. A frame is the
-/// innermost cycle with several outputs around a block, or the root.
+/// The executions as each frame of the flow sees them. Only a cycle with
+/// several outputs hides selections, so every frame shares the view of the
+/// innermost such cycle around it, or of the root.
 pub(super) struct Frames<'a> {
     /// Per block, the innermost cycle with several outputs strictly around it.
     inner: Vec<Option<usize>>,
@@ -64,7 +65,6 @@ impl<'a> Frames<'a> {
         }
     }
 
-    /// Which blocks repeating executions reach, for [`Passes::reaches`].
     pub(super) fn passes(&self) -> &Passes {
         &self.passes
     }
@@ -91,17 +91,14 @@ impl<'a> Frames<'a> {
         self.inner[block]
     }
 
-    /// The executions as `frame` sees them.
     pub(super) fn view(&self, frame: Option<usize>) -> &[Execution] {
         &self.views[&frame]
     }
 
-    /// The executions as `block` sees them.
     pub(super) fn at(&self, block: usize) -> &[Execution] {
         self.view(self.frame(block))
     }
 
-    /// Whether a selection made at `block` is visible from `frame`.
     pub(super) fn visible(&self, frame: Option<usize>, block: usize) -> bool {
         visible(&self.inner, frame, block)
     }

@@ -13,3 +13,11 @@ Thumbs.db
 
 # Tooling caches
 /.cache/
+
+# The sample workspace resolves against the crates of this repository, whose
+# versions change with every release.
+/ide/sample/Cargo.lock
+
+# The VS Code extension's dependencies and build
+/ide/vscode/node_modules/
+/ide/vscode/out/

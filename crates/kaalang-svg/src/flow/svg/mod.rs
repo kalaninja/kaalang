@@ -178,8 +178,8 @@ fn write_connection_label(svg: &mut String, label: &Label) {
     let source = source(&label.lines);
     let lines = source.as_deref().unwrap_or(&label.lines);
     let class = match (label.kind, source.is_some()) {
-        (LabelKind::Wire, false) => "connection-label",
-        (LabelKind::Wire, true) => "connection-label code",
+        (LabelKind::Wire(_), false) => "connection-label",
+        (LabelKind::Wire(_), true) => "connection-label code",
         (LabelKind::Branch, false) => "connection-label branch-label",
         (LabelKind::Branch, true) => "connection-label branch-label code",
     };
@@ -232,7 +232,8 @@ fn write_merge(svg: &mut String, scene: &Scene, junction: usize) {
     svg.push_str("    </g>\n");
 }
 
-/// Describes the diagram once: each node with the labels it and its exits own,
+/// Describes the diagram once: each expanded cycle with its inputs and outputs,
+/// each node with the labels it and its exits own, each merge with its wires,
 /// then each connection as the pair of ends it joins.
 fn describe(scene: &Scene) -> String {
     let topology = &scene.topology;
@@ -331,7 +332,6 @@ fn describe(scene: &Scene) -> String {
     }
 }
 
-/// Appends `lead` and the joined `items`, or nothing when there are none.
 fn push_phrase(described: &mut String, lead: &str, items: &[String], separator: &str) {
     if items.is_empty() {
         return;

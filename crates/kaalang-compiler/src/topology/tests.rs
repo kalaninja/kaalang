@@ -14,7 +14,6 @@ fn collapsed(source: &str) -> Topology {
         .topology
 }
 
-/// One flow of an authored fixture file.
 fn fixture(source: &str, flow: &str) -> SemanticModel {
     crate::build(&crate::tests::fixture(source, flow)).expect("the fixture is valid")
 }

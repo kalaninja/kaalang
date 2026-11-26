@@ -3,17 +3,17 @@
 
 use std::iter;
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{
     Attribute, Error, Generics, Ident, Item, LitStr, Meta, Path, Result, Token, Type, Visibility,
-    parse::ParseStream, spanned::Spanned,
+    ext::IdentExt, parse::ParseStream, spanned::Spanned,
 };
 
 use crate::{
-    configure::split_at_commas,
+    configure::{cfg_attributes, is_cfg_attr, split_at_commas},
     is_kaalang_attribute,
-    parse::{annotation_name, description, path_annotation_name},
+    parse::{annotation_name, description, literal_text, path_annotation_name},
 };
 
 /// A struct, enum, union, or type alias, with its annotations if it has any.
@@ -65,18 +65,28 @@ pub struct Relationship {
 }
 
 impl TypeDeclaration {
-    /// Every relationship in source order, the position that identifies it.
+    /// Every field in source order, a variant's fields in its variant's place.
+    /// An alias has none.
     #[must_use]
-    pub fn relationships(&self) -> Vec<&Relationship> {
-        let fields: Vec<&Field> = match &self.form {
+    pub fn fields(&self) -> Vec<&Field> {
+        match &self.form {
             TypeForm::Struct(fields) | TypeForm::Union(fields) => fields.iter().collect(),
             TypeForm::Enum(variants) => variants
                 .iter()
                 .flat_map(|variant| &variant.fields)
                 .collect(),
-            TypeForm::Alias(_, relationship) => return relationship.iter().collect(),
-        };
-        fields
+            TypeForm::Alias(..) => Vec::new(),
+        }
+    }
+
+    /// Every relationship in source order, the position that identifies it:
+    /// an alias's own, or its fields' in the order of [`Self::fields`].
+    #[must_use]
+    pub fn relationships(&self) -> Vec<&Relationship> {
+        if let TypeForm::Alias(_, relationship) = &self.form {
+            return relationship.iter().collect();
+        }
+        self.fields()
             .into_iter()
             .filter_map(|field| match &field.annotation {
                 Some(Annotation::Refer(relationship)) => Some(relationship),
@@ -114,10 +124,12 @@ pub fn type_declaration(item: &Item) -> Result<TypeDeclaration> {
         }
         Some((attribute, Meta::NameValue(_))) => Some(description(attribute, "kaalang type")?),
     };
-    if let Some(duplicate) = kaalang.next() {
+    if let Some(duplicate) = kaalang.next()
+        && !crate::attribute::already_applied(attributes)
+    {
         return Err(Error::new_spanned(
             duplicate,
-            "a type takes one `#[kaa]` attribute",
+            crate::attribute::DUPLICATE_TYPE,
         ));
     }
 
@@ -203,8 +215,14 @@ fn collect_types(items: &[Item], prefix: &str, types: &mut Vec<(String, Item)>) 
     }
 }
 
+/// The name of a struct, enum, union, or type alias.
+#[must_use]
+pub fn type_name(item: &Item) -> Option<&Ident> {
+    parts(item).map(|(_, name, _)| name)
+}
+
 /// The attributes, name, and generics of a supported declaration form.
-fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
+pub(crate) fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
     match item {
         Item::Struct(declaration) => Some((
             &declaration.attrs,
@@ -238,7 +256,12 @@ fn parts(item: &Item) -> Option<(&Vec<Attribute>, &Ident, &Generics)> {
 ///
 /// Rejects unsupported declaration forms. Annotation errors are emitted at
 /// their source spans under the same compilation guards as the annotations.
-pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStream> {
+pub(crate) fn expand_type(arguments: &TokenStream, item: Item) -> Result<TokenStream> {
+    let (item, checks) = expansion(arguments, item)?;
+    Ok(quote! { #item #checks })
+}
+
+pub(crate) fn expansion(arguments: &TokenStream, mut item: Item) -> Result<(Item, TokenStream)> {
     // Spanned at the arguments, so that a malformed description points at them.
     let attribute: Attribute = match arguments.clone().into_iter().next() {
         None => syn::parse_quote!(#[kaa]),
@@ -295,24 +318,31 @@ pub fn expand_type(arguments: &TokenStream, mut item: Item) -> Result<TokenStrea
         // Without its annotations the item is valid Rust, so its uses still resolve.
         Err(error) => {
             let error = error.into_compile_error();
-            return Ok(quote! { #item #error });
+            return Ok((item, error));
         }
     };
 
-    // Each import is spanned at its target, where rustc reports an unknown one,
-    // and stands under its field's `cfg`, as the target may.
+    // Each import stands under its field's `cfg`, as the target may.
     checks.extend(
         declaration
             .relationships()
             .into_iter()
             .map(|relationship| {
-                let (target, cfgs) = (&relationship.target, &relationship.cfgs);
-                quote_spanned!(target.span()=> #(#cfgs)* #[allow(unused_imports)] use #target as _;)
+                let (import, cfgs) = (import(&relationship.target), &relationship.cfgs);
+                quote!(#(#cfgs)* #import)
             })
             .collect::<TokenStream>(),
     );
     let checks = (!checks.is_empty()).then(|| quote! { const _: () = { #checks }; });
-    Ok(quote! { #item #checks })
+    Ok((item, quote!(#checks)))
+}
+
+/// The import that has rustc resolve `target`, placed at it, where rustc
+/// reports an unknown one. Nothing uses the import, and rustc reports no lint
+/// in a macro's own span, while an `allow` would fail under `forbid`.
+fn import(target: &Path) -> TokenStream {
+    let span = Span::mixed_site().located_at(target.span());
+    quote_spanned!(span=> use #target as _;)
 }
 
 fn expand_fields<'a>(
@@ -366,10 +396,7 @@ fn expand_annotations(
         match validate(std::slice::from_ref(annotation)) {
             Ok(target) => {
                 if let Some(target) = target {
-                    checks.extend(guarded(
-                        quote_spanned!(target.span()=> #[allow(unused_imports)] use #target as _;),
-                        &[],
-                    ));
+                    checks.extend(guarded(import(&target), &[]));
                 }
                 for &(previous, prior) in &valid {
                     if let Err(error) = validate(&[Attribute::clone(prior), annotation.clone()]) {
@@ -399,7 +426,7 @@ fn lift_annotations(
             kept.push(attribute.clone());
             continue;
         };
-        if !list.path.is_ident("cfg_attr") {
+        if !is_cfg_attr(&list.path) {
             kept.push(attribute.clone());
             continue;
         }
@@ -439,7 +466,7 @@ fn take_annotations(
     let mut rest = Vec::new();
     for part in parts {
         match syn::parse2::<Meta>(part.clone()) {
-            Ok(Meta::List(nested)) if nested.path.is_ident("cfg_attr") => {
+            Ok(Meta::List(nested)) if is_cfg_attr(&nested.path) => {
                 if let Some(nested) = take_annotations(nested.tokens, predicates, lifted) {
                     rest.push(quote!(cfg_attr(#nested)));
                 }
@@ -545,36 +572,6 @@ fn misplaced_case(attribute: &Attribute) -> Error {
     Error::new_spanned(attribute, "`case` describes an enum variant")
 }
 
-fn cfg_attributes(attributes: &[Attribute]) -> Vec<Attribute> {
-    fn guard(meta: &Meta) -> Option<Meta> {
-        let Meta::List(list) = meta else {
-            return None;
-        };
-        if list.path.is_ident("cfg") {
-            return Some(meta.clone());
-        }
-        if !list.path.is_ident("cfg_attr") {
-            return None;
-        }
-        let mut parts = split_at_commas(list.tokens.clone()).into_iter();
-        let predicate = parts.next()?;
-        let guards: Vec<_> = parts
-            .filter_map(|part| syn::parse2::<Meta>(part).ok().and_then(|meta| guard(&meta)))
-            .collect();
-        (!guards.is_empty())
-            .then(|| syn::parse_quote_spanned!(list.span()=> cfg_attr(#predicate, #(#guards),*)))
-    }
-    attributes
-        .iter()
-        .filter_map(|attribute| {
-            guard(&attribute.meta).map(|meta| Attribute {
-                meta,
-                ..attribute.clone()
-            })
-        })
-        .collect()
-}
-
 /// Parses `refer(Target, "description")` on a field of the type `owner` under
 /// `cfgs`, or on a type alias, which has no owner.
 fn relationship(
@@ -599,7 +596,8 @@ fn relationship(
             Ok((target, input.parse::<LitStr>()?))
         })
         .map_err(|_| malformed())?;
-    if description.value().trim().is_empty() {
+    let text = literal_text(&description);
+    if text.trim().is_empty() {
         return Err(Error::new_spanned(
             description,
             "a kaalang relationship requires a non-empty description",
@@ -624,11 +622,10 @@ fn relationship(
         let mut name = owner.clone();
         name.set_span(target.span());
         target = name.into();
-    }
-    if let Some(name) = target.get_ident()
+    } else if let Some(name) = target.get_ident()
         && generics
             .type_params()
-            .any(|parameter| parameter.ident == *name)
+            .any(|parameter| parameter.ident.unraw() == name.unraw())
     {
         return Err(Error::new_spanned(
             name,
@@ -637,7 +634,7 @@ fn relationship(
     }
     Ok(Relationship {
         target,
-        description: description.value(),
+        description: text,
         cfgs,
     })
 }
@@ -732,7 +729,7 @@ mod tests {
             "{expanded}"
         );
         assert!(
-            expanded.contains("# [cfg (all (unix))] # [allow (unused_imports)] use Device as _ ;"),
+            expanded.contains("# [cfg (all (unix))] use Device as _ ;"),
             "{expanded}"
         );
     }
@@ -767,9 +764,8 @@ mod tests {
         };
         let expanded = expand_type(&TokenStream::new(), item).unwrap().to_string();
         assert!(
-            expanded.contains(
-                "# [cfg (feature = \"audit\")] # [cfg (not (test))] # [allow (unused_imports)] use Auditor as _ ;"
-            ),
+            expanded
+                .contains("# [cfg (feature = \"audit\")] # [cfg (not (test))] use Auditor as _ ;"),
             "{expanded}"
         );
     }

@@ -5,14 +5,11 @@ use kaalang_compiler::{
 
 use crate::ArrangementVerifier;
 
-/// Compacts `model.arrangement` in place, keeping each normalized replacement
-/// only after the verifier accepts it, so a failure preserves the existing
-/// witness. Each of `model.stages` needs its own call.
-/// Terminates as ranks rise, then contours approach their bodies and coordinates,
-/// lanes, and runs disappear.
-///
-/// Reaches a deterministic local fixed point, not a global minimum of bends or
-/// area, as specified by RFC 0003 §2.3.
+/// Compacts `model.arrangement` in place as RFC 0003 §2.3 specifies, keeping
+/// each normalized replacement only after the verifier accepts it, so a
+/// failure preserves the existing witness. Each of `model.stages` needs its own
+/// call. Terminates as ranks rise, then contours approach their bodies and
+/// coordinates, lanes, and runs disappear.
 pub fn compact_arrangement(model: &mut SemanticModel) {
     if model.topology.cycles.is_empty()
         && !model

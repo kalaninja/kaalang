@@ -1,6 +1,6 @@
 use kaalang::kaa;
 
-/// Two borrows and then a move of the same wire, in exactly that order. The
+/// Two borrows and then a move of the same wire, in that order. The
 /// move also waits for a trigger the first borrow produced. Rust checks the
 /// borrows against the move; kaalang only fixes the sequence.
 #[kaa]

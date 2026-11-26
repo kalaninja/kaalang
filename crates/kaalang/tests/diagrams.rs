@@ -10,44 +10,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use kaalang_compiler::{SourceFile, SourceType, Target};
-
-/// The compilation target every fixture is read for, `x86_64-unknown-linux-gnu`
-/// as rustc 1.99.1 prints its cfg, so that the diagrams depend on neither the
-/// host nor the toolchain, and with `test`, since the fixtures are tests.
-const TARGET: &str = r#"
-debug_assertions
-panic="unwind"
-target_abi=""
-target_arch="x86_64"
-target_endian="little"
-target_env="gnu"
-target_family="unix"
-target_feature="fxsr"
-target_feature="sse"
-target_feature="sse2"
-target_has_atomic="16"
-target_has_atomic="32"
-target_has_atomic="64"
-target_has_atomic="8"
-target_has_atomic="ptr"
-target_has_atomic_primitive_alignment="16"
-target_has_atomic_primitive_alignment="32"
-target_has_atomic_primitive_alignment="64"
-target_has_atomic_primitive_alignment="8"
-target_has_atomic_primitive_alignment="ptr"
-target_os="linux"
-target_pointer_width="64"
-target_vendor="unknown"
-test
-unix
-"#;
+use kaalang_compiler::{SourceFile, SourceType};
+use kaalang_testing::corpus::TARGET;
 
 #[test]
 #[ignore = "run just rust svg to regenerate fixture diagrams"]
 fn draws_a_diagram_beside_every_executable_fixture() {
     let tests = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests");
-    let target: Target = TARGET.parse().expect("the fixture target is a cfg set");
     let mut drawn = 0;
     for directory in fixture_directories(&tests) {
         let declarations = fs::read_to_string(directory.join("mod.rs")).unwrap();
@@ -72,7 +41,7 @@ fn draws_a_diagram_beside_every_executable_fixture() {
                 );
             }
             let source = fs::read_to_string(fixture).unwrap();
-            let file = SourceFile::parse(&source, &target)
+            let file = SourceFile::parse(&source, &TARGET)
                 .unwrap_or_else(|error| panic!("{}: {error}", fixture.display()));
             let flows = kaalang_compiler::flows(file.items());
             // A method's diagram is named after the method, without its impl.
@@ -124,12 +93,9 @@ fn flow_diagrams(
 ) -> Vec<(String, String)> {
     let mut diagrams: Vec<(String, String)> = Vec::new();
     for (position, name) in names.iter().enumerate() {
-        for (suffix, collapse_cycles) in std::iter::once(("", false)).chain(
-            source
-                .contains("#[kaa::cycle(")
-                .then_some(("_collapsed", true)),
-        ) {
-            let svg = file
+        for collapse_cycles in kaalang_testing::corpus::views(source) {
+            let suffix = if collapse_cycles { "_collapsed" } else { "" };
+            let (svg, _) = file
                 .flow(position, collapse_cycles)
                 .map_err(|error| error.to_string())
                 .and_then(|flow| kaalang_svg::render_flow(flow).map_err(|error| error.to_string()))
@@ -170,46 +136,25 @@ fn draw(current: &mut Vec<PathBuf>, diagram: PathBuf, svg: &str) {
 }
 
 /// One diagram for every type of a fixture without flows, as the fixture
-/// target compiles it, named after the type, except the first: the subject of
-/// the `case` is named after it. A type's incoming types are those in the same
-/// file whose `refer` names it bare, a convention that stands in for the
-/// resolver of `cargo kaalang`.
+/// target compiles it. Incoming types are matched by the bare name a `refer`
+/// writes, standing in for the resolver of `cargo kaalang`.
 fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(String, String)> {
     let fixture = fixture.display();
-    // Each declaration with the targets of its relationships, in source order.
-    let types: Vec<(SourceType, Vec<String>)> = kaalang_compiler::type_items(file.items())
+    let types: Vec<SourceType> = kaalang_compiler::type_items(file.items())
         .into_iter()
         .map(|(path, _)| {
-            let ty = file
-                .ty(&path)
-                .unwrap_or_else(|error| panic!("{fixture}: {error}"));
-            let targets = ty
-                .declaration
-                .relationships()
-                .iter()
-                .map(|relationship| {
-                    relationship
-                        .target
-                        .get_ident()
-                        .map_or_else(String::new, ToString::to_string)
-                })
-                .collect();
-            (ty, targets)
+            file.ty(&path)
+                .unwrap_or_else(|error| panic!("{fixture}: {error}"))
         })
         .collect();
     types
         .iter()
         .enumerate()
-        .map(|(index, (focus, _))| {
+        .map(|(index, focus)| {
             let name = last_segment(&focus.path);
             let drawn: Vec<(&SourceType, Vec<usize>)> = types
                 .iter()
-                .map(|(ty, targets)| {
-                    let positions = (0..targets.len())
-                        .filter(|&index| targets[index] == name)
-                        .collect();
-                    (ty, positions)
-                })
+                .map(|ty| (ty, kaalang_testing::corpus::naming(&ty.declaration, name)))
                 .collect();
             let incoming: Vec<_> = drawn
                 .iter()
@@ -221,9 +166,10 @@ fn type_diagrams(file: &SourceFile<'_>, fixture: &Path, case: &str) -> Vec<(Stri
                 .find(|(ty, _)| ty.path == focus.path)
                 .map(card)
                 .expect("the focus is a listed type");
-            let svg =
-                kaalang_svg::render_type(&own, &[&incoming], kaalang_svg::TypeOptions::default())
-                    .unwrap_or_else(|error| panic!("{fixture}: {}: {error}", focus.path));
+            let groups = vec![(); incoming.len()];
+            let options = kaalang_svg::TypeOptions::default();
+            let (svg, _) = kaalang_svg::render_type(&own, &incoming, &groups, options)
+                .unwrap_or_else(|error| panic!("{fixture}: {}: {error}", focus.path));
             let file = if index == 0 {
                 case.to_owned()
             } else {

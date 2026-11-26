@@ -134,7 +134,6 @@ impl Arrangement {
         self.routes.iter().chain(self.back_routes.values())
     }
 
-    /// Mutable [`Self::all_routes`].
     pub fn all_routes_mut(&mut self) -> impl Iterator<Item = &mut Route> {
         self.routes.iter_mut().chain(self.back_routes.values_mut())
     }
@@ -254,7 +253,6 @@ impl Route {
     }
 }
 
-/// The horizontal line occupied by a sideways run.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RunLine {
     /// The centre of a vertex row, including a visible merge's arrival rail.
@@ -263,7 +261,6 @@ pub enum RunLine {
     Lane { gap: usize, lane: usize },
 }
 
-/// One sideways run of a corridor.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Run {
     pub line: RunLine,

@@ -381,7 +381,7 @@ fn assign_gap(
     for (run, group) in sideways.iter().zip(groups.iter().copied()) {
         plan.lanes.insert((run.connection, gap), lanes[&group]);
     }
-    // The gap needs room for the levels actually occupied, not for one per
+    // The gap needs room for the levels occupied, not for one per
     // group: runs no ordering separates all share the topmost level.
     plan.gap_lanes[gap] = lanes.values().max().map_or(0, |deepest| deepest + 1);
 
@@ -424,7 +424,7 @@ fn order(above: &[Vec<usize>], movable: &dyn Fn(usize) -> bool) -> Result<Vec<us
         let Some(next) = next else {
             // A cycle of lane requirements: the runs in it cannot all sit in
             // one gap, so one of them has to move. Blame one the search can
-            // actually move.
+            // move.
             let unplaced = |run: &usize| !placed[*run];
             return Err((0..above.len())
                 .filter(unplaced)

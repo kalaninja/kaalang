@@ -126,7 +126,6 @@ pub(crate) struct OrderEvent<T> {
 type Backlog = Vec<OrderNumber>;
 
 impl Order {
-    /// The sum of the lines.
     fn total(&self) -> Money {
         Money(
             self.lines

@@ -690,7 +690,7 @@ fn a_right_question_branch_description_replaces_its_output_above_the_connection(
             .all(|label| joined(&label.lines, "") != "yes")
     );
     assert!(scene.labels.iter().any(|label| {
-        matches!(label.kind, LabelKind::Wire) && joined(&label.lines, "") == "no"
+        matches!(label.kind, LabelKind::Wire(_)) && joined(&label.lines, "") == "no"
     }));
     let connection = scene
         .connections
@@ -969,7 +969,7 @@ fn continuation_starts_below_the_completed_nested_cycle() {
         .topology
         .cycle_boundaries
         .iter()
-        .find(|boundary| (boundary.header + 1..boundary.end).contains(&inner.header))
+        .find(|boundary| boundary.encloses(inner.header))
         .expect("the inner cycle is enclosed");
     let outer = scene
         .topology
@@ -1328,7 +1328,7 @@ fn clearing_one_label_can_take_more_than_one_lane() {
         .unwrap();
     scene.labels = vec![Label {
         owner: Vertex::Node(NodeId::Start),
-        kind: LabelKind::Wire,
+        kind: LabelKind::Wire(WireList::Capture(NodeId::Start)),
         lines: vec![RichText::literal("wwwwwwwwww")],
         at: Point {
             x: climb[0].x - 3 * LANE,
@@ -1520,8 +1520,7 @@ fn every_generated_shape_the_model_accepts_also_renders() {
     assert_eq!((drawn, refused), (1095, 1740));
 }
 
-/// Every generated cycle with two outputs the model accepts renders, expanded
-/// and collapsed.
+/// Over generated cycles with two outputs.
 #[test]
 fn every_accepted_alternative_output_shape_renders_in_both_views() {
     let mut drawn = 0;
@@ -1547,7 +1546,7 @@ fn every_accepted_alternative_output_shape_renders_in_both_views() {
 fn every_accepted_staged_shape_renders_in_both_views() {
     let mut rendered = 0;
     for source in kaalang_testing::shapes::staged_shapes() {
-        let file = kaalang_compiler::SourceFile::parse(&source, kaalang_compiler::Target::EMPTY)
+        let file = kaalang_compiler::SourceFile::parse(&source, kaalang_compiler::CfgSet::EMPTY)
             .unwrap_or_else(|error| panic!("{source}\n{error}"));
         if file.flow(0, false).is_err() {
             continue;

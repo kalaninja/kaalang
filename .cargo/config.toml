@@ -1,3 +1,12 @@
 [env]
 # Write diagnostics beside compile-fail fixtures for diff review, like behavior SVGs.
 TRYBUILD = "overwrite"
+
+[target.'cfg(target_os = "linux")']
+runner = "scripts/cargo-runner.sh"
+
+[target.wasm32-unknown-unknown]
+# syn parses a nested expression recursively, about 2 KB of stack a level: the
+# default 1 MB stopped a file at 495 nested parentheses. 4 MB outlasts the
+# stack V8 gives a Chromium worker, which stops it at 1251.
+rustflags = ["-C", "link-arg=-zstack-size=4194304"]

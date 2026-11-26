@@ -7,7 +7,7 @@ pub(super) use kaalang_compiler::geometry::enters;
 use kaalang_compiler::{
     SemanticModel, Side,
     geometry::{bundle_meetings, compatible, overlaps_itself, straighten, turns_downward},
-    topology::{Destination, ExitId, NodeId, Source, Vertex},
+    topology::{Destination, ExitId, NodeId, Source, Vertex, may_share_run},
 };
 
 use super::{Connection, Point, Rows, Scene};
@@ -58,7 +58,6 @@ pub(super) fn exit_anchor(scene: &Scene, exit: ExitId, destination: Destination)
 
 /// Realizes every iteration back edge: out of its tail, up the lane the arrangement
 /// chose beside its body, and horizontally into its entry junction.
-/// The lane sits just outside the body it climbs past.
 pub(super) fn back_edges(scene: &Scene, model: &SemanticModel, rows: &Rows) -> Vec<Connection> {
     let mut drawn: Vec<(usize, i32)> = Vec::new();
     let mut connections = Vec::new();
@@ -325,10 +324,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if collapsed(connection) || collapsed(other) {
                 continue;
             }
-            // The side exits of one node fan out along one row.
-            let shared = connection.source == other.source
-                || connection.destination == other.destination
-                || connection.source.is_side_exit_beside(other.source);
+            let ends = |connection: &Connection| (connection.source, connection.destination);
+            let shared = may_share_run(ends(connection), ends(other));
             let meetings = if shared {
                 bundle_meetings(&connection.points, &other.points)
             } else {
@@ -434,7 +431,6 @@ fn touches(connection: &Connection, node: NodeId) -> bool {
         || connection.destination == Destination::Node(node)
 }
 
-/// Whether any segment of a route passes through a rectangle.
 pub(super) fn crosses(points: &[Point], bounds: (i32, i32, i32, i32)) -> bool {
     points
         .windows(2)

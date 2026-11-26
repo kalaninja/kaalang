@@ -1,8 +1,6 @@
 # RFC 0003: kaalang SVG Renderer
 
 - Status: accepted
-- Visual language: [RFC 0002](0002-visual-language.md)
-- Artifact target: SVG
 
 ## 1. Overview
 
@@ -19,9 +17,7 @@ each validated cycle boundary to one node and checks a second arrangement for
 that projection. Before any concrete renderer measures it, a shared step may
 compact that witness into the common rows, columns, corridors, lanes, and
 contours. A concrete renderer chooses no structure of its own; it assigns
-dimensions and spacing to the shared arrangement. Sections 2.1–2.4 describe
-construction and verification of RFC 0002's rules; §2.5 defines presentation
-preferences.
+dimensions and spacing to the shared arrangement.
 
 ### 2.1 The decision procedure
 

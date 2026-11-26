@@ -64,10 +64,8 @@ pub(super) struct Group {
     pub(super) reaching: BTreeMap<usize, usize>,
 }
 
-/// Choice groups occupy adjacent cases and may nest, but may not cross. Both
-/// are decided by route, not by case: a later selection inside one case may
-/// send its routes to different groups, and only a route that reaches a group
-/// can separate it or set it apart from another. A cycle's declared outputs
+/// Holds a choice's convergence groups to RFC 0001 §7 as RFC 0007 §4.2 refines
+/// it: adjacent, nested or apart, both by route. A cycle's declared outputs
 /// group the same way.
 pub(super) fn validate_groups(owner: &Block, groups: &[Group]) -> Result<()> {
     let (noun, members) = match owner.kind {

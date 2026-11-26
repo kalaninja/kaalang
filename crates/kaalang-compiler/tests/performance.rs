@@ -1,7 +1,5 @@
 //! What this crate costs: analysis, topology projection, arrangement
 //! construction and lowering to Rust.
-//!
-//! Wall-clock, in the unoptimized dev profile a macro expansion runs in.
 
 use std::time::{Duration, Instant};
 
@@ -45,50 +43,55 @@ fn cost(function: &ItemFn) -> Option<Cost> {
     Some(Cost { accepted, diagram })
 }
 
-// Ordinary and stress fixtures have separate corpus passes. Each flow is also
-// checked against its tier's budget, so the pass catches distributed regressions
-// and the flow checks catch isolated ones.
+// Every timing below was measured on an Intel Core i7-12800H efficiency core at
+// 1.8 GHz, with Turbo Boost disabled and the `performance` platform profile.
 
-/// Per-flow allowance for 263 ordinary model flows: serial p50 635 ms with
-/// Turbo Boost disabled.
-const MODEL_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(5);
-/// Per-flow allowance for four stress model flows: serial p50 626 ms with
-/// Turbo Boost disabled.
-const MODEL_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(300);
-/// One ordinary fixture flow's model, against a median of about 1.9 ms.
-const MODEL_FLOW_BUDGET: Duration = Duration::from_millis(25);
-/// One stress-fixture flow's model, against the new cycle/stage fixture's
-/// median of about 310 ms, with twice that cost rounded up.
-const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(640);
+/// Per-flow allowance over the ordinary corpus, whose median serial pass took
+/// about 4.4 ms a flow.
+const MODEL_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(10);
+/// Per-flow allowance over the stress corpus, whose median serial pass took
+/// about 300 ms a flow.
+const MODEL_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(600);
+/// One ordinary fixture flow's model, against a typical median of about 3.5 ms
+/// and a worst of about 19 ms.
+const MODEL_FLOW_BUDGET: Duration = Duration::from_millis(50);
+/// One stress-fixture flow's model, against a worst median of about 590 ms,
+/// with twice that cost rounded up.
+const MODEL_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(1200);
 
-/// Per-flow allowance for 263 ordinary lowering flows: serial p50 856 ms with
-/// Turbo Boost disabled. Expansion rebuilds the model, so its budget is separate.
-const LOWERING_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(6);
-/// Per-flow allowance for four stress lowering flows: serial p50 663 ms with
-/// Turbo Boost disabled.
-const LOWERING_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(350);
-/// One ordinary fixture flow's lowering, against a median of about 1.6 ms.
-const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(25);
-/// One stress-fixture flow's lowering, with the same headroom as its model.
-const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(640);
+/// Per-flow allowance over the ordinary corpus, whose median serial pass took
+/// about 6.4 ms a flow. Expansion rebuilds the model, so its budget is
+/// separate.
+const LOWERING_CORPUS_FLOW_BUDGET: Duration = Duration::from_millis(13);
+/// Per-flow allowance over the stress corpus, whose median serial pass took
+/// about 325 ms a flow.
+const LOWERING_CORPUS_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(700);
+/// One ordinary fixture flow's lowering, against a typical median of about
+/// 5.3 ms and a worst of about 24 ms.
+const LOWERING_FLOW_BUDGET: Duration = Duration::from_millis(50);
+/// One stress-fixture flow's lowering, against a worst median of about 640 ms,
+/// with the same headroom as its model.
+const LOWERING_STRESS_FLOW_BUDGET: Duration = Duration::from_millis(1300);
 
 // Generated probes sit outside the fixture corpus and exercise selected steps.
 /// The bound on analysis alone for a generated probe, against a measured median
-/// of about 60 ms for nine branching levels.
+/// of about 145 ms for nine branching levels.
 const GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_millis(500);
 /// Analysis of twelve branching levels, against a measured median of about
-/// 140 ms. The 4096 possible executions remain factored during compilation.
+/// 300 ms. The 4096 possible executions remain factored during compilation.
 const LARGE_GENERATED_ANALYSIS_BUDGET: Duration = Duration::from_secs(1);
 /// Analysis of twenty branching levels, against a measured median of about
-/// 1.75 s with branch work and older captures. That flow has over sixty million
+/// 3.9 s with branch work and older captures. That flow has over sixty million
 /// executions; compilation keeps their exact conditions instead of listing them.
-const SERIAL_ANALYSIS_BUDGET: Duration = Duration::from_secs(4);
+const SERIAL_ANALYSIS_BUDGET: Duration = Duration::from_secs(8);
 /// A repeating cycle with over 120 million finite histories, against a median
-/// of about 3.1 s. Preparation and a cycle stage each analyze their own histories.
-const CYCLIC_ANALYSIS_BUDGET: Duration = Duration::from_secs(8);
-const STAGED_ANALYSIS_BUDGET: Duration = Duration::from_secs(16);
+/// of about 7.3 s.
+const CYCLIC_ANALYSIS_BUDGET: Duration = Duration::from_secs(16);
+/// Preparation and a cycle stage each analyze their own histories, against a
+/// median of about 14.8 s.
+const STAGED_ANALYSIS_BUDGET: Duration = Duration::from_secs(32);
 /// The bound on the diagram decision for a generated probe, against a worst
-/// measured figure of about 290 ms.
+/// measured figure of about 460 ms.
 const GENERATED_DIAGRAM_DECISION_BUDGET: Duration = Duration::from_secs(3);
 fn check_compiler_corpus_budgets(
     label: &str,

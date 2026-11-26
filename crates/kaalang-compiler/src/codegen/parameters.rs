@@ -7,10 +7,9 @@ use syn::{FnArg, ItemFn, Pat, PatIdent, ext::IdentExt};
 
 use super::Bindings;
 
-/// Moves every named parameter into its hygienic wire binding. A wildcard
-/// parameter provides no wire. The receiver is its own wire: Rust forbids
-/// rebinding `self`, and no other spelling can reach it.
-pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings) -> TokenStream2 {
+/// A wildcard parameter provides no wire. The receiver is its own wire: Rust
+/// forbids rebinding `self`, and no other spelling can reach it.
+pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings, scope: Span) -> TokenStream2 {
     let wires = function
         .sig
         .inputs
@@ -22,7 +21,7 @@ pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings) -> TokenStream2 {
                     // the binding out of authored computational bodies.
                     parameter
                         .ident
-                        .set_span(Span::mixed_site().located_at(parameter.ident.span()));
+                        .set_span(scope.located_at(parameter.ident.span()));
                     Some(wire(parameter, bindings))
                 }
                 Pat::Wild(_) => None,
@@ -33,7 +32,6 @@ pub(crate) fn emit(function: &mut ItemFn, bindings: &Bindings) -> TokenStream2 {
     quote!(#(#wires)*)
 }
 
-/// One parameter's hygienic wire binding.
 fn wire(parameter: &PatIdent, bindings: &Bindings) -> TokenStream2 {
     let ident = &parameter.ident;
     let name = ident.unraw();

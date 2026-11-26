@@ -1,3 +1,7 @@
+//! The generated code leaves a diverging arm nothing to report: no lint level
+//! and no unreachable code.
+#![forbid(unreachable_code, clippy::diverging_sub_expression)]
+
 use kaalang::kaa;
 
 #[kaa]

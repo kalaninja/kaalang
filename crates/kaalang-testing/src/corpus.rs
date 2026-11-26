@@ -2,20 +2,33 @@
 //! performance corpus in sync with flow fixtures and stress fixtures.
 
 use std::{
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
+use kaalang_compiler::{CfgSet, FlowItem};
 use syn::ItemFn;
 
-/// Fixture suites to load.
+/// The cfg of `x86_64-unknown-linux-gnu` printed by rustc 1.99.1, plus `test`.
+pub const TARGET_CFG: &str = include_str!("../../kaalang/tests/diagram-target.cfg");
+
+/// The target used to compile and draw fixture source in the corpus.
+pub static TARGET: LazyLock<CfgSet> =
+    LazyLock::new(|| TARGET_CFG.parse().expect("the fixture target is a cfg set"));
+
+fn fixture_flows(source: &str) -> syn::Result<Vec<FlowItem>> {
+    let mut file = syn::parse_file(source)?;
+    TARGET.configure(&mut file);
+    Ok(kaalang_compiler::flows(&file.items))
+}
+
 #[derive(Clone, Copy)]
 pub enum Suite {
     /// Flow fixtures outside the stress suite.
     Ordinary,
     /// Hand-written stress fixtures.
     Stress,
-    /// Both ordinary and stress fixtures.
     All,
 }
 
@@ -36,6 +49,68 @@ pub fn files(suite: Suite) -> Vec<(PathBuf, String)> {
     files
 }
 
+/// One diagram the fixture diagrams draw: a flow of a fixture, in one view.
+pub struct Diagram {
+    /// The flow's path within its file.
+    pub path: String,
+    /// The fixture's source text.
+    pub source: String,
+    /// The flow's position among its file's flows, as
+    /// [`kaalang_compiler::flows`] lists them.
+    pub position: usize,
+    /// Whether the diagram draws each cycle as one node.
+    pub collapse_cycles: bool,
+}
+
+impl fmt::Display for Diagram {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "{} (collapsed={})",
+            self.path, self.collapse_cycles
+        )
+    }
+}
+
+/// Every diagram the selected fixtures draw, each flow in its [`views`], in
+/// declaration order for [`TARGET_CFG`].
+///
+/// # Panics
+///
+/// Panics when a fixture stops parsing.
+#[must_use]
+pub fn diagrams(suite: Suite) -> Vec<Diagram> {
+    files(suite)
+        .into_iter()
+        .flat_map(|(path, source)| {
+            let flows = fixture_flows(&source)
+                .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+            let views = views(&source);
+            let mut diagrams = Vec::new();
+            for (position, flow) in flows.into_iter().enumerate() {
+                for &collapse_cycles in &views {
+                    diagrams.push(Diagram {
+                        path: flow.path.clone(),
+                        source: source.clone(),
+                        position,
+                        collapse_cycles,
+                    });
+                }
+            }
+            diagrams
+        })
+        .collect()
+}
+
+/// The views a fixture's flows are drawn in: expanded, and collapsed too when
+/// the fixture has a cycle.
+#[must_use]
+pub fn views(source: &str) -> Vec<bool> {
+    std::iter::once(false)
+        .chain(source.contains("#[kaa::cycle(").then_some(true))
+        .collect()
+}
+
 /// Selected fixture flows in name order, with their stress-suite flag.
 /// The `method` fixtures declare theirs in `impl` and `trait` blocks, which
 /// [`kaalang_compiler::flows`] collects.
@@ -48,9 +123,8 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
     let mut flows: Vec<(String, ItemFn, bool)> = files(suite)
         .iter()
         .flat_map(|(path, source)| {
-            let file = syn::parse_file(source)
-                .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-            kaalang_compiler::flows(&file.items)
+            fixture_flows(source)
+                .unwrap_or_else(|error| panic!("{}: {error}", path.display()))
                 .into_iter()
                 .map(|flow| {
                     let name = flow.function.sig.ident.to_string();
@@ -69,8 +143,8 @@ pub fn corpus(suite: Suite) -> Vec<(String, ItemFn, bool)> {
 /// Panics when the source does not parse or declares no such flow.
 #[must_use]
 pub fn flow_named(source: &str, name: &str) -> ItemFn {
-    let file = syn::parse_file(source).expect("the fixture parses");
-    kaalang_compiler::flows(&file.items)
+    fixture_flows(source)
+        .expect("the fixture parses")
         .into_iter()
         .find(|flow| flow.path == name)
         .expect("the fixture declares the flow")
@@ -122,6 +196,7 @@ fn collect(directory: &Path, suite: Suite, files: &mut Vec<(PathBuf, String)>) {
 pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)], suite: Suite) {
     if !matches!(suite, Suite::Stress) {
         for expected in [
+            "conditional_parameters",
             "destructure_singleton_tuple",
             "mutate_a_receiver",
             "doubled",
@@ -145,6 +220,18 @@ pub fn assert_corpus_shape(flows: &[(String, ItemFn, bool)], suite: Suite) {
 pub fn is_stress(path: &Path) -> bool {
     path.ancestors()
         .any(|directory| directory.ends_with("tests/stress"))
+}
+
+/// The positions of the relationships of `declaration` whose target is `name`
+/// bare: how the fixture diagrams find a type's incoming cards in its own file,
+/// in place of the resolver of `cargo kaalang`.
+#[must_use]
+pub fn naming(declaration: &kaalang_compiler::TypeDeclaration, name: &str) -> Vec<usize> {
+    (0..)
+        .zip(declaration.relationships())
+        .filter(|(_, relationship)| relationship.target.is_ident(name))
+        .map(|(position, _)| position)
+        .collect()
 }
 
 #[cfg(test)]

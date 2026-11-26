@@ -6,20 +6,24 @@
 //! Positions come from `proc-macro2`'s `span-locations`, which the `source`
 //! feature enables. The macro leaves it off: rustc gives it tokens, not text.
 
-use std::{cell::OnceCell, error::Error, fmt};
+use std::{cell::OnceCell, collections::BTreeMap, error::Error, fmt, ops::Range};
 
-use proc_macro2::Span;
-use syn::{Generics, Item, Meta, ReturnType, Signature, spanned::Spanned};
-
-pub use self::target::Target;
-use crate::{
-    FlowItem, SemanticModel, TypeDeclaration, TypeForm, build_with_options, flows,
-    is_kaalang_attribute, type_declaration, type_items,
+use proc_macro2::{Ident, Span};
+use syn::{
+    Attribute, Fields, Generics, ImplItem, Item, Meta, ReturnType, Signature, TraitItem,
+    Visibility, spanned::Spanned,
 };
 
-mod target;
+pub use self::{cards::NamedPath, ribbons::Ribbons};
+use crate::{
+    Annotation, CfgSet, FlowItem, Owner, Relationship, SemanticModel, TypeDeclaration, TypeForm,
+    build_with_options, datatype::parts, flows, type_declaration, type_items,
+};
 
-/// An error produced while reading a flow or a type from a source file.
+mod cards;
+mod ribbons;
+mod spans;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SourceError {
     /// The input is not a syntactically valid Rust file.
@@ -102,8 +106,13 @@ pub struct SourceFile<'a> {
     /// text without a byte order mark or a shebang line. The newline that ends
     /// a shebang line stays, so line numbers match the given text.
     tokenized: &'a str,
-    /// What the target compiles of the file.
+    /// How many bytes of the given text precede the tokenized text.
+    prefix: usize,
     items: Vec<Item>,
+    /// Where each function and type the file declares starts, at its first
+    /// attribute, a `cfg` the target removed included, by where its name
+    /// starts.
+    starts: BTreeMap<usize, usize>,
     /// Every type declaration with its path within the file, listed on first
     /// use: a flow's diagram needs none.
     types: OnceCell<Vec<(String, Item)>>,
@@ -115,7 +124,7 @@ impl<'a> SourceFile<'a> {
     /// # Errors
     ///
     /// Returns [`SourceError::Parse`] when `text` is not valid Rust.
-    pub fn parse(text: &'a str, target: &Target) -> Result<Self, SourceError> {
+    pub fn parse(text: &'a str, target: &CfgSet) -> Result<Self, SourceError> {
         let mut file = syn::parse_file(text).map_err(|error| {
             let (line, column) = line_and_column(error.span());
             SourceError::Parse {
@@ -124,28 +133,86 @@ impl<'a> SourceFile<'a> {
                 message: error.to_string(),
             }
         })?;
+        let mut starts = BTreeMap::new();
+        collect_starts(&file.items, &mut starts);
         target.configure(&mut file);
-        let tokenized = text.strip_prefix('\u{feff}').unwrap_or(text);
-        let tokenized = file
-            .shebang
-            .as_ref()
-            .map_or(tokenized, |shebang| &tokenized[shebang.len()..]);
+        let prefix = source_prefix(text, &file);
         Ok(Self {
-            tokenized,
+            tokenized: &text[prefix..],
+            prefix,
             items: file.items,
+            starts,
             types: OnceCell::new(),
         })
     }
 
+    /// The flows and types the file declares that kaalang draws, in source
+    /// order: a flow by its position and path as [`SourceFile::flow_named`]
+    /// takes them, a type by its path as [`SourceFile::ty`] takes it. Each runs
+    /// from its first attribute, a `cfg` that holds included, to just past its
+    /// last character, where an editor's caret still stands in it, in bytes of
+    /// the text as given. Where two meet, the one starting there takes the
+    /// caret. A byte order mark, a shebang line, the space between
+    /// declarations, and what the target does not compile declare nothing.
+    #[must_use]
+    pub fn declared_ranges(&self) -> Vec<(Range<usize>, Declared)> {
+        let start = |name: &Ident, otherwise| {
+            self.prefix
+                + self
+                    .starts
+                    .get(&name.span().byte_range().start)
+                    .copied()
+                    .unwrap_or(otherwise)
+        };
+        let mut ranges = Vec::new();
+        for (position, flow) in flows(&self.items).iter().enumerate() {
+            let function = &flow.function;
+            let end = self.prefix + function.block.brace_token.span.close().byte_range().end;
+            ranges.push((
+                start(
+                    &function.sig.ident,
+                    function.sig.fn_token.span.byte_range().start,
+                )..end,
+                Declared::Flow(position, flow_path(flow)),
+            ));
+        }
+        for (path, item) in self.type_items() {
+            if let (Some((_, name, _)), Some(bounds)) = (parts(item), type_bounds(item)) {
+                ranges.push((
+                    start(name, bounds.start)..self.prefix + bounds.end,
+                    Declared::Type(path.clone()),
+                ));
+            }
+        }
+        ranges.sort_unstable_by_key(|(range, _)| range.start);
+        ranges
+    }
+
     /// What the target compiles of the file, for a caller to list its flows
-    /// with [`flows`] or its types with [`type_items`].
+    /// with [`fn@flows`] or its types with [`type_items`].
     #[must_use]
     pub fn items(&self) -> &[Item] {
         &self.items
     }
 
+    /// What the target compiles of the file, for a caller that keeps it
+    /// beyond the text.
+    #[must_use]
+    pub fn into_items(self) -> Vec<Item> {
+        self.items
+    }
+
+    /// The bytes under `span`, a span of what was read from this file,
+    /// counted from the start of the text as given: a byte order mark and a
+    /// shebang line count.
+    #[must_use]
+    pub fn range(&self, span: Span) -> Range<usize> {
+        let range = span.byte_range();
+        self.prefix + range.start..self.prefix + range.end
+    }
+
     /// Reads the flow at `position` among the file's flows, counted in source
-    /// order as [`flows`] lists them, with each cycle as one node when
+    /// order as [`fn@flows`] lists them, with each cycle as one node when
     /// `collapse_cycles` is set. The caller selected it by its own rules.
     ///
     /// # Errors
@@ -154,28 +221,40 @@ impl<'a> SourceFile<'a> {
     /// and [`SourceError::InvalidFlow`] when that function is not a valid
     /// kaalang flow.
     pub fn flow(&self, position: usize, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
-        let Some(item) = flows(&self.items).into_iter().nth(position) else {
-            return Err(SourceError::FlowNotFound(position));
+        let item = flows(&self.items)
+            .into_iter()
+            .nth(position)
+            .ok_or(SourceError::FlowNotFound(position))?;
+        self.read_flow(item, collapse_cycles)
+    }
+
+    /// Reads the flow at the file-local `path` from [`Declared::Flow`], even
+    /// after edits have moved it from `position`. If the path occurs more
+    /// than once, its previous position takes precedence. Returns `None`
+    /// when the file no longer declares that flow.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SourceError::InvalidFlow`] when the selected function is
+    /// not a valid kaalang flow.
+    pub fn flow_named(
+        &self,
+        path: &str,
+        position: usize,
+        collapse_cycles: bool,
+    ) -> Result<Option<SourceFlow>, SourceError> {
+        let mut flows = flows(&self.items);
+        let matches = |flow: &FlowItem| flow_path(flow) == path;
+        let item = if flows.get(position).is_some_and(matches) {
+            Some(flows.swap_remove(position))
+        } else {
+            flows.into_iter().find(matches)
         };
-        if let Some(attribute) = item
-            .function
-            .attrs
-            .iter()
-            .filter(|attribute| is_kaalang_attribute(attribute))
-            .find(|attribute| match &attribute.meta {
-                Meta::Path(_) => false,
-                Meta::List(arguments) => !arguments.tokens.is_empty(),
-                Meta::NameValue(_) => true,
-            })
-        {
-            return Err(invalid_flow(
-                &item.path,
-                &syn::Error::new_spanned(
-                    attribute,
-                    "#[kaa] on a function does not accept arguments",
-                ),
-            ));
-        }
+        item.map(|item| self.read_flow(item, collapse_cycles))
+            .transpose()
+    }
+
+    fn read_flow(&self, item: FlowItem, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
         let model = build_with_options(&item.function, collapse_cycles)
             .map_err(|error| invalid_flow(&item.path, &error))?;
         let signature = &item.function.sig;
@@ -203,9 +282,8 @@ impl<'a> SourceFile<'a> {
     /// target compiles and [`SourceError::InvalidType`] when that type's
     /// annotations are not valid.
     pub fn ty(&self, path: &str) -> Result<SourceType, SourceError> {
-        let types = self.types.get_or_init(|| type_items(&self.items));
         // Only code rustc rejects declares a path twice for one target.
-        let Some((_, item)) = types.iter().find(|(listed, _)| listed == path) else {
+        let Some((_, item)) = self.type_items().iter().find(|(listed, _)| listed == path) else {
             return Err(SourceError::TypeNotFound(path.to_owned()));
         };
         let declaration = type_declaration(item).map_err(|error| {
@@ -217,32 +295,62 @@ impl<'a> SourceFile<'a> {
                 message: error.to_string(),
             }
         })?;
-        let field_types = match &declaration.form {
-            TypeForm::Struct(fields) | TypeForm::Union(fields) => fields
-                .iter()
-                .map(|field| self.collapsed(field.ty.span()))
-                .collect(),
-            TypeForm::Enum(variants) => variants
-                .iter()
-                .flat_map(|variant| &variant.fields)
-                .map(|field| self.collapsed(field.ty.span()))
-                .collect(),
-            TypeForm::Alias(ty, _) => vec![self.collapsed(ty.span())],
+        // Every form `type_items` lists has a name.
+        let (Some((_, name, _)), Some(visibility)) = (parts(item), visibility(item)) else {
+            return Err(SourceError::TypeNotFound(path.to_owned()));
         };
-        let relationship_targets = declaration
-            .relationships()
-            .iter()
-            .map(|relationship| self.collapsed(relationship.target.span()))
-            .collect();
+        let name = name.clone();
+        // Relationships number in the order the fields list them.
+        let mut relationships = Vec::new();
+        let mut relationship = |relationship: &Relationship| {
+            let target = self.collapsed(relationship.target.span());
+            let to_self = target == "Self";
+            relationships.push(SourceRelationship {
+                // `Self` names the declaring type.
+                target_span: if to_self {
+                    name.span()
+                } else {
+                    cards::target_span(&relationship.target)
+                },
+                target,
+                to_self,
+            });
+            relationships.len() - 1
+        };
+        let mut field = |ty: &syn::Type, refers: Option<&Relationship>| SourceField {
+            ty: self.collapsed(ty.span()),
+            paths: self.named_paths(ty),
+            relationship: refers.map(&mut relationship),
+        };
+        let fields = match &declaration.form {
+            TypeForm::Alias(ty, refers) => vec![field(ty, refers.as_ref())],
+            _ => declaration
+                .fields()
+                .into_iter()
+                .map(|declared| {
+                    let refers = match &declared.annotation {
+                        Some(Annotation::Refer(relationship)) => Some(relationship),
+                        _ => None,
+                    };
+                    field(&declared.ty, refers)
+                })
+                .collect(),
+        };
         Ok(SourceType {
             path: path.to_owned(),
+            name,
+            visibility: visibility.clone(),
+            span: item.span(),
             generics: self.generics(&declaration.generics),
             representations: self.representations(item),
-            field_types,
-            relationship_targets,
+            fields,
+            relationships,
             declaration,
-            item: item.clone(),
         })
+    }
+
+    fn type_items(&self) -> &[(String, Item)] {
+        self.types.get_or_init(|| type_items(&self.items))
     }
 
     /// The authored text under a span with every whitespace run collapsed to
@@ -251,8 +359,6 @@ impl<'a> SourceFile<'a> {
         collapsed_text(&self.tokenized[span.byte_range()])
     }
 
-    /// The generic parameters a declaration keeps for its target, each as
-    /// authored, between angle brackets, or nothing when it keeps none.
     fn generics(&self, generics: &Generics) -> String {
         if generics.params.is_empty() {
             return String::new();
@@ -265,7 +371,6 @@ impl<'a> SourceFile<'a> {
         format!("<{}>", parameters.join(", "))
     }
 
-    /// The authored flow header without its parameters and return type.
     fn header(&self, signature: &Signature) -> String {
         let start = signature.span().byte_range().start;
         // The generics follow from the parameters the target keeps.
@@ -314,11 +419,120 @@ impl<'a> SourceFile<'a> {
     }
 }
 
+/// Bytes syn strips before tokenizing a whole Rust file.
+fn source_prefix(text: &str, file: &syn::File) -> usize {
+    usize::from(text.starts_with('\u{feff}')) * '\u{feff}'.len_utf8()
+        + file.shebang.as_ref().map_or(0, String::len)
+}
+
+/// What a place in a source file declares that kaalang draws.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Declared {
+    /// A flow, by its position among the file's flows and its file-local path.
+    Flow(usize, String),
+    /// A type, by its path within the file.
+    Type(String),
+}
+
+/// A method's path names its owner within its module; a free function's
+/// already includes its inline modules.
+fn flow_path(flow: &FlowItem) -> String {
+    match flow.owner {
+        Owner::Module => flow.path.clone(),
+        Owner::Impl(_) | Owner::Trait(_) => format!("{}{}", flow.module, flow.path),
+    }
+}
+
+/// Records where each function and type among `items` that has attributes
+/// starts, at its first one, by where its name starts, before the target
+/// removes any of them. One without attributes starts where its span does.
+fn collect_starts(items: &[Item], starts: &mut BTreeMap<usize, usize>) {
+    for item in items {
+        let (attributes, name) = match item {
+            Item::Fn(function) => (&function.attrs, &function.sig.ident),
+            Item::Mod(module) => {
+                if let Some((_, items)) = &module.content {
+                    collect_starts(items, starts);
+                }
+                continue;
+            }
+            Item::Impl(block) => {
+                for item in &block.items {
+                    if let ImplItem::Fn(function) = item {
+                        record(&function.attrs, &function.sig.ident, starts);
+                    }
+                }
+                continue;
+            }
+            Item::Trait(declaration) => {
+                for item in &declaration.items {
+                    if let TraitItem::Fn(function) = item {
+                        record(&function.attrs, &function.sig.ident, starts);
+                    }
+                }
+                continue;
+            }
+            item => match parts(item) {
+                Some((attributes, name, _)) => (attributes, name),
+                None => continue,
+            },
+        };
+        record(attributes, name, starts);
+    }
+}
+
+/// Where a type item runs without its attributes, from its first token to its
+/// last: a whole item's span would rebuild its tokens.
+fn type_bounds(item: &Item) -> Option<Range<usize>> {
+    let (visibility, keyword, end) = match item {
+        Item::Struct(declaration) => (
+            &declaration.vis,
+            declaration.struct_token.span,
+            match (&declaration.fields, declaration.semi_token) {
+                (_, Some(semi)) => semi.spans[0],
+                (Fields::Named(fields), None) => fields.brace_token.span.close(),
+                _ => return None,
+            },
+        ),
+        Item::Enum(declaration) => (
+            &declaration.vis,
+            declaration.enum_token.span,
+            declaration.brace_token.span.close(),
+        ),
+        Item::Union(declaration) => (
+            &declaration.vis,
+            declaration.union_token.span,
+            declaration.fields.brace_token.span.close(),
+        ),
+        Item::Type(declaration) => (
+            &declaration.vis,
+            declaration.type_token.span,
+            declaration.semi_token.spans[0],
+        ),
+        _ => return None,
+    };
+    let start = match visibility {
+        Visibility::Public(token) => token.span,
+        Visibility::Restricted(restricted) => restricted.pub_token.span,
+        Visibility::Inherited => keyword,
+    };
+    Some(start.byte_range().start..end.byte_range().end)
+}
+
+fn record(attributes: &[Attribute], name: &Ident, starts: &mut BTreeMap<usize, usize>) {
+    if let Some(first) = attributes.first() {
+        starts.insert(
+            name.span().byte_range().start,
+            first.pound_token.span.byte_range().start,
+        );
+    }
+}
+
 /// One flow of a source file, validated, with the text its diagram quotes from
-/// its signature. Only [`SourceFile::flow`] makes one.
+/// its signature. Only [`SourceFile::flow`] and [`SourceFile::flow_named`] make
+/// one.
 #[non_exhaustive]
 pub struct SourceFlow {
-    /// The function, with its path within the file.
     pub item: FlowItem,
     /// Its model, with each cycle as one node when the caller asked for that.
     pub model: SemanticModel,
@@ -338,9 +552,11 @@ pub struct SourceFlow {
 pub struct SourceType {
     /// The type's path within the file.
     pub path: String,
-    /// The declaration as the target compiles it.
-    pub item: Item,
-    /// Its form, generics, description, and annotations.
+    /// Its name in its declaration.
+    pub name: Ident,
+    pub visibility: Visibility,
+    /// The whole declaration, its attributes included.
+    pub span: Span,
     pub declaration: TypeDeclaration,
     /// The generic parameters the target keeps, each as authored, between
     /// angle brackets, or nothing when it keeps none.
@@ -348,12 +564,35 @@ pub struct SourceType {
     /// The authored arguments of each `repr` attribute that has any, in source
     /// order. An alias has none.
     pub representations: Vec<String>,
-    /// The authored type of every field in source order, a variant's fields in
-    /// its variant's place, or an alias's right-hand side alone.
-    pub field_types: Vec<String>,
-    /// The authored target of every relationship, in the order
-    /// [`TypeDeclaration::relationships`] lists them.
-    pub relationship_targets: Vec<String>,
+    /// Every field as [`TypeDeclaration::fields`] lists them, or an alias's
+    /// right-hand side alone.
+    pub fields: Vec<SourceField>,
+    /// Every relationship, in the order [`TypeDeclaration::relationships`]
+    /// lists them.
+    pub relationships: Vec<SourceRelationship>,
+}
+
+/// What a card quotes of one field.
+#[non_exhaustive]
+pub struct SourceField {
+    /// Its authored type, each whitespace run one space.
+    pub ty: String,
+    /// The paths `ty` names.
+    pub paths: Vec<NamedPath>,
+    /// Its relationship's position among [`SourceType::relationships`].
+    pub relationship: Option<usize>,
+}
+
+/// A relationship's target as a card quotes it.
+#[non_exhaustive]
+pub struct SourceRelationship {
+    /// As authored.
+    pub target: String,
+    /// Where it names its type, for an engine to resolve: its last segment, or
+    /// the declaring type's name for `Self`.
+    pub target_span: Span,
+    /// Whether it is `Self`, the declaring type.
+    pub to_self: bool,
 }
 
 /// The 1-based line and column where `span` starts in the text its file was
@@ -364,7 +603,6 @@ pub fn line_and_column(span: Span) -> (usize, usize) {
     (start.line, start.column + 1)
 }
 
-/// Reports a flow-level error at its source position.
 fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
     let (line, column) = line_and_column(error.span());
     SourceError::InvalidFlow {
@@ -372,6 +610,16 @@ fn invalid_flow(name: &str, error: &syn::Error) -> SourceError {
         line,
         column,
         message: error.to_string(),
+    }
+}
+
+fn visibility(item: &Item) -> Option<&Visibility> {
+    match item {
+        Item::Struct(declaration) => Some(&declaration.vis),
+        Item::Enum(declaration) => Some(&declaration.vis),
+        Item::Union(declaration) => Some(&declaration.vis),
+        Item::Type(declaration) => Some(&declaration.vis),
+        _ => None,
     }
 }
 
@@ -387,7 +635,7 @@ mod tests {
 
     /// What reading the first flow of `source` for no target fails with.
     fn flow_error(source: &str) -> SourceError {
-        SourceFile::parse(source, Target::EMPTY)
+        SourceFile::parse(source, CfgSet::EMPTY)
             .and_then(|file| file.flow(0, false).map(|_| ()))
             .expect_err("the source declares no valid flow")
     }
@@ -395,7 +643,7 @@ mod tests {
     #[test]
     fn a_type_is_selected_by_its_path_annotated_or_not() {
         let source = "mod model { #[kaa(\"\")] struct Empty; }\nstruct Plain { id: u32 }\n";
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
 
         assert_eq!(
             file.ty("Missing").err(),
@@ -405,20 +653,26 @@ mod tests {
             file.ty("model::Empty"),
             Err(SourceError::InvalidType { name, line: 1, .. }) if name == "model::Empty"
         ));
-        assert!(file.ty("Plain").is_ok_and(|ty| ty.field_types == ["u32"]));
+        assert!(file.ty("Plain").is_ok_and(|ty| ty.fields[0].ty == "u32"));
     }
 
     #[test]
     fn a_type_is_read_as_its_target_compiles_it() {
         let source = "#[cfg(unix)]\nstruct Handle(u8, #[cfg(windows)] isize);\n#[cfg(not(unix))]\nstruct Handle(u16);\n#[cfg(windows)]\nstruct Raw;\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
         let types = |target| {
             let file = SourceFile::parse(source, target).unwrap();
-            file.ty("Handle").map(|ty| ty.field_types).ok()
+            let ty = file.ty("Handle").ok()?;
+            Some(
+                ty.fields
+                    .into_iter()
+                    .map(|field| field.ty)
+                    .collect::<Vec<_>>(),
+            )
         };
 
         assert_eq!(types(&unix), Some(vec!["u8".to_owned()]));
-        assert_eq!(types(Target::EMPTY), Some(vec!["u16".to_owned()]));
+        assert_eq!(types(CfgSet::EMPTY), Some(vec!["u16".to_owned()]));
         assert_eq!(
             SourceFile::parse(source, &unix).unwrap().ty("Raw").err(),
             Some(SourceError::TypeNotFound("Raw".into()))
@@ -426,66 +680,76 @@ mod tests {
     }
 
     #[test]
-    fn a_type_lists_its_fields_and_relationship_targets_in_source_order() {
+    fn a_type_numbers_its_fields_relationships_in_source_order() {
         let source = r#"#[kaa] enum Approval {
             Named(#[kaa::refer(Member, "One.")] Vec< u8 >),
             Quorum { votes: u16, #[kaa::refer(directory :: Team, "Two.")] voters: u32 },
         }
         #[kaa] #[kaa::refer(Member, "The member.")] type MemberRef = u64;"#;
-        let file = SourceFile::parse(source, Target::EMPTY).unwrap();
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
 
         let approval = file
             .ty("Approval")
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(approval.field_types, ["Vec< u8 >", "u16", "u32"]);
+        let fields = |ty: &SourceType| -> Vec<(String, Option<String>)> {
+            let target = |at: usize| ty.relationships[at].target.clone();
+            let fields = ty.fields.iter();
+            fields
+                .map(|field| (field.ty.clone(), field.relationship.map(target)))
+                .collect()
+        };
+        let named = |ty: &str, target: Option<&str>| (ty.to_owned(), target.map(str::to_owned));
         assert_eq!(
-            approval.relationship_targets,
-            ["Member", "directory :: Team"]
+            fields(&approval),
+            [
+                named("Vec< u8 >", Some("Member")),
+                named("u16", None),
+                named("u32", Some("directory :: Team")),
+            ]
         );
         let alias = file
             .ty("MemberRef")
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(alias.field_types, ["u64"]);
-        assert_eq!(alias.relationship_targets, ["Member"]);
+        assert_eq!(fields(&alias), [named("u64", Some("Member"))]);
     }
 
     #[test]
     fn a_representation_under_a_cfg_attr_counts_when_it_holds() {
         let source = "#[kaa] #[repr(C)] #[repr(align(8))] struct Combined(u8);\n#[kaa] #[cfg_attr(unix, cfg_attr(target_pointer_width = \"64\", repr(C)))] struct Conditional(u8);\n";
-        let unix: Target = "unix\ntarget_pointer_width=\"64\"".parse().unwrap();
+        let unix: CfgSet = "unix\ntarget_pointer_width=\"64\"".parse().unwrap();
         let representations = |path, target| {
             let file = SourceFile::parse(source, target).unwrap();
             file.ty(path).map(|ty| ty.representations).ok()
         };
 
         assert_eq!(
-            representations("Combined", Target::EMPTY),
+            representations("Combined", CfgSet::EMPTY),
             Some(vec!["C".to_owned(), "align(8)".to_owned()])
         );
         assert_eq!(
             representations("Conditional", &unix),
             Some(vec!["C".to_owned()])
         );
-        assert_eq!(representations("Conditional", Target::EMPTY), Some(vec![]));
+        assert_eq!(representations("Conditional", CfgSet::EMPTY), Some(vec![]));
     }
 
     #[test]
     fn a_type_lists_the_generic_parameters_its_target_compiles() {
         let source = "struct Handle<#[cfg(windows)] W, #[cfg(unix)] U>(u8);\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
         let generics = |target| {
             let file = SourceFile::parse(source, target).unwrap();
             file.ty("Handle").map(|ty| ty.generics).ok()
         };
 
         assert_eq!(generics(&unix).as_deref(), Some("<U>"));
-        assert_eq!(generics(Target::EMPTY).as_deref(), Some(""));
+        assert_eq!(generics(CfgSet::EMPTY).as_deref(), Some(""));
     }
 
     #[test]
     fn a_flow_lists_the_parameters_its_target_compiles() {
         let source = "#[kaa]\nfn copy<#[cfg(windows)] W, #[cfg(unix)] U>(#[cfg(windows)] raw: W, #[cfg(unix)] input: U) -> U {\n    #[kaa::action(\"Return the input\")]\n    let end = |input| { input };\n    |end| return end;\n}\n";
-        let unix: Target = "unix".parse().unwrap();
+        let unix: CfgSet = "unix".parse().unwrap();
 
         let flow = SourceFile::parse(source, &unix)
             .unwrap()
@@ -503,7 +767,7 @@ mod tests {
             COPY.split_once("-> u8 ").unwrap().1
         );
 
-        let flow = SourceFile::parse(&source, Target::EMPTY)
+        let flow = SourceFile::parse(&source, CfgSet::EMPTY)
             .unwrap()
             .flow(0, false)
             .unwrap_or_else(|error| panic!("{error}"));
@@ -511,10 +775,105 @@ mod tests {
     }
 
     #[test]
-    fn a_flow_requires_an_exact_kaalang_attribute() {
+    fn a_flow_is_found_under_a_reexported_attribute() {
+        let source = format!("#[facade::kaa]\n{COPY}");
+        let file = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
+        assert!(file.flow(0, false).is_ok());
+    }
+
+    /// What `source`, read for `target`, declares where `marker` starts.
+    fn declared(source: &str, target: &CfgSet, marker: &str) -> Option<Declared> {
+        let offset = source.find(marker).expect("the source has the marker");
+        declared_at(&SourceFile::parse(source, target).unwrap(), offset)
+    }
+
+    /// What `file` declares at `offset`, as an editor finds the caret's
+    /// declaration among the ranges: the last one that holds it.
+    fn declared_at(file: &SourceFile<'_>, offset: usize) -> Option<Declared> {
+        file.declared_ranges()
+            .into_iter()
+            .rfind(|(range, _)| range.contains(&offset) || range.end == offset)
+            .map(|(_, declared)| declared)
+    }
+
+    const DECLARED: &str = "/// A flow.\n#[kaa]\nfn first(input: u8) -> u8 {\n    |input| return input;\n}\n\nmod model {\n    pub struct Member { id: u8 }\n    impl Member {\n        #[kaa]\n        fn second(input: u8) -> u8 {\n            |input| return input;\n        }\n    }\n}\n";
+
+    #[test]
+    fn a_flow_is_declared_from_its_first_attribute_to_just_past_its_end() {
+        for marker in ["/// A flow", "#[kaa]\nfn first", "first(", "\n\nmod"] {
+            assert_eq!(
+                declared(DECLARED, CfgSet::EMPTY, marker),
+                Some(Declared::Flow(0, "first".into())),
+                "{marker:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_method_in_a_module_is_declared_as_a_flow() {
         assert_eq!(
-            flow_error("#[other::kaa]\nfn nested_attribute(input: u8) -> u8 {}\n"),
-            SourceError::FlowNotFound(0)
+            declared(DECLARED, CfgSet::EMPTY, "fn second"),
+            Some(Declared::Flow(1, "model::Member::second".into()))
+        );
+    }
+
+    #[test]
+    fn a_type_in_a_module_is_declared_by_its_path() {
+        assert_eq!(
+            declared(DECLARED, CfgSet::EMPTY, "id: u8"),
+            Some(Declared::Type("model::Member".into()))
+        );
+    }
+
+    #[test]
+    fn nothing_is_declared_between_declarations_or_in_a_module_header() {
+        for marker in ["\nmod", "mod model", "impl Member"] {
+            assert_eq!(
+                declared(DECLARED, CfgSet::EMPTY, marker),
+                None,
+                "{marker:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_cfg_that_holds_starts_its_declaration() {
+        let source = "#[cfg(unix)]\n#[kaa]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n#[cfg(unix)]\nstruct Kept;\n#[cfg(windows)]\nstruct Removed;\n";
+        let unix: CfgSet = "unix".parse().unwrap();
+
+        assert_eq!(
+            declared(source, &unix, "#[cfg(unix)]"),
+            Some(Declared::Flow(0, "flow".into()))
+        );
+        assert_eq!(
+            declared(source, &unix, "#[cfg(unix)]\nstruct"),
+            Some(Declared::Type("Kept".into()))
+        );
+        assert_eq!(declared(source, &unix, "struct Removed"), None);
+    }
+
+    #[test]
+    fn a_flow_marked_through_a_cfg_attr_is_declared_from_it() {
+        let source =
+            "#[cfg_attr(unix, kaa)]\nfn flow(input: u8) -> u8 {\n    |input| return input;\n}\n";
+        let unix: CfgSet = "unix".parse().unwrap();
+
+        assert_eq!(
+            declared(source, &unix, "#[cfg_attr"),
+            Some(Declared::Flow(0, "flow".into()))
+        );
+        assert_eq!(declared(source, CfgSet::EMPTY, "fn flow"), None);
+    }
+
+    #[test]
+    fn offsets_count_the_byte_order_mark_and_the_shebang() {
+        let source = format!("\u{feff}#!/usr/bin/env rustx\n{DECLARED}");
+
+        assert_eq!(declared(&source, CfgSet::EMPTY, "\u{feff}"), None);
+        assert_eq!(declared(&source, CfgSet::EMPTY, "rustx"), None);
+        assert_eq!(
+            declared(&source, CfgSet::EMPTY, "first("),
+            Some(Declared::Flow(0, "first".into()))
         );
     }
 
@@ -524,11 +883,52 @@ mod tests {
     }
 
     #[test]
+    fn the_next_declaration_owns_the_byte_where_it_starts() {
+        let source = "#[kaa] fn a() {}#[kaa] fn b() {}struct C;struct D;#[kaa] fn e() {}";
+        for (marker, expected) in [
+            ("#[kaa] fn b", Declared::Flow(1, "b".into())),
+            ("struct C", Declared::Type("C".into())),
+            ("struct D", Declared::Type("D".into())),
+            ("#[kaa] fn e", Declared::Flow(2, "e".into())),
+        ] {
+            assert_eq!(declared(source, CfgSet::EMPTY, marker), Some(expected));
+        }
+    }
+
+    #[test]
+    fn a_moved_method_is_found_by_its_path_including_its_module() {
+        let source = "mod a { impl Owner { #[kaa] fn run() { || return; } } }\nmod b { impl Owner { #[kaa] fn run() { || return; } } }";
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
+        let Declared::Flow(position, path) =
+            declared_at(&file, source.rfind("run").unwrap()).unwrap()
+        else {
+            panic!("the cursor is in a flow");
+        };
+        let edited = format!("#[kaa] fn start() {{ || return; }}\n{source}");
+        let file = SourceFile::parse(&edited, CfgSet::EMPTY).unwrap();
+        let method = file.flow_named(&path, position, false).unwrap().unwrap();
+        assert_eq!(method.item.module, "b::");
+        assert!(
+            file.flow_named("b::Owner::gone", position, false)
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn the_position_disambiguates_a_flow_path_while_editing() {
+        let source = "#[kaa] fn run() { || return; }\n#[kaa] fn run(input: u8) -> u8 { |input| return input; }";
+        let file = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
+        let flow = file.flow_named("run", 1, false).unwrap().unwrap();
+        assert_eq!(flow.parameters, ["input: u8"]);
+    }
+
+    #[test]
     fn a_flow_marked_through_the_crate_path_is_found() {
         let source = format!("#[kaalang::kaa]\n{COPY}");
 
         assert!(
-            SourceFile::parse(&source, Target::EMPTY)
+            SourceFile::parse(&source, CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .is_ok()
@@ -548,6 +948,41 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn a_flow_takes_one_active_attribute() {
+        let source = format!("#[kaa]\n#[cfg_attr(unix, kaalang::kaa)]\n{COPY}");
+        let enabled = SourceFile::parse(&source, &"unix".parse().unwrap()).unwrap();
+        assert!(matches!(
+            enabled.flow(0, false),
+            Err(SourceError::InvalidFlow { line: 2, message, .. })
+                if message == "a function takes one `#[kaa]` attribute"
+        ));
+        let disabled = SourceFile::parse(&source, CfgSet::EMPTY).unwrap();
+        assert!(disabled.flow(0, false).is_ok());
+    }
+
+    #[test]
+    fn a_raw_cfg_attribute_configures_like_a_plain_one() {
+        let source = r#"
+            mod sample {
+                #[kaalang::kaa]
+                fn flow(#[r#cfg_attr(all(), r#cfg(any()))] (a,b): (u8,u8), value: u8) -> u8 {
+                    |value| return value;
+                }
+                struct Destination;
+                #[kaalang::kaa("The owner.")]
+                struct Owner<#[r#cfg(any())] Destination> {
+                    #[r#cfg_attr(all(), kaa::refer(Destination, "The destination."))] id: u8,
+                }
+            }
+        "#;
+        let source = SourceFile::parse(source, CfgSet::EMPTY).unwrap();
+        assert_eq!(source.flow(0, false).unwrap().parameters, ["value: u8"]);
+        let owner = source.ty("sample::Owner").unwrap();
+        assert_eq!(owner.declaration.description.as_deref(), Some("The owner."));
+        assert_eq!(owner.declaration.relationships().len(), 1);
     }
 
     #[test]
@@ -611,7 +1046,7 @@ fn invalid(condition: bool) -> u32 {
         ];
 
         let labels = |source: &str| {
-            let flow = SourceFile::parse(source, Target::EMPTY)
+            let flow = SourceFile::parse(source, CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .unwrap_or_else(|error| panic!("{error}"));

@@ -1,6 +1,3 @@
-//! Heavy synthetic flows that stress combinations of language features,
-//! compiler analysis, and diagram rendering.
-
 use std::cell::Cell;
 
 mod branching_with_work;

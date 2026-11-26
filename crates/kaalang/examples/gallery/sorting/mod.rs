@@ -1,5 +1,3 @@
-//! Two sorting algorithms applied to the same input.
-
 mod bubble_sort;
 mod quick_sort;
 

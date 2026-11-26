@@ -1,7 +1,3 @@
-//! Types: each directory shows one case. Its `mod.rs` declares the case's
-//! subject first, whose diagram is named after the directory, and every type
-//! it declares is drawn beside it.
-
 mod aliases;
 mod bare_annotation;
 mod conditional_compilation;

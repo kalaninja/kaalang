@@ -1,0 +1,260 @@
+.kaalang-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-family: var(--vscode-font-family, system-ui, sans-serif);
+  font-size: var(--vscode-font-size, 13px);
+}
+
+.kaalang-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+/* A type's diagram has no cycle to collapse. */
+.kaalang-toolbar[hidden] {
+  display: none;
+}
+
+/* A button as the editor draws its own, or plain outside VS Code. */
+.kaalang-collapse {
+  padding: 2px 10px;
+  font: inherit;
+  color: var(--vscode-button-secondaryForeground, inherit);
+  background: var(--vscode-button-secondaryBackground, transparent);
+  border: 1px solid var(--vscode-button-border, currentColor);
+  border-radius: 2px;
+}
+
+.kaalang-collapse[aria-pressed="true"] {
+  color: var(--vscode-button-foreground, var(--kaalang-background));
+  background: var(--vscode-button-background, var(--kaalang-foreground));
+}
+
+.kaalang-banner {
+  margin: 0;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+  color: var(--vscode-errorForeground, #b91c1c);
+}
+
+.kaalang-diagram {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.kaalang-diagram > svg {
+  display: block;
+}
+
+.kaalang-stale .kaalang-diagram > svg {
+  opacity: 0.4;
+}
+
+.kaalang-empty {
+  margin: 16px 8px;
+  opacity: 0.7;
+}
+
+.kaalang-linking {
+  cursor: pointer;
+}
+
+.kaalang-hotspots > rect {
+  fill: none;
+  stroke: var(--vscode-textLink-foreground, #2563eb);
+  stroke-width: 1.5;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.kaalang-hotspots > .kaalang-hovered,
+.kaalang-show-hotspots .kaalang-hotspots > rect {
+  visibility: visible;
+}
+
+/* A connection or a merge reaches well past its line, so it is tinted, not boxed. */
+.kaalang-hotspots > :is([data-kind="connection"], [data-kind="merge"]) {
+  fill: var(--vscode-textLink-foreground, #2563eb);
+  fill-opacity: 0.15;
+  stroke: none;
+}
+
+/* The ribbon clicked, as the editor draws its hover. */
+.kaalang-popup {
+  position: fixed;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 12px;
+  max-width: 50vw;
+  max-height: 50vh;
+  overflow: auto;
+  padding: 4px 8px;
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  color: var(--vscode-editorHoverWidget-foreground, var(--kaalang-foreground));
+  background: var(
+    --vscode-editorHoverWidget-background,
+    var(--kaalang-background)
+  );
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--kaalang-muted));
+  border-radius: 3px;
+}
+
+.kaalang-popup > button {
+  padding: 0;
+  font: inherit;
+  text-align: start;
+  color: var(--vscode-textLink-foreground, #2563eb);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.kaalang-popup > span {
+  color: var(--kaalang-muted);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The diagram in the editor's theme. The SVG's own colors suit a light
+ * background; these rules outrank its classes, and each node's fill is a tint
+ * of the background, so one rule serves light and dark themes.
+ */
+.kaalang-page {
+  --kaalang-background: var(--vscode-editor-background, #ffffff);
+  --kaalang-foreground: var(--vscode-editor-foreground, #1f2937);
+  --kaalang-muted: var(--vscode-descriptionForeground, #64748b);
+  --kaalang-cycle: var(--vscode-charts-green, #15803d);
+  --kaalang-red: var(--vscode-charts-red, #b91c1c);
+  --kaalang-green: var(--vscode-charts-green, #166534);
+  --kaalang-blue: var(--vscode-charts-blue, #1d4ed8);
+  --kaalang-purple: var(--vscode-charts-purple, #6d28d9);
+  background: var(--kaalang-background);
+  color: var(--kaalang-foreground);
+}
+
+.kaalang-diagram svg {
+  color: var(--kaalang-foreground);
+}
+
+/* Only the outer canvas paints a background; a staged flow's parts have none. */
+.kaalang-diagram svg rect[width="100%"][height="100%"] {
+  fill: var(--kaalang-background);
+}
+
+.kaalang-diagram svg .node-shape {
+  --kaalang-tint: transparent;
+  fill: color-mix(in srgb, var(--kaalang-tint) 8%, var(--kaalang-background));
+}
+
+.kaalang-diagram svg :is(.start, .end, .parameter-panel) .node-shape {
+  --kaalang-tint: #0ea5e9;
+}
+
+.kaalang-diagram svg :is(.action, .call) .node-shape {
+  --kaalang-tint: #64748b;
+}
+
+.kaalang-diagram svg :is(.cycle, .for-entry, .for-end) .node-shape {
+  --kaalang-tint: #22c55e;
+}
+
+.kaalang-diagram svg .question .node-shape {
+  --kaalang-tint: #f59e0b;
+}
+
+.kaalang-diagram
+  svg
+  :is(.select, .case, .stage-entry, .stage-transition)
+  .node-shape {
+  --kaalang-tint: #8b5cf6;
+}
+
+.kaalang-diagram svg :is(.connection-label:not(.branch-label), .md-badge) {
+  fill: var(--kaalang-muted);
+}
+
+/* A label's halo keeps the lines it crosses from its letters. */
+.kaalang-diagram svg :is(.connection-label, .cycle-caption) {
+  stroke: var(--kaalang-background);
+}
+
+.kaalang-diagram svg .cycle-boundary {
+  fill: color-mix(in srgb, var(--kaalang-cycle) 6%, transparent);
+  stroke: var(--kaalang-cycle);
+}
+
+.kaalang-diagram svg :is(.cycle-caption, .loop-marker) {
+  fill: var(--kaalang-cycle);
+}
+
+/* A type's cards, which the SVG paints white with slate rules and text. */
+.kaalang-diagram svg :is(.card-shape, .port) {
+  fill: var(--kaalang-background);
+}
+
+.kaalang-diagram svg .card-groove {
+  fill: color-mix(
+    in srgb,
+    var(--kaalang-foreground) 4%,
+    var(--kaalang-background)
+  );
+}
+
+.kaalang-diagram svg .card-rules {
+  stroke: color-mix(
+    in srgb,
+    var(--kaalang-foreground) 20%,
+    var(--kaalang-background)
+  );
+}
+
+.kaalang-diagram svg :is(.type-kind, .field-name, .target) {
+  fill: var(--kaalang-muted);
+}
+
+.kaalang-diagram svg .stage-connections {
+  stroke: currentColor;
+}
+
+.kaalang-diagram svg marker path {
+  fill: currentColor;
+}
+
+.kaalang-diagram svg .md-highlight-box {
+  fill: color-mix(in srgb, #facc15 30%, var(--kaalang-background));
+}
+
+/* Before the authored colors, so that one still wins in a cycle caption. */
+.kaalang-diagram svg :where(.cycle-caption) .md-math {
+  color: var(--kaalang-cycle);
+}
+
+/* An authored color; `color` paints a formula. */
+.kaalang-diagram svg [class*="md-color-"] {
+  fill: var(--kaalang-authored);
+  color: var(--kaalang-authored);
+}
+
+.kaalang-diagram svg .md-color-red {
+  --kaalang-authored: var(--kaalang-red);
+}
+
+.kaalang-diagram svg .md-color-green {
+  --kaalang-authored: var(--kaalang-green);
+}
+
+.kaalang-diagram svg .md-color-blue {
+  --kaalang-authored: var(--kaalang-blue);
+}
+
+.kaalang-diagram svg .md-color-purple {
+  --kaalang-authored: var(--kaalang-purple);
+}
+
+.kaalang-diagram svg .md-color-muted {
+  --kaalang-authored: var(--kaalang-muted);
+}

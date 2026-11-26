@@ -4,34 +4,24 @@
 //! libraries by their crate names. rustc has already checked that the path
 //! names something; this finds what.
 
-use std::{collections::BTreeMap, iter};
+use std::{collections::BTreeMap, iter, path::Path};
 
 use syn::{
     ext::IdentExt,
     visit_mut::{self, VisitMut},
 };
 
-use crate::workspace::{Crate, Declared, UsePath, Visibility};
+use super::{Crate, Declared, UsePath, Visibility};
 
 /// A type declaration: its crate and its index among the crate's types.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct TypeRef {
-    pub(super) krate: usize,
-    pub(super) id: usize,
-}
-
-impl TypeRef {
-    /// Where the declaration is written: its file and its place in the file,
-    /// which identify it across the crates that include the file.
-    pub(super) fn place(self, crates: &[Crate]) -> (&std::path::Path, proc_macro2::LineColumn) {
-        let krate = &crates[self.krate];
-        let entry = &krate.types[self.id];
-        (&krate.modules[entry.module].file.canonical, entry.position)
-    }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct TypeRef {
+    pub krate: usize,
+    pub id: usize,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum Resolution {
+pub enum Resolution {
     /// A struct, enum, union, or alias of the workspace.
     Type(TypeRef),
     /// Something of the workspace that is not a type, such as "a trait".
@@ -66,18 +56,19 @@ pub(super) enum Def {
     Unknown(&'static str),
 }
 
-pub(super) struct Resolver<'a> {
-    crates: &'a [Crate],
+/// Rust's type and value namespaces over a set of workspace crates.
+pub struct Resolver<'a> {
+    pub(super) crates: Vec<&'a Crate>,
     /// Each crate's names for the workspace's libraries.
     externs: Vec<Vec<(String, usize)>>,
-    /// One identity for each source declaration, including shared files.
-    types: Vec<Vec<usize>>,
 }
 
 impl<'a> Resolver<'a> {
-    pub(super) fn new(crates: &'a [Crate]) -> Self {
+    pub fn new(crates: impl IntoIterator<Item = &'a Crate>) -> Self {
+        let crates: Vec<_> = crates.into_iter().collect();
         let libraries: Vec<(usize, &Crate)> = crates
             .iter()
+            .copied()
             .enumerate()
             .filter(|(_, krate)| krate.library)
             .collect();
@@ -88,8 +79,7 @@ impl<'a> Resolver<'a> {
                 for (name, package) in &krate.dependencies {
                     if let Some((index, _)) = libraries
                         .iter()
-                        .filter(|(_, library)| library.package_id == *package)
-                        .min_by_key(|(_, library)| library.host != krate.host)
+                        .find(|(_, library)| library.package_id == *package)
                     {
                         names.push((name.clone(), *index));
                     }
@@ -99,38 +89,28 @@ impl<'a> Resolver<'a> {
                     names.extend(
                         libraries
                             .iter()
-                            .filter(|(_, library)| {
-                                library.package_id == krate.package_id && library.host == krate.host
-                            })
+                            .filter(|(_, library)| library.package_id == krate.package_id)
                             .map(|(index, library)| (library.name.clone(), *index)),
                     );
                 }
                 names
             })
             .collect();
-        let mut declared = BTreeMap::new();
-        let types = crates
-            .iter()
-            .enumerate()
-            .map(|(index, krate)| {
-                (0..krate.types.len())
-                    .map(|id| {
-                        let key = TypeRef { krate: index, id }.place(crates);
-                        let next = declared.len();
-                        *declared.entry(key).or_insert(next)
-                    })
-                    .collect()
-            })
-            .collect();
-        Self {
-            crates,
-            externs,
-            types,
-        }
+        Self { crates, externs }
+    }
+
+    /// A declaration's physical source position, shared by all inclusions of
+    /// its file, which rustc compiles as a type each.
+    #[must_use]
+    pub(super) fn place(&self, ty: TypeRef) -> (&'a Path, proc_macro2::LineColumn) {
+        let krate = self.crates[ty.krate];
+        let entry = &krate.types[ty.id];
+        (&krate.modules[entry.module].file.canonical, entry.position)
     }
 
     /// Resolves `path` as written in `module` of crate `krate`.
-    pub(super) fn resolve(&self, krate: usize, module: usize, path: &syn::Path) -> Resolution {
+    #[must_use]
+    pub fn resolve(&self, krate: usize, module: usize, path: &syn::Path) -> Resolution {
         match self.find(krate, module, path) {
             Def::Type(found) => Resolution::Type(found),
             Def::Module(..) => Resolution::NotAType("a module"),
@@ -146,12 +126,14 @@ impl<'a> Resolver<'a> {
     }
 
     /// What `path`, as written in `module` of crate `krate`, names.
+    #[must_use]
     pub(super) fn find(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, false)
     }
 
     /// A query has not been checked by rustc: a bare missing name cannot use
     /// the fallback for external types unless its scope could provide it.
+    #[must_use]
     pub(super) fn is_type(&self, krate: usize, module: usize, path: &syn::Path) -> Option<bool> {
         Some(match self.find(krate, module, path) {
             Def::Ambiguous(_) => return None,
@@ -222,11 +204,13 @@ impl<'a> Resolver<'a> {
     /// What `path` names among functions, constants, and statics: its last
     /// segment passes over a module or type that shares the name, as in
     /// `mod checkout; pub use checkout::checkout;`.
+    #[must_use]
     pub(super) fn find_value(&self, krate: usize, module: usize, path: &syn::Path) -> Def {
         self.lookup(krate, module, path, true)
     }
 
     /// Compares types after expanding aliases in their own scopes.
+    #[must_use]
     pub(super) fn types_match(
         &self,
         query_scope: (usize, usize),
@@ -235,31 +219,32 @@ impl<'a> Resolver<'a> {
         written: &syn::Type,
         generics: &syn::Generics,
     ) -> bool {
+        let mut names = BTreeMap::new();
         let query = self.normalized_type(
             query_scope.0,
             query_scope.1,
             query,
             &syn::Generics::default(),
+            &mut names,
         );
-        let written = self.normalized_type(written_scope.0, written_scope.1, written, generics);
-        kaalang_compiler::types_match(&query, &written, generics, &mut |left, right| {
-            let identity = |path: &syn::Path| {
+        let written = self.normalized_type(
+            written_scope.0,
+            written_scope.1,
+            written,
+            generics,
+            &mut names,
+        );
+        super::select::types_match(&query, &written, generics, &mut |left, right| {
+            // Normalizing gives a path an identity unless it leads outside
+            // the workspace.
+            let def = |path: &syn::Path| {
                 path.leading_colon
-                    .and_then(|_| path.segments.first().map(|segment| segment.ident.clone()))
+                    .and_then(|_| path.segments.first())
+                    .and_then(|identity| names.get(&identity.ident).cloned())
+                    .unwrap_or(Def::Outside)
             };
             let last = |path: &syn::Path| path.segments.last().map(|segment| segment.ident.unraw());
-            let (left_id, right_id) = (identity(left), identity(right));
-            if left_id.as_ref().is_some_and(|id| id == "missing") {
-                return false;
-            }
-            if left_id.as_ref().is_some_and(|id| id == "unknown")
-                || right_id
-                    .as_ref()
-                    .is_some_and(|id| id == "unknown" || id == "missing")
-            {
-                return last(left) == last(right);
-            }
-            left_id == right_id && (left_id.is_some() || last(left) == last(right))
+            same_item(&def(left), true, &def(right), last(left) == last(right))
         })
     }
 
@@ -270,10 +255,12 @@ impl<'a> Resolver<'a> {
         module: usize,
         ty: &syn::Type,
         generics: &syn::Generics,
+        names: &mut BTreeMap<syn::Ident, Def>,
     ) -> syn::Type {
         let mut ty = ty.clone();
         Normalize {
             resolver: self,
+            names,
             krate,
             module,
             bound: generics
@@ -358,7 +345,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn variant(&self, ty: TypeRef, name: &str, value: bool) -> Option<(Def, Visibility)> {
-        let krate = &self.crates[ty.krate];
+        let krate = self.crates[ty.krate];
         let entry = &krate.types[ty.id];
         let syn::Item::Enum(enumeration) = &entry.item else {
             return None;
@@ -619,8 +606,32 @@ struct Lookup {
     cyclic: bool,
 }
 
+/// Whether two resolved names name one item. A name `left` that rustc has not
+/// checked, as in a flow path, and that resolves to nothing names nothing. The
+/// source cannot tell what a name it cannot resolve is, nor which item outside
+/// the workspace a name is: there, `last_segments_match` decides.
+pub(super) fn same_item(
+    left: &Def,
+    unchecked: bool,
+    right: &Def,
+    last_segments_match: bool,
+) -> bool {
+    match (left, right) {
+        (Def::Missing, _) if unchecked => false,
+        (Def::Type(_), Def::Type(_))
+        | (Def::Trait(..), Def::Trait(..))
+        | (Def::Value(..), Def::Value(..)) => left == right,
+        (Def::Outside, Def::Outside)
+        | (Def::Missing | Def::Unknown(_), _)
+        | (_, Def::Missing | Def::Unknown(_)) => last_segments_match,
+        _ => false,
+    }
+}
+
 struct Normalize<'a, 'b> {
     resolver: &'a Resolver<'b>,
+    /// What each identity a path was replaced with resolves to.
+    names: &'a mut BTreeMap<syn::Ident, Def>,
     krate: usize,
     module: usize,
     bound: Vec<syn::Ident>,
@@ -766,32 +777,42 @@ impl VisitMut for Normalize<'_, '_> {
         {
             return;
         }
-        let identity = match self.resolver.find(self.krate, self.module, path) {
-            Def::Type(found) => Some(format!(
-                "type_{}",
-                self.resolver.types[found.krate][found.id]
-            )),
-            Def::Trait(krate, module, name) => Some(format!("trait_{krate}_{module}_{name}")),
-            Def::Value(krate, module, name, _) => Some(format!("value_{krate}_{module}_{name}")),
-            Def::Unknown(_) => Some("unknown".into()),
+        let Some(last) = path.segments.last().cloned() else {
+            return;
+        };
+        let ident = |name: &str| syn::Ident::new(name, last.ident.span());
+        // An identity spells the item, so that equal constants print alike.
+        let found = self.resolver.find(self.krate, self.module, path);
+        let identity = match &found {
+            Def::Type(found) => Some(ident(&format!("type_{}_{}", found.krate, found.id))),
+            Def::Trait(krate, module, name) => {
+                Some(ident(&format!("trait_{krate}_{module}_{name}")))
+            }
+            Def::Value(krate, module, name, _) => {
+                Some(ident(&format!("value_{krate}_{module}_{name}")))
+            }
+            Def::Unknown(_) => Some(ident("unknown")),
             Def::Missing
             | Def::Module(..)
             | Def::Variant(..)
             | Def::NotAType(_)
-            | Def::Ambiguous(_) => Some("missing".into()),
+            | Def::Ambiguous(_) => Some(ident("missing")),
             Def::Outside => None,
         };
-        let Some(last) = path.segments.last().cloned() else {
-            return;
-        };
+        if let Some(identity) = &identity {
+            // No type is a module, a variant, or what glob imports leave ambiguous.
+            let named = if identity == "missing" {
+                Def::Missing
+            } else {
+                found
+            };
+            self.names.insert(identity.clone(), named);
+        }
         *path = match identity {
-            Some(identity) => {
-                let ident = syn::Ident::new(&identity, last.ident.span());
-                syn::Path {
-                    leading_colon: Some(syn::token::PathSep::default()),
-                    segments: [syn::PathSegment::from(ident), last].into_iter().collect(),
-                }
-            }
+            Some(ident) => syn::Path {
+                leading_colon: Some(syn::token::PathSep::default()),
+                segments: [syn::PathSegment::from(ident), last].into_iter().collect(),
+            },
             // Names outside the workspace retain the RFC's last-segment match.
             None => syn::Path {
                 leading_colon: None,
@@ -804,7 +825,7 @@ impl VisitMut for Normalize<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::{Def, Resolution, Resolver, TypeRef};
-    use crate::workspace::{Crate, library};
+    use crate::names::{Crate, library};
 
     /// Resolves `target` from the module at `module`, a path such as `a::b::`,
     /// in the first of `crates`.

@@ -1,15 +1,11 @@
-use std::{
-    fs,
-    num::NonZeroUsize,
-    path::{Path, PathBuf},
-};
+use std::{num::NonZeroUsize, path::PathBuf};
 
 use clap::{ArgGroup, builder::NonEmptyStringValueParser};
 use kaalang_compiler::{SourceError, SourceFile};
 use kaalang_svg::RenderError;
 use syn::ext::IdentExt;
 
-use crate::{datatype, workspace};
+use crate::{datatype, output, workspace};
 
 #[derive(clap::Args)]
 #[command(group(ArgGroup::new("item").required(true).args(["flow", "type"])))]
@@ -41,17 +37,15 @@ pub(super) struct Diagram {
 impl Diagram {
     /// Renders the flow or type and prints the written path.
     pub(super) fn run(self) -> Result<(), String> {
-        let (path, svg, sources) = match (&self.flow, &self.ty) {
-            (Some(flow), _) => {
-                let (svg, file) = self.flow(flow)?;
-                (flow, svg, vec![file])
-            }
+        let package = self.package.as_deref();
+        let crates = workspace::crates(package, &self.target)?;
+        let (path, svg) = match (&self.flow, &self.ty) {
+            (Some(flow), _) => (flow, self.flow(flow, &crates)?),
             (None, Some(ty)) => {
                 let options = kaalang_svg::TypeOptions {
                     columns: self.columns,
                 };
-                let drawn = datatype::draw(ty, self.package.as_deref(), &self.target, options)?;
-                (ty, drawn.svg, drawn.files)
+                (ty, datatype::draw(&crates, ty, package, options)?)
             }
             (None, None) => unreachable!("clap requires --flow or --type"),
         };
@@ -68,25 +62,23 @@ impl Diagram {
                 format!("{name}.svg")
             })
         });
-        for source in &sources {
-            if overwrites(source, &output)? {
-                return Err("the output path would overwrite the source file".to_owned());
-            }
-        }
-        // Rendering finished in memory, so a failed render never touches the output.
-        fs::write(&output, &svg)
+        let sources = crates
+            .iter()
+            .flat_map(|krate| &krate.sources)
+            .map(PathBuf::as_path);
+        output::write(&output, &svg, sources)
             .map_err(|error| format!("could not write `{}`: {error}", output.display()))?;
 
         println!("{}", output.display());
         Ok(())
     }
 
-    /// Renders the flow at `path` and returns it with the file declaring it.
-    fn flow(&self, path: &str) -> Result<(String, PathBuf), String> {
-        let found = workspace::find(path, self.package.as_deref(), &self.target)?;
+    /// Renders the flow at `path` in its declaring crate's configuration.
+    fn flow(&self, path: &str, crates: &[workspace::Crate]) -> Result<String, String> {
+        let found = workspace::find(crates, path, self.package.as_deref())?;
         let located = |error: &dyn std::fmt::Display| format!("{}: {error}", found.file.display());
         // The file and the renderer know only the path within the file.
-        let flow = SourceFile::parse(&found.source, &found.cfg)
+        let flow = SourceFile::parse(found.source, found.cfg)
             .and_then(|file| file.flow(found.position, self.collapse_cycles))
             .map_err(|mut error| {
                 if let SourceError::InvalidFlow { name, .. } = &mut error {
@@ -94,25 +86,13 @@ impl Diagram {
                 }
                 located(&error)
             })?;
-        let svg = kaalang_svg::render_flow(flow).map_err(|mut error| {
+        let (svg, _) = kaalang_svg::render_flow(flow).map_err(|mut error| {
             if let RenderError::UnroutableTopology { name, .. } = &mut error {
                 path.clone_into(name);
             }
             located(&error)
         })?;
-        Ok((svg, found.file))
-    }
-}
-
-/// Whether writing `output` would replace `source`, even through a link.
-fn overwrites(source: &Path, output: &Path) -> Result<bool, String> {
-    match same_file::is_same_file(source, output) {
-        Ok(same) => Ok(same),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(error) => Err(format!(
-            "could not check output `{}`: {error}",
-            output.display()
-        )),
+        Ok(svg)
     }
 }
 

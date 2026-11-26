@@ -12,7 +12,10 @@ use super::{
     BRANCH_LABEL_FONT, COLUMN_WIDTH, CONNECTION_LABEL_FONT, CONNECTION_LABEL_HALO, Label,
     LabelKind, MIN_VERTICAL_GAP, NODE_WIDTH, Point, Rows, Scene,
 };
-use crate::text::{RichText, block_metrics, joined, line_ink, text_width, wrap_text};
+use crate::{
+    flow::captions::WireList,
+    text::{RichText, block_metrics, code_ranges, joined, line_ink, text_width, wrap_text},
+};
 
 /// A label beside a vertical run must fit before the next column's node,
 /// including clearance and its halo on both sides.
@@ -30,6 +33,7 @@ const BRANCH_RISE: i32 = BRANCH_LABEL_FONT / 2 + CONNECTION_LABEL_HALO;
 const DROP: i32 = 18;
 /// Drop of a larger question-branch description below its exit.
 const BRANCH_DROP: i32 = 20;
+const NAME_SEPARATOR: &str = ", ";
 
 /// Where a label's lines stack against the point it marks.
 #[derive(Clone, Copy)]
@@ -68,7 +72,7 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
             && let Destination::Node(node) = connection.destination
             && captions.branch_description(exit).is_none()
         {
-            labels.extend(capture_label(scene, node, captions.handover(exit)));
+            labels.extend(capture_label(scene, node, WireList::Handover(exit)));
         }
     }
 
@@ -88,11 +92,7 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
         {
             continue;
         }
-        labels.extend(capture_label(
-            scene,
-            node.id,
-            captions.capture_label(node.id),
-        ));
+        labels.extend(capture_label(scene, node.id, WireList::Capture(node.id)));
     }
 
     labels
@@ -100,9 +100,10 @@ pub(super) fn place_labels(scene: &Scene, rows: &Rows) -> Vec<Label> {
 
 /// Captures stay above the receiving node, including labels that also represent
 /// the preceding hand-over. Shared labels retain that hand-over's order.
-fn capture_label(scene: &Scene, node: NodeId, names: &[String]) -> Option<Label> {
+fn capture_label(scene: &Scene, node: NodeId, names: WireList) -> Option<Label> {
     let anchor = scene.top_anchor(node);
     wire_label(
+        scene,
         Vertex::Node(node),
         names,
         Point {
@@ -159,8 +160,9 @@ fn place_merge_label(
     // vertical below it.
     let anchor = super::route::junction_point(scene, rows, junction);
     labels.extend(wire_label(
+        scene,
         Vertex::Junction(junction),
-        wires,
+        WireList::Junction(junction),
         Point {
             x: anchor.x,
             y: anchor.y + DROP,
@@ -194,7 +196,7 @@ fn exit_label_anchor(scene: &Scene, exit: ExitId) -> Point {
         .map_or(anchor, |x| Point { x, y: anchor.y })
 }
 
-/// The label one exit draws: its branch description, or else its handover
+/// The label one exit draws: its branch description, or else its hand-over
 /// unless a merge or a shared capture label already names it.
 fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label> {
     let anchor = exit_label_anchor(scene, exit);
@@ -219,8 +221,9 @@ fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label>
             y: anchor.y + DROP,
         };
         wire_label(
+            scene,
             Vertex::Node(exit.node),
-            scene.captions.handover(exit),
+            WireList::Handover(exit),
             at,
             Stack::Below,
         )
@@ -230,12 +233,19 @@ fn exit_label(scene: &Scene, exit: ExitId, skip_handover: bool) -> Option<Label>
 /// Wraps one label and stacks its lines against `at`. Its left edge, including
 /// the halo, stays clear of the adjacent vertical run or node boundary. Nothing
 /// is drawn when it names no wire: wrapping an empty label yields a blank line.
-fn wire_label(owner: Vertex, names: &[String], at: Point, stack: Stack) -> Option<Label> {
+fn wire_label(
+    scene: &Scene,
+    owner: Vertex,
+    list: WireList,
+    at: Point,
+    stack: Stack,
+) -> Option<Label> {
+    let names = scene.captions.names(list);
     let lines = (!names.is_empty()).then(|| {
-        let names = RichText::code(names.join(", "));
+        let names = RichText::code(names.join(NAME_SEPARATOR));
         wrap_text(&names, LABEL_WIDTH, CONNECTION_LABEL_FONT)
     })?;
-    Some(place_label(owner, lines, LabelKind::Wire, at, stack))
+    Some(place_label(owner, lines, LabelKind::Wire(list), at, stack))
 }
 
 fn branch_label(owner: Vertex, description: &RichText, at: Point, stack: Stack) -> Label {
@@ -289,7 +299,7 @@ fn vertical_label_gap(lines: &[RichText], kind: LabelKind) -> i32 {
         return 0;
     }
     let drop = match kind {
-        LabelKind::Wire => DROP,
+        LabelKind::Wire(_) => DROP,
         LabelKind::Branch => BRANCH_DROP,
     };
     let (baseline_span, above, below) = extent(lines, kind);
@@ -336,9 +346,41 @@ pub(super) fn label_rect(label: &Label) -> (i32, i32, i32, i32) {
     )
 }
 
+/// The rectangle of each name of a wire label on each line it is drawn on,
+/// with the name's position among `names`, the names the label joined. A name
+/// the label wraps has one rectangle per line. Each spans the name's advance
+/// width, and runs from a font size above its baseline to half of one below,
+/// as `label_rect` bounds a line.
+pub(crate) fn name_rects(label: &Label, names: &[String]) -> Vec<(usize, (i32, i32, i32, i32))> {
+    let font_size = label.kind.font_size();
+    let baselines = block_metrics(&label.lines, font_size, label.kind.line_height()).baselines;
+    let ranges = names.iter().scan(0, |start, name| {
+        let range = *start..*start + name.len();
+        *start = range.end + NAME_SEPARATOR.len();
+        Some(range)
+    });
+    let mut rects = Vec::new();
+    code_ranges(
+        &label.lines,
+        font_size,
+        ranges,
+        |position, line, _, left, right| {
+            let y = label.at.y + baselines[line] - baselines[0];
+            rects.push((
+                position,
+                (
+                    label.at.x + left,
+                    y - font_size,
+                    label.at.x + right,
+                    y + font_size / 2,
+                ),
+            ));
+        },
+    );
+    rects
+}
+
 /// Checks final labels against the canvas, nodes, panel, and back edges.
-/// Intermediate transformations use `clearance`: later steps can still move
-/// rails away from labels and translate the scene inside the canvas.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     clearance(scene)
         .or_else(|| {
@@ -428,7 +470,7 @@ mod tests {
                 .collect(),
             labels: vec![Label {
                 owner: Vertex::Node(NodeId::Block(0)),
-                kind: LabelKind::Wire,
+                kind: LabelKind::Wire(WireList::Capture(NodeId::Block(0))),
                 lines: vec![RichText::literal("end")],
                 at,
             }],

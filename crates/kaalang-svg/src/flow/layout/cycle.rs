@@ -24,14 +24,11 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
     let last_rows = scene
         .region_bodies
         .iter()
-        .zip(&scene.topology.cycle_boundaries)
-        .map(|(body, boundary)| {
-            body.iter()
-                .copied()
-                .chain(boundary.results.iter().map(|&result| Vertex::from(result)))
-                .map(|vertex| scene.rank(vertex))
+        .map(|held| {
+            held.iter()
+                .map(|&vertex| scene.rank(vertex))
                 .max()
-                .expect("every cycle body includes its entry")
+                .expect("every cycle boundary holds its entry")
         })
         .collect::<Vec<_>>();
     let mut padding = vec![0; scene.arrangement.ranks];
@@ -47,7 +44,7 @@ pub(super) fn bottom_padding(scene: &Scene) -> Vec<i32> {
             .filter(|(outer, last)| {
                 outer.caps.is_none()
                     && **last == row
-                    && (outer.header..outer.end).contains(&boundary.header)
+                    && (outer.header == boundary.header || outer.encloses(boundary.header))
             })
             .count();
         padding[row] = padding[row].max((layers as i32 - 1) * VERTICAL_PADDING);
@@ -59,7 +56,7 @@ pub(super) fn dimensions(label: &RichText) -> (i32, i32, Vec<RichText>) {
     block_dimensions(label, NODE_LABEL_WIDTH - MARKER_SPACE, NODE_MIN_HEIGHT)
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines)] // One cohesive pass bounds each cycle region and fits its caption.
 pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
     let point = |vertex| match vertex {
         Vertex::Node(node) => Some(scene.top_anchor(node)),
@@ -73,14 +70,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
     for (index, boundary) in scene.topology.cycle_boundaries.iter().enumerate().rev() {
         let body = &scene.region_bodies[index];
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
-        let owns_vertex = |vertex| {
-            body.contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns_vertex = |vertex| body.contains(&vertex);
         let mut boxes = scene
             .nodes
             .iter()
@@ -90,7 +80,7 @@ pub(super) fn regions(scene: &Scene) -> Vec<CycleRegion> {
         boxes.extend(
             regions
                 .iter()
-                .filter(|(header, _)| (boundary.header + 1..boundary.end).contains(header))
+                .filter(|(header, _)| boundary.encloses(*header))
                 .map(|(_, region)| region.bounds()),
         );
         let body_bottom = boxes.iter().map(|bounds| bounds.3).max();
@@ -252,14 +242,7 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
         .enumerate()
     {
         let (left, _, right, _) = region.bounds();
-        let owns = |vertex| {
-            scene.region_bodies[index].contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns = |vertex| scene.region_bodies[index].contains(&vertex);
         for bounds in scene
             .nodes
             .iter()
@@ -281,7 +264,8 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
             let climbing = scene.topology.cycles.iter().any(|cycle| {
                 edge.source == Source::Junction(cycle.tail)
                     && edge.destination == Vertex::Junction(cycle.entry)
-                    && !(boundary.header..boundary.end).contains(&cycle.header)
+                    && cycle.header != boundary.header
+                    && !boundary.encloses(cycle.header)
             });
             if !climbing {
                 continue;
@@ -304,8 +288,8 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
             .zip(&scene.cycle_regions)
         {
             if other.header == boundary.header
-                || (boundary.header + 1..boundary.end).contains(&other.header)
-                || (other.header + 1..other.end).contains(&boundary.header)
+                || boundary.encloses(other.header)
+                || other.encloses(boundary.header)
                 || !overlaps(region.bounds(), theirs.bounds())
             {
                 continue;
@@ -317,7 +301,7 @@ pub(super) fn clearance(scene: &Scene) -> i32 {
     wanted
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines)] // One loop holds each region to every boundary rule.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     if scene.topology.cycle_boundaries.len() != scene.cycle_regions.len() {
         return Some("a cycle boundary is missing from the diagram".to_owned());
@@ -337,14 +321,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
         }
         let body = &scene.region_bodies[index];
         let owns = |id: NodeId| body.contains(&Vertex::Node(id));
-        let owns_vertex = |vertex| {
-            body.contains(&vertex)
-                || vertex == boundary.entry
-                || boundary
-                    .results
-                    .iter()
-                    .any(|&result| Vertex::from(result) == vertex)
-        };
+        let owns_vertex = |vertex| body.contains(&vertex);
         for node in &scene.nodes {
             let bounds = Scene::bounds(node);
             if owns(node.id) && !contains(region.bounds(), bounds) {
@@ -390,8 +367,7 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             }
             let source_owned = owns_vertex(Vertex::from(edge.source));
             let destination_owned = owns_vertex(edge.destination);
-            let crosses_interface =
-                edge.destination == boundary.entry || boundary.results.contains(&edge.source);
+            let crosses_interface = boundary.crosses_interface(edge.source, edge.destination);
             if source_owned
                 && destination_owned
                 && edge
@@ -426,8 +402,8 @@ pub(super) fn verify(scene: &Scene) -> Option<String> {
             if nested.header == boundary.header {
                 continue;
             }
-            let nested_owned = (boundary.header + 1..boundary.end).contains(&nested.header);
-            let enclosing = (nested.header + 1..nested.end).contains(&boundary.header);
+            let nested_owned = boundary.encloses(nested.header);
+            let enclosing = nested.encloses(boundary.header);
             if (nested_owned && !contains(region.bounds(), nested_region.bounds()))
                 || (!nested_owned
                     && !enclosing

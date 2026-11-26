@@ -4,6 +4,9 @@ mod ci 'just/ci.just'
 # Documentation commands
 mod docs 'just/docs.just'
 
+# IDE commands
+mod ide 'just/ide.just'
+
 # Release commands
 mod release 'just/release.just'
 
@@ -13,13 +16,16 @@ mod rust 'just/rust.just'
 # Tooling image commands
 mod tooling 'just/tooling.just'
 
+# WebAssembly commands
+mod wasm 'just/wasm.just'
+
 # List the available recipes.
 [default]
 list:
     @just --list
 
-# Format Markdown and Rust sources in place.
+# Format Markdown, web, and Rust sources in place.
 fmt: docs::fmt rust::fmt
 
-# Check Markdown and Rust formatting.
+# Check Markdown, web, and Rust formatting.
 fmt-check: docs::fmt-check rust::fmt-check

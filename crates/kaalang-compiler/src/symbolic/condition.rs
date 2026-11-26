@@ -275,7 +275,6 @@ impl Conditions {
         result
     }
 
-    /// Projects away every selection not in `retained`.
     pub(super) fn project(&mut self, condition: Condition, retained: &[usize]) -> Condition {
         self.rebuild(condition, &mut HashMap::new(), &|c, variable, children| {
             if retained.contains(&variable) {

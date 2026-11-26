@@ -1,9 +1,6 @@
 # RFC 0009: Types
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
 
 ## 1. Motivation and scope
 
@@ -306,8 +303,11 @@ root: items in declaration order, with a module's items at the position of its
 its package, then the other workspace members by package name. Within a package,
 its library and binaries come first as one group, then its tests, examples, and
 benches; each group is ordered by target name, and targets of the same name by
-the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file
-that several crates include through `mod` gives one card, at its first position.
+the path of their crate root, so `src/lib.rs` precedes `src/main.rs`. A file the
+source includes several times, through `mod` in several crates or `#[path]` in
+several modules of one, declares a type per inclusion, as rustc compiles it:
+each has its own path and relationships, and each that refers to the focus is a
+card of its own, at its own position.
 
 The incoming cards stand in rows above the focus, read from left to right and
 then from top to bottom. Each package's library and binaries, its tests, its
@@ -387,7 +387,8 @@ the item and for incoming types. When the path exists in several packages, `-p`
 names the package to take it from. Each target of a package (its library,
 binaries, tests, examples, and benches) is a separate crate; a path that
 resolves in more than one of them cannot be selected, unless they all reach one
-declaration in a file they share. Exactly one of `--flow` and `--type` is given.
+declaration in a file they share, which selects the first one's copy in the
+order of §4.3. Exactly one of `--flow` and `--type` is given.
 `--collapse-cycles` applies to flows and is rejected with `--type`; `--columns`,
 how many incoming cards a row holds, applies to types and is rejected with
 `--flow`. Without `-o`, the command writes `./<name>.svg` from the last path
@@ -411,10 +412,10 @@ two apply to every member. The compilation target's cfg set is what
 `feature = "…"` for each feature `cargo metadata` resolves for the crate's
 package, and `test` in test and bench targets. That resolution counts the
 features a dev-dependency enables, as `cargo test` does and `cargo build` does
-not. As cargo builds a procedural macro for the host, without the flags, its set
-is the host's, with `proc_macro`; and a target whose required features are not
-all enabled is not read, as cargo does not build it. A `cfg` holds when its
-predicate holds for that set, as cargo decides a
+not. A procedural macro is read for the same compilation target, with
+`proc_macro` in its set, though cargo builds it for the host; and a target whose
+required features are not all enabled is not read, as cargo does not build it. A
+`cfg` holds when its predicate holds for that set, as cargo decides a
 `[target.'cfg(…)'.dependencies]` table; any other name is unset, one a build
 script sets included. Cargo's configuration files are not read, so their
 `build.target` and `rustflags` do not apply. An unknown compilation target is a
@@ -492,6 +493,7 @@ Acceptance scenarios:
 | `<&Report as Approve>::approve`                         | Select the method of the `impl` for `&Report`.                         |
 | Incoming types from two crates                          | Order the focus type's crate first, then its package, then others.     |
 | More incoming types than fit one row                    | Wrap them into rows in source order, each target group from a new one. |
+| An incoming type in a file two modules include          | Draw a card for each module whose copy refers to the focus.            |
 | A focus type without `#[kaa]`                           | Draw its Rust structure without descriptions.                          |
 | `refer` to a plain type of the workspace                | Draw the relationship as to any other type.                            |
 | `refer` to `String`, a trait, or a module               | Fail naming the relationship and its target.                           |
@@ -506,10 +508,8 @@ Acceptance scenarios:
 
 ## 8. Compatibility and exclusions
 
-Beyond the provisions §2.5, §4.2, and §6 name, this RFC does not supersede the
-execution, lowering, or control-flow drawing rules in the accepted RFCs. Their
-flow terms retain their existing meanings. A type relationship is not evidence
-of execution order or of a value being moved or borrowed.
+A type relationship is not evidence of execution order or of a value being moved
+or borrowed.
 
 The annotations must preserve ordinary Rust type behavior, including native
 representation attributes. They add no runtime registry or generated lookup. The

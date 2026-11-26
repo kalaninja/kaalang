@@ -1,0 +1,5 @@
+error: a kaalang choice body must contain exactly one `match` expression
+ --> tests/flow/choice/compile_fail/whole_body_todo.rs:8:43
+  |
+8 |     let (negative, nonnegative) = |input| todo!();
+  |                                           ^^^^

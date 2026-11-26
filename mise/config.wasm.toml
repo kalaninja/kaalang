@@ -1,0 +1,6 @@
+# What the rust image adds for the WebAssembly bindings, selected with
+# MISE_ENV=wasm: wasm-bindgen's CLI, the same version as the `wasm-bindgen`
+# crate whose output it reads, and Node.js to run the module.
+[tools]
+"github:wasm-bindgen/wasm-bindgen" = "0.2.130"
+node = "24.21.0"

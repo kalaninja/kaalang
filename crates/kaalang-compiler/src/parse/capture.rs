@@ -211,9 +211,7 @@ impl<'ast> Visit<'ast> for Uses {
     fn visit_local(&mut self, local: &'ast Local) {
         // RFC 0007 §5.3 leaves conditional bindings to Rust's name resolution.
         // Parameter bindings remain hygienically hidden from uncaptured uses.
-        let conditional = local.attrs.iter().any(|attribute| {
-            attribute.path().is_ident("cfg") || attribute.path().is_ident("cfg_attr")
-        });
+        let conditional = local.attrs.iter().any(crate::configure::conditional);
         if !conditional {
             if let Some(initializer) = &local.init {
                 self.visit_expr(&initializer.expr);

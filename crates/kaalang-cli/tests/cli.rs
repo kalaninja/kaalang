@@ -145,12 +145,13 @@ fn explicit_output_replaces_an_existing_file() {
     assert_eq!(
         fs::read_to_string(directory.join("chosen.svg")).unwrap(),
         kaalang_svg::render_flow(
-            kaalang_compiler::SourceFile::parse(SOURCE, kaalang_compiler::Target::EMPTY)
+            kaalang_compiler::SourceFile::parse(SOURCE, kaalang_compiler::CfgSet::EMPTY)
                 .unwrap()
                 .flow(0, false)
                 .unwrap_or_else(|error| panic!("{error}"))
         )
         .unwrap()
+        .0
     );
 }
 
@@ -202,6 +203,200 @@ fn failed_render_keeps_the_existing_output() {
         fs::read_to_string(directory.join("chosen.svg")).unwrap(),
         "keep this diagram"
     );
+}
+
+#[test]
+fn a_file_in_place_of_a_module_directory_does_not_make_the_module_ambiguous() {
+    let directory = package("cli-file-for-directory", "mod model; pub struct Root;");
+    write(&directory, "src/model.rs", "pub struct Member;");
+    write(&directory, "src/model", "a file, not a directory");
+
+    let result = run(&directory, "diagram --type model::Member -o out.svg");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+#[test]
+fn skipped_module_paths_allow_replacing_an_unrelated_diagram() {
+    let directory = package(
+        "cli-skipped-paths",
+        "#[path = \"plain/part.rs\"] mod missing; #[path = \"loop.rs\"] mod cycle; pub struct Root;",
+    );
+    write(&directory, "src/plain", "a file, not a directory");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink("loop.rs", directory.join("src/loop.rs")).unwrap();
+
+    for _ in 0..2 {
+        let result = run(&directory, "diagram --type Root -o out.svg");
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
+    assert!(
+        fs::read_to_string(directory.join("out.svg"))
+            .unwrap()
+            .starts_with("<svg")
+    );
+}
+
+#[test]
+fn an_export_protects_modules_besides_the_drawn_file() {
+    let root = "pub mod model;\npub mod sibling;\n";
+    let directory = package("cli-protect-workspace", root);
+    write(
+        &directory,
+        "src/model.rs",
+        &format!("{SOURCE}\npub struct Record;"),
+    );
+    write(&directory, "src/sibling.rs", "pub struct Sibling;");
+    fs::hard_link(
+        directory.join("src/sibling.rs"),
+        directory.join("other.svg"),
+    )
+    .unwrap();
+
+    for query in ["--type model::Record", "--flow model::route"] {
+        for output in ["src/lib.rs", "other.svg"] {
+            let failed = run(&directory, &format!("diagram {query} -o {output}"));
+            assert!(!failed.status.success());
+            assert!(String::from_utf8_lossy(&failed.stderr).contains("overwrite the source"));
+        }
+    }
+    assert_eq!(
+        fs::read_to_string(directory.join("src/lib.rs")).unwrap(),
+        root
+    );
+    assert_eq!(
+        fs::read_to_string(directory.join("src/sibling.rs")).unwrap(),
+        "pub struct Sibling;"
+    );
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn an_unreadable_module_does_not_prevent_replacing_an_unrelated_export() {
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
+    let directory = package(
+        "cli-unreadable-module",
+        "mod private_file; pub struct Root;",
+    );
+    write(&directory, "src/private_file.rs", "pub struct Private;");
+    let source = directory.join("src/private_file.rs");
+    fs::hard_link(&source, directory.join("alias.svg")).unwrap();
+    #[cfg(unix)]
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o200)).unwrap();
+    #[cfg(windows)]
+    let writer = {
+        use std::os::windows::fs::OpenOptionsExt;
+        const FILE_SHARE_WRITE: u32 = 2;
+        fs::File::options()
+            .write(true)
+            .share_mode(FILE_SHARE_WRITE)
+            .open(&source)
+            .unwrap()
+    };
+    write(&directory, "chosen.svg", "previous diagram");
+
+    let rendered = run(&directory, "diagram --type Root -o chosen.svg");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    assert!(
+        fs::read_to_string(directory.join("chosen.svg"))
+            .unwrap()
+            .contains("<svg")
+    );
+    let failed = run(&directory, "diagram --type Root -o alias.svg");
+    assert!(!failed.status.success());
+    assert!(String::from_utf8_lossy(&failed.stderr).contains("overwrite the source"));
+    #[cfg(unix)]
+    fs::set_permissions(&source, fs::Permissions::from_mode(0o600)).unwrap();
+    #[cfg(windows)]
+    drop(writer);
+    assert_eq!(fs::read_to_string(source).unwrap(), "pub struct Private;");
+}
+
+#[cfg(unix)]
+#[test]
+fn an_inaccessible_module_directory_allows_repeated_exports() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = package("cli-inaccessible-module", "mod private; pub struct Root;");
+    write(&directory, "src/private/mod.rs", "pub struct Private;");
+    let private = directory.join("src/private");
+    fs::set_permissions(&private, fs::Permissions::from_mode(0o000)).unwrap();
+    let first = run(&directory, "diagram --type Root -o out.svg");
+    let second = run(&directory, "diagram --type Root -o out.svg");
+    fs::set_permissions(private, fs::Permissions::from_mode(0o700)).unwrap();
+    for rendered in [first, second] {
+        assert!(rendered.status.success(), "{rendered:?}");
+    }
+    assert!(
+        fs::read_to_string(directory.join("out.svg"))
+            .unwrap()
+            .starts_with("<svg")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn a_failed_write_keeps_the_previous_export_and_removes_the_temporary_file() {
+    let directory = package("cli-write-failure", SOURCE);
+    let output = directory.join("route.svg");
+    assert!(run(&directory, "diagram --flow route").status.success());
+    let previous = fs::read(&output).unwrap();
+    let result = Command::new("sh")
+        .args([
+            "-c",
+            "ulimit -f 1 && trap '' XFSZ && exec \"$0\" diagram --flow route",
+        ])
+        .arg(env!("CARGO_BIN_EXE_cargo-kaalang"))
+        .current_dir(&directory)
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("could not write"),
+        "{result:?}"
+    );
+    assert_eq!(fs::read(output).unwrap(), previous);
+    assert!(fs::read_dir(directory).unwrap().all(|file| {
+        !file
+            .unwrap()
+            .file_name()
+            .to_string_lossy()
+            .starts_with(".kaalang-")
+    }));
+}
+
+#[cfg(unix)]
+#[test]
+fn exporting_through_a_symlink_updates_its_target_and_keeps_its_permissions() {
+    use std::os::unix::fs::{PermissionsExt as _, symlink};
+
+    let directory = package("cli-output-link", SOURCE);
+    fs::create_dir(directory.join("drawings")).unwrap();
+    let target = directory.join("drawings/actual.svg");
+    let link = directory.join("chosen.svg");
+    symlink("drawings/actual.svg", &link).unwrap();
+    for existing in [false, true] {
+        let rendered = run(&directory, "diagram --flow route -o chosen.svg");
+        assert!(rendered.status.success(), "{:?}", rendered.stderr);
+        assert!(link.is_symlink());
+        assert!(fs::read_to_string(&target).unwrap().starts_with("<svg"));
+        if existing {
+            assert_eq!(
+                fs::metadata(&target).unwrap().permissions().mode() & 0o777,
+                0o640
+            );
+        } else {
+            fs::set_permissions(&target, fs::Permissions::from_mode(0o640)).unwrap();
+        }
+    }
 }
 
 #[test]
@@ -1017,7 +1212,6 @@ pub struct Payment {
 const LINUX: &str = "x86_64-unknown-linux-gnu";
 const WINDOWS: &str = "x86_64-pc-windows-msvc";
 
-/// Draws `item` from `directory` for `target` and returns the diagram.
 fn drawn(directory: &Path, item: &str, target: &str) -> String {
     let rendered = run(
         directory,
@@ -1031,7 +1225,6 @@ fn drawn(directory: &Path, item: &str, target: &str) -> String {
     fs::read_to_string(directory.join("drawn.svg")).expect("the diagram was written")
 }
 
-/// Asserts that running `line` from `directory` finds no such type or flow.
 fn not_found(directory: &Path, line: &str) {
     let failed = run(directory, line);
     assert!(!failed.status.success(), "{line}");
@@ -1316,11 +1509,10 @@ fn cfg_test_holds_in_test_targets_only() {
 }
 
 #[test]
-fn a_procedural_macro_is_read_for_the_host() {
-    let os = std::env::consts::OS;
+fn a_procedural_macro_is_read_for_the_named_target() {
     let directory = package(
         "cli-target-proc-macro",
-        &format!("#[cfg(all(proc_macro, target_os = \"{os}\"))]\npub struct OnHost;\n"),
+        "#[cfg(all(proc_macro, target_family = \"wasm\"))]\npub struct OnTarget;\n",
     );
     write(
         &directory,
@@ -1332,31 +1524,25 @@ fn a_procedural_macro_is_read_for_the_host() {
     );
     let rendered = run(
         &directory,
-        "diagram --type OnHost --target wasm32-unknown-unknown",
+        "diagram --type OnTarget --target wasm32-unknown-unknown",
     );
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
 }
 
 #[test]
-fn a_procedural_macros_dependencies_are_read_for_the_host() {
-    let os = std::env::consts::OS;
+fn a_procedural_macros_type_refers_to_the_type_read_for_the_named_target() {
     let directory = workspace(
-        "cli-host-dependencies",
+        "cli-target-proc-macro-dependency",
         &[
-            ("macros", "use bridge::Member;\n"),
-            ("bridge", "pub use model::Member;\n"),
+            (
+                "macros",
+                "#[kaa]\nstruct Rule {\n    #[kaa::refer(model::Member, \"m\")]\n    m: u8,\n}\n",
+            ),
             (
                 "model",
-                &format!(
-                    "pub struct Member {{\n\
-                     #[cfg(target_os = \"{os}\")] pub host_field: u8,\n\
-                     #[cfg(not(target_os = \"{os}\"))] pub target_field: u8,\n\
-                     }}\nimpl Member {{\n\
-                     #[cfg(target_os = \"{os}\")] {}\n\
-                     #[cfg(not(target_os = \"{os}\"))] {}\n}}\n",
-                    method("route", "self", "Host method."),
-                    method("route", "self", "Target method."),
-                ),
+                "pub struct Member {\n\
+                 #[cfg(target_family = \"wasm\")] pub target_field: u8,\n\
+                 #[cfg(not(target_family = \"wasm\"))] pub host_field: u8,\n}\n",
             ),
         ],
     );
@@ -1364,42 +1550,14 @@ fn a_procedural_macros_dependencies_are_read_for_the_host() {
         &directory,
         "macros/Cargo.toml",
         &format!(
-            "{}[lib]\nproc-macro = true\n\n[target.'cfg(target_os = \"{os}\")'.dependencies]\nbridge = {{ path = \"../bridge\" }}\n",
+            "{}[lib]\nproc-macro = true\n\n[dependencies]\nmodel = {{ path = \"../model\" }}\n",
             manifest("macros")
         ),
     );
-    write(
-        &directory,
-        "bridge/Cargo.toml",
-        &format!(
-            "{}[target.'cfg(target_os = \"{os}\")'.dependencies]\nmodel = {{ path = \"../model\" }}\n",
-            manifest("bridge")
-        ),
-    );
-    for (package, present, absent) in [
-        ("macros", "host_field", "target_field"),
-        ("model", "target_field", "host_field"),
-    ] {
-        let svg = drawn(
-            &directory,
-            &format!("--type Member -p {package}"),
-            "wasm32-unknown-unknown",
-        );
-        assert!(svg.contains(present), "{package}: {svg}");
-        assert!(!svg.contains(absent), "{package}: {svg}");
-    }
-    for (package, present, absent) in [
-        ("macros", "Host method.", "Target method."),
-        ("model", "Target method.", "Host method."),
-    ] {
-        let svg = drawn(
-            &directory,
-            &format!("--flow Member::route -p {package}"),
-            "wasm32-unknown-unknown",
-        );
-        assert!(svg.contains(present), "{package}: {svg}");
-        assert!(!svg.contains(absent), "{package}: {svg}");
-    }
+    let svg = drawn(&directory, "--type Member", "wasm32-unknown-unknown");
+    assert!(svg.contains("Rule"), "{svg}");
+    assert!(svg.contains("target_field"), "{svg}");
+    assert!(!svg.contains("host_field"), "{svg}");
 }
 
 #[test]
@@ -1440,25 +1598,6 @@ fn a_module_the_target_does_not_compile_is_not_read() {
     );
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
-}
-
-#[test]
-fn a_file_read_twice_draws_its_type_once() {
-    // Both modules read `src/common.rs`, which declares `Report` once.
-    let directory = package(
-        "cli-type-read-twice",
-        "pub struct Member;\n#[path = \"common.rs\"]\nmod first;\n#[path = \"common.rs\"]\nmod second;\n",
-    );
-    write(
-        &directory,
-        "src/common.rs",
-        "#[kaa]\npub struct Report {\n    #[kaa::refer(crate::Member, \"m\")]\n    m: u8,\n}\n",
-    );
-    let rendered = run(&directory, "diagram --type Member");
-    assert!(rendered.status.success(), "{:?}", rendered.stderr);
-    assert!(rendered.stderr.is_empty(), "{:?}", rendered.stderr);
-    let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
-    assert_eq!(svg.matches("class=\"relationship\"").count(), 1, "{svg}");
 }
 
 #[test]
@@ -1546,6 +1685,30 @@ fn a_flow_two_crates_read_under_their_own_cfgs_is_found_once() {
     );
     let rendered = run(&directory, "diagram --flow review::route");
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
+}
+
+#[test]
+fn a_flow_a_test_and_an_example_share_is_drawn_as_the_test_reads_it() {
+    let directory = package("cli-shared-file-flow-order", "");
+    write(
+        &directory,
+        "src/review.rs",
+        &SOURCE.replace(
+            "fn route(",
+            "pub fn route(#[cfg(test)] _tested: u8, #[cfg(not(test))] _shown: u8, ",
+        ),
+    );
+    for target in ["examples/demo.rs", "tests/it.rs"] {
+        write(
+            &directory,
+            target,
+            "#[path = \"../src/review.rs\"]\nmod review;\n",
+        );
+    }
+    let rendered = run(&directory, "diagram --flow review::route");
+    assert!(rendered.status.success(), "{:?}", rendered.stderr);
+    let svg = fs::read_to_string(directory.join("route.svg")).unwrap();
+    assert!(svg.contains("_tested") && !svg.contains("_shown"), "{svg}");
 }
 
 #[test]
@@ -1705,9 +1868,13 @@ fn incoming_types_follow_crate_order() {
 }
 
 #[test]
-fn a_file_that_two_crates_include_gives_one_card() {
+fn a_copy_of_a_file_in_another_crate_refers_to_its_own_types() {
     let directory = package("cli-type-shared-file", "pub mod model;\n");
-    write(&directory, "src/main.rs", "mod model;\nfn main() {}\n");
+    write(
+        &directory,
+        "src/main.rs",
+        "#[path = \"model.rs\"] mod other;\nfn main() {}\n",
+    );
     write(
         &directory,
         "src/model.rs",
@@ -1717,6 +1884,139 @@ fn a_file_that_two_crates_include_gives_one_card() {
     assert!(rendered.status.success(), "{:?}", rendered.stderr);
     let svg = fs::read_to_string(directory.join("Member.svg")).unwrap();
     assert_eq!(svg.matches(r#"class="card""#).count(), 1, "{svg}");
+}
+
+#[test]
+fn each_inclusion_of_a_file_gives_its_incoming_type_a_card() {
+    let directory = package(
+        "cli-distinct-incoming",
+        r#"pub struct Focus;
+           #[path = "shared.rs"] pub mod r#left;
+           #[path = "shared.rs"] pub mod right;"#,
+    );
+    write(
+        &directory,
+        "src/shared.rs",
+        r#"#[kaa] pub struct Report { #[kaa::refer(crate::Focus, "Owner")] pub id: u8 }"#,
+    );
+    let draw = || {
+        let rendered = run(&directory, "diagram --type Focus");
+        assert!(rendered.status.success(), "{rendered:?}");
+        assert!(rendered.stderr.is_empty(), "{rendered:?}");
+        fs::read_to_string(directory.join("Focus.svg")).unwrap()
+    };
+    let svg = draw();
+    assert!(
+        svg.contains("r#left::Report → Focus") && svg.contains("right::Report → Focus"),
+        "{svg}"
+    );
+    assert_eq!(svg.matches(r#"class="card""#).count(), 2, "{svg}");
+    write(
+        &directory,
+        "tests/shared.rs",
+        r#"pub use cli_distinct_incoming::Focus; #[path = "../src/shared.rs"] mod left;"#,
+    );
+    let svg = draw();
+    assert!(svg.contains("shared::left::Report → Focus"), "{svg}");
+    assert_eq!(svg.matches(r#"class="card""#).count(), 3, "{svg}");
+}
+
+#[test]
+fn two_modules_of_one_crate_give_shared_source_distinct_types() {
+    let directory = package(
+        "cli-distinct-inclusions",
+        r#"
+        #[path = "shared.rs"] pub mod r#left;
+        #[path = "shared.rs"] pub mod right;
+        #[kaa] pub struct Report { #[kaa::refer(left::Member, "Owner")] pub owner: u32 }
+    "#,
+    );
+    write(&directory, "src/shared.rs", "pub struct Member;");
+    // A third inclusion must not make left and right aliases of one another.
+    write(
+        &directory,
+        "tests/shared.rs",
+        "#[path = \"../src/shared.rs\"] mod left;",
+    );
+    let query = |name: &str| {
+        let result = run(
+            &directory,
+            &format!("diagram --type {name}::Member -o out.svg"),
+        );
+        assert!(result.status.success(), "{:?}", result.stderr);
+        fs::read_to_string(directory.join("out.svg")).unwrap()
+    };
+    assert!(query("left").contains("Report → r#left::Member"));
+    assert!(!query("right").contains("Report → right::Member"));
+}
+
+#[test]
+fn an_unrelated_target_cannot_change_which_shared_types_match() {
+    let directory = package(
+        "cli-shared-target-identity",
+        r#"#[path = "shared.rs"] pub mod first; pub use first::Member as Chosen;"#,
+    );
+    write(&directory, "src/shared.rs", "pub struct Member;");
+    write(
+        &directory,
+        "tests/other.rs",
+        r#"#[path = "../src/shared.rs"] pub mod second;
+           pub use second::Member as Chosen;
+           #[kaa] pub struct Incoming { #[kaa::refer(second::Member, "Owner")] pub id: u32 }"#,
+    );
+    let query = || run(&directory, "diagram --type Chosen -o chosen.svg");
+    let first = query();
+    assert!(first.status.success(), "{:?}", first.stderr);
+    let svg = fs::read(directory.join("chosen.svg")).unwrap();
+    // The test target refers to its own copy of `Member`.
+    assert!(!String::from_utf8_lossy(&svg).contains("Incoming"));
+
+    let repeated = r#"#[path = "../src/shared.rs"] pub mod first;
+                      #[path = "../src/shared.rs"] pub mod second;
+                      #[path = "../src/shared.rs"] pub mod third;"#;
+    write(&directory, "tests/repeated.rs", repeated);
+    let again = query();
+    assert!(again.status.success(), "{:?}", again.stderr);
+    assert_eq!(fs::read(directory.join("chosen.svg")).unwrap(), svg);
+
+    write(
+        &directory,
+        "tests/repeated.rs",
+        &format!("{repeated} pub use third::Member as Chosen;"),
+    );
+    let again = query();
+    assert!(again.status.success(), "{:?}", again.stderr);
+    assert_eq!(fs::read(directory.join("chosen.svg")).unwrap(), svg);
+}
+
+#[test]
+fn conflicting_module_files_are_reported_without_drawing_either_candidate() {
+    let directory = package("cli-ambiguous-module-files", "mod node; pub struct Root;");
+    for file in ["src/node.rs", "src/node/mod.rs"] {
+        write(&directory, file, &format!("pub struct Item;\n{SOURCE}"));
+    }
+    for query in ["--type node::Item", "--flow node::route"] {
+        let failed = run(&directory, &format!("diagram {query} -o out.svg"));
+        assert!(!failed.status.success());
+        let message = String::from_utf8_lossy(&failed.stderr).replace('\\', "/");
+        assert!(
+            message.contains("is ambiguous")
+                && message.contains("src/node.rs")
+                && message.contains("src/node/mod.rs"),
+            "{message}"
+        );
+        assert!(!directory.join("out.svg").exists());
+    }
+    let unrelated = run(&directory, "diagram --type Root");
+    assert!(unrelated.status.success());
+    assert!(String::from_utf8_lossy(&unrelated.stderr).contains("is ambiguous"));
+    for file in ["src/node.rs", "src/node/mod.rs"] {
+        assert!(
+            !run(&directory, &format!("diagram --type Root -o {file}"))
+                .status
+                .success()
+        );
+    }
 }
 
 #[test]
@@ -1770,13 +2070,23 @@ fn a_target_in_a_file_that_could_not_be_read_warns_and_draws_no_line() {
 
 #[test]
 fn a_type_path_in_two_packages_fails_until_one_is_selected() {
+    let root = "pub mod model; pub use model::Member;";
     let directory = workspace(
         "cli-type-two-packages",
-        &[
-            ("first", "pub struct Member;\n"),
-            ("second", "pub struct Member;\n"),
-        ],
+        &[("first", root), ("second", root)],
     );
+    for member in ["first", "second"] {
+        write(
+            &directory,
+            &format!("{member}/src/model.rs"),
+            "pub struct Member;",
+        );
+        write(
+            &directory,
+            &format!("{member}/src/main.rs"),
+            &format!("{root} fn main() {{}}"),
+        );
+    }
     let failed = run(&directory, "diagram --type Member");
     assert!(!failed.status.success());
     let stderr = String::from_utf8_lossy(&failed.stderr);

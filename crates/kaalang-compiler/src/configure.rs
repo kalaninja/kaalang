@@ -4,8 +4,8 @@
 use proc_macro2::{TokenStream, TokenTree};
 use quote::ToTokens;
 use syn::{
-    Attribute, Fields, File, FnArg, GenericParam, Generics, ImplItem, Item, Meta, Signature,
-    TraitItem, punctuated::Punctuated,
+    Attribute, Fields, File, FnArg, GenericParam, Generics, ImplItem, Item, Meta, Path, Signature,
+    TraitItem, punctuated::Punctuated, spanned::Spanned,
 };
 
 /// Answers whether a `cfg` predicate, the tokens inside `cfg(...)`, holds.
@@ -91,7 +91,7 @@ fn items(items: &mut Vec<Item>, holds: &mut Holds<'_>) {
 }
 
 /// An item's attributes, unless syn could not parse the item.
-fn attributes(item: &mut Item) -> Option<&mut Vec<Attribute>> {
+pub(crate) fn attributes(item: &mut Item) -> Option<&mut Vec<Attribute>> {
     Some(match item {
         Item::Const(item) => &mut item.attrs,
         Item::Enum(item) => &mut item.attrs,
@@ -141,7 +141,6 @@ fn generics(generics: &mut Generics, holds: &mut Holds<'_>) {
     });
 }
 
-/// Keeps the elements of `list` whose attributes hold.
 fn kept<T, P: Default>(
     list: &mut Punctuated<T, P>,
     holds: &mut Holds<'_>,
@@ -153,6 +152,18 @@ fn kept<T, P: Default>(
         .collect();
 }
 
+pub(crate) fn is_cfg(path: &Path) -> bool {
+    path.is_ident("cfg") || path.is_ident("r#cfg")
+}
+
+pub(crate) fn is_cfg_attr(path: &Path) -> bool {
+    path.is_ident("cfg_attr") || path.is_ident("r#cfg_attr")
+}
+
+pub(crate) fn conditional(attribute: &Attribute) -> bool {
+    is_cfg(attribute.path()) || is_cfg_attr(attribute.path())
+}
+
 /// Expands the `cfg_attr`s among `attributes`, then removes the `cfg`s,
 /// answering whether every one holds.
 fn active(attributes: &mut Vec<Attribute>, holds: &mut Holds<'_>) -> bool {
@@ -162,7 +173,7 @@ fn active(attributes: &mut Vec<Attribute>, holds: &mut Holds<'_>) -> bool {
     }
     let mut active = true;
     expanded.retain(|attribute| {
-        if !attribute.path().is_ident("cfg") {
+        if !is_cfg(attribute.path()) {
             return true;
         }
         // One predicate, which rustc lets a comma follow.
@@ -182,7 +193,7 @@ fn expand(attribute: Attribute, holds: &mut Holds<'_>, expanded: &mut Vec<Attrib
         expanded.push(attribute);
         return;
     };
-    if !list.path.is_ident("cfg_attr") {
+    if !is_cfg_attr(&list.path) {
         expanded.push(attribute);
         return;
     }
@@ -207,7 +218,39 @@ fn expand(attribute: Attribute, holds: &mut Holds<'_>, expanded: &mut Vec<Attrib
     }
 }
 
-/// The comma-separated parts of `tokens`, without an empty trailing one.
+/// Keeps the guards on generated checks, including guards carried by nested `cfg_attr`s.
+pub(crate) fn cfg_attributes(attributes: &[Attribute]) -> Vec<Attribute> {
+    fn guard(meta: &Meta) -> Option<Meta> {
+        let Meta::List(list) = meta else {
+            return None;
+        };
+        if is_cfg(&list.path) {
+            // The original Rust declaration diagnoses a cfg with the wrong arity.
+            return (split_at_commas(list.tokens.clone()).len() == 1).then(|| meta.clone());
+        }
+        if !is_cfg_attr(&list.path) {
+            return None;
+        }
+        let mut parts = split_at_commas(list.tokens.clone()).into_iter();
+        let predicate = parts.next()?;
+        let guards: Vec<_> = parts
+            .filter_map(|part| syn::parse2::<Meta>(part).ok().and_then(|meta| guard(&meta)))
+            .collect();
+        (!guards.is_empty())
+            .then(|| syn::parse_quote_spanned!(list.span()=> cfg_attr(#predicate, #(#guards),*)))
+    }
+    attributes
+        .iter()
+        .filter_map(|attribute| {
+            guard(&attribute.meta).map(|meta| Attribute {
+                meta,
+                ..attribute.clone()
+            })
+        })
+        .collect()
+}
+
+/// The comma-separated parts of `tokens`, without the empty ones.
 pub(crate) fn split_at_commas(tokens: TokenStream) -> Vec<TokenStream> {
     let mut parts = vec![TokenStream::new()];
     for token in tokens {

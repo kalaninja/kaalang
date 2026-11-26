@@ -1,14 +1,4 @@
-//! Routes never cross, and run inside a card only along a groove. An incoming
-//! card lists its tiles one under another, so each reaches the card's right
-//! side: a line starts there, level with its target, and joins its column's
-//! trunk, which drops into the focus. The focus sets a struct's tiles side
-//! by side, each row widened to the card's edge, and is widened to reach under
-//! every trunk. Its own lines leave each tile where it touches the card's edge:
-//! a struct's from the bottom edge into one bus below the card, a union's from
-//! the right side. An enum variant's tiles do not all reach an edge, so each
-//! variant ends in a groove, used or not, whose bus leaves the focus through a
-//! port on its right side. All of them join one trunk there, which climbs and
-//! arrives at the focus's top edge right of every incoming line.
+//! Lays out a type diagram by RFC 0009 §4.2 and §4.3. Routes never cross.
 
 use std::num::NonZeroUsize;
 
@@ -68,7 +58,7 @@ const CORRIDOR: i32 = 48;
 pub(super) struct TypeScene {
     pub(super) width: i32,
     pub(super) height: i32,
-    /// The incoming cards in source order, then the focus.
+    /// The incoming cards in the given order, then the focus.
     pub(super) cards: Vec<CardShape>,
     /// Where the focus stands among `cards`: last.
     pub(super) focus: usize,
@@ -100,6 +90,9 @@ pub(super) struct TextBlock {
     pub(super) x: i32,
     pub(super) top: i32,
     pub(super) lines: Vec<RichText>,
+    /// The position of the tile it belongs to, among its card's in source
+    /// order.
+    pub(super) tile: Option<usize>,
 }
 
 /// The kinds of text a card shows, each with its own typography.
@@ -211,9 +204,15 @@ pub(super) struct Route {
     pub(super) points: Vec<Point>,
 }
 
-/// Lays out the focus under its incoming cards, in groups that each start a
-/// new row, with `columns` cards to a row when given.
-pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUsize>) -> TypeScene {
+/// Lays out the focus under its incoming cards, in rows as
+/// [`kaalang_render::card_cells`] places them by `groups`, with `columns` cards
+/// to a row when given.
+pub(super) fn layout<K: PartialEq>(
+    incoming: &[Card],
+    groups: &[K],
+    focus: &Card,
+    columns: Option<NonZeroUsize>,
+) -> TypeScene {
     let sized = SizedCard::new(focus);
     let natural = sized.width();
     let Row {
@@ -221,7 +220,7 @@ pub(super) fn layout(groups: &[&[Card]], focus: &Card, columns: Option<NonZeroUs
         mut routes,
         bottom: row_bottom,
         right,
-    } = row(groups, columns, ROW_WIDTH.max(natural));
+    } = row(incoming, groups, columns, ROW_WIDTH.max(natural));
     let incoming = cards.len();
     let mut ports = Vec::new();
     let rightmost_drop = routes
@@ -303,23 +302,31 @@ struct Row {
     right: i32,
 }
 
-/// Sets the incoming cards side by side in source order, each group from a new
+/// Sets the incoming cards side by side in the given order, each group from a new
 /// row, wrapping into further rows after `columns` cards, or else into rows no
 /// wider than `limit`. The cards of a column share its width and one trunk,
 /// which drops through the gap right of the column into the focus.
-fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
-    let incoming: Vec<&Card> = groups.iter().flat_map(|group| group.iter()).collect();
-    let lengths: Vec<usize> = groups.iter().map(|group| group.len()).collect();
-    let sized: Vec<SizedCard> = incoming.iter().map(|card| SizedCard::new(card)).collect();
+fn row<K: PartialEq>(
+    incoming: &[Card],
+    groups: &[K],
+    columns: Option<NonZeroUsize>,
+    limit: i32,
+) -> Row {
+    let sized: Vec<SizedCard> = incoming.iter().map(SizedCard::new).collect();
     let natural: Vec<i32> = sized.iter().map(SizedCard::list_width).collect();
-    let widest = lengths.iter().copied().max().unwrap_or(0);
+    let widest = groups
+        .chunk_by(PartialEq::eq)
+        .map(<[K]>::len)
+        .max()
+        .unwrap_or(0);
     let grid = match columns {
-        Some(columns) => Grid::new(&lengths, &natural, columns.get()),
+        Some(columns) => Grid::new(groups, &natural, columns),
         None => (1..=widest)
             .rev()
-            .map(|columns| Grid::new(&lengths, &natural, columns))
+            .filter_map(NonZeroUsize::new)
+            .map(|columns| Grid::new(groups, &natural, columns))
             .find(|grid| grid.width() <= limit)
-            .unwrap_or_else(|| Grid::new(&lengths, &natural, 1)),
+            .unwrap_or_else(|| Grid::new(groups, &natural, NonZeroUsize::MIN)),
     };
     let built: Vec<Built> = sized
         .iter()
@@ -367,7 +374,7 @@ fn row(groups: &[&[Card]], columns: Option<NonZeroUsize>, limit: i32) -> Row {
     row
 }
 
-/// Where each incoming card goes.
+/// Where each incoming card goes, measured.
 struct Grid {
     /// Each card's row and column.
     cells: Vec<(usize, usize)>,
@@ -377,13 +384,8 @@ struct Grid {
 }
 
 impl Grid {
-    fn new(sizes: &[usize], natural: &[i32], columns: usize) -> Self {
-        let mut cells = Vec::with_capacity(natural.len());
-        let mut first = 0;
-        for &size in sizes {
-            cells.extend((0..size).map(|index| (first + index / columns, index % columns)));
-            first += size.div_ceil(columns);
-        }
+    fn new<K: PartialEq>(groups: &[K], natural: &[i32], columns: NonZeroUsize) -> Self {
+        let cells = kaalang_render::card_cells(groups, columns);
         let used = cells
             .iter()
             .map(|&(_, column)| column + 1)
@@ -482,6 +484,8 @@ struct SizedVariant {
 
 /// A tile's text, parsed and measured once.
 struct SizedTile {
+    /// The tile's position among its card's, in source order.
+    index: usize,
     /// The width the tile needs for its own text, side by side with others.
     width: i32,
     /// The width of its name and type, listed.
@@ -505,7 +509,7 @@ impl SizedTile {
             .map(|text| Text::Description.parse(text));
         // The target is a Rust path, set in code like the type above it, after
         // a triangle that stays legible at its size where an arrow does not.
-        let target = tile.target.as_deref().map(|target| {
+        let target = tile.target.as_ref().map(|(target, _)| {
             let mut text = RichText::literal("▸ ");
             text.push_styled(target, Text::Type.style());
             text
@@ -525,6 +529,7 @@ impl SizedTile {
             .map_or(0, |target| Text::Target.width(target));
         let text = description_width.max(target_width);
         Self {
+            index: tile.index,
             // A target never wraps: its triangle would stand alone on a line.
             width: code
                 .max(description_width)
@@ -544,6 +549,7 @@ impl SizedTile {
     fn wrap(&self, width: i32) -> WrappedTile {
         let budget = width - 2 * TILE_PADDING_X;
         WrappedTile {
+            index: self.index,
             width,
             label: Text::Field.wrap_optional(self.label.as_ref(), budget),
             ty: Text::Type.wrap(&self.ty, budget),
@@ -556,6 +562,7 @@ impl SizedTile {
 
 /// A tile wrapped at the width it is drawn at.
 struct WrappedTile {
+    index: usize,
     width: i32,
     label: Vec<RichText>,
     ty: Vec<RichText>,
@@ -828,7 +835,16 @@ impl Built {
             x,
             top,
             lines,
+            tile: None,
         });
+    }
+
+    /// Places text of the tile at `index`.
+    fn tile_text(&mut self, index: usize, text: Text, x: i32, top: i32, lines: Vec<RichText>) {
+        self.text(text, x, top, lines);
+        if let Some(block) = self.texts.last_mut() {
+            block.tile = Some(index);
+        }
     }
 
     fn rule(&mut self, x1: i32, y1: i32, x2: i32, y2: i32) {
@@ -882,7 +898,7 @@ impl Built {
         ] {
             if !lines.is_empty() {
                 y += gap;
-                self.text(text, left, y, lines.clone());
+                self.tile_text(tile.index, text, left, y, lines.clone());
                 y += text.height(lines);
             }
         }
@@ -890,7 +906,7 @@ impl Built {
             let bottom = top + height;
             let end = x + tile.width - TILE_PADDING_X;
             let target = bottom - TILE_PADDING_Y - Text::Target.height(&tile.target);
-            self.text(Text::Target, end, target, tile.target.clone());
+            self.tile_text(tile.index, Text::Target, end, target, tile.target.clone());
             if tile.drawn {
                 let at = if side {
                     Point {
@@ -945,7 +961,7 @@ impl Built {
         ] {
             if !lines.is_empty() {
                 let height = text.height(&lines);
-                self.text(text, left, code_bottom, lines);
+                self.tile_text(tile.index, text, left, code_bottom, lines);
                 code_bottom += height;
             }
         }
@@ -970,7 +986,7 @@ impl Built {
                 });
             }
             let height = Text::Target.height(&target);
-            self.text(Text::Target, end, text_bottom, target);
+            self.tile_text(tile.index, Text::Target, end, text_bottom, target);
             text_bottom += height;
         }
         code_bottom.max(text_bottom) + TILE_PADDING_Y - top
@@ -1071,7 +1087,7 @@ mod tests {
             "Entry",
             Structure::Row(vec![tile("line", Some(target), true)]),
         );
-        let scene = layout(&[], &focus, None);
+        let scene = layout(&[], &[(); 0], &focus, None);
         let targets: Vec<usize> = scene.cards[scene.focus]
             .texts
             .iter()
@@ -1088,10 +1104,12 @@ mod tests {
 
     fn tile(label: &str, target: Option<&str>, drawn: bool) -> Tile {
         Tile {
+            index: 0,
             label: Some(label.to_owned()),
             ty: "MemberId".to_owned(),
+            paths: Vec::new(),
             description: Some("A description that wraps over a few lines in its tile.".to_owned()),
-            target: target.map(str::to_owned),
+            target: target.map(|target| (target.to_owned(), proc_macro2::Span::call_site())),
             drawn,
         }
     }
@@ -1099,6 +1117,7 @@ mod tests {
     fn card(name: &str, structure: Structure) -> Card {
         Card {
             name: name.to_owned(),
+            name_span: proc_macro2::Span::call_site(),
             marker: '+',
             kind: "struct".to_owned(),
             description: Some("A card.".to_owned()),
@@ -1169,7 +1188,7 @@ mod tests {
             Structure::Stack(own().into()),
         ]
         .into_iter()
-        .map(|structure| layout(&[&incoming], &card("Member", structure), None))
+        .map(|structure| layout(&incoming, &[(); 3], &card("Member", structure), None))
         .collect()
     }
 
@@ -1195,7 +1214,7 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        layout(&[&incoming], &focus, None)
+        layout(&incoming, &vec![(); incoming.len()], &focus, None)
     }
 
     #[test]
@@ -1233,9 +1252,9 @@ mod tests {
     #[test]
     fn each_group_of_incoming_cards_starts_a_row() {
         let source = |name: &str| card(name, Structure::Row(vec![tile("m", Some("Member"), true)]));
-        let (first, second) = ([source("Library")], [source("Test"), source("Example")]);
+        let incoming = [source("Library"), source("Test"), source("Example")];
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&first, &second], &focus, None);
+        let scene = layout(&incoming, &["lib", "tests", "tests"], &focus, None);
         assert_eq!(rows(&scene, 3), 2);
         // The second group is a row of its own, aligned to the same columns.
         assert_eq!(scene.cards[0].x, scene.cards[1].x);
@@ -1259,8 +1278,9 @@ mod tests {
                 .collect();
             card("Member", Structure::Row(tiles))
         };
-        let narrow = layout(&[&incoming], &focus(1), None);
-        let wide = layout(&[&incoming], &focus(14), None);
+        let groups = vec![(); incoming.len()];
+        let narrow = layout(&incoming, &groups, &focus(1), None);
+        let wide = layout(&incoming, &groups, &focus(14), None);
         assert!(wide.cards[16].width > 1800);
         assert!(rows(&wide, 16) < rows(&narrow, 16));
         routes_neither_cross_nor_enter(&wide);
@@ -1277,7 +1297,12 @@ mod tests {
             })
             .collect();
         let focus = card("Member", Structure::Row(vec![tile("name", None, false)]));
-        let scene = layout(&[&incoming], &focus, NonZeroUsize::new(3));
+        let scene = layout(
+            &incoming,
+            &vec![(); incoming.len()],
+            &focus,
+            NonZeroUsize::new(3),
+        );
         assert_eq!(rows(&scene, 7), 3);
         assert!(
             scene.cards[..3]

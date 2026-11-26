@@ -106,8 +106,8 @@ struct Completion {
 }
 
 impl Completion {
-    /// One pair of executions that agree at every question and choice they both
-    /// run but `selector`, and whether they reach different producers there.
+    /// One pair of executions that agree at every selector they both run but
+    /// `selector`, and whether they reach different producers there.
     fn compare(
         &mut self,
         selector: usize,
@@ -238,9 +238,9 @@ fn completion_at(
 /// that one's alternatives.
 ///
 /// An execution outside every merge's context settles no merge's order, so
-/// dropping it here keeps it out of the comparisons and out of the count the
-/// strategy is chosen by. Both come back aligned, which is what lets the
-/// comparisons index a context by an execution's position.
+/// dropping it here keeps it out of the comparisons. Both come back aligned,
+/// which is what lets the comparisons index a context by an execution's
+/// position.
 fn context<'a>(
     flow: &Flow,
     executions: &'a [Execution],
@@ -317,7 +317,6 @@ fn validate_adjacency(
     Ok(())
 }
 
-/// Branches reaching the merge of `merge` leave a gap between its producers.
 pub(crate) fn gap(flow: &Flow, merge: &WireMerge) -> Error {
     let wire = flow.wire_name(&merge.wire);
     Error::new(
@@ -986,8 +985,7 @@ mod tests {
 
     /// A flow whose outputs are all distinct has no merge to order. Cycles reach
     /// several executions without repeating a name, which is the shape that
-    /// would otherwise pay for pairs no merge ever reads: 87 of the 191 corpus
-    /// flows declare no merge at all.
+    /// would otherwise pay for pairs no merge ever reads.
     #[test]
     fn a_flow_without_merges_compares_nothing() {
         let function =

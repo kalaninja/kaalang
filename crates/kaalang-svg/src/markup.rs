@@ -26,7 +26,6 @@ pub(crate) const FONT_WEIGHT_SEMIBOLD: i32 = 600;
 pub(crate) const FONT_WEIGHT_BOLD: i32 = 700;
 /// Markdown bold, visibly stronger than any label's own weight, as RFC 0005 asks.
 const FONT_WEIGHT_HEAVY: i32 = 800;
-/// The text color and font stack of every diagram.
 pub(crate) const BASE_STYLE: &str = r#"svg { color: #1f2937; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-rendering: optimizeLegibility; }"#;
 pub(crate) const MONOSPACE: &str =
     r#"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace"#;
@@ -185,7 +184,6 @@ fn write_decorations(
     }
 }
 
-/// Where a badge's marker is centered on a line.
 fn badge_center_y(baseline: i32, font_size: i32) -> Dim {
     Dim::from_i64(i64::from(baseline))
         - Dim::ratio(

@@ -21,14 +21,8 @@ order is execution order: each block runs where it is written, in every
 execution that reaches it.
 
 A validated flow is drawable: a flow whose required connections have no
-conforming diagram under [RFC 0002](0002-visual-language.md) is rejected at
-compile time, like violations of the syntactic and semantic rules below.
-
-This RFC defines kaalang's syntax and semantics.
-[RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md) describes how the
-language is translated to Rust, and
-[RFC 0002: kaalang Visual Language](0002-visual-language.md) defines its visual
-representation.
+conforming diagram in the visual language is rejected at compile time, like
+violations of the syntactic and semantic rules below.
 
 ## 2. Terminology
 
@@ -122,8 +116,7 @@ when no description is written. A question may carry an ordered `#[yes]` and
 carries two or more ordered `#[case("description")]` attributes. Transfers have
 no attributes or descriptions.
 
-Source comments remain ordinary Rust comments. Block, question-branch, and case
-descriptions come from their attributes.
+Source comments remain ordinary Rust comments.
 
 Actions, calls, and cycles may declare no outputs; questions and choices must
 declare theirs. Such a block written without `let`, or with the pattern
@@ -345,11 +338,10 @@ The match scrutinee is evaluated exactly once. Unlike question outputs, choice
 outputs are not restricted to `()`, and different outputs may carry different
 Rust types. Like question outputs, they are branch outputs (section 6).
 
-An implemented choice body contains exactly one `match` expression. An exact
-whole-body `todo!()` is also a valid placeholder; every downstream branch still
-undergoes type checking. An individual match arm cannot consist solely of
-`todo!()`, with or without braces. Match bindings and block locals remain scoped
-to the selected arm; downstream code receives only declared wires.
+A choice body contains exactly one `match` expression; a whole-body `todo!()` is
+rejected. An arm may be the placeholder `todo!()`; every downstream branch still
+undergoes type checking. Match bindings and block locals remain scoped to the
+selected arm; downstream code receives only declared wires.
 
 The selected arm's value leaves the match before the branch continues. A case
 value is therefore owned or borrows data that outlives the choice, such as a
@@ -586,8 +578,8 @@ impl Rectangle {
 }
 ```
 
-A `todo!()` body is a placeholder that keeps its Rust behavior and panics if
-execution reaches it:
+A `todo!()` body, other than a choice's (§4.4), is a placeholder that keeps its
+Rust behavior and panics if execution reaches it:
 
 ```rust
 use kaalang::kaalang;
@@ -609,8 +601,6 @@ fn decide(request: Request) -> Decision {
 
 Unreachable-code warnings remain visible for unfinished flows;
 `#[allow(unreachable_code)]` on the function silences them.
-[RFC 0004 §6](0004-rust-lowering.md#6-placeholders-and-function-attributes)
-describes how lowering preserves placeholders and function attributes.
 
 ### 5.1 Zero-computation flow
 
@@ -991,8 +981,7 @@ choice_statement :=
     "let" "(" output_binding "," output_binding ("," output_binding)* ","? ")" "="
     "|" input_list "|" choice_body ";"
 
-choice_expression := rust_match_expression | "todo!()"
-choice_body := choice_expression | "{" choice_expression "}"
+choice_body := rust_match_expression | "{" rust_match_expression "}"
 choice_match_arm := rust_pattern rust_guard? "=>" rust_expression
 
 case_attribute := "#[case(" block_description ")]"
@@ -1011,7 +1000,4 @@ input := "mut"? identifier | "&" "mut"? identifier
 Outputs within one declaration are distinct. In a `call_statement`, `rust_path`
 may not be a single identifier that names one of the block's captured aliases.
 Tuple construction in a transfer value does not implicitly destructure a
-captured tuple-valued wire. Every other constraint the grammar leaves open is
-stated with its rule: descriptions and computational control flow in section 3,
-block and transfer kinds in section 4, function forms and flow parameters in
-section 5, and repeated output names in section 6.
+captured tuple-valued wire.

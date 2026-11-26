@@ -7,7 +7,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
-kaalang-compiler = { workspace = true }
+kaalang-compiler = { workspace = true, features = ["cfg"] }
 syn = { workspace = true }
 
 [lints]

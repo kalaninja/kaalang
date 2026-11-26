@@ -1,14 +1,16 @@
 //! Renders validated kaalang flows and type diagrams as standalone SVG.
 //!
-//! It serves `cargo kaalang`, and its API may change in any minor release.
+//! It serves `cargo kaalang` and the bindings an editor's page loads, and its
+//! API may change in any minor release.
 
 use std::{error::Error, fmt, num::NonZeroUsize};
 
+#[cfg(doc)]
+use kaalang_compiler::{Analysis, SemanticModel, SourceFile};
 use kaalang_compiler::{SourceFlow, SourceType, line_and_column};
 use proc_macro2::Span;
 use syn::Visibility;
 
-/// Appends one line to the SVG.
 macro_rules! emit {
     ($svg:expr, $($argument:tt)*) => {
         writeln!($svg, $($argument)*).expect("writing to a String cannot fail")
@@ -29,7 +31,6 @@ mod flow;
 mod markup;
 mod text;
 
-/// Presentation options for one rendered type diagram.
 #[derive(Clone, Copy, Default)]
 pub struct TypeOptions {
     /// How many incoming cards a row holds. Without it, a row holds as many
@@ -37,7 +38,6 @@ pub struct TypeOptions {
     pub columns: Option<NonZeroUsize>,
 }
 
-/// An error produced while rendering a kaalang flow or type diagram.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RenderError {
     /// A verified arrangement could not be realized in pixels. This is a
@@ -81,7 +81,8 @@ impl fmt::Display for RenderError {
 
 impl Error for RenderError {}
 
-/// Renders a flow as it was read from its source file.
+/// Renders a flow as it was read from its source file. Returns the SVG and its
+/// hotspots.
 ///
 /// # Errors
 ///
@@ -90,8 +91,88 @@ impl Error for RenderError {}
 /// [`RenderError::UnroutableTopology`] when realizing the model's checked
 /// arrangement cannot route every connection or place every label. A flow is
 /// named by its path within the file.
-pub fn render_flow(flow: SourceFlow) -> Result<String, RenderError> {
+pub fn render_flow(flow: SourceFlow) -> Result<(String, Vec<Hotspot>), RenderError> {
     flow::render(flow)
+}
+
+/// States what the drawing stands for and leaves what a click does to the
+/// reader.
+#[derive(Clone, Debug)]
+pub enum HotspotKind {
+    /// A node, or a drawn cycle boundary. Its span is the source the node
+    /// draws, as [`Analysis::node_span`] places it; a boundary's is its cycle.
+    /// A boundary's hotspot holds its body's, so under a point the innermost
+    /// hotspot is the one meant, whatever the order of the list.
+    Node,
+    /// A call node: a node whose call names `callee`, the last segment of the
+    /// callee path.
+    Call { callee: Span },
+    /// One wire name in a label. Its span is where its producer binds the
+    /// wire, as [`Analysis::binding`] places it.
+    Wire,
+    /// A strip centred on one segment of a drawn connection, with its ribbon,
+    /// as [`SemanticModel::ribbons`] gives it. It reaches past a corner or a
+    /// junction but stops at a node. Strips of shared segments
+    /// overlap, and so do those of neighbouring ones. It has no span: no one
+    /// place in the source stands for it.
+    Connection { ribbon: Vec<RibbonWire> },
+    /// The square on a merge, with its ribbon, as [`SemanticModel::ribbons`]
+    /// gives it. It overlaps the strips of the connections that meet there,
+    /// and has no span.
+    Merge { ribbon: Vec<RibbonWire> },
+    /// One path a tile's type names, on one line it is drawn on, of the type
+    /// `card` draws: 0 for the focus, then the incoming cards in the order
+    /// [`render_type`] takes them. Its span is the path's last segment, as
+    /// [`kaalang_compiler::SourceField::paths`] places it.
+    Path { card: usize },
+    /// A relationship's target, of the type `card` draws. Its span names the
+    /// target's type, as [`kaalang_compiler::SourceRelationship::target_span`]
+    /// places it. `focus` marks
+    /// a tile whose relationship line reaches the focus.
+    Target { card: usize, focus: bool },
+    /// The header of an incoming card, the type `card` draws. Its span is the
+    /// type's name in its declaration.
+    Header { card: usize },
+}
+
+/// One wire of a ribbon: its displayed name, and where its producer binds it,
+/// as [`Analysis::binding`] places it.
+#[derive(Clone, Debug)]
+pub struct RibbonWire {
+    pub name: String,
+    pub binding: Span,
+}
+
+/// One element of a rendered diagram that stands for something in its source.
+#[derive(Clone, Debug)]
+pub struct Hotspot {
+    pub kind: HotspotKind,
+    /// The element's rectangle in the SVG's user units. A name that wraps has
+    /// one hotspot per line.
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+    /// The source the element stands for, a span of the flow or of the type
+    /// as it was read, or none for a connection or a merge.
+    /// [`SourceFile::range`] gives its bytes, but only while proc-macro2 still
+    /// holds the parsed text: it forgets every span when its source map is
+    /// cleared.
+    pub span: Option<Span>,
+    /// For a field-type path, where it stands in the SVG's field-type text,
+    /// so that a browser can measure the glyphs it draws in its own font.
+    pub field_text: Option<FieldText>,
+}
+
+/// Where a path stands on one line of a type diagram's field-type text.
+#[derive(Clone, Debug)]
+pub struct FieldText {
+    /// The line among the SVG's field-type lines.
+    pub line: usize,
+    /// The text of that line.
+    pub text: String,
+    /// The path's bytes in that text.
+    pub range: std::ops::Range<usize>,
 }
 
 /// Reads the flow at `path` within `source` for no target, for tests that
@@ -102,7 +183,7 @@ pub(crate) fn read_path(
     path: &str,
     collapse_cycles: bool,
 ) -> Result<SourceFlow, kaalang_compiler::SourceError> {
-    let file = kaalang_compiler::SourceFile::parse(source, kaalang_compiler::Target::EMPTY)?;
+    let file = kaalang_compiler::SourceFile::parse(source, kaalang_compiler::CfgSet::EMPTY)?;
     let position = kaalang_compiler::flows(file.items())
         .iter()
         .position(|flow| flow.path == path)
@@ -119,10 +200,9 @@ pub(crate) fn render_path(
 ) -> Result<String, RenderError> {
     let flow = read_path(source, path, collapse_cycles)
         .unwrap_or_else(|error| panic!("`{path}` does not read: {error}"));
-    render_flow(flow)
+    render_flow(flow).map(|(svg, _)| svg)
 }
 
-/// One card of a type diagram.
 #[derive(Clone, Copy)]
 pub struct TypeCard<'a> {
     /// The type the card draws, as it was read from the file that declares it.
@@ -136,27 +216,48 @@ pub struct TypeCard<'a> {
     pub relationships: &'a [usize],
 }
 
+/// A card the renderer could not draw, numbered as in its hotspots.
+#[derive(Debug)]
+pub struct CardError {
+    pub card: usize,
+    pub error: RenderError,
+}
+
+impl fmt::Display for CardError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.error.fmt(formatter)
+    }
+}
+
+impl Error for CardError {}
+
 /// Renders a type diagram: the focus card under the incoming cards, in the
 /// given order, with a line for each relationship they draw into the focus.
-/// Each group of incoming cards starts a new row and wraps into further rows
-/// after `options.columns` cards, or where it would grow wider than a screen,
-/// or than the focus when it is wider.
+/// `groups` gives each incoming card's group: a card of another group than the
+/// card before it starts a new row. Returns the SVG and its hotspots.
 ///
 /// # Errors
 ///
-/// Returns [`RenderError::InvalidLabelCharacter`] when a card's text contains
-/// a character XML 1.0 cannot represent, for the focus before the incoming
-/// cards in their order.
+/// Returns a [`CardError`] for the focus card, or else for the first incoming
+/// card in the given order, whose text contains a character XML 1.0 cannot
+/// represent.
 ///
 /// # Panics
 ///
-/// Panics when a card draws a relationship index its type does not have.
-pub fn render_type(
+/// Panics when a card draws a relationship index its type does not have, or
+/// when `groups` does not give one group for each incoming card.
+pub fn render_type<K: PartialEq>(
     focus: &TypeCard<'_>,
-    incoming: &[&[TypeCard<'_>]],
+    incoming: &[TypeCard<'_>],
+    groups: &[K],
     options: TypeOptions,
-) -> Result<String, RenderError> {
-    datatype::render(focus, incoming, options.columns)
+) -> Result<(String, Vec<Hotspot>), CardError> {
+    assert_eq!(
+        groups.len(),
+        incoming.len(),
+        "each incoming card has a group"
+    );
+    datatype::render(focus, incoming, groups, options.columns)
 }
 
 /// The UML visibility marker.
@@ -211,13 +312,13 @@ const fn valid_xml_character(character: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use kaalang_compiler::{SourceFile, Target};
+    use kaalang_compiler::{CfgSet, SourceFile};
 
     use super::*;
 
     /// Renders the type at `path` in `source`, read for no target, alone.
     fn render_card(source: &str, path: &str) -> Result<String, RenderError> {
-        let ty = SourceFile::parse(source, Target::EMPTY)
+        let ty = SourceFile::parse(source, CfgSet::EMPTY)
             .unwrap()
             .ty(path)
             .unwrap_or_else(|error| panic!("{error}"));
@@ -226,7 +327,9 @@ mod tests {
             header: path,
             relationships: &[],
         };
-        render_type(&card, &[], TypeOptions::default())
+        render_type(&card, &[], &[(); 0], TypeOptions::default())
+            .map(|(svg, _)| svg)
+            .map_err(|error| error.error)
     }
 
     #[test]
@@ -283,7 +386,6 @@ mod tests {
         );
     }
 
-    /// Renders the flow at `path` within `source`, read for no target.
     fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
         render_path(source, path, false)
     }
@@ -397,8 +499,6 @@ mod tests {
         );
     }
 
-    /// A character reference decodes before the diagram is written, so the
-    /// character it names is validated too.
     #[test]
     fn reports_an_invalid_character_a_reference_introduces() {
         let source = "#[kaa]\nfn invalid(input: u8) -> u8 {\n    #[kaa::action(\"Record&#30;the run.\")]\n    let end = |input| { input };\n\n    |end| return end;\n}\n";

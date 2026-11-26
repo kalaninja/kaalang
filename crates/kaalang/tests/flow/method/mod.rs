@@ -1,5 +1,6 @@
 mod build_a_self_value;
 mod call_with_the_receiver;
+mod conditional_parameters;
 mod consume_a_receiver;
 mod doubled;
 mod measure;

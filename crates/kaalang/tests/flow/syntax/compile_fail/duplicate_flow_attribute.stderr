@@ -1,0 +1,5 @@
+error: a function takes one `#[kaa]` attribute
+ --> tests/flow/syntax/compile_fail/duplicate_flow_attribute.rs:4:1
+  |
+4 | #[cfg_attr(all(), kaa)]
+  | ^^^^^^^^^^^^^^^^^^^^^^^

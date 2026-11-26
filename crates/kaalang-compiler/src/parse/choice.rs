@@ -4,10 +4,7 @@ use proc_macro2::Ident;
 use syn::{Attribute, Error, Expr, Result};
 
 use super::{BlockSyntax, description};
-use crate::{
-    choice::{choice_match, is_todo_body, is_todo_macro},
-    model::Block,
-};
+use crate::{choice::choice_match, model::Block};
 
 pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
     Error::new_spanned(
@@ -16,7 +13,6 @@ pub(super) fn case_before_choice(attribute: &Attribute) -> Error {
     )
 }
 
-/// A choice owns the `#[kaa::case("...")]` attributes that describe its branches.
 pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
     let block_description = description(syntax.kind_attribute, "kaalang block")?;
     let cases = syntax.accept_companions(&["case"])?;
@@ -44,13 +40,10 @@ pub(crate) fn parse(syntax: BlockSyntax<'_>) -> Result<Block> {
 }
 
 fn validate_body(body: &Expr, outputs: &[Ident]) -> Result<()> {
-    if is_todo_body(body) {
-        return Ok(());
-    }
     let Some(choice) = choice_match(body) else {
         return Err(Error::new_spanned(
             body,
-            "a kaalang choice body must contain exactly one `match` expression or `todo!()`",
+            "a kaalang choice body must contain exactly one `match` expression",
         ));
     };
     if choice.arms.len() != outputs.len() {
@@ -59,16 +52,5 @@ fn validate_body(body: &Expr, outputs: &[Ident]) -> Result<()> {
             "a kaalang choice match must contain exactly one arm for each output",
         ));
     }
-    if let Some(arm) = choice
-        .arms
-        .iter()
-        .find(|arm| is_todo_macro(&arm.body) || is_todo_body(&arm.body))
-    {
-        return Err(Error::new_spanned(
-            &arm.body,
-            "`todo!()` is supported only as the whole kaalang choice body",
-        ));
-    }
-
     Ok(())
 }

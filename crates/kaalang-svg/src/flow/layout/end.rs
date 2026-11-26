@@ -4,7 +4,6 @@ use kaalang_compiler::topology::NodeKind;
 
 use super::Scene;
 
-/// Nothing may end below the final block.
 pub(super) fn verify(scene: &Scene) -> Option<String> {
     let end = scene
         .topology

@@ -10,7 +10,9 @@ use crate::{
         Point, bundle_meetings, compatible, on_segment, overlaps_itself, straighten, turns_downward,
     },
     model::Flow,
-    topology::{Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex},
+    topology::{
+        Connection, Cycle, Destination, ExitId, NodeId, Source, Topology, Vertex, may_share_run,
+    },
 };
 
 /// Abstract coordinates with separate lines for ranks and gap lanes, and space
@@ -47,24 +49,20 @@ impl ArrangementGeometry {
             .map(|index| self.vertices[index].1)
     }
 
-    /// Connection polyline at its topology index.
     #[must_use]
     pub fn connection(&self, index: usize) -> Option<&[Point]> {
         self.connections.get(index).map(Vec::as_slice)
     }
 
-    /// Iteration back-edge polyline at its topology index.
     #[must_use]
     pub fn back_edge(&self, index: usize) -> Option<&[Point]> {
         self.back_edges.get(index).map(Vec::as_slice)
     }
 
-    /// Every connection polyline in topology order.
     pub fn connections(&self) -> impl ExactSizeIterator<Item = &[Point]> {
         self.connections.iter().map(Vec::as_slice)
     }
 
-    /// Every iteration back-edge polyline in topology order.
     pub fn back_edges(&self) -> impl ExactSizeIterator<Item = &[Point]> {
         self.back_edges.iter().map(Vec::as_slice)
     }
@@ -212,16 +210,15 @@ pub(super) fn back_edge_polyline(
 ///
 /// Connections leaving one exit or reaching one destination may share a
 /// collinear segment and split or join where they touch. The side exits of one
-/// node fan out along one row the same way. Otherwise only the incoming and
-/// outgoing routes of one junction may meet, and only at that junction's own
-/// point.
+/// node fan out along one row the same way. Otherwise two routes may meet only
+/// at a vertex both end at.
 pub(super) fn meetings(
     left: (Source, Destination),
     left_line: &[Point],
     right: (Source, Destination),
     right_line: &[Point],
 ) -> (bool, Vec<Point>) {
-    let shared = left.0 == right.0 || left.1 == right.1 || left.0.is_side_exit_beside(right.0);
+    let shared = may_share_run(left, right);
     let mut points = if shared {
         bundle_meetings(left_line, right_line)
     } else {
@@ -277,7 +274,7 @@ pub(super) fn arrangement_with_shape(
     geometry_after_choice(flow, topology, arrangement, shape, |_| Ok(()))
 }
 
-/// Cached branch regions and reachability reused across arrangement checks.
+/// Branch regions, computed once and reused across arrangement checks.
 pub(super) struct Shape {
     branchers: Vec<Brancher>,
 }
@@ -350,8 +347,8 @@ pub(super) fn geometry_after_coverage(
     geometry_after_choice(flow, topology, arrangement, shape, additional)
 }
 
-/// Checks rank and column relations before compression and geometry.
-/// Compression preserves the order and equality these rules read.
+/// Checks rank and column relations before normalization and geometry.
+/// Normalization preserves the order and equality these rules read.
 pub(super) fn placement(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -582,11 +579,9 @@ fn numeric_bounds(topology: &Topology, arrangement: &Arrangement) -> Result<(), 
     Ok(())
 }
 
-/// Forward connections descend, except for a side exit that ends at a wire merge
-/// or its sole iteration tail on its row. A cycle's own tail and result may share
-/// a row when their routes are disjoint. A renderer may replace the row rule for
-/// a cycle completion with its own boundary check; other placement-only
-/// relations descend.
+/// Checks the row order of RFC 0002 §8 and the alignments of RFC 0003 §2.5. A
+/// renderer may replace the row rule for a cycle completion with its own
+/// boundary check; other placement-only relations descend.
 fn order(
     topology: &Topology,
     arrangement: &Arrangement,
@@ -677,10 +672,8 @@ pub(super) fn serial_columns(topology: &Topology, arrangement: &Arrangement) -> 
     Ok(())
 }
 
-/// A selection's branches leave it left to right in authored order, the first
-/// in its own column; its shared continuations sit in the column their group's
-/// first branch reached, and each convergence group keeps the columns it
-/// reserves.
+/// Checks the branch columns, shared continuations, and reserved columns of
+/// RFC 0002 §8.
 fn branch_columns(flow: &Flow, arrangement: &Arrangement, shape: &Shape) -> Result<(), String> {
     for brancher in &shape.branchers {
         let block = brancher.block;

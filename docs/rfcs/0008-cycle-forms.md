@@ -1,12 +1,6 @@
 # RFC 0008: Cycle forms
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
-- Lowering: [RFC 0004: kaalang Rust Lowering](0004-rust-lowering.md)
-- Stages: [RFC 0006: Stages](0006-stages.md)
-- Refinements: [RFC 0007: Language refinements](0007-language-refinements.md)
 
 ## 1. Motivation and scope
 
@@ -236,7 +230,8 @@ fn sum(values: &[i64]) -> i64 {
 }
 ```
 
-Illustrative Rust, omitting unit control-wire bindings and lint allowances:
+Illustrative Rust, omitting unit control-wire bindings and the reads of capture
+aliases:
 
 ```rust
 fn sum(wire_values: &[i64]) -> i64 {
@@ -395,8 +390,7 @@ consumer.
 
 ## 8. Changes to earlier RFCs
 
-This RFC supersedes the provisions below. Earlier released RFC texts remain
-unchanged.
+This RFC supersedes the provisions below.
 
 - **RFC 0001 §§3, 4.5 and 8; RFC 0006 §§5, 8.3 and 8.5; RFC 0007 §§1.1, 2 and
   3:** a cycle body is a Rust `loop` or `for` loop rather than a bare brace
@@ -427,8 +421,6 @@ unchanged.
 - **RFC 0006:** for cycles may appear in preparation and stage bodies under the
   same rules; a for cycle's declared output can be a stage transition like any
   completed cycle's output.
-
-Concrete compiler and renderer types remain implementation choices.
 
 ## 9. Acceptance scenarios
 

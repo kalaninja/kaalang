@@ -3,23 +3,66 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kaalang_compiler::{
-    Analysis, BlockKind, Input, ProducerId, SemanticModel,
-    topology::{Connection, Destination, ExitId, Node, NodeId, NodeKind, Source, Topology},
+    Analysis, Flow, Input, ProducerId, SemanticModel,
+    topology::{Connection, Destination, Exit, ExitId, Node, NodeId, NodeKind, Source, Topology},
 };
-use syn::{Expr, FnArg, Pat, PatIdent, ext::IdentExt};
+use proc_macro2::Span;
+use syn::{PatIdent, ext::IdentExt};
 
 pub(crate) use self::stage::derive_stage;
 use crate::text::RichText;
 
 mod stage;
 
+/// One list of wire names, as a label draws it.
+#[derive(Clone, Copy)]
+pub(crate) enum WireList {
+    /// The displayed captures of a node.
+    Capture(NodeId),
+    Handover(ExitId),
+    Junction(usize),
+}
+
+/// One name of a wire list and where its producer binds it.
+type Wire = (String, Option<Span>);
+
+/// The names of one wire list, and where the producer of each binds it. `()`
+/// names no wire and has no binding.
+#[derive(Clone, Default)]
+struct NamedWires {
+    names: Vec<String>,
+    bindings: Vec<Option<Span>>,
+}
+
+impl FromIterator<Wire> for NamedWires {
+    fn from_iter<I: IntoIterator<Item = Wire>>(wires: I) -> Self {
+        let (names, bindings) = wires.into_iter().unzip();
+        Self { names, bindings }
+    }
+}
+
+impl NamedWires {
+    /// Keeps the names, with their bindings, whose position `keep` accepts.
+    fn retain_at(&mut self, keep: impl Fn(usize) -> bool) {
+        let wires = std::mem::take(self);
+        *self = wires
+            .names
+            .into_iter()
+            .zip(wires.bindings)
+            .enumerate()
+            .filter(|(position, _)| keep(*position))
+            .map(|(_, wire)| wire)
+            .collect();
+    }
+}
+
 /// Every string the diagram shows, keyed by the structural item that owns it.
 #[derive(Clone, Default)]
 pub(crate) struct Captions {
     label: BTreeMap<NodeId, RichText>,
     capture: BTreeMap<NodeId, Vec<String>>,
-    capture_label: BTreeMap<NodeId, Vec<String>>,
-    handover: BTreeMap<ExitId, Vec<String>>,
+    capture_label: BTreeMap<NodeId, NamedWires>,
+    handover: BTreeMap<ExitId, NamedWires>,
     branch_description: BTreeMap<ExitId, RichText>,
     cycle_inputs: BTreeMap<usize, String>,
     /// Per cycle, each declared output's binding label and bare name.
@@ -27,7 +70,7 @@ pub(crate) struct Captions {
     /// Borrowed for a node that has no caption of its own.
     empty: RichText,
     /// Per junction, the merged wire names, empty for a structural junction.
-    junction: Vec<Vec<String>>,
+    junction: Vec<NamedWires>,
     back_marker: BTreeSet<NodeId>,
 }
 
@@ -46,7 +89,7 @@ impl Captions {
     /// The displayed capture list. `()` marks an empty input on a connected
     /// computational node; it is neither a wire name nor a synthetic capture.
     pub(crate) fn capture_label(&self, node: NodeId) -> &[String] {
-        self.capture_label.get(&node).map_or(&[], Vec::as_slice)
+        self.names(WireList::Capture(node))
     }
 
     /// Derived cycle inputs may share a hand-over regardless of order.
@@ -61,7 +104,7 @@ impl Captions {
     /// The wires newly provided at this exit, labeled whether or not any
     /// connection leaves.
     pub(crate) fn handover(&self, exit: ExitId) -> &[String] {
-        self.handover.get(&exit).map_or(&[], Vec::as_slice)
+        self.names(WireList::Handover(exit))
     }
 
     /// The authored description of a question branch, which replaces that
@@ -94,7 +137,24 @@ impl Captions {
 
     /// The wires that meet at one junction, in model order.
     pub(crate) fn junction_wires(&self, junction: usize) -> &[String] {
-        self.junction.get(junction).map_or(&[], Vec::as_slice)
+        self.names(WireList::Junction(junction))
+    }
+
+    fn wires(&self, list: WireList) -> Option<&NamedWires> {
+        match list {
+            WireList::Capture(node) => self.capture_label.get(&node),
+            WireList::Handover(exit) => self.handover.get(&exit),
+            WireList::Junction(junction) => self.junction.get(junction),
+        }
+    }
+
+    pub(crate) fn names(&self, list: WireList) -> &[String] {
+        self.wires(list).map_or(&[], |wires| &wires.names)
+    }
+
+    /// Where the producer of each name of `list` binds it.
+    pub(crate) fn bindings(&self, list: WireList) -> &[Option<Span>] {
+        self.wires(list).map_or(&[], |wires| &wires.bindings)
     }
 
     /// Whether the two ends of one connection are drawn as a single label:
@@ -128,28 +188,44 @@ impl Captions {
 pub(crate) fn derive(model: &SemanticModel, start: &str, return_type: &str) -> Captions {
     derive_with_parameters(
         model,
+        &model.analysis,
+        None,
         start,
         return_type,
         &named_parameters(&model.analysis),
     )
 }
 
+/// `root` is the whole flow's analysis and `part` the local flow `model`
+/// draws, as `Analysis::binding` takes them; `parameters` captions that local
+/// flow's inputs.
 #[allow(clippy::too_many_lines)] // One cohesive pass derives every displayed caption.
 fn derive_with_parameters(
     model: &SemanticModel,
+    root: &Analysis,
+    part: Option<usize>,
     start: &str,
     return_type: &str,
     parameters: &[String],
 ) -> Captions {
     let topology = &model.topology;
-    let end_input = end_input(model);
+    let flow = &model.analysis.flow;
+    let binding = |producer| root.binding(part, producer);
+    let produced = |producer| -> Wire {
+        (
+            provided(&model.analysis, parameters, producer),
+            Some(binding(producer)),
+        )
+    };
+    let end_input = end_input(model, binding);
     let mut captions = Captions::default();
+    let captured_wire =
+        |input: &Input| -> Wire { (captured(input), flow.producer(&input.ident).map(binding)) };
 
     for node in &topology.nodes {
         let label = match node.id {
             NodeId::Start => RichText::marked_code(start),
             NodeId::Block(_) if node.kind == NodeKind::End => RichText::code(return_type),
-            // Undescribed calls use the callee path.
             NodeId::Block(block) => match &model.analysis.flow.blocks[block].description {
                 Some(text) => RichText::markdown(text),
                 None if node.kind == NodeKind::Call => {
@@ -168,7 +244,7 @@ fn derive_with_parameters(
         let capture = match node.id {
             NodeId::Block(_) if node.kind == NodeKind::End => end_input.clone(),
             NodeId::Block(block) if node.kind == NodeKind::Cycle => {
-                cycle_input_names(model, parameters, block)
+                cycle_inputs(model, block, produced)
             }
             // The for-entry captures what the for cycle's header does.
             NodeId::Block(block) if node.kind == NodeKind::ForEntry => {
@@ -179,17 +255,18 @@ fn derive_with_parameters(
                     .inputs
                     .iter()
                     .filter(|input| !input.derived)
-                    .map(captured)
+                    .map(captured_wire)
                     .collect()
             }
             NodeId::Block(block) => model.analysis.flow.blocks[block]
                 .inputs
                 .iter()
-                .map(captured)
+                .map(captured_wire)
                 .collect(),
             NodeId::Start | NodeId::Case { .. } => Vec::new(),
         };
-        let displayed = if capture.is_empty()
+        let capture: NamedWires = capture.into_iter().collect();
+        let displayed = if capture.names.is_empty()
             && !matches!(
                 node.kind,
                 NodeKind::Start | NodeKind::End | NodeKind::Case | NodeKind::ForEnd
@@ -199,11 +276,14 @@ fn derive_with_parameters(
                 .next()
                 .is_some()
         {
-            vec!["()".to_owned()]
+            NamedWires {
+                names: vec!["()".to_owned()],
+                bindings: vec![None],
+            }
         } else {
             capture.clone()
         };
-        captions.capture.insert(node.id, capture);
+        captions.capture.insert(node.id, capture.names);
         captions.capture_label.insert(node.id, displayed);
     }
 
@@ -218,11 +298,12 @@ fn derive_with_parameters(
             captions.label.insert(caps.bottom, label.clone());
         }
         captions.label.insert(NodeId::Block(boundary.header), label);
-        let inputs = cycle_input_names(model, parameters, boundary.header);
+        let inputs = cycle_inputs(model, boundary.header, produced);
         if !inputs.is_empty() {
+            let names: Vec<String> = inputs.into_iter().map(|(name, _)| name).collect();
             captions
                 .cycle_inputs
-                .insert(boundary.header, inputs.join(", "));
+                .insert(boundary.header, names.join(", "));
         }
     }
     // Both views name a cycle's outputs: the expanded results and the
@@ -241,19 +322,8 @@ fn derive_with_parameters(
     }
 
     for exit in &topology.exits {
-        captions.handover.insert(
-            exit.id,
-            exit.provides
-                .iter()
-                .filter(|&&producer| match producer {
-                    ProducerId::BlockOutput { block, output } => !model.analysis.flow.blocks[block]
-                        .unnamed_outputs
-                        .contains(&output),
-                    ProducerId::FlowInput(_) => true,
-                })
-                .map(|&producer| provided(&model.analysis, parameters, producer))
-                .collect(),
-        );
+        let wires = handed_over(flow, exit).map(produced).collect();
+        captions.handover.insert(exit.id, wires);
         if let (NodeId::Block(block), Some(branch)) = (exit.id.node, exit.id.branch)
             && let Some(description) = model.analysis.flow.blocks[block]
                 .question_branches
@@ -273,13 +343,7 @@ fn derive_with_parameters(
             junction
                 .merges
                 .iter()
-                .map(|&merge| {
-                    provided(
-                        &model.analysis,
-                        parameters,
-                        model.analysis.merges[merge].producers[0],
-                    )
-                })
+                .map(|&merge| produced(model.analysis.merges[merge].producers[0]))
                 .collect()
         })
         .collect();
@@ -287,34 +351,31 @@ fn derive_with_parameters(
     captions
 }
 
-/// The value transferred into end.
-fn end_input(model: &SemanticModel) -> Vec<String> {
-    model
-        .analysis
-        .flow
-        .blocks
+/// The producers whose names an exit's hand-over caption lists, in its order:
+/// an unnamed output has no name to list.
+fn handed_over<'a>(flow: &'a Flow, exit: &'a Exit) -> impl Iterator<Item = ProducerId> + 'a {
+    exit.provides
         .iter()
-        .find(|block| block.kind == BlockKind::Return)
-        .map_or_else(Vec::new, |block| transferred(&block.body))
+        .copied()
+        .filter(|&producer| match producer {
+            ProducerId::BlockOutput { block, output } => {
+                !flow.blocks[block].unnamed_outputs.contains(&output)
+            }
+            ProducerId::FlowInput(_) => true,
+        })
 }
 
-/// Return operands label their wires individually, so an adjacent hand-over can
-/// share the same ordered list. A tuple-valued wire still contributes one name.
-fn transferred(value: &Expr) -> Vec<String> {
-    match value {
-        Expr::Group(group) => transferred(&group.expr),
-        Expr::Paren(parenthesized) => transferred(&parenthesized.expr),
-        Expr::Path(path) => vec![
-            path.path
-                .get_ident()
-                .expect("a return value is one captured input")
-                .unraw()
-                .to_string(),
-        ],
-        Expr::Tuple(tuple) if tuple.elems.is_empty() => vec!["()".to_owned()],
-        Expr::Tuple(tuple) => tuple.elems.iter().flat_map(transferred).collect(),
-        _ => unreachable!("a return value is validated before captions are derived"),
-    }
+/// The value transferred into end, each wire with where its producer binds it.
+fn end_input(model: &SemanticModel, binding: impl Fn(ProducerId) -> Span) -> Vec<Wire> {
+    model
+        .analysis
+        .returned()
+        .into_iter()
+        .map(|operand| match operand {
+            Some((name, producer)) => (name.unraw().to_string(), producer.map(&binding)),
+            None => ("()".to_owned(), None),
+        })
+        .collect()
 }
 
 /// The named flow parameters, in flow-input order, as the start node's
@@ -322,15 +383,9 @@ fn transferred(value: &Expr) -> Vec<String> {
 /// Rust gives it.
 fn named_parameters(analysis: &Analysis) -> Vec<String> {
     analysis
-        .parameters
-        .iter()
-        .filter_map(|parameter| match parameter {
-            FnArg::Receiver(_) => Some("self".to_owned()),
-            FnArg::Typed(parameter) => match parameter.pat.as_ref() {
-                Pat::Ident(binding) => Some(binding_label(binding)),
-                _ => None,
-            },
-        })
+        .flow_input_bindings()
+        .into_iter()
+        .map(|binding| binding.map_or_else(|| "self".to_owned(), binding_label))
         .collect()
 }
 
@@ -355,16 +410,20 @@ fn provided(analysis: &Analysis, parameters: &[String], producer: ProducerId) ->
 
 /// A cycle's gate and the outer wires its body captures, each with its
 /// producer's `mut` rather than a capture form.
-fn cycle_input_names(model: &SemanticModel, parameters: &[String], block: usize) -> Vec<String> {
+fn cycle_inputs(
+    model: &SemanticModel,
+    block: usize,
+    wire: impl Fn(ProducerId) -> Wire,
+) -> Vec<Wire> {
     let flow = &model.analysis.flow;
     flow.blocks[block]
         .inputs
         .iter()
         .map(|input| {
-            let producer = flow
-                .producer(&input.ident)
-                .expect("a cycle input names a produced wire");
-            provided(&model.analysis, parameters, producer)
+            wire(
+                flow.producer(&input.ident)
+                    .expect("a cycle input names a produced wire"),
+            )
         })
         .collect()
 }

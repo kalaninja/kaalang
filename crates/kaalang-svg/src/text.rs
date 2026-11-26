@@ -294,7 +294,6 @@ fn math_font() -> Option<&'static MathFont> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-/// A contiguous piece of text whose characters share the same style.
 pub(crate) struct StyledSpan {
     pub(crate) text: String,
     pub(crate) style: Style,
@@ -1067,15 +1066,16 @@ fn clusters_width(clusters: &[Cluster], font_size: i32) -> i32 {
         .unwrap_or(i32::MAX)
 }
 
-fn fitting_count(clusters: &[Cluster], budget: i32, font_size: i32) -> usize {
+/// A line break is needed only when a cluster takes this prefix over budget.
+fn line_break(advances: impl Iterator<Item = i64>, budget: i32) -> Option<usize> {
     let mut used = 0;
-    for (count, cluster) in clusters.iter().enumerate() {
-        used += cluster.advance(font_size);
+    for (count, advance) in advances.enumerate() {
+        used += advance;
         if used / TEXT_ADVANCE_SCALE > i64::from(budget) {
-            return count.max(1);
+            return Some(count.max(1));
         }
     }
-    clusters.len()
+    None
 }
 
 /// Whether `cluster` is an underscore in Rust source, after which an
@@ -1106,8 +1106,14 @@ pub(crate) fn wrap_text(text: &RichText, budget: i32, font_size: i32) -> Vec<Ric
             continue;
         }
         let mut start = 0;
-        while clusters_width(&clusters[start..], font_size) > budget {
-            let hard_end = start + fitting_count(&clusters[start..], budget, font_size);
+        let fitting = |start: usize| {
+            line_break(
+                clusters[start..].iter().map(|c| c.advance(font_size)),
+                budget,
+            )
+        };
+        while let Some(count) = fitting(start) {
+            let hard_end = start + count;
             let candidates = &clusters[start..hard_end];
             // Never a lone space, nor a badge or a leading underscore without
             // the name it belongs to.
@@ -1153,7 +1159,6 @@ fn line(clusters: &[Cluster]) -> RichText {
     line
 }
 
-/// Height and baseline positions for a wrapped block of label text.
 pub(crate) struct TextBlockMetrics {
     pub(crate) height: i32,
     pub(crate) baselines: Vec<i32>,
@@ -1200,6 +1205,43 @@ pub(crate) fn block_metrics(
     TextBlockMetrics { height, baselines }
 }
 
+/// The horizontal advance bounds of ordered, disjoint byte ranges in wrapped
+/// code. A range spanning lines visits each line it occupies.
+pub(crate) fn code_ranges(
+    lines: &[RichText],
+    font: i32,
+    ranges: impl Iterator<Item = Range<usize>>,
+    mut visit: impl FnMut(usize, usize, Range<usize>, i32, i32),
+) {
+    let mut ranges = ranges.enumerate().peekable();
+    let mut start = 0;
+    for (line, text) in lines.iter().map(AsRef::<str>::as_ref).enumerate() {
+        let end = start + text.len();
+        while let Some((index, range)) = ranges.peek() {
+            if range.start >= end {
+                break;
+            }
+            let from = range.start.max(start);
+            let to = range.end.min(end);
+            if from < to {
+                let width = |at| text_width(&RichText::code(&text[..at - start]), font);
+                visit(
+                    *index,
+                    line,
+                    from - start..to - start,
+                    width(from),
+                    width(to),
+                );
+            }
+            if range.end > end {
+                break;
+            }
+            ranges.next();
+        }
+        start = end;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1209,6 +1251,16 @@ mod tests {
 
     fn wrap_literal(text: &str, budget: i32, font_size: i32) -> Vec<RichText> {
         wrap_text(&RichText::literal(text), budget, font_size)
+    }
+
+    #[test]
+    fn choosing_a_line_break_measures_only_through_the_first_overflow() {
+        // Only the prefix of a long paragraph can influence this line.
+        let mut measured = 0;
+        let advances =
+            std::iter::repeat_n(super::TEXT_ADVANCE_SCALE, 32_768).inspect(|_| measured += 1);
+        assert_eq!(super::line_break(advances, 40), Some(40));
+        assert_eq!(measured, 41);
     }
 
     #[test]

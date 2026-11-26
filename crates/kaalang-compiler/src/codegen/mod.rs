@@ -2,9 +2,9 @@
 
 use std::collections::{HashMap, HashSet};
 
-use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
+use proc_macro2::{Group, Ident, Span, TokenStream as TokenStream2, TokenTree};
 use quote::{ToTokens, quote, quote_spanned};
-use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, ext::IdentExt, token::Mut};
+use syn::{Expr, FnArg, ItemFn, Lifetime, Pat, Result, Stmt, ext::IdentExt, token::Mut};
 
 use crate::{Analysis, Block, BlockKind, Branch, ExecutionPlan, Flow, Input};
 
@@ -161,7 +161,6 @@ impl Bindings {
         })
     }
 
-    /// Declares one inferred gate per gated wire.
     fn gate_declarations(&self) -> TokenStream2 {
         let mut gates = self.gates.values().collect::<Vec<_>>();
         gates.sort();
@@ -212,18 +211,39 @@ fn in_place(flow: &Flow, bindings: &Bindings, index: usize, next: &ExecutionPlan
 /// root flow.
 fn transfer(flow: &Flow, bindings: &Bindings, index: usize, exit: &TokenStream2) -> TokenStream2 {
     let block = &flow.blocks[index];
-    let captures = input_bindings(&block.inputs, bindings);
-    let value = transfer_value(&block.body);
-    // A hidden export forwards a declared output, which may be named `_like_this`.
-    let allow = (block.kind == BlockKind::Export)
-        .then(|| quote!(#[allow(clippy::used_underscore_binding)]));
+    let mut captures = input_bindings(&block.inputs, bindings);
+    let mut value = transfer_value(&block.body);
+    // A hidden export forwards a declared output, which may be named
+    // `_like_this`: no author reads it here, so clippy must not report the read.
+    if block.kind == BlockKind::Export {
+        captures = hidden(captures);
+        value = value.map(hidden);
+    }
     quote_spanned! {block.span=>
-        #allow
         {
             #captures
             #exit #value;
         }
     }
+}
+
+/// Gives each identifier the expansion's hygiene at its own place.
+fn hidden(tokens: TokenStream2) -> TokenStream2 {
+    tokens
+        .into_iter()
+        .map(|token| match token {
+            TokenTree::Group(group) => {
+                let mut inner = Group::new(group.delimiter(), hidden(group.stream()));
+                inner.set_span(group.span());
+                inner.into()
+            }
+            TokenTree::Ident(mut ident) => {
+                ident.set_span(Span::mixed_site().located_at(ident.span()));
+                ident.into()
+            }
+            token => token,
+        })
+        .collect()
 }
 
 /// Emits Rust from a verified plan, including its resolved branch-exit targets.
@@ -326,12 +346,21 @@ fn loop_label(index: usize, span: Span) -> Lifetime {
     )
 }
 
-/// Splices the statements of a block body so lowering adds no extra braces.
+/// Keeps a body's scope when a hoisted item can shadow a capture alias.
+/// A statement macro can introduce such an item too.
 pub(crate) fn block_body(body: &Expr) -> TokenStream2 {
     match body {
         Expr::Block(block) if block.attrs.is_empty() && block.label.is_none() => {
             let statements = &block.block.stmts;
-            quote!(#(#statements)*)
+            if statements
+                .iter()
+                .any(|stmt| matches!(stmt, Stmt::Item(_) | Stmt::Macro(_)))
+            {
+                // This extra block belongs to lowering, including its braces for Rust's lints.
+                quote!({ #(#statements)* })
+            } else {
+                quote!(#(#statements)*)
+            }
         }
         body => quote!(#body),
     }
@@ -358,9 +387,15 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
             } else {
                 (mutable, None)
             };
-            quote_spanned!(alias.span()=>
-                #[allow(unused_variables, clippy::let_unit_value)]
+            // The read keeps an alias used that only places its block, where an
+            // `allow` would fail under `forbid`; rustc reports no unread `_name`,
+            // and clippy would report this read of one.
+            let read = (!alias.to_string().starts_with('_')).then(|| quote!(let _ = #alias;));
+            // The binding takes the expansion's hygiene, where clippy reports no
+            // binding of a unit control wire.
+            quote_spanned!(Span::mixed_site().located_at(alias.span())=>
                 let #binding_mut #alias = #borrow #borrow_mut #wire;
+                #read
             )
         });
 
@@ -372,17 +407,23 @@ pub(crate) fn input_bindings(inputs: &[Input], bindings: &Bindings) -> TokenStre
 /// # Errors
 ///
 /// Returns the same errors as [`crate::build`].
-pub fn expand(mut function: ItemFn) -> Result<ItemFn> {
+pub fn expand(function: ItemFn) -> Result<ItemFn> {
+    expand_in_scope(function, Span::mixed_site())
+}
+
+/// Expands as [`expand`] does, binding the parameters at `scope`, the span the
+/// shell's signature gives their identifiers.
+pub(crate) fn expand_in_scope(mut function: ItemFn, scope: Span) -> Result<ItemFn> {
     let analysis = crate::analyze(&function)?;
     if !analysis.stages.is_empty() {
-        return stage::expand(function, &analysis);
+        return stage::expand(function, &analysis, scope);
     }
     // Diagram realizability is required even when compilation discards the arrangement.
     let topology = crate::project(&analysis, false);
     crate::construct(&analysis, &topology)?;
 
     let bindings = Bindings::new(&analysis);
-    let parameters = parameters::emit(&mut function, &bindings);
+    let parameters = parameters::emit(&mut function, &bindings, scope);
     let body = flow(&analysis.flow, &analysis.execution_plan, &bindings);
     // Lower in place to preserve `Self`, enclosing generics, and receiver scope.
     *function.block = syn::parse2(quote!({

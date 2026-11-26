@@ -39,32 +39,34 @@ pub(crate) fn flow(function: &ItemFn) -> Result<Flow> {
     Ok(flow)
 }
 
+/// Whether a parameter is a flow input: every one but `_`.
+pub(crate) fn is_flow_input(argument: &FnArg) -> bool {
+    !matches!(argument, FnArg::Typed(argument)
+        if matches!(argument.pat.as_ref(), Pat::Wild(wildcard) if wildcard.attrs.is_empty()))
+}
+
 /// Extracts identifier flow parameters, preserving mutability in the signature.
 fn flow_inputs(function: &ItemFn) -> Result<Vec<Ident>> {
     function
         .sig
         .inputs
         .iter()
-        .filter_map(|argument| match argument {
-            FnArg::Typed(argument) => match argument.pat.as_ref() {
-                Pat::Wild(wildcard) if wildcard.attrs.is_empty() => None,
-                pattern => Some(
-                    simple_binding(pattern, "kaalang flow parameters", true)
-                        .map(|input| input.unraw()),
-                ),
-            },
+        .filter(|argument| is_flow_input(argument))
+        .map(|argument| match argument {
+            FnArg::Typed(argument) => {
+                simple_binding(&argument.pat, "kaalang flow parameters", true)
+                    .map(|input| input.unraw())
+            }
             // A receiver is a flow input like any other, under the one name
             // Rust gives it. Its wire is the receiver itself, so no capture
             // rebinds it and no spelling other than the authored one is legal.
-            FnArg::Receiver(receiver) => Some(Ok(Ident::new("self", receiver.self_token.span()))),
+            FnArg::Receiver(receiver) => Ok(Ident::new("self", receiver.self_token.span())),
         })
         .collect()
 }
 
-/// How a capture of the receiver is spelled, and the wire it names: the
-/// receiver's own spelling. A receiver taken by reference borrows, however it
-/// is spelled; every other receiver, including `mut self` and `self: Box<Self>`,
-/// is a value like `mut name: T` is.
+/// How RFC 0001 §5 spells a capture of the receiver, with whether it borrows
+/// and whether mutably.
 pub(crate) fn receiver_capture(receiver: &Receiver) -> (&'static str, bool, bool) {
     let borrows = match &receiver.kind {
         ReceiverKind::Reference(_, _, mutability) => Some(mutability.is_some()),
@@ -87,8 +89,7 @@ fn body_captures(flow: &Flow, function: &ItemFn) -> Result<()> {
     receiver_captures(flow, function.sig.receiver())
 }
 
-/// Checks every use of the receiver. A capture names a receiver and is spelled
-/// the way the signature declares it; a body that reads `self` captures it.
+/// Checks every use of the receiver against RFC 0001 §5.
 ///
 /// The receiver binds itself, so a capture cannot borrow or move it into
 /// anything else and nothing can put the name out of a body's reach. This walk
@@ -465,7 +466,6 @@ impl<'a> BlockSyntax<'a> {
     }
 }
 
-/// A block body carries neither attributes nor a label.
 fn decorated_body(body: impl ToTokens) -> Error {
     Error::new_spanned(
         body,
@@ -504,9 +504,8 @@ fn block_statement(statement: &Stmt) -> Result<(&[Attribute], Pat, Option<Closur
                     "kaalang blocks do not support `let else`",
                 ));
             }
-            // A block that captures nothing may omit its empty capture list:
-            // `let output = body;` is `let output = || body;`. A closure or
-            // body written by another macro arrives in an invisible group.
+            // A closure or body written by another macro arrives in an
+            // invisible group.
             let closure = match ungrouped(initializer.expr.as_ref()) {
                 Expr::Closure(closure) if !closure.attrs.is_empty() => {
                     return Err(Error::new_spanned(
@@ -782,9 +781,14 @@ fn input(alias: Ident, borrowed: bool, mutable: bool) -> Input {
 
 /// Whether one of a block's captures is spelled `name`, raw or not.
 pub(super) fn captured(inputs: &[Input], name: &Ident) -> bool {
+    capture(inputs, name).is_some()
+}
+
+/// The block's capture spelled `name`, raw or not.
+pub(crate) fn capture<'a>(inputs: &'a [Input], name: &Ident) -> Option<&'a Input> {
     inputs
         .iter()
-        .any(|input| input.alias.unraw() == name.unraw())
+        .find(|input| input.alias.unraw() == name.unraw())
 }
 
 /// Rejects transfers out of the body's own control-flow scope. A nested
@@ -941,17 +945,29 @@ pub(crate) fn description(attribute: &Attribute, subject: &str) -> Result<String
             format!("a {subject} description must be a string literal"),
         )
     })?;
-    if description.value().trim().is_empty() {
+    let text = literal_text(&description);
+    if text.trim().is_empty() {
         return Err(Error::new_spanned(
             description,
             format!("a {subject} requires a non-empty description"),
         ));
     }
 
-    Ok(description.value())
+    Ok(text)
 }
 
-/// Extracts an identifier binding, optionally permitting an authored `mut`.
+/// A string literal's value as rustc reads it. rustc turns a file's CRLF into
+/// a line feed before it reads anything; syn does so in a cooked string and
+/// leaves a raw one as the file has it.
+pub(crate) fn literal_text(literal: &LitStr) -> String {
+    let text = literal.value();
+    if text.contains("\r\n") && literal.token().to_string().starts_with('r') {
+        text.replace("\r\n", "\n")
+    } else {
+        text
+    }
+}
+
 fn simple_binding(pattern: &Pat, subject: &str, allow_mut: bool) -> Result<Ident> {
     match pattern {
         Pat::Ident(binding)
@@ -974,8 +990,17 @@ mod tests {
     use proc_macro2::Ident;
     use syn::{ItemFn, parse_quote};
 
-    use super::{block_input, block_outputs, flow, reject_control_transfers};
+    use super::{block_input, block_outputs, flow, literal_text, reject_control_transfers};
     use crate::model::BlockKind;
+
+    #[test]
+    fn a_literal_reads_a_crlf_in_the_file_as_a_line_feed() {
+        let text = |literal: &str| literal_text(&syn::parse_str(literal).expect("a string"));
+        assert_eq!(text("r\"one\r\ntwo\""), "one\ntwo");
+        assert_eq!(text("\"one\r\ntwo\""), "one\ntwo");
+        // An escape is the author's own carriage return.
+        assert_eq!(text(r#""one\r\ntwo""#), "one\r\ntwo");
+    }
 
     #[test]
     fn captures_preserve_borrowing_mutability_and_authored_spelling() {

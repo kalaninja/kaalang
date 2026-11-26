@@ -1,9 +1,6 @@
 # RFC 0005: Markdown
 
 - Status: accepted
-- Language: [RFC 0001: kaalang Language](0001-language.md)
-- Visual language: [RFC 0002: kaalang Visual Language](0002-visual-language.md)
-- Renderer: [RFC 0003: kaalang SVG Renderer](0003-svg-renderer.md)
 
 ## 1. Motivation and scope
 
@@ -100,9 +97,8 @@ Strikethrough, superscript, and subscript extend this notation with the
 delimiters in §3. Single `^` and `~` pairs normally delimit text at word
 boundaries. Index notation also permits a pair in otherwise plain text when at
 least one outside neighbor is alphanumeric and the enclosed text is nonempty and
-has no leading or trailing whitespace. This makes `x^2^` and `H~2~O` useful.
-Escaped markers and code spans remain literal. The three supported tag pairs
-denote text effects, not HTML content.
+has no leading or trailing whitespace. Escaped markers and code spans remain
+literal. The three supported tag pairs denote text effects, not HTML content.
 
 Supported effects may combine. For example, `***text***` is bold italic, and
 `**very *important* text**` adds italic to the bold word `important`.
@@ -112,8 +108,7 @@ literal.
 For nested superscripts or subscripts, the innermost position wins; nesting does
 not repeatedly shrink the font or accumulate baseline shifts.
 
-Unmatched delimiters remain text. Invalid TeX and formatting introduce no syntax
-errors in otherwise valid descriptions.
+Unmatched delimiters remain text.
 
 ### 3.2 Escapes, code, and formulas
 
@@ -286,17 +281,10 @@ serialization; do not reparse in the serializer or strip markers after layout.
 
 Every renderer must follow the same notation and literal fallback rules.
 
-## 6. Compatibility and RFC integration
+## 6. Changes to earlier RFCs
 
-This is a presentation change for existing descriptions containing recognized
-marker pairs, escapes, or character references. For example, a description
-containing `**urgent**` previously showed asterisks and will now show bold text.
-Escape those markers to keep them visible. Raw Rust strings bypass Rust escapes,
-not this notation. Descriptions without recognized notation keep their existing
-presentation.
-
-Earlier accepted RFCs remain unchanged. This RFC supersedes the following
-provisions only within the scope of description formatting:
+This RFC supersedes the following provisions only within the scope of
+description formatting:
 
 - [RFC 0002 §6](0002-visual-language.md#6-wires-and-labels): the requirement to
   display exact authored text now permits the description interpretation defined
@@ -312,16 +300,3 @@ provisions only within the scope of description formatting:
 - [RFC 0003 §4](0003-svg-renderer.md#4-validation-and-failures): a diagram also
   fails when a description's character reference decodes to a character XML 1.0
   cannot represent.
-
-The requirement for nonempty Rust description strings in
-[RFC 0001 §3](0001-language.md#3-block-statements) and all other provisions of
-the earlier RFCs remain in force.
-
-## 7. Acceptance criteria
-
-- Every supported effect, combination, escape, quote, formula, literal fallback,
-  and explicit newline follows §3.
-- Wrapping, shortening, formula placement, accessibility, and XML validity meet
-  §4, including when several effects occur in one description.
-- A flow using the complete notation retains the same Rust behavior as its
-  plain-text equivalent.

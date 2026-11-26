@@ -52,18 +52,17 @@
   producers of one wire before any capture.
 - **frame**: one sequence level: the root, preparation, a stage body, or one
   iteration of a cycle body.
-- **cycle**: the only name for the kaalang repetition block. A loop cycle
-  completes through a declared output and repeats at `continue`; a for cycle
-  completes when its items run out. "loop" names only Rust's `loop`, the loop
-  cycle form, and the loop marker.
+- **cycle**: the only name for the kaalang repetition block. A **loop cycle**,
+  with a Rust `loop` body, completes through a declared output and repeats at
+  `continue`; a **for cycle**, a Rust `for` loop, completes when its items run
+  out. "loop" names only Rust's `loop`, the loop cycle form, and the loop
+  marker.
 - **iteration**: one execution of a cycle body.
 - **gate**: a wire whose availability lets a block or transfer take part in a
   route; a cycle header may name one.
 - **export**: passes one selected value out of a cycle at its **result
   boundary**, or to another stage through a transition. At a cycle, a **boundary
   consumer** is the implicit by-value use of the exported wire.
-- **loop cycle**, **for cycle**: the two cycle forms, with a Rust `loop` body or
-  a Rust `for` loop.
 - **item wires**: the wires a for cycle's item pattern binds for one iteration.
 - **for-entry**, **for-end**: the caps above and below an expanded for cycle's
   body.
@@ -106,10 +105,17 @@
   cycle, for-entry, for-end, transition, merge, end. A return draws only its
   route to end.
 - **connection**: one drawn control-flow link; not a wire.
+- **ribbon**: the wires a connection or a merge carries: those in scope there
+  that a block further along captures. The diagram does not draw it.
 - **exit**, **hand-over**, **distributor**: where connections leave a node, the
   wires labeled there, and the shared segment a select's cases fan out from.
 - **label**, **parameter panel**: text on a node or connection, and the panel
   beside start listing the flow's Rust parameters.
+- **hotspot**: a diagram rectangle with what it stands for: a node, cycle
+  boundary, or wire name in a label, with its source (what the node draws, a
+  call's callee, or where the producer binds the wire); a connection segment or
+  merge, with its ribbon; a path in a tile's type, a relationship's target, or
+  an incoming card's header, with the type it names.
 - **column**, **row**: the vertical and horizontal positions nodes and segments
   align to; in a type diagram, those of the incoming cards.
 - **cycle boundary**: the region drawn around an expanded loop cycle; its body

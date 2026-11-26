@@ -6,7 +6,10 @@ fn run_choice_skeleton_with_a_shared_consumer(value: i32) -> i32 {
     #[kaa::choice("What is the sign of the value?")]
     #[kaa::case("The value is negative.")]
     #[kaa::case("The value is nonnegative.")]
-    let (negative, nonnegative) = |value| todo!();
+    let (negative, nonnegative) = |value| match value {
+        ..0 => todo!(),
+        _ => todo!(),
+    };
 
     #[kaa::action("Build the negative magnitude.")]
     let magnitude = |negative| todo!();

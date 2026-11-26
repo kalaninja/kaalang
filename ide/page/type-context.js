@@ -1,0 +1,105 @@
+/** Requests keep distinct ids when the page moves to another type or text. */
+let next = 0;
+
+/** The host's references for the type a drawing shows. */
+export class TypeContext {
+  /** Each file the engine finds references in, read in the crate the engine reads it in. */
+  #files = [];
+  /** Where the focus's text stands in the workspace's module tree. */
+  #place;
+  #referrers = null;
+  #waiting = false;
+  #refreshing = false;
+  #edited = false;
+  version = 0;
+
+  constructor(path) {
+    this.path = path;
+  }
+
+  /** The bindings number their sources from the focus, then each other file. */
+  sources(uri, text) {
+    const own = this.#files.find((file) => file.uri === uri);
+    const others = this.#files.filter((file) => file.uri !== uri);
+    return {
+      uris: [uri, ...others.map((file) => file.uri)],
+      texts: [text, ...others.map((file) => file.text)],
+      context: {
+        // The focus's references count only in the text they were found in.
+        offsets: own?.text === text ? own.offsets : [],
+        place: this.#place,
+        files: others.map(({ text, cfg, offsets, place }) => ({
+          text,
+          cfg,
+          offsets,
+          place,
+        })),
+      },
+    };
+  }
+
+  /** A refresh keeps its finished diagram until the new references arrive. */
+  canPublish() {
+    if (this.#refreshing && this.#waiting) return false;
+    this.#refreshing = false;
+    return true;
+  }
+
+  /** Asks again, when the engine may have analyzed more. */
+  refresh(host) {
+    if (this.#referrers) {
+      this.#refreshing = true;
+      this.#request(host, this.#referrers.uri, this.#referrers.offset);
+    }
+  }
+
+  /**
+   * The focus's text changed: the next drawing asks again, and shows the
+   * cards of the other files meanwhile.
+   */
+  edited() {
+    this.#edited = true;
+    this.#refreshing = false;
+  }
+
+  /**
+   * The text is the drawn one again. A host may have dropped the request an
+   * edit overtook, so it asks again.
+   */
+  unchanged(host) {
+    if (this.#edited && this.#waiting) {
+      this.ask(host, this.#referrers.uri, this.#referrers.offset);
+    }
+  }
+
+  /** Asks for the references to the focus named at `offset` of `uri`, once per text. */
+  ask(host, uri, offset) {
+    if (this.#referrers && !this.#edited) return;
+    this.#edited = false;
+    this.#request(host, uri, offset);
+  }
+
+  #request(host, uri, offset) {
+    this.#referrers = { id: ++next, uri, offset };
+    this.#waiting = true;
+    host.send({ type: "referrers", ...this.#referrers });
+  }
+
+  /** Only the latest answer can change the drawing. */
+  receive(message) {
+    if (message.type !== "referrers" || message.id !== this.#referrers?.id)
+      return false;
+    this.#waiting = false;
+    const place = message.focus?.place;
+    // A refresh that finds the same references leaves the drawing as it is.
+    if (
+      JSON.stringify([message.files, place]) !==
+      JSON.stringify([this.#files, this.#place])
+    ) {
+      this.#files = message.files;
+      this.#place = place;
+      ++this.version;
+    }
+    return true;
+  }
+}

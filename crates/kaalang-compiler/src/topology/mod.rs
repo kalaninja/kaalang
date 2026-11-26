@@ -72,10 +72,7 @@ pub enum NodeKind {
     Case,
     End,
     StageTransition,
-    /// The for-entry of an expanded for cycle, which takes its next item.
     ForEntry,
-    /// The for-end of an expanded for cycle, where each iteration ends and
-    /// from which the completed cycle continues.
     ForEnd,
 }
 
@@ -129,9 +126,8 @@ pub struct Exit {
     pub provides: Vec<ProducerId>,
 }
 
-/// A merge or cycle/transfer boundary, with no computation or new producer.
-/// Merges with identical arrivals share one junction. A cycle result may reuse
-/// the merge feeding its output; other structural junctions merge no wires.
+/// A cycle result may reuse the merge feeding its output; other structural
+/// junctions merge no wires.
 #[derive(Clone, Default)]
 pub struct Junction {
     /// The `Analysis::merges` entries that meet here, in model order.
@@ -140,7 +136,6 @@ pub struct Junction {
     pub is_cycle_result: bool,
 }
 
-/// The visual topology of one flow.
 #[derive(Clone, Default)]
 pub struct Topology {
     pub nodes: Vec<Node>,
@@ -150,12 +145,9 @@ pub struct Topology {
     /// Every node and junction, sorted in authored order, so a lookup is a
     /// binary search.
     pub vertices: Vec<Vertex>,
-    /// Placement-only precedence, never drawn as execution: iteration ends before
-    /// what follows them, a cycle body before its result or for-end, and every
-    /// sink before end and each stage transition.
+    /// Placement-only precedence, never drawn as execution.
     pub order: Vec<Connection>,
     pub back_edges: Vec<Connection>,
-    /// The visible input and result boundaries of expanded cycles.
     pub cycle_boundaries: Vec<CycleBoundary>,
     /// Repeating loop cycles only, in header order, so an enclosing cycle comes
     /// before those nested in it. A for cycle has no back edge and is not listed.
@@ -193,6 +185,19 @@ pub(crate) fn linked(pairs: &[(usize, usize)]) -> Topology {
 }
 
 impl Topology {
+    /// Every vertex a cycle boundary holds: its body's, the cycles nested in
+    /// it included, its entry, and its results.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `boundary` is not one of this topology's.
+    #[must_use]
+    pub fn boundary_vertices(&self, flow: &Flow, boundary: &CycleBoundary) -> BTreeSet<Vertex> {
+        let mut vertices = self.body_vertices(flow, boundary.header);
+        vertices.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
+        vertices
+    }
+
     /// Vertices drawn inside the cycle body beginning at `header`: its own
     /// blocks and their cases, together with its entry and tail and those of the
     /// cycles nested in it.
@@ -423,7 +428,6 @@ pub(crate) struct Analyzed<'a> {
     pub(crate) collapse_cycles: bool,
 }
 
-/// Builds the visual topology of one validated flow.
 #[allow(clippy::too_many_lines)] // Coordinates each projection phase in dependency order.
 pub(crate) fn project(model: &Analyzed<'_>) -> Topology {
     let mut nodes = vec![Node {
@@ -748,6 +752,14 @@ impl Source {
                 && left.branch.is_some_and(|branch| branch > 0)
                 && right.branch.is_some_and(|branch| branch > 0))
     }
+}
+
+/// Whether the routes of two connections may share a run, and split or join
+/// where they touch: they leave one exit, reach one destination, or leave side
+/// exits of one node, which fan out along one row.
+#[must_use]
+pub fn may_share_run(left: (Source, Destination), right: (Source, Destination)) -> bool {
+    left.0 == right.0 || left.1 == right.1 || left.0.is_side_exit_beside(right.0)
 }
 
 impl From<Source> for Vertex {
@@ -1273,9 +1285,7 @@ pub struct Cycle {
     pub header: usize,
     pub entry: usize,
     pub tail: usize,
-    /// The preferred contour, not a requirement: choose the left
-    /// side unless every repeating route takes the rightmost branch of the
-    /// first selection in the body.
+    /// The preferred contour of RFC 0002 §8, not a requirement.
     pub(crate) prefer_left: bool,
 }
 
@@ -1295,7 +1305,6 @@ pub struct CycleBoundary {
     pub caps: Option<Caps>,
 }
 
-/// The two caps an expanded for cycle draws instead of a boundary.
 #[derive(Clone, Copy)]
 pub struct Caps {
     pub top: NodeId,
@@ -1307,6 +1316,19 @@ pub struct Caps {
 }
 
 impl CycleBoundary {
+    /// Whether `block`, such as a nested cycle's header, lies inside this cycle.
+    #[must_use]
+    pub fn encloses(&self, block: usize) -> bool {
+        (self.header + 1..self.end).contains(&block)
+    }
+
+    /// Whether a connection from `source` to `destination` crosses this
+    /// boundary through its interface: into its entry, or out of a result.
+    #[must_use]
+    pub fn crosses_interface(&self, source: Source, destination: Destination) -> bool {
+        destination == self.entry || self.results.contains(&source)
+    }
+
     /// Projection allocates entry junctions before removing redundant ones.
     fn entry_junction(&self) -> usize {
         let Vertex::Junction(junction) = self.entry else {

@@ -78,7 +78,6 @@ pub(super) fn output_order(flow: &Flow, frames: &Frames<'_>) -> Result<()> {
     Ok(())
 }
 
-/// A repeating route lies between the routes exporting `before` and `after`.
 pub(crate) fn repeat_between(cycle: &Block, before: usize, after: usize) -> Error {
     Error::new(
         cycle.span,
@@ -90,7 +89,6 @@ pub(crate) fn repeat_between(cycle: &Block, before: usize, after: usize) -> Erro
     )
 }
 
-/// The routes exporting `first` leave to the left of those exporting `later`.
 pub(crate) fn out_of_order(cycle: &Block, first: usize, later: usize) -> Error {
     Error::new(
         cycle.output_binding(first).ident.span(),
@@ -102,8 +100,6 @@ pub(crate) fn out_of_order(cycle: &Block, first: usize, later: usize) -> Error {
     )
 }
 
-/// A route reaches the end of the body of the cycle at `header` without
-/// `continue` or a declared output.
 pub(crate) fn open_body(flow: &Flow, header: usize) -> Error {
     let message = if flow.blocks[header].outputs.is_empty() {
         "a route through this kaalang cycle reaches the end of its body; an outputless cycle repeats it with `continue`"

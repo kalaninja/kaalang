@@ -15,10 +15,11 @@ use kaalang_compiler::{
 use self::label::{label_rect, vertical_gaps};
 pub(crate) use self::{
     cycle::CAP_CHAMFER,
+    label::name_rects,
     staged::{StagedScene, layout_staged},
 };
 use crate::{
-    flow::captions::Captions,
+    flow::captions::{Captions, WireList},
     markup::{DOT_RADIUS, MARGIN},
     text::{self, LABEL_FONT, LINE_HEIGHT, RichText, SECONDARY_FONT, wrap_text},
 };
@@ -74,11 +75,9 @@ pub(crate) const BRANCH_LINE_HEIGHT: i32 = 18;
 pub(crate) const CONNECTION_LABEL_HALO: i32 = 5;
 /// Distance between two horizontal runs sharing one row gap.
 const LANE: i32 = 20;
-/// Text budget inside a rectangular node.
 pub(crate) const NODE_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 /// Branch icons lose horizontal space to their slanted sides.
 const BRANCH_LABEL_WIDTH: i32 = NODE_WIDTH - 2 * BRANCH_LABEL_PADDING_X;
-/// Text budget inside a case icon.
 const CASE_LABEL_WIDTH: i32 = CASE_WIDTH - 2 * NODE_LABEL_PADDING_X;
 
 #[derive(Clone, Default)]
@@ -102,10 +101,9 @@ pub(crate) struct Scene {
     stage_rows: Option<staged::StageRows>,
     /// Model-defined body vertices, one set per `topology.cycles` entry.
     bodies: Vec<BTreeSet<Vertex>>,
-    /// The owned vertices of every expanded cycle boundary, including cycles
+    /// The vertices every expanded cycle boundary holds, including cycles
     /// that have no repeating execution and therefore no back edge.
     region_bodies: Vec<BTreeSet<Vertex>>,
-    /// The strings its nodes, exits, and junctions show.
     pub(crate) captions: Rc<Captions>,
     pub(crate) nodes: Vec<Node>,
     pub(crate) parameters: Option<ParameterPanel>,
@@ -132,11 +130,10 @@ pub(crate) struct CycleRegion {
 
 impl CycleRegion {
     /// Left, top, right, bottom, like `Scene::bounds`.
-    pub(super) const fn bounds(&self) -> (i32, i32, i32, i32) {
+    pub(crate) const fn bounds(&self) -> (i32, i32, i32, i32) {
         (self.left, self.top, self.right, self.bottom)
     }
 
-    /// The bounds grown by `by` on every side.
     pub(super) const fn padded(&self, by: i32) -> (i32, i32, i32, i32) {
         (
             self.left - by,
@@ -193,21 +190,21 @@ pub(crate) struct Label {
 
 #[derive(Clone, Copy)]
 pub(crate) enum LabelKind {
-    Wire,
+    Wire(WireList),
     Branch,
 }
 
 impl LabelKind {
     pub(crate) const fn font_size(self) -> i32 {
         match self {
-            Self::Wire => CONNECTION_LABEL_FONT,
+            Self::Wire(_) => CONNECTION_LABEL_FONT,
             Self::Branch => BRANCH_LABEL_FONT,
         }
     }
 
     pub(crate) const fn line_height(self) -> i32 {
         match self {
-            Self::Wire => CONNECTION_LINE_HEIGHT,
+            Self::Wire(_) => CONNECTION_LINE_HEIGHT,
             Self::Branch => BRANCH_LINE_HEIGHT,
         }
     }
@@ -253,7 +250,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
             .iter()
             .find(|boundary| boundary.header == scene.topology.cycles[index].header)
             .expect("a repeating cycle has a boundary");
-        let (boundary_header, boundary_end) = (boundary.header, boundary.end);
+        let boundary = boundary.clone();
         let obstructions = |scene: &Scene| {
             let mut bounds = scene.labels.iter().map(label_rect).collect::<Vec<_>>();
             bounds.extend(
@@ -262,9 +259,7 @@ fn clear_labels(scene: &mut Scene) -> i32 {
                     .cycle_boundaries
                     .iter()
                     .zip(cycle::regions(scene))
-                    .filter(|(nested, _)| {
-                        (boundary_header + 1..boundary_end).contains(&nested.header)
-                    })
+                    .filter(|(nested, _)| boundary.encloses(nested.header))
                     .map(|(_, region)| region.padded(LANE)),
             );
             bounds
@@ -424,9 +419,9 @@ enum Blocked {
     Narrow(i32),
 }
 
-/// Checks that pixels preserve the arrangement's rows, columns, ports, and
-/// contour anchors after translation. Crossing-free geometry alone cannot
-/// detect a swapped column or a disconnected port.
+/// Checks that pixels keep the arrangement's rows, columns, ports, and contour
+/// anchors: crossing-free geometry alone cannot detect a swapped column or a
+/// disconnected port.
 pub(super) fn correspondence(scene: &Scene) -> Option<String> {
     let gaps = vertical_gaps(scene);
     let rows = scene.rows(&gaps);
@@ -577,7 +572,7 @@ fn attempt(
             .topology
             .cycle_boundaries
             .iter()
-            .map(|boundary| topology.body_vertices(flow, boundary.header))
+            .map(|boundary| topology.boundary_vertices(flow, boundary))
             .collect(),
         arrangement: model.arrangement.clone(),
         topology: model.topology.clone(),
@@ -756,14 +751,12 @@ impl Scene {
         }
     }
 
-    /// The rank the arrangement gave one vertex.
     pub(super) fn rank(&self, vertex: Vertex) -> usize {
         self.arrangement.rank[&vertex]
     }
 
     /// Column centre under a strictly increasing map. Content columns reserve
-    /// measured widths; routing-only columns need one lane. Each gap grows only
-    /// for the back edge reaches that enter it.
+    /// measured widths.
     pub(super) fn column_x(&self, column: i32) -> i32 {
         let distance: i32 = (0.min(column)..0.max(column))
             .map(|at| self.column_gap(at))
@@ -862,7 +855,7 @@ impl Scene {
             .expect("every projected node is placed")
     }
 
-    pub(super) const fn bounds(node: &Node) -> (i32, i32, i32, i32) {
+    pub(crate) const fn bounds(node: &Node) -> (i32, i32, i32, i32) {
         (
             node.x - node.width / 2,
             node.y - node.height / 2,

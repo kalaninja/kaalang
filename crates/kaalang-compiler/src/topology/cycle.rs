@@ -65,7 +65,6 @@ pub(super) fn order_exits(
 pub(super) fn order_boundaries(topology: &mut Topology) {
     let mut order = Vec::new();
     for boundary in &topology.cycle_boundaries {
-        let owns = |block| (boundary.header + 1..boundary.end).contains(&block);
         // A completing loop cycle continues from its result junctions, a for
         // cycle from its for-end.
         let targets = match boundary.caps {
@@ -81,10 +80,12 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
                     NodeId::Block(block) | NodeId::Case { choice: block, .. } => block,
                     NodeId::Start => return None,
                 };
-                (owns(block) && Vertex::Node(node.id) != target).then_some(Connection {
-                    source: Source::Exit(ExitId::of(node.id)),
-                    destination: target,
-                })
+                (boundary.encloses(block) && Vertex::Node(node.id) != target).then_some(
+                    Connection {
+                        source: Source::Exit(ExitId::of(node.id)),
+                        destination: target,
+                    },
+                )
             }));
             order.extend(
                 topology
@@ -101,7 +102,7 @@ pub(super) fn order_boundaries(topology: &mut Topology) {
                 topology
                     .cycle_boundaries
                     .iter()
-                    .filter(|nested| owns(nested.header))
+                    .filter(|nested| boundary.encloses(nested.header))
                     .flat_map(|nested| {
                         std::iter::once(nested.entry)
                             .chain(nested.results.iter().map(|&result| Vertex::from(result)))
@@ -259,7 +260,6 @@ pub(super) fn project_for_end(
     });
 }
 
-/// Orders everything in each for body before its for-end.
 pub(super) fn precede_for_ends(flow: &Flow, topology: &mut Topology) {
     for position in 0..topology.cycle_boundaries.len() {
         let boundary = &topology.cycle_boundaries[position];
@@ -414,8 +414,6 @@ fn replace_junctions(topology: &mut Topology, replacements: &BTreeMap<usize, Sou
     topology.index();
 }
 
-/// Follow the side occupied by the repeating routes of the first selection.
-/// Without a common rightmost branch, the back edge starts on the left contour.
 pub(super) fn prefer_left(model: &Analyzed<'_>, header: usize) -> bool {
     if let Some(symbolic) = model.symbolic {
         return symbolic.clone().prefer_left(model.flow, header);

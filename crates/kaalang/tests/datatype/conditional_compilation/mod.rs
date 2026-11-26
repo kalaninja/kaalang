@@ -36,7 +36,7 @@ pub struct Session {
     #[kaa::refer(Handle, "The open device.")]
     pub handle: Handle,
     // Only on Unix does the log name a device.
-    #[cfg_attr(unix, kaa::refer(Device, "The device it logs to."))]
+    #[r#cfg_attr(unix, kaa::refer(Device, "The device it logs to."))]
     #[cfg_attr(not(unix), kaa::value("The log destination."))]
     #[cfg_attr(any(), kaa::value(""))]
     pub log: String,
@@ -79,4 +79,29 @@ fn conditional_variant_annotations_do_not_change_field_guards() {
     }
     let Record::Current(value) = Record::Current(3);
     assert_eq!(value, 3);
+}
+
+#[test]
+fn a_disabled_generic_does_not_shadow_the_relationship_target() {
+    #[kaa]
+    struct Inventory<#[r#cfg_attr(all(), r#cfg(any()))] Device> {
+        #[kaa::refer(Device, "The registered device.")]
+        id: u32,
+        #[cfg(any())]
+        storage: Device,
+    }
+    assert_eq!(Inventory { id: 23 }.id, 23);
+}
+
+#[test]
+fn a_forbidden_lint_admits_the_relationship_check_of_a_conditional_generic() {
+    #[forbid(unused_imports)]
+    #[kaa]
+    struct Inventory<#[cfg(any())] Device> {
+        #[kaa::refer(Device, "The registered device.")]
+        id: u32,
+        #[cfg(any())]
+        storage: Device,
+    }
+    assert_eq!(Inventory { id: 23 }.id, 23);
 }

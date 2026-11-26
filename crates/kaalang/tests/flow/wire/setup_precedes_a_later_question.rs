@@ -32,7 +32,7 @@ fn the_setup_runs_before_the_question_that_selects_its_consumers() {
     for (condition, expected) in [(true, 8), (false, 9)] {
         let order = Cell::new(0);
         assert_eq!(setup_precedes_a_later_question(condition, &order), expected);
-        // 1 then 2, exactly as the two blocks are written.
+        // 1 then 2, as the two blocks are written.
         assert_eq!(order.get(), 12);
     }
 }

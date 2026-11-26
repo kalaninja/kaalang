@@ -22,9 +22,7 @@ pub(crate) mod question;
 mod return_block;
 pub(crate) mod verify;
 
-/// Builds the nested branch tree the validated flow lowers to. Every accepted
-/// flow has one, so a failure here is a compiler bug rather than a rejected
-/// program.
+/// Builds the nested branch tree the validated flow lowers to.
 pub(crate) fn flow(
     flow: &Flow,
     executions: &[Execution],

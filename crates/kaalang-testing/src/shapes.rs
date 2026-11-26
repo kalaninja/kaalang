@@ -275,7 +275,7 @@ fn selection(routes: &[&str], prefix: &str) -> String {
 
 /// One cycle whose body selects `routes`, wrapped in an outer cycle whose other
 /// branches take `propagate`. It uses the same names as [`cycle_routes`], plus
-/// `propagate` for an inner result that the enclosing cycle explicitly handles.
+/// `propagate`.
 /// The inner cycle repeats through `inner_again`: a nested local cannot reuse
 /// the outer `again` it can see.
 ///

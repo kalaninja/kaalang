@@ -39,13 +39,12 @@ pub(super) struct Parts {
 /// The analyzed parts of a flow, stopping short of construction.
 ///
 /// `build` constructs, so reading the parts from it would hide every flow the
-/// construction refuses — which is exactly the set a decision test has to see.
+/// construction refuses — which is the set a decision test has to see.
 /// `None` means a rule other than realizability rejected the flow.
 pub(super) fn parts_of(source: &str) -> Option<Parts> {
     parts_from(&syn::parse_str(source).ok()?)
 }
 
-/// The same, for a function a caller has already parsed.
 pub(super) fn parts_from(function: &syn::ItemFn) -> Option<Parts> {
     let analysis = crate::analyze(function).ok()?;
     let topology = crate::project(&analysis, false);
@@ -153,10 +152,9 @@ fn a_cycle_is_refused_rather_than_ranked() {
 /// One named break of a valid arrangement.
 type Mutation = (&'static str, fn(&mut Arrangement));
 
-/// Mutations covering arrangement structure and geometry. The first group
-/// breaks structural coverage before geometry is checked; the second holds
-/// breaks that only the drawn geometry rejects, so each has to reach the
-/// crossing and overlap checks.
+/// The first group breaks structural coverage before geometry is checked; the
+/// second holds breaks that only the drawn geometry rejects, so each has to
+/// reach the crossing and overlap checks.
 #[allow(clippy::too_many_lines)] // One data table; each entry names its break.
 fn mutations() -> Vec<Mutation> {
     vec![
@@ -277,9 +275,9 @@ fn mutations() -> Vec<Mutation> {
     ]
 }
 
-/// Each mutation must fail verification. This probe cannot isolate crossings:
-/// its single-lane gaps produce diagonal routes first. Impossibility tests and
-/// shared geometry tests cover crossing rejection separately.
+/// This probe cannot isolate crossings: its single-lane gaps produce diagonal
+/// routes first. Impossibility tests and shared geometry tests cover crossing
+/// rejection separately.
 #[test]
 fn the_verifier_rejects_every_mutation() {
     // Both a cycle exit and flow completion outside the repeating branches.
@@ -304,9 +302,7 @@ fn the_verifier_rejects_every_mutation() {
     }
 }
 
-/// Node dimensions and label text are a presentation's business. The same
-/// topology under long, wide, non-Latin descriptions keeps the arrangement it
-/// had under short ones.
+/// Node dimensions and label text are a presentation's business.
 #[test]
 fn descriptions_do_not_change_the_arrangement() {
     let plain = cycle_routes(&["repeat", "repeat", "leave"]);
@@ -377,9 +373,8 @@ fn the_sweep_alone_draws_every_executable_fixture() {
     }
 }
 
-/// Cycle bodies with two declared outputs draw them in declaration order or
-/// are rejected before construction; none reaches an internal error or a
-/// construction refusal.
+/// Over cycle bodies with two declared outputs; none reaches an internal error
+/// or a construction refusal.
 #[test]
 fn generated_alternative_outputs_draw_in_order_or_are_rejected_early() {
     let (mut drawn, mut rejected_earlier) = (0, 0);
@@ -598,8 +593,6 @@ fn the_construction_agrees_with_an_independent_procedure() {
     );
 }
 
-/// CONTRIBUTING.md asks for `just rust test-exhaustive` before a commit that
-/// touches this decision.
 #[test]
 #[ignore = "exhaustive; run it with `just rust test-exhaustive`"]
 fn the_declared_domain_agrees_with_the_independent_procedure() {
@@ -867,8 +860,8 @@ fn a_diverging_branch_between_partial_merges_is_drawn() {
     );
 }
 
-/// A back edge one column beyond its body still verifies. The renderer uses
-/// this witness to check that the recorded column survives realization.
+/// A back edge further out than its body needs still verifies. The renderer
+/// uses this witness to check that the recorded column survives realization.
 #[test]
 fn a_back_edge_may_stand_beyond_the_body_it_clears() {
     let model = model(&cycle_routes(&["repeat", "repeat", "leave"]));

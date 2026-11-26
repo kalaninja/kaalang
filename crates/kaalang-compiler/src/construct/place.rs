@@ -23,8 +23,7 @@ impl Placement {
 }
 
 /// Places one projected topology, or reports that it has no top-to-bottom
-/// order at all. `sunk` names the vertices to place as late as precedence
-/// allows.
+/// order. `sunk` names the vertices to place as late as precedence allows.
 pub(super) fn place(
     topology: &Topology,
     footprints: &Footprints,
@@ -70,7 +69,7 @@ pub(super) fn rows(
     while !pending.is_empty() {
         // Validated wire merges leave an acyclic visual graph, so this only
         // fails on a projection bug. Refuse the diagram rather than abort: the
-        // renderer is also a library and a command-line binary.
+        // compiler also serves libraries and a command-line binary.
         let Some(&ready) = pending.iter().find(|&&vertex| {
             topology
                 .incoming(vertex)

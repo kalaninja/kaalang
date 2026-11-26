@@ -30,18 +30,13 @@ impl Bodies {
                 .cycle_boundaries
                 .iter()
                 .map(|boundary| {
-                    let mut owned = topology.body_vertices(flow, boundary.header);
-                    owned.extend(boundary.results.iter().map(|&result| Vertex::from(result)));
+                    let owned = topology.boundary_vertices(flow, boundary);
                     let inside = |vertex: Vertex| owned.contains(&vertex);
-                    let interface = |edge: &Connection| {
-                        edge.destination == boundary.entry
-                            || boundary.results.contains(&edge.source)
-                    };
                     let (mut internal, mut foreign_routes) = (Vec::new(), Vec::new());
                     for (index, edge) in topology.connections.iter().enumerate() {
                         if inside(Vertex::from(edge.source)) && inside(edge.destination) {
                             internal.push(index);
-                        } else if !interface(edge) {
+                        } else if !boundary.crosses_interface(edge.source, edge.destination) {
                             foreign_routes.push(index);
                         }
                     }
@@ -50,8 +45,8 @@ impl Bodies {
                         .iter()
                         .enumerate()
                         .filter_map(|(index, cycle)| {
-                            (!(boundary.header..boundary.end).contains(&cycle.header))
-                                .then_some(index)
+                            let own = cycle.header == boundary.header;
+                            (!own && !boundary.encloses(cycle.header)).then_some(index)
                         })
                         .collect();
                     let own_back_edge = topology
@@ -63,9 +58,9 @@ impl Bodies {
                         if other.header == boundary.header {
                             continue;
                         }
-                        if (boundary.header + 1..boundary.end).contains(&other.header) {
+                        if boundary.encloses(other.header) {
                             nests.push(index);
-                        } else if !(other.header + 1..other.end).contains(&boundary.header) {
+                        } else if !other.encloses(boundary.header) {
                             beside.push(index);
                         }
                     }

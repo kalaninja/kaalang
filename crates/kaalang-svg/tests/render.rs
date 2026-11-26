@@ -1,10 +1,11 @@
-use kaalang_compiler::{SourceError, SourceFile, SourceFlow, Target};
-use kaalang_svg::{RenderError, render_flow};
+use kaalang_compiler::{CfgSet, SourceError, SourceFile, SourceFlow};
+use kaalang_svg::{RenderError, TypeCard, TypeOptions, render_flow, render_type};
+use kaalang_testing::corpus::{self, Suite};
 
 /// Reads the flow at `path` within `source` for no target, with each cycle as
 /// one node when `collapse_cycles` is set.
 fn read(source: &str, path: &str, collapse_cycles: bool) -> Result<SourceFlow, SourceError> {
-    let file = SourceFile::parse(source, Target::EMPTY)?;
+    let file = SourceFile::parse(source, CfgSet::EMPTY)?;
     let position = kaalang_compiler::flows(file.items())
         .iter()
         .position(|flow| flow.path == path)
@@ -15,9 +16,9 @@ fn read(source: &str, path: &str, collapse_cycles: bool) -> Result<SourceFlow, S
 /// Renders that flow, which must read.
 fn render_view(source: &str, path: &str, collapse_cycles: bool) -> Result<String, RenderError> {
     render_flow(read(source, path, collapse_cycles).unwrap_or_else(|error| panic!("{error}")))
+        .map(|(svg, _)| svg)
 }
 
-/// Renders the flow at `path` within `source`, read for no target.
 fn render_source(source: &str, path: &str) -> Result<String, RenderError> {
     render_view(source, path, false)
 }
@@ -411,7 +412,6 @@ fn quoted<'a>(line: &'a str, name: &str) -> &'a str {
         .0
 }
 
-/// The first line of `svg` that contains `needle`.
 fn first_line<'a>(svg: &'a str, needle: &str) -> &'a str {
     svg.lines()
         .find(|line| line.contains(needle))
@@ -758,4 +758,31 @@ fn a_branch_described_as_code_keeps_the_code_class() {
         2,
         "{svg}"
     );
+}
+
+#[test]
+fn crlf_line_endings_draw_the_same_type_diagram() {
+    let mut drawn = 0;
+    for (path, source) in corpus::files(Suite::Ordinary) {
+        let crlf = source.replace('\n', "\r\n");
+        let file = SourceFile::parse(&source, CfgSet::EMPTY).expect("the fixture parses");
+        let crlf_file = SourceFile::parse(&crlf, CfgSet::EMPTY).expect("the fixture parses");
+        for (name, _) in kaalang_compiler::type_items(file.items()) {
+            let svg = |file: &SourceFile<'_>| {
+                let ty = file.ty(&name).map_err(|error| error.to_string())?;
+                let card = TypeCard {
+                    ty: &ty,
+                    header: &name,
+                    relationships: &[],
+                };
+                render_type(&card, &[], &[(); 0], TypeOptions::default())
+                    .map(|(svg, _)| svg)
+                    .map_err(|error| error.to_string())
+            };
+            let svg_of_lf = svg(&file);
+            assert_eq!(svg(&crlf_file), svg_of_lf, "{name} in {}", path.display());
+            drawn += usize::from(svg_of_lf.is_ok());
+        }
+    }
+    assert!(drawn > 20, "{drawn} type diagrams");
 }

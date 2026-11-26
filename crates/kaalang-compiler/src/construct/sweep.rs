@@ -260,7 +260,7 @@ fn branch_rules(
 }
 
 impl Columns {
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // Unifies column identities, then orders them by the static constraints.
     fn of(flow: &Flow, topology: &Topology, flexible: bool) -> Option<Self> {
         let index = |vertex| index_of(topology, vertex);
         let n = topology.vertices.len();
@@ -707,8 +707,6 @@ impl<'a> Sweep<'a> {
             || a.destination == b.destination
     }
 
-    /// Static anchors on the event row. Untouched forward routes may move
-    /// between events; back edges choose a position inside their persistent bounds.
     fn back_edge_anchor(&self, i: usize) -> Anchor {
         Anchor {
             left: self.columns.back_edges[i],
@@ -717,6 +715,8 @@ impl<'a> Sweep<'a> {
         }
     }
 
+    /// Static anchors on the event row. Untouched forward routes may move
+    /// between events; back edges choose a position inside their persistent bounds.
     fn anchors(&self, frontier: &[Lifeline], sides: &[Option<Side>], step: &Step) -> Vec<Anchor> {
         let take = |items: &[Lifeline]| {
             items
@@ -803,11 +803,8 @@ impl<'a> Sweep<'a> {
         Some(order)
     }
 
-    /// A path to a vertex strictly after v separates paths to v on its two
-    /// sides, provided it cannot itself reach v. It cannot meet either path
-    /// before v: such a meeting would make it an ancestor of v. Only the
-    /// already live edges may escape through their common source; exclude
-    /// those from this obstruction.
+    /// Whether a live path separates paths to a vertex it cannot reach: the
+    /// separator obstruction of RFC 0003 §2.1.
     fn sealed(&self, state: &State) -> bool {
         let destination = |item: Lifeline| match item {
             Lifeline::Wire(w) => self.topology.connections[w].destination,
@@ -1271,9 +1268,7 @@ impl<'a> Sweep<'a> {
         (before, after)
     }
 
-    /// Ordered wires can be moved without crossing: leftward moves from left
-    /// to right, then rightward moves from right to left. Shared departures
-    /// split before these moves; arrivals merge on one final common rail.
+    /// Routes the strip between two events as RFC 0003 §2.1 constructs it.
     fn strip(
         &self,
         gap: usize,
@@ -1395,9 +1390,8 @@ fn pack_side(
     pack(&run, start, end, previous, fixed);
 }
 
-/// Keep a live path where it already stood whenever the new anchor interval
-/// leaves room. Clamping left to right preserves order and reserves one integer
-/// for each remaining path; it changes coordinates, never the search state.
+/// Keeps live paths where they stood by the clamp of RFC 0003 §2.1; it changes
+/// coordinates, never the search state.
 fn pack(
     paths: &[Lifeline],
     mut left: i32,

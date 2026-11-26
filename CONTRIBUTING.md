@@ -11,18 +11,19 @@
 
 ## Sources of truth
 
-RFCs in `docs/rfcs/` define kaalang syntax and semantics. Implementation code,
-Rust documentation, diagnostics, test names, and test fixtures use the
-terminology of the relevant RFC. Do not duplicate the language contract in other
-documentation.
+Implementation code, Rust documentation, diagnostics, test names, and test
+fixtures use the terminology of the relevant RFC. Do not duplicate the language
+contract in other documentation; link the RFC paragraph in force, which
+`docs/language.md` lists by subject.
 
-RFCs describe syntax, semantics, observable behavior, and design decisions.
-Algorithms, transformation steps, their rationale, and correctness arguments
-belong in the RFC covering that subject. Crate choices, library versions, and
-build or runtime configuration belong in code or development documentation. So
-does the organization of the code: which crate or function does what, library
-interfaces, the names of types and functions, and tests. An RFC names none of
-them.
+RFCs in `docs/rfcs/` describe syntax, semantics, observable behavior, and design
+decisions. Algorithms, transformation steps, their rationale, and correctness
+arguments belong in the RFC covering that subject. Crate choices, library
+versions, and build or runtime configuration belong in code or development
+documentation. So does the organization of the code: which crate or function
+does what, library interfaces, the names of types and functions, and tests. An
+RFC names none of them. `docs/architecture.md` describes the repository, its
+tooling, and the implementation.
 
 Accepted RFCs are immutable. A new RFC changes an accepted decision by naming
 the provisions it supersedes, and takes precedence for them.
@@ -33,12 +34,7 @@ never what the code shows, and link to RFCs for detailed rationale.
 Always write the language name as `kaalang`, including at the start of a
 sentence and in headings.
 
-Behavior tests are executable examples of accepted programs. Compile-fail tests
-document rejected programs and their diagnostics.
-
-## Code organization
-
-### Block kind modules
+## Block kind modules
 
 Put behavior specific to one block kind in a module named for that kind, in
 every phase that needs it, such as `parse/action.rs`, `analyze/question.rs`, or
@@ -63,56 +59,28 @@ For syntax or semantic changes:
 
 1. Read the relevant RFC, implementation, and tests.
 2. State the design problem and chosen tradeoff.
-3. Add a new RFC, or update a proposed one, together with the implementation.
+3. Add a new RFC, or update a proposed one, together with the implementation,
+   and list the paragraphs it puts in force in `docs/language.md`.
 4. Add behavior and compile-fail coverage as appropriate.
 5. Check terminology against `GLOSSARY.md` across documentation, Rust
    documentation, diagnostics, identifiers, and test names.
 
 ## Validation
 
-Recipes live in `justfile` and `just/` and run from the repository root with
-[just](https://just.systems). The Rust and Markdown recipes run in Docker images
-built from `Dockerfile`, so the host needs only just and Docker; the release
-recipes run cargo on the host for its crates.io credentials. The images install
-the tools pinned in `mise/` with [mise](https://mise.jdx.dev). The nightly
-rustfmt in the `fmt` image applies the import options in `rustfmt.toml`. A
-recipe rebuilds its image when those files change. Downloaded crates and npm
-packages stay in the ignored `.cache/`.
+Before committing:
 
-Format sources:
-
-```sh
-just fmt
-```
-
-It runs [Prettier](https://prettier.io/docs/cli), pinned in `just/docs.just`, on
-Markdown and the nightly `cargo fmt` on Rust.
-
-Run the full baseline before committing:
-
-```sh
-just ci run
-```
-
-It checks formatting, then runs `cargo clippy` with warnings denied,
-`cargo test`, `just rust svg`, and `git diff --check`. `just rust` and
-`just docs` list the per-step recipes.
-
-One comparison is too slow for the baseline and sits behind `#[ignore]`:
-
-```sh
-just rust test-exhaustive
-```
-
-It takes about half a minute. It compares the construction with the independent
-procedure over the whole declared domain, and the two analysis paths over every
-generated cycle shape; no other check reaches the nested cycle shapes in bulk.
-Run it before committing a change to `construct/`, `analyze/`, `symbolic/`, the
-shapes in `kaalang-testing`, or any rule those answers rest on.
-
-`just rust svg` redraws every generated diagram and shows the diff; review it
-before committing. The diagram generator is an ignored test, so `cargo test`
-leaves the SVG files untouched.
+- Run `just fmt`, then the full baseline, `just ci run`.
+- Review the diagram diff `just rust svg` shows; the baseline runs it. Never
+  edit a generated `.svg` by hand.
+- After a change to `construct/`, `analyze/`, `symbolic/`, the shapes in
+  `kaalang-testing`, or any rule those answers rest on, run
+  `just rust test-exhaustive`. It takes about half a minute and stays out of the
+  baseline; no other check reaches the nested cycle shapes in bulk.
+- After a change to the IDE page, try it with `just ide page-open`; every check
+  on its `checks.html` must pass.
+- After a change under `ide/`, check the cases of `ide/sample/README.md` in
+  every supported IDE: `just ide vscode-open`, then **Show Diagram to the Side**
+  in the editor title.
 
 Flow fixtures live in `crates/kaalang/tests/flow/`, one directory per language
 feature and one flow per file, named for its flow, with its diagram beside it. A
@@ -132,8 +100,8 @@ every type its `mod.rs` declares, datatype or plain type, named after the type
 in snake case. The first type is the case's subject, and its diagram is named
 after the directory instead, as `many_incoming_types/many_incoming_types.svg`. A
 type's incoming types there are those in the same file that refer to it by its
-bare name. Every fixture is read for 64-bit Linux, fixed in `tests/diagrams.rs`,
-so the diagrams do not depend on the machine that draws them.
+bare name. The Rust and WebAssembly tests draw the fixtures for the same 64-bit
+Linux target from `crates/kaalang/tests/diagram-target.cfg`.
 
 Hand-written stress fixtures live in `crates/kaalang/tests/stress/<flow>/mod.rs`
 with their tests and diagrams. They combine language features heavily and get
@@ -141,56 +109,28 @@ the stress tier of the corpus budgets.
 
 ### Packaging a release
 
-Set the version in the root `Cargo.toml`, in `[workspace.package]` and in each
-path crate's entry in `[workspace.dependencies]`, and date its section in
-`CHANGELOG.md`. Then verify the publishable packages together:
+1. Set the version in the root `Cargo.toml`, in `[workspace.package]` and in
+   each path crate's entry in `[workspace.dependencies]`, and date its section
+   in `CHANGELOG.md`.
+2. Run `just release package`, then commit the version and the date: the
+   publishing recipes refuse an uncommitted tree.
+3. Run `just release publish-dry-run`, then `just release publish`.
+4. To resume a partial release, publish one crate at a time with
+   `just release publish-crate <crate>`, in dependency order:
+   `kaalang-compiler`, `kaalang-macros`, `kaalang-render`, `kaalang-svg`,
+   `kaalang-workspace`, `kaalang`, then `kaalang-cli`.
+5. Tag the released commit and push the tag:
 
-```sh
-just release package
-```
-
-Commit the version and the date; the publishing recipes refuse an uncommitted
-tree. Preview the publication without uploading:
-
-```sh
-just release publish-dry-run
-```
-
-Publish the workspace in dependency order:
-
-```sh
-just release publish
-```
-
-To resume a partial release, publish one crate at a time with
-`just release publish-crate <crate>`, in dependency order: `kaalang-compiler`,
-`kaalang-macros`, `kaalang-render`, `kaalang-svg`, `kaalang`, then
-`kaalang-cli`. `kaalang-testing` is never published.
-
-Then tag the released commit and push the tag:
-
-```sh
-git tag -a v<version> -m "kaalang <version>"
-git push origin v<version>
-```
+   ```sh
+   git tag -a v<version> -m "kaalang <version>"
+   git push origin v<version>
+   ```
 
 ## Performance budgets
 
-Each crate bounds the stages it owns: `kaalang-compiler` analysis, topology
-construction, and lowering to Rust; `kaalang-render` structural compaction; and
-`kaalang-svg` measurement and serialization. They share fixture sources and
-generated probes through `kaalang-testing`, and the compiler and SVG corpus
-budgets share one harness for warm-up, measurement, statistics, and the
-aggregate and per-item checks. Keep it that way: a budget over its own corpus,
-probes, or statistic stops comparing with the others.
-
-The fixture corpus is read from the checked-in test fixtures, so it grows with
-the language. Ordinary and stress fixtures run in separate corpus tests, each
-with an aggregate budget of `count * allowance` and its own per-item limit. The
-allowance is below the per-item limit, so the aggregate still catches
-distributed regressions. Compiler passes take every fixture flow once; SVG
-passes take expanded and collapsed diagrams of cycle fixtures. The render
-crate's generated probes cover large compaction shapes outside the corpus.
+Every budget takes its fixture sources, generated probes, and harness from
+`kaalang-testing`: a budget over its own corpus, probes, or statistic stops
+comparing with the others.
 
 The bounds are wall-clock time in the unoptimized dev profile, the profile a
 macro expansion runs in. They sit over a recorded median with headroom for a
@@ -198,8 +138,8 @@ loaded machine: they catch a large regression, not drift. Record the measured
 median beside any constant you change, and run the suite twice: a budget that
 only passes once is not a gate.
 
-`just rust perf` runs the three crates serially and prints a table. Prefer its
-numbers to those of `cargo test`, which runs the budgets side by side and so
+`just rust perf` runs each crate's budgets serially and prints a table. Prefer
+its numbers to those of `cargo test`, which runs the budgets side by side and so
 measures contention as well as work. Each run prints the distribution behind its
 verdict; a p100 several times the p50 means the machine was busy, not that
 something got slower.
